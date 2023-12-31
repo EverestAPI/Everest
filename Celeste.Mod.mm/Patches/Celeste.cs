@@ -4,6 +4,7 @@
 using Celeste.Mod;
 using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
+using EverestSplash;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
@@ -123,34 +124,27 @@ namespace Celeste {
             }
 
             // Get the splash up and running asap
-            if (!args.Contains("--disable-splash") && File.Exists("EverestSplash.dll")) {
-                Type everestSplashType = Assembly.LoadFile(Path.GetFullPath("EverestSplash.dll"))
-                    .GetType("EverestSplash.EverestSplash");
-                MethodInfo createWindowMethod = 
-                    everestSplashType?.GetMethod("CreateWindow", BindingFlags.Public | BindingFlags.Static);
-                MethodInfo runWindowMethod = 
-                    everestSplashType?.GetMethod("RunWindow", BindingFlags.Public | BindingFlags.Static); 
-                
-                // Work starts here!
-                using Barrier barrier = new(2);
+            if (!args.Contains("--disable-splash")) {
+                Barrier barrier = new(2);
                 string targetRenderer = "";
                 for (int i = 0; i < args.Length; i++) { // The splash will use the same renderer as fna
                     if (args[i] == "--graphics" && args.Length > i + 1) {
                         targetRenderer = args[i + 1];
                     }
                 }
+                
                 // We require that the sdl_init happens synchronously but on the thread where its going to be used
                 // its not documented anywhere that this is dangerous, so danger is assumed
                 Thread thread = new(() => {
-                    object window = createWindowMethod?.Invoke(null, new object[]{targetRenderer});
-                    // ReSharper disable once AccessToDisposedClosure
+                    EverestSplashWindow window = EverestSplash.EverestSplash.CreateWindow(targetRenderer);
+                    
                     barrier.SignalAndWait();
-                    runWindowMethod?.Invoke(null, new []{window});
+                    EverestSplash.EverestSplash.RunWindow(window);
                 });
                 thread.Start();
                 barrier.SignalAndWait();
                 
-                splashPipeServerStream = new NamedPipeServerStream("EverestSplash");
+                splashPipeServerStream = new NamedPipeServerStream(EverestSplash.EverestSplash.Name);
                 splashPipeServerStreamConnection = splashPipeServerStream.WaitForConnectionAsync();    
             }
 
@@ -386,7 +380,7 @@ https://discord.gg/6qjaePQ");
                 sw.Flush();
                 StreamReader sr = new(splashPipeServerStream);
                 // yes, this, inevitably, slows down the everest boot process, but, see EverestSplashWindow.FeedBack
-                // for mor info
+                // for more info
                 sr.ReadLine();
             }
         }

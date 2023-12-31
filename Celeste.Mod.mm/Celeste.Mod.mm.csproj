@@ -77,6 +77,9 @@
     <EmbeddedResource Remove="Content\Dialog\Fonts\chinese-noto.bmfc" />
     <EmbeddedResource Remove="Content\Dialog\Fonts\chinese_additional_characters.txt" />
     <EmbeddedResource Remove="Content\**\*.xcf" />
+    <EmbeddedResource Include="..\lib-stripped\Celeste-icon.png">
+      <LogicalName>%(EmbeddedResource.Identity)</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>

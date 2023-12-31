@@ -1,10 +1,12 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.IO;
 using System.IO.Pipes;
 using SDL2;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 
@@ -17,6 +19,7 @@ namespace EverestSplash;
 /// This program could also be loaded as a library and ran by calling `LaunchWindow`.
 /// It uses a separate thread to run sdl, even if not necessary, to not accidentally create any gl, vk or directx context
 /// and conflict with fna
+/// For testing see message at end of file
 /// </summary>
 public static class EverestSplash {
     public const string Name = "EverestSplash";
@@ -79,24 +82,19 @@ public class EverestSplashWindow {
     private static int WindowHeight = 340; // Currently hardcoded, TODO: fractional scaling
     private static int WindowWidth = 800;
     private static readonly TextureInfo EverestLogoTexture = new() {
-        path = "SplashContent/everest.png",
-        embeddedResourcePath = "EverestSplash.SplashContent.everest.png" 
+        path = "Content/Graphics/Atlases/Gui/splash/everest_centered.png",
     };
     private static readonly TextureInfo StartingEverestTexture = new() {
-        path = "SplashContent/starting_everest_text.png",
-        embeddedResourcePath = "EverestSplash.SplashContent.starting_everest_text.png" 
+        path = "Content/Graphics/Atlases/Gui/splash/starting_everest_text.png",
     };
     private static readonly TextureInfo WheelTexture = new() {
-        path = "SplashContent/splash_wheel_blur.png",
-        embeddedResourcePath = "EverestSplash.SplashContent.splash_wheel_blur.png" 
+        path = "Content/Graphics/Atlases/Gui/splash/splash_wheel_blur.png",
     };
     private static readonly TextureInfo BgGradientTexture = new() {
-        path = "SplashContent/bg_gradient_2x.png",
-        embeddedResourcePath = "EverestSplash.SplashContent.bg_gradient_2x.png" 
+        path = "Content/Graphics/Atlases/Gui/splash/bg_gradient_2x.png",
     };
     private static readonly TextureInfo AppIcon = new() {
-        path = "./Celeste-icon.png",
-        embeddedResourcePath = "EverestSplash.Celeste-icon.png"
+        path = "../lib-stripped/Celeste-icon.png",
     };
     private static readonly Color bgDark = new() {  // Everest's dark purple color
         R = 59, G = 45, B = 74, A = 255,
@@ -136,7 +134,6 @@ public class EverestSplashWindow {
         });
         
         Init(); // Init right away
-
     }
 
     public void Run() { // Calling this multiple times is asking for trouble
@@ -175,7 +172,7 @@ public class EverestSplashWindow {
         windowInfo = new WindowInfo() { window = window, renderer = renderer, };
         SDL.SDL_SetHint( SDL.SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
-        IntPtr appIconRWops = LoadRWopsFromEmbeddedResource(AppIcon.embeddedResourcePath);
+        IntPtr appIconRWops = LoadRWopsFromEmbeddedResource(AppIcon.path);
         IntPtr appIconSurface = SDL_image.IMG_Load_RW(appIconRWops, (int) SDL.SDL_bool.SDL_TRUE); // Make sure to always free the RWops
         SDL.SDL_SetWindowIcon(window, appIconSurface);
         
@@ -347,9 +344,9 @@ public class EverestSplashWindow {
     }
 
     private IntPtr LoadTexture(TextureInfo sprite) {
-        return sprite.embeddedResourcePath == "" ? 
+        return File.Exists(sprite.path) ? 
             LoadTextureFromPath(sprite.path) : 
-            LoadTextureFromEmbeddedResource(sprite.embeddedResourcePath);
+            LoadTextureFromEmbeddedResource(sprite.path);
     }
 
     private IntPtr LoadTextureFromPath(string path) {
@@ -428,7 +425,6 @@ public class EverestSplashWindow {
 
     private struct TextureInfo {
         public string path = "";
-        public string embeddedResourcePath = "";
         public TextureInfo() {}
     }
 
@@ -479,4 +475,104 @@ public class EverestSplashWindow {
             public void HasRan() => HasFixed = true;
         }
     }
+    
+#nullable disable
+    public static class SDL_image {
+        /* Used by DllImport to load the native library. */
+        private const string nativeLibName = "SDL2_image";
+        
+        
+        [Flags]
+        public enum IMG_InitFlags
+        {
+        	IMG_INIT_JPG =	0x00000001,
+        	IMG_INIT_PNG =	0x00000002,
+        	IMG_INIT_TIF =	0x00000004,
+        	IMG_INIT_WEBP =	0x00000008
+        }
+        
+        [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int IMG_Init(IMG_InitFlags flags);
+        
+        /* src refers to an SDL_RWops*, IntPtr to an SDL_Surface* */
+        /* THIS IS A PUBLIC RWops FUNCTION! */
+        [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr IMG_Load_RW(
+        	IntPtr src,
+        	int freesrc
+        );
+        
+        /* IntPtr refers to an SDL_Texture*, renderer to an SDL_Renderer* */
+        [DllImport(nativeLibName, EntryPoint = "IMG_LoadTexture", CallingConvention = CallingConvention.Cdecl)]
+        private static extern unsafe IntPtr INTERNAL_IMG_LoadTexture(
+        	IntPtr renderer,
+        	byte* file
+        );
+        public static unsafe IntPtr IMG_LoadTexture(
+        	IntPtr renderer,
+        	string file
+        ) {
+        	byte* utf8File = Utf8EncodeHeap(file);
+        	IntPtr handle = INTERNAL_IMG_LoadTexture(
+        		renderer,
+        		utf8File
+        	);
+        	Marshal.FreeHGlobal((IntPtr) utf8File);
+        	return handle;
+        }
+
+        /* renderer refers to an SDL_Renderer*.
+         * src refers to an SDL_RWops*.
+         * IntPtr to an SDL_Texture*.
+         */
+        /* THIS IS A PUBLIC RWops FUNCTION! */
+        [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr IMG_LoadTexture_RW(
+        	IntPtr renderer,
+        	IntPtr src,
+			int freesrc
+        );
+        
+        public static string IMG_GetError()
+        {
+        	return SDL.SDL_GetError();
+        }
+        
+        /* Used for heap allocated string marshaling.
+        * Returned byte* must be free'd with FreeHGlobal.
+        */
+        private static unsafe byte* Utf8EncodeHeap(string str)
+        {
+        	if (str == null)
+        	{
+        		return (byte*) 0;
+        	}
+
+        	int bufferSize = Utf8Size(str);
+        	byte* buffer = (byte*) Marshal.AllocHGlobal(bufferSize);
+        	fixed (char* strPtr = str)
+        	{
+        		Encoding.UTF8.GetBytes(strPtr, str.Length + 1, buffer, bufferSize);
+        	}
+        	return buffer;
+        }
+        
+        /* Used for stack allocated string marshaling. */
+        private static int Utf8Size(string str)
+        {
+        	if (str == null)
+        	{
+        		return 0;
+        	}
+        	return (str.Length * 4) + 1;
+        }
+    }
 }
+/* In order to modify and test this module it may be beneficial to detach it 
+ * from Everest and work on it in a separate environment.
+ * Consequently, to run this file you could just, if you ide supports it, 
+ * run the `LaunchWindow` method. Otherwise "hacking" it and adding a `Main`
+ * method and changing the output type to `Exe` is also valid for developing,
+ * just make sure to revert it. Finally, theres tools that are capable of
+ * loading a dll and running a method from it via cli arguments. 
+ */
