@@ -260,10 +260,10 @@ namespace Celeste {
             if (isLevelSet)
                 logBuilder.Append("Level set ");
 
-            logBuilder.AppendFormat("Dialog ID \"{0}\" has no translation in {1}.txt", dialogId, language.Label ?? language.Id);
+            logBuilder.AppendFormat("Dialog ID \"{0}\" has no translation in {1}", dialogId, language.FilePath);
 
             if (language != FallbackLanguage)
-                logBuilder.AppendFormat(" or {0}.txt", FallbackLanguage.Label);
+                logBuilder.AppendFormat(" or {0}", FallbackLanguage.FilePath);
 
             logBuilder.Append('!');
 
