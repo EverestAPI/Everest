@@ -475,8 +475,11 @@ public class EverestSplashWindow {
             public void HasRan() => HasFixed = true;
         }
     }
-    
 #nullable disable
+    
+    /// <summary>
+    /// Stripped down version of SDL_image from https://github.com/flibitijibibo/SDL2-CS
+    /// </summary>
     public static class SDL_image {
         /* Used by DllImport to load the native library. */
         private const string nativeLibName = "SDL2_image";
