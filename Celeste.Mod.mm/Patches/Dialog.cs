@@ -10,6 +10,7 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using System.Text;
 
 
 namespace Celeste {
@@ -88,7 +89,7 @@ namespace Celeste {
 
         public static void RefreshLanguages() {
             PostLanguageLoad();
-            DialogExt.MissingDialogIDs.Clear();
+            DialogExt.MissingDialogIds.Clear();
             Dialog.Language = Dialog.Languages[Dialog.Language.Id];
         }
 
@@ -197,12 +198,10 @@ namespace Celeste {
             if (language.Dialog.TryGetValue(name, out string result))
                 return result;
 
-            if (language != FallbackLanguage)
-                return Get(name, FallbackLanguage);
+            if (language != FallbackLanguage && FallbackLanguage.Dialog.TryGetValue(name, out result))
+                return result;
 
-            if (DialogExt.MissingDialogIDs.Add(name))
-                Logger.Log(LogLevel.Warn, "Dialog", $"Could not get Dialog ID: {name}");
-
+            WarnMissingDialogId(name, language);
             return "[" + name + "]";
         }
 
@@ -219,12 +218,10 @@ namespace Celeste {
             if (language.Cleaned.TryGetValue(name, out string result))
                 return result;
 
-            if (language != FallbackLanguage)
-                return Clean(name, FallbackLanguage);
+            if (language != FallbackLanguage && FallbackLanguage.Cleaned.TryGetValue(name, out result))
+                return result;
 
-            if (DialogExt.MissingDialogIDs.Add(name))
-                Logger.Log(LogLevel.Warn, "Dialog", $"Could not clean Dialog ID: {name}");
-
+            WarnMissingDialogId(name, language);
             return "{" + name + "}";
         }
 
@@ -239,13 +236,38 @@ namespace Celeste {
             name = name.DialogKeyify();
 
             string cleaned = ("levelset_" + name).DialogCleanOrNull() ?? name.DialogCleanOrNull();
+
             if (cleaned != null)
                 return cleaned;
 
-            if (DialogExt.MissingDialogIDs.Add(name))
-                Logger.Log(LogLevel.Warn, "Dialog", $"Could not clean level set Dialog ID: {name}");
-
+            WarnMissingDialogId(name, isLevelSet: true);
             return name.SpacedPascalCase();
+        }
+
+        /// <summary>
+        /// Log a warn whenever a Dialog ID has no translation in the current language or the fallback language (<tt>English.txt</tt>).
+        /// </summary>
+        /// <param name="dialogId">Dialog ID which is missing a translation</param>
+        /// <param name="language">The language to check (defaults to <see cref="Dialog.Language"/>)</param>
+        /// <param name="isLevelSet">Whether this is a level set Dialog ID</param>
+        private static void WarnMissingDialogId(string dialogId, Language language = null, bool isLevelSet = false) {
+            if (!DialogExt.MissingDialogIds.Add(dialogId))
+                return;
+
+            language ??= Dialog.Language;
+            StringBuilder logBuilder = new();
+
+            if (isLevelSet)
+                logBuilder.Append("Level set ");
+
+            logBuilder.AppendFormat("Dialog ID \"{0}\" has no translation in {1}.txt", dialogId, language.Label ?? language.Id);
+
+            if (language != FallbackLanguage)
+                logBuilder.AppendFormat(" or {0}.txt", FallbackLanguage.Label);
+
+            logBuilder.Append('!');
+
+            Logger.Log(LogLevel.Warn, "Dialog", logBuilder.ToString());
         }
 
     }
@@ -256,7 +278,11 @@ namespace Celeste {
         public static string CleanLevelSet(string name)
             => patch_Dialog.CleanLevelSet(name);
 
-        internal static readonly HashSet<string> MissingDialogIDs = new();
+        /// <summary>
+        /// Contains all Dialog IDs which don't have a translation in the current language or <tt>English.txt</tt>.
+        /// It is reset whenever <see cref="AssetReloadHelper"/> reloads the current language.
+        /// </summary>
+        public static readonly HashSet<string> MissingDialogIds = new();
 
     }
 }
