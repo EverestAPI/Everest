@@ -4,7 +4,6 @@
 using Celeste.Mod;
 using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
-using EverestSplash;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
@@ -136,15 +135,15 @@ namespace Celeste {
                 // We require that the sdl_init happens synchronously but on the thread where its going to be used
                 // its not documented anywhere that this is dangerous, so danger is assumed
                 Thread thread = new(() => {
-                    EverestSplashWindow window = EverestSplash.EverestSplash.CreateWindow(targetRenderer);
+                    EverestSplashWindow window = EverestSplash.CreateWindow(targetRenderer);
                     
                     barrier.SignalAndWait();
-                    EverestSplash.EverestSplash.RunWindow(window);
+                    EverestSplash.RunWindow(window);
                 });
                 thread.Start();
                 barrier.SignalAndWait();
                 
-                splashPipeServerStream = new NamedPipeServerStream(EverestSplash.EverestSplash.Name);
+                splashPipeServerStream = new NamedPipeServerStream(EverestSplash.Name);
                 splashPipeServerStreamConnection = splashPipeServerStream.WaitForConnectionAsync();    
             }
 

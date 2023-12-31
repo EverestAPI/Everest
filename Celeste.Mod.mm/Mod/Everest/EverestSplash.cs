@@ -1,16 +1,16 @@
 ﻿#nullable enable
-using System;
-using System.IO;
-using System.IO.Pipes;
 using SDL2;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 
-namespace EverestSplash;
+namespace Celeste.Mod;
 
 /// <summary>
 /// EverestSplash is a simple program whose task is to display a `loading in progress` window coded in pure sdl
