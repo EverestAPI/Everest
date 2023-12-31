@@ -173,16 +173,10 @@ namespace Celeste {
                 return false;
 
             name = name.DialogKeyify();
-            if (language == null)
-                language = Dialog.Language;
+            language ??= Dialog.Language;
 
-            if (language.Dialog.ContainsKey(name))
-                return true;
-
-            if (language != FallbackLanguage)
-                return Has(name, FallbackLanguage);
-
-            return false;
+            return language.Dialog.ContainsKey(name)
+                || (language != FallbackLanguage && FallbackLanguage.Dialog.ContainsKey(name));
         }
 
         /// <inheritdoc cref="Dialog.Get(string, Language)"/>
@@ -192,8 +186,7 @@ namespace Celeste {
                 return "";
 
             name = name.DialogKeyify();
-            if (language == null)
-                language = Dialog.Language;
+            language ??= Dialog.Language;
 
             if (language.Dialog.TryGetValue(name, out string result))
                 return result;
@@ -212,8 +205,7 @@ namespace Celeste {
                 return "";
 
             name = name.DialogKeyify();
-            if (language == null)
-                language = Dialog.Language;
+            language ??= Dialog.Language;
 
             if (language.Cleaned.TryGetValue(name, out string result))
                 return result;
