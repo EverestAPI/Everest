@@ -89,7 +89,7 @@ namespace Celeste {
 
         public static void RefreshLanguages() {
             PostLanguageLoad();
-            DialogExt.MissingDialogIds.Clear();
+            MissingDialogIds.Clear();
             Dialog.Language = Dialog.Languages[Dialog.Language.Id];
         }
 
@@ -243,7 +243,7 @@ namespace Celeste {
         /// <param name="language">The language to check (defaults to <see cref="Dialog.Language"/>)</param>
         /// <param name="isLevelSet">Whether this is a level set Dialog ID</param>
         private static void WarnMissingDialogId(string dialogId, Language language = null, bool isLevelSet = false) {
-            if (!DialogExt.MissingDialogIds.Add(dialogId))
+            if (!MissingDialogIds.Add(dialogId))
                 return;
 
             language ??= Dialog.Language;
@@ -262,6 +262,15 @@ namespace Celeste {
             Logger.Log(LogLevel.Warn, "Dialog", logBuilder.ToString());
         }
 
+        // can't move the field higher up, else MonoMod causes a member name conflict in a compiler generated class
+        // see https://github.com/MonoMod/MonoMod/issues/73
+
+        /// <summary>
+        /// Contains all Dialog IDs which don't have a translation in the current language or <tt>English.txt</tt>.
+        /// It is reset whenever <see cref="AssetReloadHelper"/> reloads the current language.
+        /// </summary>
+        public static readonly HashSet<string> MissingDialogIds = new();
+
     }
     public static class DialogExt {
 
@@ -269,12 +278,6 @@ namespace Celeste {
         [Obsolete("Use Dialog.CleanLevelSet instead.")]
         public static string CleanLevelSet(string name)
             => patch_Dialog.CleanLevelSet(name);
-
-        /// <summary>
-        /// Contains all Dialog IDs which don't have a translation in the current language or <tt>English.txt</tt>.
-        /// It is reset whenever <see cref="AssetReloadHelper"/> reloads the current language.
-        /// </summary>
-        public static readonly HashSet<string> MissingDialogIds = new();
 
     }
 }
