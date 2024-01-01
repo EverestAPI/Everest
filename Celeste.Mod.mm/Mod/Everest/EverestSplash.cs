@@ -76,7 +76,6 @@ public static class EverestSplash {
 /// The class responsible of holding and doing all the heavy work on the splash,
 /// is instantiated via `CreateNewWindow`
 /// </summary>
-[SuppressMessage("Performance", "CA1806:Do not ignore method results")]
 public class EverestSplashWindow {
     private static readonly string WindowTitle = "Starting Everest...";
     private static int WindowHeight = 340; // Currently hardcoded, TODO: fractional scaling
@@ -157,17 +156,22 @@ public class EverestSplashWindow {
         }
         
         if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO | SDL.SDL_INIT_EVENTS) != 0) { // Init as little as we can, we need to go fast
-            // TODO: Proper error handling on the thread
-            throw new Exception("Failed to create SDL window!");
+            throw new Exception("Failed to SDL init!\n" + SDL.SDL_GetError());
         }
 
-        SDL_image.IMG_Init(SDL_image.IMG_InitFlags.IMG_INIT_PNG);
+        if (SDL_image.IMG_Init(SDL_image.IMG_InitFlags.IMG_INIT_PNG) != 0) {
+            throw new Exception("Failed to SDL_image init!\n" + SDL.SDL_GetError());
+        }
 
         IntPtr window = SDL.SDL_CreateWindow(WindowTitle, SDL.SDL_WINDOWPOS_CENTERED, SDL.SDL_WINDOWPOS_CENTERED,
             WindowWidth, WindowHeight, SDL.SDL_WindowFlags.SDL_WINDOW_BORDERLESS | SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN);
+        if (window == IntPtr.Zero)
+            throw new Exception("Failed to create window!\n" + SDL.SDL_GetError());
 
         IntPtr renderer = SDL.SDL_CreateRenderer(window, GetSDLRendererIdx(),
             SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
+        if (renderer == IntPtr.Zero)
+            throw new Exception("Failed to create renderer!\n" + SDL.SDL_GetError());
 
         windowInfo = new WindowInfo() { window = window, renderer = renderer, };
         SDL.SDL_SetHint( SDL.SDL_HINT_RENDER_SCALE_QUALITY, "1");
@@ -351,7 +355,7 @@ public class EverestSplashWindow {
 
     private IntPtr LoadTextureFromPath(string path) {
         IntPtr texture = SDL_image.IMG_LoadTexture(windowInfo.renderer, path);
-        if (texture.Equals(IntPtr.Zero)) {
+        if (texture == IntPtr.Zero) {
             throw new Exception(SDL_image.IMG_GetError());
         }
         return texture;
@@ -360,7 +364,8 @@ public class EverestSplashWindow {
     private IntPtr LoadTextureFromEmbeddedResource(string embeddedResourcePath) {
         IntPtr rwData = LoadRWopsFromEmbeddedResource(embeddedResourcePath);
         IntPtr texture = SDL_image.IMG_LoadTexture_RW(windowInfo.renderer, rwData, (int)SDL.SDL_bool.SDL_TRUE);
-        if (texture.Equals(IntPtr.Zero)) {
+        // Implicit free on the call above by sdl
+        if (texture == IntPtr.Zero) {
             throw new Exception(SDL_image.IMG_GetError());
         }
         return texture;
@@ -373,6 +378,8 @@ public class EverestSplashWindow {
         }
 
         unsafe {
+            // About the lifetime of this pointer: this has to live until after we convert the RWops into a texture
+            // because its at that point that sdl will copy to gpu memory and we're free to free that
             IntPtr data_ptr = Marshal.AllocHGlobal((int) (stream.Length * sizeof(byte)));
             Span<byte> data = new((byte*) data_ptr, (int) stream.Length);
             int read = stream.Read(data);
@@ -385,6 +392,9 @@ public class EverestSplashWindow {
             fixed (byte* data_bytes = data) {
                 rwData = SDL.SDL_RWFromConstMem(new IntPtr(data_bytes), read);
             }
+
+            if (rwData == IntPtr.Zero)
+                throw new Exception(SDL.SDL_GetError());
 
             return rwData;
         }
