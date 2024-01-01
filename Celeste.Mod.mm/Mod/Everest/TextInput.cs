@@ -62,6 +62,12 @@ namespace Celeste.Mod {
             } else if ((_OnInput == null || _OnInput.GetInvocationList().Length == 0) && TextInputEXT.IsTextInputActive()) {
                 TextInputEXT.StopTextInput();
             }
+
+            // Warn the modder if there's ever multiple subscriptions, because chances are that they misused the event
+            if (_OnInput?.GetInvocationList().Length > 1) {
+                Logger.Log(LogLevel.Warn, "TextInput", 
+                    "Simultaneous text input subscriptions detected, is this a bug? See TextInput.OnInput for proper usage");
+            }
         }
 
         public static string GetClipboardText() => SDL.SDL_GetClipboardText();
