@@ -30,7 +30,21 @@ namespace Celeste.Mod.UI {
 
         public bool FromChapterSelect = false;
 
-        public bool Searching;
+        private bool searching;
+
+        public bool Searching {
+            get => searching;
+            set {
+                if (value != searching) { // Prevent multiple subscriptions
+                    if (value) { 
+                        TextInput.OnInput += OnTextInput;
+                    } else {
+                        TextInput.OnInput -= OnTextInput;
+                    }
+                }
+                searching = value;
+            }
+        }
 
         private string search = "";
         private string searchPrev = "";
@@ -133,10 +147,6 @@ namespace Celeste.Mod.UI {
         }
 
         public void OnTextInput(char c) {
-
-            if (!Searching)
-                return;
-
             if (c == (char) 13) {
                 // Enter
                 Scene.OnEndOfFrame += () => {
@@ -420,8 +430,6 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Enter(Oui from) {
-            TextInput.OnInput += OnTextInput;
-
             searchBarColor = Color.DarkSlateGray;
             searchBarColor.A = 80;
 
@@ -452,8 +460,6 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Leave(Oui next) {
-            TextInput.OnInput -= OnTextInput;
-
             FromChapterSelect = false;
 
             MInput.Disabled = false;
@@ -576,7 +582,7 @@ namespace Celeste.Mod.UI {
         }
 
         public override void SceneEnd(Scene scene) {
-            TextInput.OnInput -= OnTextInput;
+            Searching = false; // Stop text input
             MInput.Disabled = false;
         }
 
