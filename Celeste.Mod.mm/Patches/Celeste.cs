@@ -124,8 +124,8 @@ namespace Celeste {
 
             splashPipeLock = new(); // FIXME: this should be statically initialized, but doing so,
                                     // and in combination with the locks, it creates an invalid program (apparently)
-            // Get the splash up and running asap
-            if (!args.Contains("--disable-splash")) {
+            // Get the splash up and running asap, currently disabled for macos, for technical issues
+            if (!args.Contains("--disable-splash") && !RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
                 Barrier barrier = new(2);
                 string targetRenderer = "";
                 for (int i = 0; i < args.Length; i++) { // The splash will use the same renderer as fna
