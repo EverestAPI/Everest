@@ -191,5 +191,17 @@ namespace Celeste {
             }
         }
 
+        [MonoModReplace]
+        public new void StopBlocks() {
+            foreach (CassetteBlock entity in base.Scene.Tracker.GetEntities<CassetteBlock>()) {
+                entity.Finish();
+            }
+            foreach (CassetteListener listener in base.Scene.Tracker.GetComponents<CassetteListener>()) {
+                listener.Finish();
+            }
+            if (!isLevelMusic) {
+                Audio.Stop(sfx);
+            }
+        }
     }
 }
