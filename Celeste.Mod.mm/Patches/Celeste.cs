@@ -134,6 +134,11 @@ namespace Celeste {
                     }
                 }
                 
+                lock (splashPipeLock) { // The server has to be started right away, so the thread can kill it if necessary
+                    splashPipeServerStream = new NamedPipeServerStream(EverestSplash.Name);
+                    splashPipeServerStreamConnection = splashPipeServerStream.WaitForConnectionAsync();
+                }
+                
                 // We require that the sdl_init happens synchronously but on the thread where its going to be used
                 // its not documented anywhere that this is dangerous, so danger is assumed
                 Thread thread = new(() => {
@@ -152,25 +157,22 @@ namespace Celeste {
                             Logger.Log(LogLevel.Error, "EverestSplash", "Exception while running the splash");
                             Logger.LogDetailed(e);
                             window?.Kill(); // Kill the window if its alive
-                            if (!hasSignaled) {
-                                barrier.SignalAndWait();
-                            }
-
+                            
                             splashPipeServerStreamConnection = null;
                             if (splashPipeServerStream != null) {
                                 splashPipeServerStream.Dispose();
                                 splashPipeServerStream = null;
                             }
                         }
+                        if (!hasSignaled) {
+                            barrier.SignalAndWait();
+                        }
                     }
                 });
                 thread.Start();
                 barrier.SignalAndWait();
 
-                lock (splashPipeLock) {
-                    splashPipeServerStream = new NamedPipeServerStream(EverestSplash.Name);
-                    splashPipeServerStreamConnection = splashPipeServerStream.WaitForConnectionAsync();
-                }
+                
             }
 
             if (args.Contains("--console") && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
@@ -398,7 +400,7 @@ https://discord.gg/6qjaePQ");
             lock (splashPipeLock) {
                 if (splashPipeServerStream != null) {
                     if (!splashPipeServerStreamConnection.IsCompleted) {
-                        Console.WriteLine("Could not connect to splash");
+                        Logger.Log(LogLevel.Error, "EverestSplash", "Could not connect to splash");
                         return;
                     }
 
@@ -406,10 +408,16 @@ https://discord.gg/6qjaePQ");
                         StreamWriter sw = new(splashPipeServerStream);
                         sw.WriteLine("stop");
                         sw.Flush();
-                        StreamReader sr = new(splashPipeServerStream);
-                        // yes, this, inevitably, slows down the everest boot process, but, see EverestSplashWindow.FeedBack
-                        // for more info
-                        sr.ReadLine();
+                        bool stopSuccessful = Task.Run(() => {
+                            StreamReader sr = new(splashPipeServerStream);
+                            // yes, this, inevitably, slows down the everest boot process, but, see EverestSplashWindow.FeedBack
+                            // for more info
+                            sr.ReadLine();
+                        }).Wait(TimeSpan.FromSeconds(10)); // Big enough timeout for any modern computer
+                        if (!stopSuccessful) {
+                            Logger.Log(LogLevel.Error, "EverestSplash", "Timeout!, splash did not respond, continuing...");
+                        }
+                        
                     } catch (Exception e) {
                         Logger.Log(LogLevel.Error, "EverestSplash", "Could not stop splash!");
                         Logger.LogDetailed(e);
