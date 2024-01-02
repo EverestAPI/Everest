@@ -2,7 +2,6 @@
 using SDL2;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
@@ -159,7 +158,7 @@ public class EverestSplashWindow {
             throw new Exception("Failed to SDL init!\n" + SDL.SDL_GetError());
         }
 
-        if (SDL_image.IMG_Init(SDL_image.IMG_InitFlags.IMG_INIT_PNG) != 0) {
+        if (SDL_image.IMG_Init(SDL_image.IMG_InitFlags.IMG_INIT_PNG) == 0) { // IMG_Init return 0 on failure...
             throw new Exception("Failed to SDL_image init!\n" + SDL.SDL_GetError());
         }
 
@@ -313,15 +312,17 @@ public class EverestSplashWindow {
 
     private void Cleanup() {
         fnaFixes.Dispose(); // Do this asap, theres no reason to (theoretically), but it wont hurt
-        
-        SDL.SDL_DestroyTexture(windowInfo.everestLogoTexture);
-        SDL.SDL_DestroyTexture(windowInfo.startingEverestTexture);
-        SDL.SDL_DestroyTexture(windowInfo.wheelTexture);
-        SDL.SDL_DestroyTexture(windowInfo.bgGradientTexture);
-        
-        SDL.SDL_DestroyRenderer(windowInfo.renderer);
 
-        SDL.SDL_DestroyWindow(windowInfo.window);
+        foreach (IntPtr texture in windowInfo.loadedTextures) {
+            if (texture != IntPtr.Zero)
+                SDL.SDL_DestroyTexture(texture);
+        }
+        
+        if (windowInfo.renderer != IntPtr.Zero)
+            SDL.SDL_DestroyRenderer(windowInfo.renderer);
+
+        if (windowInfo.window != IntPtr.Zero)
+            SDL.SDL_DestroyWindow(windowInfo.window);
         
         // Do not call this under any circumstance when running together with everest
         // It will mess with fna and cause a hangup/segfault
@@ -333,6 +334,14 @@ public class EverestSplashWindow {
             timer.Dispose();
         }
         timers.Clear();
+    }
+
+    /// <summary>
+    /// Kills the window, stopping everything and releasing all resources.
+    /// </summary>
+    public void Kill() {
+        ClientPipe.Dispose();
+        Cleanup();
     }
 
     /// <summary>
@@ -348,9 +357,12 @@ public class EverestSplashWindow {
     }
 
     private IntPtr LoadTexture(TextureInfo sprite) {
-        return File.Exists(sprite.path) ? 
+        IntPtr tex = File.Exists(sprite.path) ? 
             LoadTextureFromPath(sprite.path) : 
             LoadTextureFromEmbeddedResource(sprite.path);
+        if (tex != IntPtr.Zero)
+            windowInfo.loadedTextures.Add(tex);
+        return tex;
     }
 
     private IntPtr LoadTextureFromPath(string path) {
@@ -425,12 +437,16 @@ public class EverestSplashWindow {
     
     
     private struct WindowInfo {
-        public IntPtr window;
-        public IntPtr renderer;
-        public IntPtr everestLogoTexture;
-        public IntPtr startingEverestTexture;
-        public IntPtr wheelTexture;
-        public IntPtr bgGradientTexture;
+        public IntPtr window = IntPtr.Zero;
+        public IntPtr renderer = IntPtr.Zero;
+        public IntPtr everestLogoTexture = IntPtr.Zero;
+        public IntPtr startingEverestTexture = IntPtr.Zero;
+        public IntPtr wheelTexture = IntPtr.Zero;
+        public IntPtr bgGradientTexture = IntPtr.Zero;
+        public readonly List<IntPtr> loadedTextures = new();
+
+        public WindowInfo() {
+        }
     }
 
     private struct TextureInfo {
