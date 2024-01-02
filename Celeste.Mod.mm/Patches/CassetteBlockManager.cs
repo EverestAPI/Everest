@@ -159,7 +159,9 @@ namespace Celeste {
             }
 
             foreach (CassetteListener listener in Scene.Tracker.GetComponents<CassetteListener>()) {
-                listener.Start(listener.Index == currentIndex);
+                if (listener.ID.ID == EntityID.None.ID || listener.ID.Level == SceneAs<Level>().Session.Level) {
+                    listener.Start(listener.Index == currentIndex);
+                }
             }
         }
 

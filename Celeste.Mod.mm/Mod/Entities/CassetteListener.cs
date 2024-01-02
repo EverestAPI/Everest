@@ -54,8 +54,17 @@ namespace Celeste.Mod.Entities {
         /// </summary>
         public Modes Mode;
 
-        public CassetteListener(int index) : base(false, false) {
+        /// <summary>
+        /// Matches the functionality of <see cref="CassetteBlock.ID"/>.
+        /// </summary>
+        public EntityID ID;
+
+        public CassetteListener(int index) : this(index, EntityID.None) {
+        }
+
+        public CassetteListener(int index, EntityID id) : base(false, false) {
             Index = index;
+            ID = id;
         }
 
         /// <summary>
