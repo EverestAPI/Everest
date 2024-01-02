@@ -1,5 +1,6 @@
 using Monocle;
 using System;
+using System.Linq;
 
 namespace Celeste.Mod.Entities {
     [Tracked]
@@ -59,11 +60,17 @@ namespace Celeste.Mod.Entities {
         /// </summary>
         public EntityID ID;
 
-        public CassetteListener(int index) : this(index, EntityID.None) {
+        /// <summary>
+        /// Matches the functionality of <see cref="CassetteBlock.Tempo"/>.
+        /// </summary>
+        public float Tempo;
+
+        public CassetteListener(int index, float tempo = 1f) : this(EntityID.None, index, tempo) {
         }
 
-        public CassetteListener(int index, EntityID id) : base(false, false) {
+        public CassetteListener(EntityID id, int index, float tempo = 1f) : base(false, false) {
             Index = index;
+            Tempo = tempo;
             ID = id;
         }
 
@@ -116,6 +123,44 @@ namespace Celeste.Mod.Entities {
                 OnWillActivate?.Invoke();
             }
         }
+
+#pragma warning disable CS0618 // Type or member is obsolete
+        public override void EntityAdded(Scene scene) {
+            base.EntityAdded(scene);
+
+            // bail if the scene is null or not a Level
+            if (scene is not Level level) {
+                return;
+            }
+
+            // configure the level for the cassette block manager
+            level.HasCassetteBlocks = true;
+            level.CassetteBlockBeats = Math.Max(Index + 1, level.CassetteBlockBeats);
+            // ReSharper disable once CompareOfFloatsByEqualityOperator
+            if (level.CassetteBlockTempo == 1f) {
+                level.CassetteBlockTempo = Tempo;
+            }
+
+            // duplicates functionality of Level.ShouldCreateCassetteManager
+            if (!(level.Session.Area.Mode != AreaMode.Normal || !level.Session.Cassette)) {
+                return;
+            }
+
+            // bail if there's a manager tracked
+            if (level.Tracker.GetEntity<CassetteBlockManager>() is not null) {
+                return;
+            }
+
+            // also cater for the possibility that the manager has not yet been added to the tracker
+            if (level.Entities.Any(e => e is CassetteBlockManager) ||
+                level.Entities.GetToAdd().Any(e => e is CassetteBlockManager)) {
+                return;
+            }
+
+            // add a new cassette block manager to the scene
+            level.Add(new CassetteBlockManager());
+        }
+#pragma warning restore CS0618 // Type or member is obsolete
 
         public enum Modes
         {
