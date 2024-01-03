@@ -40,9 +40,11 @@ namespace Celeste.Mod {
 
         /// <summary>
         /// Invoked whenever text input occurs, including some "input action" characters.
+        /// This event is in charge of managing `StartTextInput` and `StopTextInput` calls.
+        /// Consequently its use should be restricted to when text input from the keyboard is needed.
+        /// Note that the aforementioned FNA calls will bring up virtual keyboard (if available, Steam Deck is an
+        /// example), so it's the modder's job to make sure it does appear and disappear correctly.
         /// Take a look at the FNA TextInputExt documentation for more info: https://github.com/FNA-XNA/FNA/wiki/5:-FNA-Extensions#textinputext
-        /// !!!Make sure to unsubscribe to this as soon as you're done with input, otherwise it'll cause issues with
-        /// virtual keyboards (e.g SteamDeck) and mess up IME users!!!
         /// </summary>
         public static event Action<char> OnInput {
             add {
