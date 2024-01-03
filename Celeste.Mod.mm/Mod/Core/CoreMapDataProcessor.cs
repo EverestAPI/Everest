@@ -10,7 +10,7 @@ namespace Celeste.Mod.Core {
         public Dictionary<int, Dictionary<int, BinaryPacker.Element>> PlacedBerriesPerCheckpoint;
         public Dictionary<int, int> MaximumBerryOrderPerCheckpoint;
         public Dictionary<int, List<BinaryPacker.Element>> AutomaticBerriesPerCheckpoint;
-        public int MaxBerryCheckpoint; // future compatibility in case support for too high checkpoints gets added
+        public int MaxBerryCheckpoint;
         public List<CheckpointData> CheckpointsAuto;
         public Dictionary<int, CheckpointData> CheckpointsManual;
         public int MaxManualCheckpoint;
@@ -95,6 +95,7 @@ namespace Celeste.Mod.Core {
                                     strawberryInCheckpoint++;
                                 }
                             }
+
                             // eliminate gaps in berry order
                             int gaps = 0;
                             for (int i = 0; i <= MaximumBerryOrderPerCheckpoint[checkpoint]; i++) {
@@ -105,6 +106,17 @@ namespace Celeste.Mod.Core {
                                     gaps++;
                                 } else {
                                     placedBerry.SetAttr("order", placedBerry.AttrInt("order") - gaps);
+                                }
+                            }
+
+                            // assign berries with invalid checkpoint ID to final checkpoint
+                            if (checkpoint > Checkpoint) {
+                                for (int i = 0; i <= MaximumBerryOrderPerCheckpoint[checkpoint]; i++) {
+                                    Logger.Log(LogLevel.Warn, "core", $"Invalid checkpoint ID {checkpoint} for berry in map {Mode.Path}. Reassigning to last checkpoint.");
+                                    BinaryPacker.Element berry = placedBerries[i];
+                                    berry.SetAttr("checkpointID", Checkpoint);
+                                    berry.SetAttr("order", MaximumBerryOrderPerCheckpoint[Checkpoint] + 1);
+                                    MaximumBerryOrderPerCheckpoint[Checkpoint]++;
                                 }
                             }
                         }
