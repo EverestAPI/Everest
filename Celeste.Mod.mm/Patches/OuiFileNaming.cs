@@ -73,8 +73,8 @@ namespace Celeste {
         public extern IEnumerator orig_Leave(Oui next);
         public override IEnumerator Leave(Oui next) {
             Engine.Commands.Enabled = (Celeste.PlayMode == Celeste.PlayModes.Debug);
-            if (UseKeyboardInput) 
-                TextInput.OnInput -= OnTextInput;
+            // Non existent unhooks aren't dangerous, and can get us out of weird situations
+            TextInput.OnInput -= OnTextInput;
             return orig_Leave(next);
         }
 

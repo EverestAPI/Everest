@@ -184,8 +184,8 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Leave(Oui next) {
-            if (UseKeyboardInput) 
-                TextInput.OnInput -= OnTextInput;
+            // Non existent unhooks aren't dangerous, and can get us out of weird situations
+            TextInput.OnInput -= OnTextInput;
 
             Overworld.ShowInputUI = true;
             Focused = false;
