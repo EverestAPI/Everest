@@ -59,15 +59,15 @@ namespace Celeste.Mod.Core {
                             if (!PlacedBerriesPerCheckpoint.ContainsKey(checkpoint) && !AutomaticBerriesPerCheckpoint.ContainsKey(checkpoint)) {
                                 continue;
                             }
-                            if (!PlacedBerriesPerCheckpoint.ContainsKey(checkpoint)) {
-                                PlacedBerriesPerCheckpoint[checkpoint] = new Dictionary<int, BinaryPacker.Element>();
+                            if (!PlacedBerriesPerCheckpoint.TryGetValue(checkpoint, out Dictionary<int, BinaryPacker.Element> placedBerries)) {
+                                PlacedBerriesPerCheckpoint[checkpoint] = placedBerries = new Dictionary<int, BinaryPacker.Element>();
                                 MaximumBerryOrderPerCheckpoint[checkpoint] = -1;
                             }
-                            Dictionary<int, BinaryPacker.Element> placedBerries = PlacedBerriesPerCheckpoint[checkpoint];
+                            
                             // automatically assign berries without specified order
-                            if (AutomaticBerriesPerCheckpoint.ContainsKey(checkpoint)) {
+                            if (AutomaticBerriesPerCheckpoint.TryGetValue(checkpoint, out List<BinaryPacker.Element> berries)) {
                                 int strawberryInCheckpoint = 0;
-                                foreach (BinaryPacker.Element berry in AutomaticBerriesPerCheckpoint[checkpoint]) {
+                                foreach (BinaryPacker.Element berry in berries) {
                                     while (placedBerries.ContainsKey(strawberryInCheckpoint)) {
                                         strawberryInCheckpoint++;
                                     }
@@ -80,13 +80,13 @@ namespace Celeste.Mod.Core {
                             // eliminate gaps in berry order
                             int gaps = 0;
                             for (int i = 0; i <= MaximumBerryOrderPerCheckpoint[checkpoint]; i++) {
-                                if (!placedBerries.ContainsKey(i)) {
+                                if (!placedBerries.TryGetValue(i, out BinaryPacker.Element placedBerry)) {
                                     if (gaps == 0) {
                                         Logger.Log(LogLevel.Warn, "core", $"Gap in berry order in checkpoint {checkpoint} of map {Mode.Path}. Reassigning berry order.");
                                     }
                                     gaps++;
                                 } else {
-                                    placedBerries[i].SetAttr("order", placedBerries[i].AttrInt("order") - gaps);
+                                    placedBerry.SetAttr("order", placedBerry.AttrInt("order") - gaps);
                                 }
                             }
                         }
@@ -261,11 +261,12 @@ namespace Celeste.Mod.Core {
             };
 
         public override void Run(string stepName, BinaryPacker.Element el) {
-            if (StrawberryRegistry.TrackableContains(el))
-                stepName = "entity:strawberry";
-
-            if (StrawberryRegistry.GetRegisteredBerries().Any(berry => berry.entityName == el.Name))
+            if (StrawberryRegistry.IsRegisteredBerry(el.Name)) {
                 TotalStrawberriesIncludingUntracked++;
+                
+                if (StrawberryRegistry.TrackableContains(el))
+                    stepName = "entity:strawberry";
+            }
 
             base.Run(stepName, el);
         }
