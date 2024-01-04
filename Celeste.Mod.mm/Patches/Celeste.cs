@@ -171,8 +171,6 @@ namespace Celeste {
                 });
                 thread.Start();
                 barrier.SignalAndWait();
-
-                
             }
 
             if (args.Contains("--console") && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
@@ -408,16 +406,23 @@ https://discord.gg/6qjaePQ");
                         StreamWriter sw = new(splashPipeServerStream);
                         sw.WriteLine("stop");
                         sw.Flush();
-                        bool stopSuccessful = Task.Run(() => {
-                            StreamReader sr = new(splashPipeServerStream);
-                            // yes, this, inevitably, slows down the everest boot process, but, see EverestSplashWindow.FeedBack
-                            // for more info
-                            sr.ReadLine();
-                        }).Wait(TimeSpan.FromSeconds(10)); // Big enough timeout for any modern computer
+                        Thread splashFeedbackThread = new(() => {
+                            Console.WriteLine("started running task");
+                            try {
+                                StreamReader sr = new(splashPipeServerStream);
+                                // yes, this, inevitably, slows down the everest boot process, but, see EverestSplashWindow.FeedBack
+                                // for more info
+                                sr.ReadLine();
+                            } catch (Exception e) {
+                                Logger.Log(LogLevel.Error, "EverestSplash", "Could not read line!");
+                                Logger.LogDetailed(e);
+                            }
+                        });
+                        splashFeedbackThread.Start();
+                        bool stopSuccessful = splashFeedbackThread.Join(TimeSpan.FromSeconds(10)); // Big enough timeout for any modern computer
                         if (!stopSuccessful) {
                             Logger.Log(LogLevel.Error, "EverestSplash", "Timeout!, splash did not respond, continuing...");
                         }
-                        
                     } catch (Exception e) {
                         Logger.Log(LogLevel.Error, "EverestSplash", "Could not stop splash!");
                         Logger.LogDetailed(e);
