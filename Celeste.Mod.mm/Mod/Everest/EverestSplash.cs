@@ -12,22 +12,22 @@ using System.Timers;
 namespace Celeste.Mod;
 
 /// <summary>
-/// EverestSplash is a simple program whose task is to display a `loading in progress` window coded in pure sdl
+/// EverestSplash is a simple program whose task is to display a `loading in progress` window coded in pure SDL.
 /// It is designed to work together with Everest and communicate via named pipes, where it'll listen for any data,
 /// and once a line can be read, the splash will disappear.
-/// This program could also be loaded as a library and ran by calling `LaunchWindow`.
-/// It uses a separate thread to run sdl, even if not necessary, to not accidentally create any gl, vk or directx context
-/// and conflict with fna
-/// For testing see message at end of file
+/// This program could also be loaded as a library and run by calling `LaunchWindow`.
+/// It uses a separate thread to run SDL, even if not necessary, to not accidentally create any gl, vk or directx context
+/// and conflict with FNA.
+/// For testing, see message at end of file.
 /// </summary>
 public static class EverestSplash {
     public const string Name = "EverestSplash";
 
     /// <summary>
-    /// This method requires always the targetRenderer, for ease of use with reflection
+    /// This method always requires the targetRenderer, for ease of use with reflection.
     /// </summary>
-    /// <param name="targetRenderer">the sdl2 renderer to use, "" is any renderer</param>
-    /// <returns>The window created</returns>
+    /// <param name="targetRenderer">The SDL2 renderer to use or "" for any renderer.</param>
+    /// <returns>The window created.</returns>
     public static EverestSplashWindow CreateWindow(string targetRenderer) {
         return EverestSplashWindow.CreateNewWindow(targetRenderer);
     }
@@ -37,7 +37,7 @@ public static class EverestSplash {
     }
 
     /// <summary>
-    /// Launches the window, to be closes via named pipes
+    /// Launches the window, to be closed via named pipes.
     /// </summary>
     public static void LaunchWindow() {
         EverestSplashWindow window = EverestSplashWindow.CreateNewWindow();
@@ -49,9 +49,9 @@ public static class EverestSplash {
     }
 
     /// <summary>
-    /// Launches a new window, which will last s seconds
+    /// Launches a new window, which will last s seconds.
     /// </summary>
-    /// <param name="s">Window lifespan</param>
+    /// <param name="s">The window lifespan.</param>
     public static void LaunchWindowSeconds(int s) {
         Task.Run(async () => {
             NamedPipeServerStream server = new(Name);
@@ -72,8 +72,8 @@ public static class EverestSplash {
 }
 
 /// <summary>
-/// The class responsible of holding and doing all the heavy work on the splash,
-/// is instantiated via `CreateNewWindow`
+/// The class responsible for holding and doing all the heavy work on the splash.
+/// Instantiated via `CreateNewWindow`.
 /// </summary>
 public class EverestSplashWindow {
     private static readonly string WindowTitle = "Starting Everest...";
@@ -120,12 +120,12 @@ public class EverestSplashWindow {
         ClientPipe.ConnectAsync().ContinueWith(_ => {
             try {
                 StreamReader sr = new(ClientPipe);
-                sr.ReadLine(); // Once we read a line, send the stop event  (for now)
+                sr.ReadLine(); // Once we read a line, send the stop event (for now)
             } catch (Exception e) {
                 Console.WriteLine(e);
-                // We want to exit if a read error occured, we must not be around when FNA's main loop starts
+                // We want to exit if a read error occurred, we must not be around when FNA's main loop starts
             }
-            SDL.SDL_Event userEvent = new() { // Fake an user event, we don't need anything fancier for now
+            SDL.SDL_Event userEvent = new() { // Fake a user event, we don't need anything fancier for now
                 type = SDL.SDL_EventType.SDL_USEREVENT,
             };
             SDL.SDL_PushEvent(ref userEvent); // This is thread safe :)
@@ -158,7 +158,7 @@ public class EverestSplashWindow {
             throw new Exception("Failed to SDL init!\n" + SDL.SDL_GetError());
         }
 
-        if (SDL_image.IMG_Init(SDL_image.IMG_InitFlags.IMG_INIT_PNG) == 0) { // IMG_Init return 0 on failure...
+        if (SDL_image.IMG_Init(SDL_image.IMG_InitFlags.IMG_INIT_PNG) == 0) { // IMG_Init returns 0 on failure...
             throw new Exception("Failed to SDL_image init!\n" + SDL.SDL_GetError());
         }
 
@@ -179,7 +179,7 @@ public class EverestSplashWindow {
         IntPtr appIconSurface = SDL_image.IMG_Load_RW(appIconRWops, (int) SDL.SDL_bool.SDL_TRUE); // Make sure to always free the RWops
         SDL.SDL_SetWindowIcon(window, appIconSurface);
         
-        // Fna fixes
+        // FNA fixes
         // FNA disables the cursor on game creation and when creating the window
         fnaFixes.Add(
             new FNAFixes.FNAFix(
@@ -228,7 +228,7 @@ public class EverestSplashWindow {
         double wheelAngle = 0;
         AnimTimer(16, () => {
             wheelAngle += 0.1;
-            // No value reset, its an angle anyways
+            // No value reset, it's an angle anyways
         });
         
         while (true) { // while true :trolloshiro: (on a serious note, for our use case its fineee :))
@@ -246,7 +246,7 @@ public class EverestSplashWindow {
             SDL.SDL_SetRenderDrawColor(windowInfo.renderer, bgColor.R, bgColor.G, bgColor.B, bgColor.A);
             SDL.SDL_RenderClear(windowInfo.renderer);
             
-            // Bg bloom drawing
+            // BG bloom drawing
             SDL.SDL_Rect bgRect = new() {
                 x = 0,
                 y = bgBloomPos,
@@ -324,9 +324,9 @@ public class EverestSplashWindow {
         if (windowInfo.window != IntPtr.Zero)
             SDL.SDL_DestroyWindow(windowInfo.window);
         
-        // Do not call this under any circumstance when running together with everest
-        // It will mess with fna and cause a hangup/segfault
-        // I mean it makes sense, this un-initializes everything, something fna doesnt expect :P
+        // Do not call this under any circumstance when running together with Everest
+        // It will mess with FNA and cause a hangup/segfault
+        // I mean it makes sense, this un-initializes everything, something FNA doesn't expect :P
         // SDL.SDL_Quit();
 
         foreach (Timer timer in timers) {
@@ -346,9 +346,9 @@ public class EverestSplashWindow {
 
     /// <summary>
     /// Notifies the server that we're done.
-    /// When running this script as a thread with another sdl app loading up, which is the case of Everest with Celeste
-    /// The event loop from this program is going to mess with the one from the main app so we *must* have exited before
-    /// that one starts because, in the case where that other loop eats up our stop event, disaster will strike.
+    /// When running this script as a thread with another SDL app loading up, which is the case for Everest with Celeste,
+    /// the event loop from this program is going to mess with the one from the main app, so we *must* have exited before
+    /// that one starts because in the case where that other loop eats up our stop event, disaster will strike.
     /// </summary>
     private void FeedBack() {
         StreamWriter sw = new(ClientPipe);
@@ -391,11 +391,11 @@ public class EverestSplashWindow {
 
         unsafe {
             // About the lifetime of this pointer: this has to live until after we convert the RWops into a texture
-            // because its at that point that sdl will copy to gpu memory and we're free to free that
+            // because it's at that point that SDL will copy to GPU memory and we're free to free that
             IntPtr data_ptr = Marshal.AllocHGlobal((int) (stream.Length * sizeof(byte)));
             Span<byte> data = new((byte*) data_ptr, (int) stream.Length);
             int read = stream.Read(data);
-            if (read == 0) { // Basic error checking, we don't really know how many should we read anyways
+            if (read == 0) { // Basic error checking, we don't really know how many we should read anyways
                 throw new InvalidDataException(
                     $"Could not read embedded resource stream for resource: {embeddedResourcePath}");
             }
@@ -472,7 +472,7 @@ public class EverestSplashWindow {
     }
 
     /// <summary>
-    /// Simple class to manage fna fixes and modifications and easily undo them
+    /// Simple class to manage FNA fixes and modifications and easily undo them
     /// </summary>
     public class FNAFixes : IDisposable {
         private readonly List<FNAFix> fixes = new();
@@ -597,11 +597,11 @@ public class EverestSplashWindow {
         }
     }
 }
-/* In order to modify and test this module it may be beneficial to detach it 
+/* In order to modify and test this module, it may be beneficial to detach it
  * from Everest and work on it in a separate environment.
- * Consequently, to run this file you could just, if you ide supports it, 
+ * Consequently, to run this file you could just, if your IDE supports it,
  * run the `LaunchWindow` method. Otherwise "hacking" it and adding a `Main`
  * method and changing the output type to `Exe` is also valid for developing,
- * just make sure to revert it. Finally, theres tools that are capable of
- * loading a dll and running a method from it via cli arguments. 
+ * just make sure to revert it. Finally, there are tools that are capable of
+ * loading a dll and running a method from it via CLI arguments.
  */
