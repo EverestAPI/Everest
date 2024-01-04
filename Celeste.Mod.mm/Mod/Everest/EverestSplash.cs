@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -107,6 +108,7 @@ public class EverestSplashWindow {
     private WindowInfo windowInfo;
     private readonly FNAFixes fnaFixes = new();
     private readonly string targetRenderer;
+    private readonly Assembly currentAssembly;
 
     public static EverestSplashWindow CreateNewWindow(string targetRenderer = "") {
         if (instance != null)
@@ -117,6 +119,7 @@ public class EverestSplashWindow {
     private EverestSplashWindow(string targetRenderer) {
         instance = this;
         this.targetRenderer = targetRenderer;
+        currentAssembly = GetType().Assembly;
         ClientPipe.ConnectAsync().ContinueWith(_ => {
             try {
                 StreamReader sr = new(ClientPipe);
@@ -384,10 +387,10 @@ public class EverestSplashWindow {
     }
 
     private IntPtr LoadRWopsFromEmbeddedResource(string embeddedResourcePath) {
-        Stream? stream = GetType().Assembly.GetManifestResourceStream(embeddedResourcePath);
-        if (stream == null) {
-            throw new FileNotFoundException($"Cannot find sprite with path as embeddedResource: {embeddedResourcePath}");
-        }
+        // If this project is built on Windows the embedded resource path will use backslashes
+        Stream stream = currentAssembly.GetManifestResourceStream(embeddedResourcePath) 
+             ?? currentAssembly.GetManifestResourceStream(embeddedResourcePath.Replace('/', '\\')) 
+             ?? throw new FileNotFoundException($"Cannot find sprite with path as embeddedResource: {embeddedResourcePath}");
 
         unsafe {
             // About the lifetime of this pointer: this has to live until after we convert the RWops into a texture
