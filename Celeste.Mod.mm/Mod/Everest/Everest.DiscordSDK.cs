@@ -188,7 +188,7 @@ namespace Celeste.Mod {
                             icon = GetMapIconURLCached(area);
                         }
 
-                        if (CoreModule.Settings.DiscordShowSide && area.Mode.Length >= 2 && area.Mode[2] != null) {
+                        if (CoreModule.Settings.DiscordShowSide && area.Mode.Length >= 2 && area.Mode[1] != null) {
                             side = " | " + (char) ('A' + session.Area.Mode) + "-Side";
                         }
 
