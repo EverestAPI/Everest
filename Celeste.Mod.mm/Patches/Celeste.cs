@@ -133,12 +133,26 @@ namespace Celeste {
                         targetRenderer = args[i + 1];
                     }
                 }
-                
-                lock (splashPipeLock) { // The server has to be started right away, so the thread can kill it if necessary
-                    splashPipeServerStream = new NamedPipeServerStream(EverestSplash.Name);
-                    splashPipeServerStreamConnection = splashPipeServerStream.WaitForConnectionAsync();
+
+                try {
+                    lock (splashPipeLock) {
+                        // The server has to be started right away, so the thread can kill it if necessary
+                        splashPipeServerStream = new NamedPipeServerStream(EverestSplash.Name);
+                        splashPipeServerStreamConnection = splashPipeServerStream.WaitForConnectionAsync();
+                    }
+                } catch (IOException e) { // Server address is in use
+                    Logger.Log(LogLevel.Error, "EverestSplash", "Could not start up splash server!, skipping splash");
+                    Logger.LogDetailed(e);
+                    splashPipeServerStreamConnection = null;
+                    if (splashPipeServerStream != null) {
+                        if (splashPipeServerStream.IsConnected) 
+                            splashPipeServerStream.Disconnect();
+
+                        splashPipeServerStream.Dispose();
+                        splashPipeServerStream = null;
+                    }
                 }
-                
+
                 // We require that the sdl_init happens synchronously but on the thread where its going to be used
                 // its not documented anywhere that this is dangerous, so danger is assumed
                 Thread thread = new(() => {
@@ -160,6 +174,9 @@ namespace Celeste {
                             
                             splashPipeServerStreamConnection = null;
                             if (splashPipeServerStream != null) {
+                                if (splashPipeServerStream.IsConnected) 
+                                    splashPipeServerStream.Disconnect();
+
                                 splashPipeServerStream.Dispose();
                                 splashPipeServerStream = null;
                             }
@@ -169,8 +186,10 @@ namespace Celeste {
                         }
                     }
                 });
-                thread.Start();
-                barrier.SignalAndWait();
+                if (splashPipeServerStream != null) { // Only start if we have the server up and running
+                    thread.Start();
+                    barrier.SignalAndWait();
+                }
             }
 
             if (args.Contains("--console") && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
@@ -423,6 +442,12 @@ https://discord.gg/6qjaePQ");
                         if (!stopSuccessful) {
                             Logger.Log(LogLevel.Error, "EverestSplash", "Timeout!, splash did not respond, continuing...");
                         }
+                        // Destroy the server asap for any future boots
+                        if (splashPipeServerStream.IsConnected)
+                            splashPipeServerStream.Disconnect();
+                        splashPipeServerStream.Dispose();
+                        splashPipeServerStream = null;
+                        splashPipeServerStreamConnection = null;
                     } catch (Exception e) {
                         Logger.Log(LogLevel.Error, "EverestSplash", "Could not stop splash!");
                         Logger.LogDetailed(e);
