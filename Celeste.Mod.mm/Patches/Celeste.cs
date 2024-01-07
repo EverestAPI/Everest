@@ -122,8 +122,74 @@ namespace Celeste {
                 }
             }
 
+            if (args.Contains("--console") && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                AllocConsole();
+
+                // Invalidate console streams
+                typeof(Console).GetField("s_in", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
+                typeof(Console).GetField("s_out", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
+                typeof(Console).GetField("s_error", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
+            }
+
+            if (args.Contains("--nolog")) {
+                MainInner(args);
+                return;
+            }
+
+            string logfile = Environment.GetEnvironmentVariable("EVEREST_LOG_FILENAME") ?? "log.txt";
+
+            // Only applying log rotation on default name, feel free to improve LogRotationHelper to deal with custom log file names...
+            if (logfile == "log.txt" && File.Exists("log.txt")) {
+                if (new FileInfo("log.txt").Length > 0) {
+                    // move the old log.txt to the LogHistory folder.
+                    // note that the cleanup will only be done when the core module is loaded: the settings aren't even loaded right now,
+                    // so we don't know how many files we should keep.
+                    if (!Directory.Exists("LogHistory")) {
+                        Directory.CreateDirectory("LogHistory");
+                    }
+                    File.Move("log.txt", Path.Combine("LogHistory", LogRotationHelper.GetFileNameByDate(File.GetLastWriteTime("log.txt"))));
+                } else {
+                    // log is empty! (this actually happens more often than you'd think, because of Steam re-opening Celeste)
+                    // just delete it.
+                    File.Delete("log.txt");
+                }
+            } else {
+                // check if log filename is allowed
+                Regex regexBadCharacter = new Regex("[" + Regex.Escape(new string(Path.GetInvalidFileNameChars())) + "]");
+                Match match = regexBadCharacter.Match(logfile);
+
+                if (match.Success) {
+                    StringBuilder errorText = new StringBuilder($"Custom log filename set in EVEREST_LOG_FILENAME=\"{logfile}\" contains invalid character(s): ", 100);
+
+                    while (match.Success) {
+                        foreach (Capture c in match.Groups[0].Captures)
+                            errorText.Append(c);
+
+                        match = match.NextMatch();
+                        if (match.Success)
+                            errorText.Append(" ");
+                    }
+
+                    throw new ArgumentException(errorText.ToString());
+                }
+
+                if (!logfile.EndsWith(".txt"))
+                    logfile += ".txt";
+            }
+
+            Everest.PathLog = logfile;
+
+            using (Stream fileStream = new FileStream(logfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
+            using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
+            using (LogWriter logWriter = new LogWriter(Console.Out, Console.Error, fileWriter))
+                MainInner(args);
+
+        }
+
+        private static void MainInner(string[] args) {
+            AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
             splashPipeLock = new(); // FIXME: this should be statically initialized, but doing so,
-                                    // and in combination with the locks, it creates an invalid program (apparently)
+                                                // and in combination with the locks, it creates an invalid program (apparently)
             // Get the splash up and running asap, currently disabled for macos, for technical issues
             if (!args.Contains("--disable-splash") && !RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
                 Barrier barrier = new(2);
@@ -191,73 +257,6 @@ namespace Celeste {
                     barrier.SignalAndWait();
                 }
             }
-
-            if (args.Contains("--console") && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                AllocConsole();
-
-                // Invalidate console streams
-                typeof(Console).GetField("s_in", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
-                typeof(Console).GetField("s_out", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
-                typeof(Console).GetField("s_error", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
-            }
-
-            if (args.Contains("--nolog")) {
-                MainInner(args);
-                return;
-            }
-
-            string logfile = Environment.GetEnvironmentVariable("EVEREST_LOG_FILENAME") ?? "log.txt";
-
-            // Only applying log rotation on default name, feel free to improve LogRotationHelper to deal with custom log file names...
-            if (logfile == "log.txt" && File.Exists("log.txt")) {
-                if (new FileInfo("log.txt").Length > 0) {
-                    // move the old log.txt to the LogHistory folder.
-                    // note that the cleanup will only be done when the core module is loaded: the settings aren't even loaded right now,
-                    // so we don't know how many files we should keep.
-                    if (!Directory.Exists("LogHistory")) {
-                        Directory.CreateDirectory("LogHistory");
-                    }
-                    File.Move("log.txt", Path.Combine("LogHistory", LogRotationHelper.GetFileNameByDate(File.GetLastWriteTime("log.txt"))));
-                } else {
-                    // log is empty! (this actually happens more often than you'd think, because of Steam re-opening Celeste)
-                    // just delete it.
-                    File.Delete("log.txt");
-                }
-            } else {
-                // check if log filename is allowed
-                Regex regexBadCharacter = new Regex("[" + Regex.Escape(new string(Path.GetInvalidFileNameChars())) + "]");
-                Match match = regexBadCharacter.Match(logfile);
-
-                if (match.Success) {
-                    StringBuilder errorText = new StringBuilder($"Custom log filename set in EVEREST_LOG_FILENAME=\"{logfile}\" contains invalid character(s): ", 100);
-
-                    while (match.Success) {
-                        foreach (Capture c in match.Groups[0].Captures)
-                            errorText.Append(c);
-
-                        match = match.NextMatch();
-                        if (match.Success)
-                            errorText.Append(" ");
-                    }
-
-                    throw new ArgumentException(errorText.ToString());
-                }
-
-                if (!logfile.EndsWith(".txt"))
-                    logfile += ".txt";
-            }
-
-            Everest.PathLog = logfile;
-
-            using (Stream fileStream = new FileStream(logfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
-            using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
-            using (LogWriter logWriter = new LogWriter(Console.Out, Console.Error, fileWriter))
-                MainInner(args);
-
-        }
-
-        private static void MainInner(string[] args) {
-            AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
 
             try {
                 Everest.ParseArgs(args);
