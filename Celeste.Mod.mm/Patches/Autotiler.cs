@@ -62,12 +62,18 @@ namespace Celeste {
                 for (int i = 0; i < fills.Count; i++)
                     data.CustomFills.Add(new patch_Tiles());
             }
+            
+            var sortMode = xml.Attr("sortMode", "default") switch {
+                "none" => MaskSortMode.None,
+                "default" => MaskSortMode.Default,
+                var unknownSortMode => throw new Exception($"Unknown sortMode for <set> element: {unknownSortMode}.")
+            };
 
-            if (data.CustomFills == null && data.ScanWidth == 3 && data.ScanHeight == 3 && !xml.HasChild("define")) // ReadIntoCustomTemplate can handle vanilla templates but meh
+            if (data.CustomFills == null && data.ScanWidth == 3 && data.ScanHeight == 3 && !xml.HasChild("define") && sortMode is MaskSortMode.Default) // ReadIntoCustomTemplate can handle vanilla templates but meh
                 orig_ReadInto(data, tileset, xml);
             else {
                 Logger.Log(LogLevel.Debug, "Autotiler", $"Reading template for tileset with id '{data.ID}', scan height {data.ScanHeight}, and scan width {data.ScanWidth}.");
-                ReadIntoCustomTemplate(data, tileset, xml);
+                ReadIntoCustomTemplate(data, tileset, xml, sortMode);
             }
 
             if (xml.HasAttr("soundPath") && xml.HasAttr("sound")) { // Could accommodate for no sound attr, but requiring it should improve clarity on user's end 
@@ -83,24 +89,32 @@ namespace Celeste {
                 data.Debris = xml.Attr("debris");
         }
 
-        private void ReadIntoCustomTemplate(patch_TerrainType data, Tileset tileset, XmlElement xml) {
+        private enum MaskSortMode {
+            Default,
+            None,
+        }
+
+        private void ReadIntoCustomTemplate(patch_TerrainType data, Tileset tileset, XmlElement xml, MaskSortMode sortMode) {
             foreach (XmlNode child in xml) {
-                if (child is XmlElement node) {
-                    if (node.Name == "set") { // Potential somewhat breaking change, although there is no reason for another name to have been used.
-                        string text = node.Attr("mask");
+                if (child is not XmlElement node)
+                    continue;
+
+                switch (node.Name) {
+                    case "set": {
+                        string mask = node.Attr("mask");
                         patch_Tiles tiles;
-                        if (text == "center") {
+                        if (mask == "center") {
                             if (data.CustomFills != null)
                                 Logger.Log(LogLevel.Warn, "Autotiler", $"\"Center\" tiles for tileset with id '{data.ID}' will not be used if custom fills are present.");
 
                             tiles = data.Center;
-                        } else if (text == "padding") {
+                        } else if (mask == "padding") {
                             if (data.CustomFills != null)
                                 Logger.Log(LogLevel.Warn, "Autotiler", $"\"Padding\" tiles for tileset with id '{data.ID}' will not be used if custom fills are present.");
 
                             tiles = data.Padded;
-                        } else if (text.StartsWith("fill")) {
-                            tiles = data.CustomFills[int.Parse(text.Substring(4))];
+                        } else if (mask.StartsWith("fill", StringComparison.Ordinal)) {
+                            tiles = data.CustomFills[int.Parse(mask.Substring(4))];
                         } else {
                             patch_Masked masked = new patch_Masked();
                             masked.Mask = new byte[data.ScanWidth * data.ScanHeight];
@@ -109,7 +123,7 @@ namespace Celeste {
                             try {
                                 // Allows for spacer characters like '-' in the xml
                                 int i = 0;
-                                foreach (char c in text) {
+                                foreach (char c in mask) {
                                     switch (c) {
                                         case '0':
                                             masked.Mask[i++] = patch_Masked.TileEmptyMask;
@@ -162,7 +176,9 @@ namespace Celeste {
                             tiles.HasOverlays = true;
                         }
 
-                    } else if (node.Name == "define") {
+                        break;
+                    }
+                    case "define": {
                         byte id = GetByteLookup(node.AttrChar("id"));
                         string filter = node.Attr("filter");
 
@@ -170,49 +186,55 @@ namespace Celeste {
                             data.blacklists[id] = filter;
                         else
                             data.whitelists[id] = filter;
+                        break;
                     }
                 }
             }
 
-            data.Masked.Sort((patch_Masked a, patch_Masked b) => {
-                // Sorts the masks to give preference to more specific masks.
-                // Order is Custom Filters -> "Not This" -> "Any" -> Everything else
-                int aFilters = 0;
-                int bFilters = 0;
-                int aNots = 0;
-                int bNots = 0;
-                int aAnys = 0;
-                int bAnys = 0;
-                for (int i = 0; i < data.ScanWidth * data.ScanHeight; i++) {
-                    if (a.Mask[i] >= patch_Masked.CustomFilterMaskStart) {
-                        aFilters++;
+            if (sortMode == MaskSortMode.Default) {
+                data.Masked.Sort((patch_Masked a, patch_Masked b) => {
+                    // Sorts the masks to give preference to more specific masks.
+                    // Order is Custom Filters -> "Not This" -> "Any" -> Everything else
+                    int aFilters = 0;
+                    int bFilters = 0;
+                    int aNots = 0;
+                    int bNots = 0;
+                    int aAnys = 0;
+                    int bAnys = 0;
+                    for (int i = 0; i < a.Mask.Length; i++) {
+                        switch (a.Mask[i]) {
+                            case patch_Masked.NotThisTileMask:
+                                aNots++;
+                                break;
+                            case patch_Masked.AnyMask:
+                                aAnys++;
+                                break;
+                            case >= patch_Masked.CustomFilterMaskStart:
+                                aFilters++;
+                                break;
+                        }
+                        switch (b.Mask[i]) {
+                            case patch_Masked.NotThisTileMask:
+                                bNots++;
+                                break;
+                            case patch_Masked.AnyMask:
+                                bAnys++;
+                                break;
+                            case >= patch_Masked.CustomFilterMaskStart:
+                                bFilters++;
+                                break;
+                        }
                     }
-                    if (b.Mask[i] >= patch_Masked.CustomFilterMaskStart) {
-                        bFilters++;
-                    }
+                    
+                    if (aFilters > 0 || bFilters > 0)
+                        return aFilters - bFilters;
 
-                    if (a.Mask[i] == patch_Masked.NotThisTileMask) {
-                        aNots++;
-                    }
-                    if (b.Mask[i] == patch_Masked.NotThisTileMask) {
-                        bNots++;
-                    }
+                    if (aNots > 0 || bNots > 0)
+                        return aNots - bNots;
 
-                    if (a.Mask[i] == patch_Masked.AnyMask) {
-                        aAnys++;
-                    }
-                    if (b.Mask[i] == patch_Masked.AnyMask) {
-                        bAnys++;
-                    }
-                }
-                if (aFilters > 0 || bFilters > 0)
-                    return aFilters - bFilters;
-
-                if (aNots > 0 || bNots > 0)
-                    return aNots - bNots;
-
-                return aAnys - bAnys;
-            });
+                    return aAnys - bAnys;
+                });
+            }
         }
 
         private byte GetByteLookup(char c) {
