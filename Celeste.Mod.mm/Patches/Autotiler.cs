@@ -112,18 +112,18 @@ namespace Celeste {
                                 foreach (char c in text) {
                                     switch (c) {
                                         case '0':
-                                            masked.Mask[i++] = 0; // No tile
+                                            masked.Mask[i++] = patch_Masked.TileEmptyMask;
                                             break;
                                         case '1':
-                                            masked.Mask[i++] = 1; // Tile
+                                            masked.Mask[i++] = patch_Masked.TilePresentMask;
                                             break;
                                         case 'x':
                                         case 'X':
-                                            masked.Mask[i++] = 2; // Any
+                                            masked.Mask[i++] = patch_Masked.AnyMask;
                                             break;
                                         case 'y':
                                         case 'Y':
-                                            masked.Mask[i++] = 3; // Not this tile
+                                            masked.Mask[i++] = patch_Masked.NotThisTileMask;
                                             break;
                                         case 'z':
                                         case 'Z':
@@ -184,24 +184,24 @@ namespace Celeste {
                 int aAnys = 0;
                 int bAnys = 0;
                 for (int i = 0; i < data.ScanWidth * data.ScanHeight; i++) {
-                    if (a.Mask[i] >= 10) {
+                    if (a.Mask[i] >= patch_Masked.CustomFilterMaskStart) {
                         aFilters++;
                     }
-                    if (b.Mask[i] >= 10) {
+                    if (b.Mask[i] >= patch_Masked.CustomFilterMaskStart) {
                         bFilters++;
                     }
 
-                    if (a.Mask[i] == 3) {
+                    if (a.Mask[i] == patch_Masked.NotThisTileMask) {
                         aNots++;
                     }
-                    if (b.Mask[i] == 3) {
+                    if (b.Mask[i] == patch_Masked.NotThisTileMask) {
                         bNots++;
                     }
 
-                    if (a.Mask[i] == 2) {
+                    if (a.Mask[i] == patch_Masked.AnyMask) {
                         aAnys++;
                     }
-                    if (b.Mask[i] == 2) {
+                    if (b.Mask[i] == patch_Masked.AnyMask) {
                         bAnys++;
                     }
                 }
@@ -216,13 +216,18 @@ namespace Celeste {
         }
 
         private byte GetByteLookup(char c) {
-            if (char.IsLower(c))
-                // Take the letter, convert it into a number from 10 to 36
-                return (byte) ((c - 'a') + 10);
-            else if (char.IsUpper(c))
-                // Take the letter, convert it into a number from 37 to 63
-                return (byte) ((c - 'A') + 37);
-            throw new ArgumentException("Custom tileset mask filter must be an uppercase or lowercase letter.");
+            // Because of how the below code converts chars to numbers, only ascii values are safe...
+            if (char.IsAscii(c)) {
+                if (char.IsLower(c))
+                    // Take the letter, convert it into a number from 10 to 36
+                    return (byte) ((c - 'a') + patch_Masked.CustomFilterMaskStart);
+                
+                if (char.IsUpper(c))
+                    // Take the letter, convert it into a number from 37 to 63
+                    return (byte) ((c - 'A') + patch_Masked.CustomFilterMaskCapitalLetterStart);
+            }
+
+            throw new ArgumentException("Custom tileset mask filter must be an ASCII uppercase or lowercase letter.");
         }
 
         [MonoModIgnore]
@@ -237,6 +242,10 @@ namespace Celeste {
         [MonoModIgnore]
         private extern bool CheckForSameLevel(int x1, int y1, int x2, int y2);
 
+        // While this method is no longer used, we still need to keep it around for backwards compat.
+        // All hooks on orig_TileHandler would've needed to duplicate the behaviour for TileHandler anyway to stay compatible with custom masks,
+        // so this should be safe.
+        [Obsolete("Never called, all code paths use TileHandler now")]
         private extern patch_Tiles orig_TileHandler(VirtualMap<char> mapData, int x, int y, Rectangle forceFill, char forceID, Behaviour behaviour);
         private patch_Tiles TileHandler(VirtualMap<char> mapData, int x, int y, Rectangle forceFill, char forceID, Behaviour behaviour) {
             char tile = GetTile(mapData, x, y, forceFill, forceID, behaviour);
@@ -254,22 +263,30 @@ namespace Celeste {
             int width = terrainType.ScanWidth;
             int height = terrainType.ScanHeight;
 
-            if (terrainType.CustomFills == null && width == 3 && height == 3 && terrainType.whitelists.Count == 0 && terrainType.blacklists.Count == 0) {
-                return orig_TileHandler(mapData, x, y, forceFill, forceID, behaviour); // Default tileset, default handler.
-            }
-
             bool fillTile = true;
-            char[] adjacent = new char[width * height];
+            // Stores information about adjacent tiles, flattened.
+            // This needs to be an array instead of stackalloc'd span, as we'll use it to construct a EquatableCharArray later
+            char[] adjacent = terrainType.GetSharedAdjacentBuffer();
+            // Stores information whether adjacent tiles are present or not, taking into consideration the 'ignores' field.
+            // Used for '1' and '0' masks.
+            Span<bool> adjacentPresent = stackalloc bool[adjacent.Length];
+            
+            // Calculate the level that contains this tile, so that we can quickly check if the neighbouring tiles are in the same level.
+            Rectangle levelBounds = behaviour.EdgesIgnoreOutOfLevel ? GetContainingLevelBounds(x, y) : default;
 
             int idx = 0;
             for (int yOffset = 0; yOffset < height; yOffset++) {
                 for (int xOffset = 0; xOffset < width; xOffset++) {
                     // Integer division will effectively truncate the "middle" (this) tile
                     bool tilePresent = TryGetTile(terrainType, mapData, x + (xOffset - width / 2), y + (yOffset - height / 2), forceFill, forceID, behaviour, out char adjTile);
-                    if (!tilePresent && behaviour.EdgesIgnoreOutOfLevel && !CheckForSameLevel(x, y, x + xOffset, y + yOffset)) {
+
+                    if (!tilePresent && behaviour.EdgesIgnoreOutOfLevel && !levelBounds.Contains(x + (xOffset - width / 2), y + (yOffset - height / 2))) {
                         tilePresent = true;
                     }
+
+                    adjacentPresent[idx] = tilePresent;
                     adjacent[idx++] = adjTile;
+                    
                     if (!tilePresent)
                         fillTile = false;
                 }
@@ -278,60 +295,93 @@ namespace Celeste {
             if (fillTile) {
                 if (terrainType.CustomFills != null) {
                     // Start at depth of 1 since first layer has already been checked by masks.
-                    int depth = GetDepth(terrainType, mapData, x, y, forceFill, behaviour, 1);
+                    int depth = GetDepth(terrainType, mapData, x, y, forceFill, behaviour, 1, levelBounds);
+                    
                     return terrainType.CustomFills[depth - 1];
-                } else {
-                    if (CheckCross(terrainType, mapData, x, y, forceFill, behaviour, 1 + width / 2, 1 + height / 2))
-                        return terrainType.Center;
-
-                    return terrainType.Padded;
                 }
+
+                if (CheckCross(terrainType, mapData, x, y, forceFill, behaviour, 1 + width / 2, 1 + height / 2, levelBounds))
+                    return terrainType.Center;
+
+                return terrainType.Padded;
+            }
+
+            // If we already checked the same set of adjacent tiles, the exact same mask will match again.
+            // This means we can easily cache this.
+            if (terrainType.GetCachedMaskOrNull(adjacent) is { } cachedMask) {
+                return cachedMask.Tiles;
             }
 
             foreach (patch_Masked item in terrainType.Masked) {
                 bool matched = true;
-                for (int i = 0; i < width * height; i++) {
-                    if (item.Mask[i] == 2) // Matches Any
-                        continue;
+                byte[] mask = item.Mask;
+                
+                // mask.Length as well as adjacent.Length should always be equal to width * height
+                // To get rid of JIT-generated bounds checks:
+                // - We'll do a normal for loop through the `mask`, to get rid of bounds checks for `mask`
+                // - And this additional check here, to get rid of bounds checks for `adjacent`
+                if (adjacent.Length < mask.Length)
+                    continue;
+                
+                for (int i = 0; i < mask.Length; i++) {
+                    bool thisTileMatched = mask[i] switch {
+                        patch_Masked.AnyMask => true,
+                        patch_Masked.TilePresentMask => adjacentPresent[i],
+                        patch_Masked.TileEmptyMask => !adjacentPresent[i],
+                        patch_Masked.NotThisTileMask => adjacent[i] != tile,
+                        var customMask => IsCustomMaskMatch(terrainType, customMask, adjacent[i])
+                    };
 
-                    if (item.Mask[i] == 1 && IsEmpty(adjacent[i])) {
+                    if (!thisTileMatched) {
                         matched = false;
                         break;
                     }
-
-                    if (item.Mask[i] == 0 && !IsEmpty(adjacent[i])) {
-                        matched = false;
-                        break;
-                    }
-
-                    if (item.Mask[i] == 3 && adjacent[i] == tile) {
-                        matched = false;
-                        break;
-                    }
-
-                    if (terrainType.blacklists.Count > 0) {
-                        if (terrainType.blacklists.ContainsKey(item.Mask[i]) && terrainType.blacklists[item.Mask[i]].Contains(adjacent[i].ToString())) {
-                            matched = false;
-                            break;
-                        }
-
-                    }
-
-                    if (terrainType.whitelists.Count > 0) {
-                        if (terrainType.whitelists.ContainsKey(item.Mask[i]) && !terrainType.whitelists[item.Mask[i]].Contains(adjacent[i].ToString())) {
-                            matched = false;
-                            break;
-                        }
-
-                    }
-
                 }
 
-                if (matched)
+                if (matched) {
+                    terrainType.CacheMask(adjacent, item);
                     return item.Tiles;
+                }
             }
 
             return null;
+        }
+        
+        /// <summary>
+        /// Checks whether the given <paramref name="tile"/> matches the custom <paramref name="mask"/>. 
+        /// </summary>
+        private static bool IsCustomMaskMatch(patch_TerrainType terrainType, byte mask, char tile) {
+            if (terrainType.blacklists.Count > 0) {
+                if (terrainType.blacklists.TryGetValue(mask, out string value) && value.Contains(tile, StringComparison.Ordinal)) {
+                    return false;
+                }
+
+            }
+
+            if (terrainType.whitelists.Count > 0) {
+                if (terrainType.whitelists.TryGetValue(mask, out string value) && !value.Contains(tile, StringComparison.Ordinal)) {
+                    return false;
+                }
+
+            }
+
+            return true;
+        }
+        
+        /// <summary>
+        /// Gets the bounds of the level that contains the given point.
+        /// This loops through all levels (rooms) in the map.
+        /// </summary>
+        private Rectangle GetContainingLevelBounds(int x, int y) {
+            foreach (Rectangle rectangle in LevelBounds)
+            {
+                if (rectangle.Contains(x, y))
+                {
+                    return rectangle;
+                }
+            }
+
+            return new(x, y, 1, 1);
         }
 
         // Replaces "CheckTile" in modded TileHandler method.
@@ -359,34 +409,34 @@ namespace Celeste {
             return !IsEmpty(tile) && !set.Ignore(tile);
         }
 
-        private int GetDepth(patch_TerrainType terrainType, VirtualMap<char> mapData, int x, int y, Rectangle forceFill, Behaviour behaviour, int depth) {
+        private int GetDepth(patch_TerrainType terrainType, VirtualMap<char> mapData, int x, int y, Rectangle forceFill, Behaviour behaviour, int depth, Rectangle levelBounds) {
             int searchX = depth + terrainType.ScanWidth / 2;
             int searchY = depth + terrainType.ScanHeight / 2;
 
-            if (CheckCross(terrainType, mapData, x, y, forceFill, behaviour, searchX, searchY) && depth < terrainType.CustomFills.Count)
-                return GetDepth(terrainType, mapData, x, y, forceFill, behaviour, ++depth);
+            if (CheckCross(terrainType, mapData, x, y, forceFill, behaviour, searchX, searchY, levelBounds) && depth < terrainType.CustomFills.Count)
+                return GetDepth(terrainType, mapData, x, y, forceFill, behaviour, ++depth, levelBounds);
 
             return depth;
         }
+        
+        private bool CheckCross(patch_TerrainType terrainType, VirtualMap<char> mapData, int x, int y, Rectangle forceFill, Behaviour behaviour, int width, int height, Rectangle levelBounds) {
+            if (behaviour.PaddingIgnoreOutOfLevel) {
+                return (CheckTile(terrainType, mapData, x - width, y, forceFill, behaviour) || !levelBounds.Contains(x - width, y)) &&
+                       (CheckTile(terrainType, mapData, x + width, y, forceFill, behaviour) || !levelBounds.Contains(x + width, y)) &&
+                       (CheckTile(terrainType, mapData, x, y - height, forceFill, behaviour) || !levelBounds.Contains(x, y - height)) &&
+                       (CheckTile(terrainType, mapData, x, y + height, forceFill, behaviour) || !levelBounds.Contains(x, y + height));
+            }
 
-        private bool CheckCross(patch_TerrainType terrainType, VirtualMap<char> mapData, int x, int y, Rectangle forceFill, Behaviour behaviour, int width, int height) {
-            if (behaviour.PaddingIgnoreOutOfLevel)
-                return (CheckTile(terrainType, mapData, x - width, y, forceFill, behaviour) || !CheckForSameLevel(x, y, x - width, y)) &&
-                    (CheckTile(terrainType, mapData, x + width, y, forceFill, behaviour) || !CheckForSameLevel(x, y, x + width, y)) &&
-                    (CheckTile(terrainType, mapData, x, y - height, forceFill, behaviour) || !CheckForSameLevel(x, y, x, y - height)) &&
-                    (CheckTile(terrainType, mapData, x, y + height, forceFill, behaviour) || !CheckForSameLevel(x, y, x, y + height));
-            else
-                return CheckTile(terrainType, mapData, x - width, y, forceFill, behaviour) &&
-                    CheckTile(terrainType, mapData, x + width, y, forceFill, behaviour) &&
-                    CheckTile(terrainType, mapData, x, y - height, forceFill, behaviour) &&
-                    CheckTile(terrainType, mapData, x, y + height, forceFill, behaviour);
+            return CheckTile(terrainType, mapData, x - width, y, forceFill, behaviour) &&
+                   CheckTile(terrainType, mapData, x + width, y, forceFill, behaviour) &&
+                   CheckTile(terrainType, mapData, x, y - height, forceFill, behaviour) &&
+                   CheckTile(terrainType, mapData, x, y + height, forceFill, behaviour);
         }
 
         public bool TryGetCustomDebris(out string path, char tiletype) {
             return !string.IsNullOrEmpty(path = lookup.TryGetValue(tiletype, out patch_TerrainType t) ? t.Debris : "");
         }
 
-        // Required because TerrainType is private.
         private class patch_TerrainType {
             public char ID;
             public List<patch_Masked> Masked;
@@ -402,6 +452,39 @@ namespace Celeste {
             public Dictionary<byte, string> whitelists;
             public Dictionary<byte, string> blacklists;
 
+            // Cached shared buffer for GetSharedAdjacentBuffer
+            private char[] _adjacentBuffer;
+            // Cache for GetCachedMaskOrNull
+            private Dictionary<EquatableCharArray, patch_Masked> _maskCache;
+
+            /// <summary>
+            /// Returns a shared char[] that can be used by the Autotiler to hold all adjacent tiles. 
+            /// </summary>
+            internal char[] GetSharedAdjacentBuffer() {
+                int size = ScanWidth * ScanHeight;
+                
+                // if ScanWidth/ScanHeight got changed, we need to create a new buffer
+                if (_adjacentBuffer is { } b && b.Length != size) {
+                    _adjacentBuffer = null;
+                }
+
+                return _adjacentBuffer ??= new char[size];
+            }
+
+            /// <summary>
+            /// Returns the <see cref="Masked"/> that is known to match the given adjacent tiles,
+            /// or null if this combination of tiles hasn't been checked yet.
+            /// </summary>
+            internal patch_Masked GetCachedMaskOrNull(char[] adjacent) {
+                return _maskCache.GetValueOrDefault(new(adjacent), null);
+            }
+
+            internal void CacheMask(char[] adjacent, patch_Masked mask) {
+                char[] adjacentCopy = (char[])adjacent.Clone();
+
+                _maskCache[new(adjacentCopy)] = mask;
+            }
+
             [MonoModIgnore]
             public extern bool Ignore(char c);
 
@@ -412,8 +495,37 @@ namespace Celeste {
 
                 whitelists = new Dictionary<byte, string>();
                 blacklists = new Dictionary<byte, string>();
+                _maskCache = new();
             }
 
+            /// <summary>
+            /// A wrapper over a char[], which allows it to be used as a dictionary key to perform a SequenceEqual comparison.
+            /// This allows us to use a shared char[] to index the dict, without having to allocate a temporary string instance.
+            /// </summary>
+            private readonly struct EquatableCharArray : IEquatable<EquatableCharArray> {
+                private readonly char[] Data;
+
+                public EquatableCharArray(char[] data) {
+                    Data = data;
+                }
+                
+                public bool Equals(EquatableCharArray other) {
+                    return Data.AsSpan().SequenceEqual(other.Data);
+                }
+
+                public override int GetHashCode() => string.GetHashCode(Data);
+                    
+                public override bool Equals(object obj)
+                    => obj is EquatableCharArray other && Equals(other);
+
+                public static bool operator ==(EquatableCharArray left, EquatableCharArray right) {
+                    return left.Equals(right);
+                }
+
+                public static bool operator !=(EquatableCharArray left, EquatableCharArray right) {
+                    return !(left == right);
+                }
+            }
         }
 
         // Required because Tiles is private.
@@ -424,13 +536,29 @@ namespace Celeste {
             public bool HasOverlays;
 
         }
-
-        // Required because Masked is private.
-        [MonoModIgnore]
+        
+        // Add additional constants to clean up code
         private class patch_Masked {
+            [MonoModIgnore]
             public byte[] Mask;
+            
+            [MonoModIgnore]
             public patch_Tiles Tiles;
 
+            public const byte TileEmptyMask = 0;
+            public const byte TilePresentMask = 1;
+            public const byte AnyMask = 2;
+            public const byte NotThisTileMask = 3;
+
+            /// <summary>
+            /// The first mask type used for custom filters.
+            /// </summary>
+            internal const byte CustomFilterMaskStart = 10;
+            
+            /// <summary>
+            /// The first mask type used for custom filters with capital letters.
+            /// </summary>
+            internal const byte CustomFilterMaskCapitalLetterStart = CustomFilterMaskStart + 27;
         }
 
     }
