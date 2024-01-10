@@ -1,0 +1,65 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net7.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <Reference Include="FNA">
+            <HintPath>..\lib-stripped\FNA.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <EmbeddedResource Include="..\lib-stripped\Celeste-icon.png">
+            <LogicalName>%(EmbeddedResource.Identity)</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="SplashContent\*">
+            <LogicalName>%(EmbeddedResource.Identity)</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+
+    <!-- Resolve AppHosts -->
+    <ItemGroup>
+        <PackageReference Include="runtime.win-x86.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
+        <PackageReference Include="runtime.win-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
+        <PackageReference Include="runtime.linux-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
+        <PackageReference Include="runtime.osx-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <AppHost_win-x86>$(Pkgruntime_win-x86_Microsoft_NETCore_DotNetAppHost)\runtimes\win-x86\native\apphost.exe</AppHost_win-x86>
+        <AppHost_win-x64>$(Pkgruntime_win-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\win-x64\native\apphost.exe</AppHost_win-x64>
+        <AppHost_linux-x64>$(Pkgruntime_linux-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\linux-x64\native\apphost</AppHost_linux-x64>
+        <AppHost_osx-x64>$(Pkgruntime_osx-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\osx-x64\native\apphost</AppHost_osx-x64>
+    </PropertyGroup>
+
+    <!-- Bind AppHosts for EverestBootSplash, just a trick to "compile" for all platforms in one publish -->
+    <Target Name="IncludeAppHosts" BeforeTargets="AssignTargetPaths">
+        <PropertyGroup>
+            <AppHostIntermediatePath_win-x86>$(IntermediateOutputPath)\EverestSplash-win.exe</AppHostIntermediatePath_win-x86>
+            <AppHostIntermediatePath_win-x64>$(IntermediateOutputPath)\EverestSplash-win64.exe</AppHostIntermediatePath_win-x64>
+            <AppHostIntermediatePath_linux-x64>$(IntermediateOutputPath)\EverestSplash-linux</AppHostIntermediatePath_linux-x64>
+            <AppHostIntermediatePath_osx-x64>$(IntermediateOutputPath)\EverestSplash-osx</AppHostIntermediatePath_osx-x64>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <Content Include="$(AppHostIntermediatePath_win-x86)" TargetPath="EverestSplash-win.exe" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+            <Content Include="$(AppHostIntermediatePath_win-x64)" TargetPath="EverestSplash-win64.exe" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+            <Content Include="$(AppHostIntermediatePath_linux-x64)" TargetPath="EverestSplash-linux" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+            <Content Include="$(AppHostIntermediatePath_osx-x64)" TargetPath="EverestSplash-osx" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+<!--            <Content Include="app.manifest" TargetPath="MiniInstaller-win.exe.manifest" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" /> &lt;!&ndash; Needed as otherwise Windows will think we're an actual installer which requires admin privileges &ndash;&gt;-->
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BindAppHosts" AfterTargets="CoreCompile" DependsOnTargets="IncludeAppHosts">
+        <Message Importance="High" Text="Binding EverestSplash AppHosts..." />
+
+        <CreateAppHost AppHostSourcePath="$(AppHost_win-x86)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x86)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
+        <CreateAppHost AppHostSourcePath="$(AppHost_win-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
+        <CreateAppHost AppHostSourcePath="$(AppHost_linux-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_linux-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
+        <CreateAppHost AppHostSourcePath="$(AppHost_osx-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_osx-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
+    </Target>
+
+</Project>

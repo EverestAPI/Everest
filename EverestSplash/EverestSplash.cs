@@ -1,9 +1,9 @@
-﻿#nullable enable
-using SDL2;
+﻿using SDL2;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -25,12 +25,48 @@ public static class EverestSplash {
     public const string Name = "EverestSplash";
 
     /// <summary>
+    /// Main function.
+    /// </summary>
+    /// <param name="args">
+    /// `--testmode` is inteded for testing this as a separate project, runs it for 5s,
+    /// `--graphics` is the sdl_renderer to use,
+    /// `--server-postfix` is a string to append to the named pipe client address to not cause issues with multiple instances</param>
+    public static void Main(string[] args) {
+        AppDomain.CurrentDomain.AssemblyResolve += (_, data) => { // Simple assembly resolver to find dll on parent directory too
+            string? folderPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string assemblyPath = Path.Combine(folderPath!, new AssemblyName(data.Name).Name + ".dll");
+            if (!File.Exists(assemblyPath)) {
+                folderPath = Path.GetDirectoryName(folderPath);
+                assemblyPath = Path.Combine(folderPath!, new AssemblyName(data.Name).Name + ".dll");
+                if (!File.Exists(assemblyPath)) return null;
+            }
+            Assembly assembly = Assembly.LoadFrom(assemblyPath);
+            return assembly;
+        };
+        if (args.Contains("--testmode"))
+            LaunchWindowDefault();
+        else {
+            string targetRenderer = "";
+            string postFix = "";
+            for (int i = 0; i < args.Length; i++) {
+                if (args[i] == "--graphics" && args.Length > i + 1) {
+                    targetRenderer = args[i + 1];
+                } else if (args[i] == "--server-postfix" && args.Length > i + 1) {
+                    postFix = args[i + 1];
+                }
+            }
+            CreateWindow(targetRenderer, postFix).Run();
+        }
+    }
+
+    /// <summary>
     /// This method always requires the targetRenderer, for ease of use with reflection.
     /// </summary>
     /// <param name="targetRenderer">The SDL2 renderer to use or "" for any renderer.</param>
+    /// <param name="postFix">A post fix to the server name, to not conflict with other instances</param>
     /// <returns>The window created.</returns>
-    public static EverestSplashWindow CreateWindow(string targetRenderer) {
-        return EverestSplashWindow.CreateNewWindow(targetRenderer);
+    public static EverestSplashWindow CreateWindow(string targetRenderer, string postFix) {
+        return EverestSplashWindow.CreateNewWindow(targetRenderer, postFix);
     }
 
     public static void RunWindow(EverestSplashWindow window) {
@@ -81,16 +117,16 @@ public class EverestSplashWindow {
     private static int WindowHeight = 340; // Currently hardcoded, TODO: fractional scaling
     private static int WindowWidth = 800;
     private static readonly TextureInfo EverestLogoTexture = new() {
-        path = "Content/Graphics/Atlases/Gui/splash/everest_centered.png",
+        path = "SplashContent/everest_centered.png",
     };
     private static readonly TextureInfo StartingEverestTexture = new() {
-        path = "Content/Graphics/Atlases/Gui/splash/starting_everest_text.png",
+        path = "SplashContent/starting_everest_text.png",
     };
     private static readonly TextureInfo WheelTexture = new() {
-        path = "Content/Graphics/Atlases/Gui/splash/splash_wheel_blur.png",
+        path = "SplashContent/splash_wheel_blur.png",
     };
     private static readonly TextureInfo BgGradientTexture = new() {
-        path = "Content/Graphics/Atlases/Gui/splash/bg_gradient_2x.png",
+        path = "SplashContent/bg_gradient_2x.png",
     };
     private static readonly TextureInfo AppIcon = new() {
         path = "../lib-stripped/Celeste-icon.png",
@@ -104,22 +140,25 @@ public class EverestSplashWindow {
     private static EverestSplashWindow? instance;
 
     
-    private readonly NamedPipeClientStream ClientPipe = new(".", EverestSplash.Name);
+    private readonly NamedPipeClientStream ClientPipe;
     private WindowInfo windowInfo;
     private readonly FNAFixes fnaFixes = new();
     private readonly string targetRenderer;
     private readonly Assembly currentAssembly;
 
-    public static EverestSplashWindow CreateNewWindow(string targetRenderer = "") {
+    public static EverestSplashWindow CreateNewWindow(string targetRenderer = "", string postFix = "") {
         if (instance != null)
             throw new InvalidOperationException(EverestSplash.Name + "Window created multiple times!");
-        return new EverestSplashWindow(targetRenderer);
+        return new EverestSplashWindow(targetRenderer, postFix);
     }
 
-    private EverestSplashWindow(string targetRenderer) {
+    private EverestSplashWindow(string targetRenderer, string postFix) {
         instance = this;
         this.targetRenderer = targetRenderer;
         currentAssembly = GetType().Assembly;
+        string serverName = EverestSplash.Name + postFix;
+        Console.WriteLine("Running splash on " + serverName);
+        ClientPipe = new(".", serverName);
         ClientPipe.ConnectAsync().ContinueWith(_ => {
             try {
                 StreamReader sr = new(ClientPipe);
@@ -504,7 +543,6 @@ public class EverestSplashWindow {
             public void HasRan() => HasFixed = true;
         }
     }
-#nullable disable
     
     /// <summary>
     /// Stripped down version of SDL_image from https://github.com/flibitijibibo/SDL2-CS
