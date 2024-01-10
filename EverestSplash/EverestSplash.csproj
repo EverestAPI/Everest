@@ -5,6 +5,7 @@
         <TargetFramework>net7.0</TargetFramework>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <UseAppHost>false</UseAppHost> <!-- MiniInstaller will create its own AppHosts -->
     </PropertyGroup>
     
     <ItemGroup>
