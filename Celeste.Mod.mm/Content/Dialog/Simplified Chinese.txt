@@ -27,7 +27,7 @@
 	POSTCARD_MISSINGTUTORIAL=	{big}哦吼！{/big}{n}找不到回放教学 {#ff1144}((tutorial)){#}。{n}请查看你的 {#44adf7}log.txt{#} 文件获知更详细的信息。
 	POSTCARD_TILEXMLERROR=		{big}哦吼！{/big}{n}在解析 {#ff1144}((path)){#} 中的 Tileset 时出现了错误。{n}请查看你的 {#44adf7}log.txt{#} 文件获知更详细的信息。
 	POSTCARD_XMLERROR=			{big}哦吼！{/big}{n}{#ff1144}((path)){#} 中出现了语法错误。{n}请查看你的 {#44adf7}log.txt{#} 文件获知更详细的信息。
-	POSTCARD_BOSSLASTNODEHIT=	{big}哦吼！{/big}{n}{#ff1144}Badeline Boss{#} 实体的最后一个节点被玩家碰到了，请在当前房间外新加入一个额外的节点确保玩家不会碰到它。
+	POSTCARD_BOSSLASTNODEHIT=	{big}哦吼！{/big}{n}{#ff1144}Badeline Boss{#} 实体的最后一个节点被玩家碰到了，{n}请在当前房间外新加入一个额外的节点确保玩家不会碰到它。
 
 
 # Main Menu
