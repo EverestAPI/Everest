@@ -5,7 +5,7 @@
         <TargetFramework>net7.0</TargetFramework>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <UseAppHost>false</UseAppHost> <!-- MiniInstaller will create its own AppHosts -->
+        <UseAppHost>false</UseAppHost> <!-- EverestSplash will create its own AppHosts -->
     </PropertyGroup>
     
     <ItemGroup>
@@ -13,6 +13,9 @@
             <HintPath>..\lib-stripped\FNA.dll</HintPath>
             <Private>False</Private>
         </Reference>
+    </ItemGroup>
+    
+    <ItemGroup>
         <EmbeddedResource Include="..\lib-stripped\Celeste-icon.png">
             <LogicalName>%(EmbeddedResource.Identity)</LogicalName>
         </EmbeddedResource>
@@ -50,7 +53,6 @@
             <Content Include="$(AppHostIntermediatePath_win-x64)" TargetPath="EverestSplash-win64.exe" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
             <Content Include="$(AppHostIntermediatePath_linux-x64)" TargetPath="EverestSplash-linux" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
             <Content Include="$(AppHostIntermediatePath_osx-x64)" TargetPath="EverestSplash-osx" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
-<!--            <Content Include="app.manifest" TargetPath="MiniInstaller-win.exe.manifest" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" /> &lt;!&ndash; Needed as otherwise Windows will think we're an actual installer which requires admin privileges &ndash;&gt;-->
         </ItemGroup>
     </Target>
 

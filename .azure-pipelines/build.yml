@@ -69,16 +69,6 @@ steps:
     cleanTargetFolder: false
     overWrite: true
     flattenFolders: false
-- task: CopyFiles@2
-  displayName: 'Pack main artifact: EverestSplash'
-  continueOnError: true
-  inputs:
-    sourceFolder: '$(Build.SourcesDirectory)/EverestSplash/bin/Release/net7.0/publish'
-    contents: '**'
-    targetFolder: '$(Build.ArtifactStagingDirectory)/main/EverestSplash/'
-    cleanTargetFolder: false
-    overWrite: true
-    flattenFolders: false
 - task: PublishBuildArtifacts@1
   displayName: 'Publish main artifact'
   continueOnError: true
