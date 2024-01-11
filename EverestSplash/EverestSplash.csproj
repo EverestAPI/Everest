@@ -5,7 +5,7 @@
         <TargetFramework>net7.0</TargetFramework>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <UseAppHost>false</UseAppHost> <!-- EverestSplash will create its own AppHosts -->
+<!--        <UseAppHost>false</UseAppHost> &lt;!&ndash; EverestSplash will create its own AppHosts &ndash;&gt;-->
     </PropertyGroup>
     
     <ItemGroup>
@@ -59,8 +59,8 @@
     <Target Name="BindAppHosts" AfterTargets="CoreCompile" DependsOnTargets="IncludeAppHosts">
         <Message Importance="High" Text="Binding EverestSplash AppHosts..." />
 
-        <CreateAppHost AppHostSourcePath="$(AppHost_win-x86)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x86)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
-        <CreateAppHost AppHostSourcePath="$(AppHost_win-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
+        <CreateAppHost AppHostSourcePath="$(AppHost_win-x86)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x86)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')"  WindowsGraphicalUserInterface="true" />
+        <CreateAppHost AppHostSourcePath="$(AppHost_win-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')"  WindowsGraphicalUserInterface="true" />
         <CreateAppHost AppHostSourcePath="$(AppHost_linux-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_linux-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
         <CreateAppHost AppHostSourcePath="$(AppHost_osx-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_osx-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
     </Target>
