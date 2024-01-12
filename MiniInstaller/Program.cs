@@ -580,6 +580,7 @@ namespace MiniInstaller {
                     libDstDir = Path.Combine(PathGame, "lib64-osx");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "Celeste.exe.config"), "osx", dllMap, "lib{0}.dylib");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "FNA.dll.config"), "osx", dllMap, "lib{0}.dylib");
+                    dllMap.Add("libSDL2_image-2.0.dylib", "libSDL2_image.dylib"); // Required by EverestSplash
                 } break;
                 default: return;
             }
