@@ -1,25 +1,25 @@
-﻿using SDL2;
+﻿using EverestSplash.SDL2;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 
-namespace Celeste.Mod;
+namespace EverestSplash;
 
 /// <summary>
 /// EverestSplash is a simple program whose task is to display a `loading in progress` window coded in pure SDL.
 /// It is designed to work together with Everest and communicate via named pipes, where it'll listen for any data,
 /// and once a line can be read, the splash will disappear.
-/// This program could also be loaded as a library and run by calling `LaunchWindow`.
-/// It uses a separate thread to run SDL, even if not necessary, to not accidentally create any gl, vk or directx context
-/// and conflict with FNA.
-/// For testing, see message at end of file.
+/// This program could also be loaded as a library and ran by calling `LaunchWindow`.
+/// It is intended to run in another OS level process to not cause issues with any other engine (mainly FNA)
+/// For testing, you can run this as a standalone, providing `--testmode (seconds)` as an argument will make it run for
+/// that amount of seconds
+/// It requires FNA to access the SDL2 bindings (for convenience), so copying it to the output directory may be required to run it as standalone.
 /// </summary>
 public static class EverestSplash {
     public const string Name = "EverestSplash";
@@ -30,32 +30,32 @@ public static class EverestSplash {
     /// <param name="args">
     /// `--testmode` is inteded for testing this as a separate project, runs it for 5s,
     /// `--graphics` is the sdl_renderer to use,
-    /// `--server-postfix` is a string to append to the named pipe client address to not cause issues with multiple instances</param>
+    /// `--server-postfix` is a string to append to the named pipe client address to not cause issues with multiple instances
+    /// </param>
     public static void Main(string[] args) {
-        AppDomain.CurrentDomain.AssemblyResolve += (_, data) => { // Simple assembly resolver to find dll on parent directory too
-            string? folderPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string assemblyPath = Path.Combine(folderPath!, new AssemblyName(data.Name).Name + ".dll");
-            if (!File.Exists(assemblyPath)) {
-                folderPath = Path.GetDirectoryName(folderPath);
-                assemblyPath = Path.Combine(folderPath!, new AssemblyName(data.Name).Name + ".dll");
-                if (!File.Exists(assemblyPath)) return null;
-            }
-            Assembly assembly = Assembly.LoadFrom(assemblyPath);
-            return assembly;
-        };
-        if (args.Contains("--testmode"))
-            LaunchWindowDefault();
-        else {
-            string targetRenderer = "";
-            string postFix = "";
-            for (int i = 0; i < args.Length; i++) {
-                if (args[i] == "--graphics" && args.Length > i + 1) {
-                    targetRenderer = args[i + 1];
-                } else if (args[i] == "--server-postfix" && args.Length > i + 1) {
-                    postFix = args[i + 1];
+        string targetRenderer = "";
+        string postFix = "";
+        int runSeconds = 0;
+        for (int i = 0; i < args.Length; i++) {
+            if (args[i] == "--graphics" && args.Length > i + 1) {
+                targetRenderer = args[i + 1];
+            } else if (args[i] == "--server-postfix" && args.Length > i + 1) {
+                postFix = args[i + 1];
+            } else if (args[i] == "--testmode") {
+                if (args.Length > i + 1) {
+                    runSeconds = int.Parse(args[i + 1]);
+                } else {
+                    runSeconds = 5;
                 }
             }
-            CreateWindow(targetRenderer, postFix).Run();
+        }
+
+        EverestSplashWindow window = CreateWindow(targetRenderer, postFix);
+        
+        if (runSeconds != 0) {
+            RunWindowSeconds(window, runSeconds);
+        } else {
+            window.Run();
         }
     }
 
@@ -65,12 +65,8 @@ public static class EverestSplash {
     /// <param name="targetRenderer">The SDL2 renderer to use or "" for any renderer.</param>
     /// <param name="postFix">A post fix to the server name, to not conflict with other instances</param>
     /// <returns>The window created.</returns>
-    public static EverestSplashWindow CreateWindow(string targetRenderer, string postFix) {
+    public static EverestSplashWindow CreateWindow(string targetRenderer = "", string postFix = "") {
         return EverestSplashWindow.CreateNewWindow(targetRenderer, postFix);
-    }
-
-    public static void RunWindow(EverestSplashWindow window) {
-        window.Run();
     }
 
     /// <summary>
@@ -81,15 +77,12 @@ public static class EverestSplash {
         window.Run();
     }
 
-    public static void LaunchWindowDefault() {
-        LaunchWindowSeconds(5);
-    }
-
     /// <summary>
-    /// Launches a new window, which will last s seconds.
+    /// Runs the window, which will last s seconds.
     /// </summary>
+    /// <param name="window">The window to operate on</param>
     /// <param name="s">The window lifespan.</param>
-    public static void LaunchWindowSeconds(int s) {
+    public static void RunWindowSeconds(EverestSplashWindow window, int s) {
         Task.Run(async () => {
             NamedPipeServerStream server = new(Name);
             await server.WaitForConnectionAsync();
@@ -103,7 +96,6 @@ public static class EverestSplash {
             await sr.ReadLineAsync();
             Console.WriteLine("Close confirmation received");
         });
-        EverestSplashWindow window = EverestSplashWindow.CreateNewWindow();
         window.Run();
     }
 }
@@ -369,7 +361,7 @@ public class EverestSplashWindow {
         // Do not call this under any circumstance when running together with Everest
         // It will mess with FNA and cause a hangup/segfault
         // I mean it makes sense, this un-initializes everything, something FNA doesn't expect :P
-        // SDL.SDL_Quit();
+        SDL.SDL_Quit();
 
         foreach (Timer timer in timers) {
             timer.Stop();
@@ -638,11 +630,4 @@ public class EverestSplashWindow {
         }
     }
 }
-/* In order to modify and test this module, it may be beneficial to detach it
- * from Everest and work on it in a separate environment.
- * Consequently, to run this file you could just, if your IDE supports it,
- * run the `LaunchWindow` method. Otherwise "hacking" it and adding a `Main`
- * method and changing the output type to `Exe` is also valid for developing,
- * just make sure to revert it. Finally, there are tools that are capable of
- * loading a dll and running a method from it via CLI arguments.
- */
+

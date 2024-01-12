@@ -5,15 +5,8 @@
         <TargetFramework>net7.0</TargetFramework>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-<!--        <UseAppHost>false</UseAppHost> &lt;!&ndash; EverestSplash will create its own AppHosts &ndash;&gt;-->
+        <UseAppHost>false</UseAppHost> <!-- EverestSplash will create its own AppHosts -->
     </PropertyGroup>
-    
-    <ItemGroup>
-        <Reference Include="FNA">
-            <HintPath>..\lib-stripped\FNA.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-    </ItemGroup>
     
     <ItemGroup>
         <EmbeddedResource Include="..\lib-stripped\Celeste-icon.png">
