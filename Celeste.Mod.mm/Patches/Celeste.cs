@@ -193,7 +193,7 @@ namespace Celeste {
             splashPipeLock = new(); // FIXME: this should be statically initialized, but doing so,
                                                 // and in combination with the locks, it creates an invalid program (apparently)
             // Get the splash up and running asap, currently disabled for macos, for technical issues
-            if (!args.Contains("--disable-splash") && File.Exists(Path.Combine(".", "EverestSplash.dll"))) {
+            if (!args.Contains("--disable-splash") && File.Exists(Path.Combine(".", "EverestSplash", "EverestSplash.dll"))) {
                 string targetRenderer = "";
                 for (int i = 0; i < args.Length; i++) { // The splash will use the same renderer as fna
                     if (args[i] == "--graphics" && args.Length > i + 1) {
@@ -223,7 +223,7 @@ namespace Celeste {
 
                 if (splashPipeServerStream != null) { // Only proceed if the server was successful
                     splashProcess = new Process {
-                        StartInfo = new ProcessStartInfo(Path.Combine(".",
+                        StartInfo = new ProcessStartInfo(Path.Combine(".", "EverestSplash",
                                 RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                                     ?
                                     RuntimeInformation.OSArchitecture == Architecture.X64
