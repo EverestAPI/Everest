@@ -1,4 +1,4 @@
-﻿using EverestSplash.SDL2;
+﻿using SDL2;
 using System;
 using System.Collections.Generic;
 using System.IO;

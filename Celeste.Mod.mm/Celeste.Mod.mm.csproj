@@ -100,13 +100,17 @@
   <ItemGroup>
     <ProjectReference Include="..\DiscordGameSDK\DiscordGameSDK.csproj" />
     <ProjectReference Include="..\NETCoreifier\NETCoreifier.csproj" />
+    <ProjectReference Include="..\EverestSplash\EverestSplash.csproj"> <!-- Forces correct build dependency order -->
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <ExcludeAssets>all</ExcludeAssets>
+    </ProjectReference>
   </ItemGroup>
   
-  <Target Name="CopyEverestSplashFiles" AfterTargets="Build">
+  <Target Name="CopyEverestSplashFiles" AfterTargets="Publish">
     <ItemGroup> <!-- For some reason to use wildcards you have to use a property -->
-      <SplashBinaries Include="..\EverestSplash\bin\$(Configuration)\$(TargetFramework)\publish\**" />
+      <SplashBinaries Include="$(OutputPath)\publish\EverestSplash*" />
     </ItemGroup>
-    <Copy SourceFiles="@(SplashBinaries)" DestinationFolder="$(OutputPath)\publish\EverestSplash\" />
+    <Move SourceFiles="@(SplashBinaries)" DestinationFolder="$(OutputPath)\publish\EverestSplash\" />
   </Target>
 
 </Project>
