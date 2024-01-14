@@ -620,7 +620,7 @@ namespace Celeste.Mod {
 
                 using (WebClient client = new WebClient()) {
                     client.DownloadProgressChanged += (object sender, DownloadProgressChangedEventArgs e) => progressCallback(e.BytesReceived, e.TotalBytesToReceive, timeStart);
-                    client.DownloadFileAsync(new Uri(url), destPath);
+                    await client.DownloadFileAsync(new Uri(url), destPath);
                 }
             }
         }

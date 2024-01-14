@@ -428,9 +428,18 @@ namespace Celeste.Mod.UI {
                 LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_DOWNLOADING"), mod.Name, mod.URL));
                 LogLine("", false);
 
+                // Initialize metrics
+                DateTime lastUpdate;
+                long lastPosition = 0;
+                int speed;
                 Func<int, long, int, bool> progressCallback = (position, length, timeStart) => {
-                    td = DateTime.Now - timeStart;
-                    speed = (int) ((position / 1024D) / td.TotalSeconds);
+                    // Calculate instaneous speed
+                    td = DateTime.Now - lastUpdate;
+                    if (td.TotalMilliseconds > 100) {
+                        speed = (int) ((position - lastPosition / 1024D) / td.TotalSeconds);
+                        lastUpdate = DateTime.Now;
+                        lastPosition = position;
+                    }
                     if (length > 0) {
                         Lines[Lines.Count - 1] = $"{((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s";
                         Progress = position;
