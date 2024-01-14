@@ -1,4 +1,4 @@
-﻿using SDL2;
+﻿using EverestSplash.SDL2;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,7 +19,6 @@ namespace EverestSplash;
 /// It is intended to run in another OS level process to not cause issues with any other engine (mainly FNA)
 /// For testing, you can run this as a standalone, providing `--testmode (seconds)` as an argument will make it run for
 /// that amount of seconds
-/// It requires FNA to access the SDL2 bindings (for convenience), so copying it to the output directory may be required to run it as standalone.
 /// </summary>
 public static class EverestSplash {
     public const string Name = "EverestSplash";

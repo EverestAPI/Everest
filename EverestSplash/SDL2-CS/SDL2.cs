@@ -36,7 +36,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 #endregion
 
-namespace SDL2
+namespace EverestSplash.SDL2
 {
 	public static class SDL
 	{

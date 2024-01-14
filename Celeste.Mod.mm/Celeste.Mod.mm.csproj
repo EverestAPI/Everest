@@ -100,10 +100,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DiscordGameSDK\DiscordGameSDK.csproj" />
     <ProjectReference Include="..\NETCoreifier\NETCoreifier.csproj" />
-    <ProjectReference Include="..\EverestSplash\EverestSplash.csproj"> <!-- Forces correct build dependency order -->
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <ExcludeAssets>all</ExcludeAssets>
-    </ProjectReference>
+    <ProjectReference Include="..\EverestSplash\EverestSplash.csproj" /> <!-- Forces correct build dependency order -->
   </ItemGroup>
   
   <Target Name="CopyEverestSplashFiles" AfterTargets="Publish">
