@@ -112,11 +112,12 @@ namespace Celeste.Mod.UI {
                     modUpdatingMessage = $"{progressString} {Dialog.Clean("AUTOUPDATECHECKER_DOWNLOADING")}";
 
                     Logger.Log(LogLevel.Verbose, "AutoModUpdater", $"Downloading {update.URL} to {zipPath}");
-                    Func<int, long, int, bool> progressCallback = (position, length, speed) => {
+                    Func<int, long, int, bool> progressCallback = (position, length, timeStart) => {
                         if (skipUpdate) {
                             return false;
                         }
-
+                        td = DateTime.Now - timeStart;
+                        speed = (int) ((position / 1024D) / td.TotalSeconds);
                         if (length > 0) {
                             modUpdatingMessage = $"{progressString} {Dialog.Clean("AUTOUPDATECHECKER_DOWNLOADING")} " +
                                 $"({((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s)";

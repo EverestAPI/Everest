@@ -11,8 +11,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -620,54 +618,9 @@ namespace Celeste.Mod {
                 if (File.Exists(destPath))
                     File.Delete(destPath);
 
-                using (HttpClient client = new CompressedHttpClient()) {
-                    client.Timeout = TimeSpan.FromMilliseconds(10000);
-                    client.DefaultRequestHeaders.Add("Accept", "application/octet-stream");
-
-                    // Manual buffered copy from web input to file output.
-                    // Allows us to measure speed and progress.
-                    using (HttpResponseMessage response = client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).Result)
-                    using (Stream input = response.Content.ReadAsStream())
-                    using (FileStream output = File.OpenWrite(destPath)) {
-                        if (input.CanTimeout)
-                            input.ReadTimeout = 10000;
-
-                        long length;
-                        if (input.CanSeek) {
-                            length = input.Length;
-                        } else {
-                            length = response.Content.Headers.ContentLength ?? 0;
-                        }
-
-                        progressCallback(0, length, 0);
-
-                        byte[] buffer = new byte[4096];
-                        DateTime timeLastSpeed = timeStart;
-                        int read = 1;
-                        int readForSpeed = 0;
-                        int pos = 0;
-                        int speed = 0;
-                        int count = 0;
-                        TimeSpan td;
-                        while (read > 0) {
-                            count = length > 0 ? (int) Math.Min(buffer.Length, length - pos) : buffer.Length;
-                            read = input.Read(buffer, 0, count);
-                            output.Write(buffer, 0, read);
-                            pos += read;
-                            readForSpeed += read;
-
-                            td = DateTime.Now - timeLastSpeed;
-                            if (td.TotalMilliseconds > 100) {
-                                speed = (int) ((readForSpeed / 1024D) / td.TotalSeconds);
-                                readForSpeed = 0;
-                                timeLastSpeed = DateTime.Now;
-                            }
-
-                            if (!progressCallback(pos, length, speed)) {
-                                break;
-                            }
-                        }
-                    }
+                using (WebClient client = new WebClient()) {
+                    client.DownloadProgressChanged += (object sender, DownloadProgressChangedEventArgs e) => progressCallback(e.BytesReceived, e.TotalBytesToReceive, timeStart);
+                    client.DownloadFileAsync(new Uri(url), destPath);
                 }
             }
         }

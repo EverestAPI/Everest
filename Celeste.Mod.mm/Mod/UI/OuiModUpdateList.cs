@@ -339,11 +339,12 @@ namespace Celeste.Mod.UI {
         private void downloadMod(ModUpdateInfo update, TextMenu.Button button, string zipPath) {
             Logger.Log(LogLevel.Verbose, "OuiModUpdateList", $"Downloading {update.URL} to {zipPath}");
 
-            Func<int, long, int, bool> progressCallback = (position, length, speed) => {
+            Func<int, long, int, bool> progressCallback = (position, length, timeStart) => {
                 if (ongoingUpdateCancelled) {
                     return false;
                 }
-
+                td = DateTime.Now - timeStart;
+                speed = (int) ((position / 1024D) / td.TotalSeconds);
                 if (length > 0) {
                     button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s)";
                 } else {
