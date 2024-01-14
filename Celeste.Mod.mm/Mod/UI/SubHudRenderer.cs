@@ -62,6 +62,7 @@ namespace Celeste.Mod.UI {
             if (!scene.Entities.HasVisibleEntities(TagsExt.SubHUD))
                 return;
 
+            Everest.Events.SubHudRenderer.BeforeRender(this, scene);
             BeginRender(null, null);
             scene.Entities.RenderOnly(TagsExt.SubHUD);
             EndRender();
