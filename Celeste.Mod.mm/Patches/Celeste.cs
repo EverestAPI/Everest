@@ -457,7 +457,6 @@ https://discord.gg/6qjaePQ");
                         splashPipeServerStream.Dispose();
                         splashPipeServerStream = null;
                         splashPipeServerStreamConnection = null;
-                        splashProcess.StandardOutput.Close();
                         splashProcess = null;
                     } catch (Exception e) {
                         Logger.Log(LogLevel.Error, "EverestSplash", "Could not stop splash!");
