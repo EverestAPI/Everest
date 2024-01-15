@@ -105,7 +105,7 @@
   
   <Target Name="CopyEverestSplashFiles" AfterTargets="Publish">
     <ItemGroup> <!-- For some reason to use wildcards you have to use a property -->
-      <SplashBinaries Include="$(OutputPath)\publish\EverestSplash*" />
+      <SplashBinaries Include="$(OutputPath)\publish\EverestSplash*;$(OutputPath)\publish\piton-runtime.yaml" />
     </ItemGroup>
     <Move SourceFiles="@(SplashBinaries)" DestinationFolder="$(OutputPath)\publish\EverestSplash\" />
   </Target>

@@ -634,6 +634,22 @@ namespace MiniInstaller {
 
             if (PathOSXExecDir != null && Path.Exists(Path.Combine(PathOSXExecDir, "osx")))
                 Directory.Delete(Path.Combine(PathOSXExecDir, "osx"), true);
+            
+            // Finally make EverestSplash executable
+            if (Platform is InstallPlatform.Linux or InstallPlatform.MacOS) {
+                string splashTarget = Platform switch {
+                    InstallPlatform.Linux => "EverestSplash-linux",
+                    InstallPlatform.MacOS => "EverestSplash-osx",
+                    _ => throw new InvalidOperationException(),
+                };
+                // Permission flags may get overwritten in the packaging process
+                Process chmodProc =
+                    Process.Start(new ProcessStartInfo("chmod", $"u+x \"EverestSplash/{splashTarget}\""));
+                chmodProc?.WaitForExit();
+                if (chmodProc?.ExitCode != 0)
+                    LogLine("Failed to set EverestSplash executable flag");
+            }
+
         }
 
         public static void CopyControllerDB() {

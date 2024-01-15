@@ -16,7 +16,7 @@
             <LogicalName>%(EmbeddedResource.Identity)</LogicalName>
         </EmbeddedResource>
         <!-- Only include this for standalone mode, MiniInstaller includes this same file -->
-        <Content Include="..\lib-ext\piton-runtime.yaml" TargetPath="piton-runtime.yaml" CopyToOutputDirectory="Always" CopyToPublishDirectory="Never" />
+        <Content Include="..\lib-ext\piton-runtime.yaml" TargetPath="piton-runtime.yaml" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
     </ItemGroup>
 
     <!-- Resolve AppHosts -->

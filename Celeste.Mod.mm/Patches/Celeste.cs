@@ -222,42 +222,51 @@ namespace Celeste {
                 }
 
                 if (splashPipeServerStream != null) { // Only proceed if the server was successful
-                    splashProcess = new Process {
-                        StartInfo = new ProcessStartInfo(Path.Combine(".", "EverestSplash",
-                                RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                                    ?
-                                    RuntimeInformation.OSArchitecture == Architecture.X64
-                                        ? "EverestSplash-win64.exe"
-                                        : "EverestSplash-win.exe"
-                                    :
-                                    RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-                                        ? "EverestSplash-linux"
-                                        :
-                                        RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
-                                            ? "EverestSplash-osx"
-                                            :
-                                            throw new Exception("Unknown OS platform")
-                            ),
-                            (targetRenderer != "" ? "--graphics " + targetRenderer : "") +
-                            " " +
-                            "--server-postfix " + currentPid),
-                    };
+                    try {
+                        splashProcess = new Process {
+                            StartInfo = new ProcessStartInfo(Path.Combine(".", "EverestSplash",
+                                    RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                                        ? RuntimeInformation.OSArchitecture == Architecture.X64
+                                            ? "EverestSplash-win64.exe"
+                                            : "EverestSplash-win.exe"
+                                        : RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                                            ? "EverestSplash-linux"
+                                            : RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+                                                ? "EverestSplash-osx"
+                                                : throw new Exception("Unknown OS platform")
+                                ),
+                                (targetRenderer != "" ? "--graphics " + targetRenderer : "") +
+                                " " +
+                                "--server-postfix " + currentPid),
+                        };
 
-                    // Required for the logger to pick up the splash stdout as well
-                    splashProcess.StartInfo.RedirectStandardOutput = true;
-                    splashProcess.StartInfo.RedirectStandardError = true;
-                    splashProcess.OutputDataReceived += (_, data) => {
-                        if (data.Data?.Trim() == "") return; // Sometimes we may receive nulls or just blank lines, skip those
-                        Console.WriteLine(data.Data);
-                    };
-                    splashProcess.ErrorDataReceived += (_, data) => {
-                        if (data.Data?.Trim() == "") return;
-                        Console.Error.WriteLine(data.Data);
-                    };
+                        // Required for the logger to pick up the splash stdout as well
+                        splashProcess.StartInfo.RedirectStandardOutput = true;
+                        splashProcess.StartInfo.RedirectStandardError = true;
+                        splashProcess.OutputDataReceived += (_, data) => {
+                            if (data.Data?.Trim() == "")
+                                return; // Sometimes we may receive nulls or just blank lines, skip those
+                            Console.WriteLine(data.Data);
+                        };
+                        splashProcess.ErrorDataReceived += (_, data) => {
+                            if (data.Data?.Trim() == "") return;
+                            Console.Error.WriteLine(data.Data);
+                        };
 
-                    splashProcess.Start();
-                    splashProcess.BeginOutputReadLine(); // This is required for the event to even be sent
-                    splashProcess.BeginErrorReadLine();
+                        splashProcess.Start();
+                        splashProcess.BeginOutputReadLine(); // This is required for the event to even be sent
+                        splashProcess.BeginErrorReadLine();
+                    } catch (Exception e) {
+                        Logger.Log(LogLevel.Error, "EverestSplash", "Starting splash failed!");
+                        Logger.LogDetailed(e);
+                        // Destroy the server asap
+                        if (splashPipeServerStream.IsConnected)
+                            splashPipeServerStream.Disconnect();
+                        splashPipeServerStream.Dispose();
+                        splashPipeServerStream = null;
+                        splashPipeServerStreamConnection = null;
+                        splashProcess = null;
+                    }
                 }
             }
 
