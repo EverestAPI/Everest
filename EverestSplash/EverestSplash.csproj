@@ -15,21 +15,19 @@
         <EmbeddedResource Include="SplashContent\*">
             <LogicalName>%(EmbeddedResource.Identity)</LogicalName>
         </EmbeddedResource>
+        <!-- Only include this for standalone mode, MiniInstaller includes this same file -->
+        <Content Include="..\lib-ext\piton-runtime.yaml" TargetPath="piton-runtime.yaml" CopyToOutputDirectory="Always" CopyToPublishDirectory="Never" />
     </ItemGroup>
 
     <!-- Resolve AppHosts -->
     <ItemGroup>
-        <PackageReference Include="runtime.win-x86.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
-        <PackageReference Include="runtime.win-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
-        <PackageReference Include="runtime.linux-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
-        <PackageReference Include="runtime.osx-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
     </ItemGroup>
 
     <PropertyGroup>
-        <AppHost_win-x86>$(Pkgruntime_win-x86_Microsoft_NETCore_DotNetAppHost)\runtimes\win-x86\native\apphost.exe</AppHost_win-x86>
-        <AppHost_win-x64>$(Pkgruntime_win-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\win-x64\native\apphost.exe</AppHost_win-x64>
-        <AppHost_linux-x64>$(Pkgruntime_linux-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\linux-x64\native\apphost</AppHost_linux-x64>
-        <AppHost_osx-x64>$(Pkgruntime_osx-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\osx-x64\native\apphost</AppHost_osx-x64>
+        <AppHost_win-x86>..\lib-ext\piton\piton-gui-win_x86.exe</AppHost_win-x86>
+        <AppHost_win-x64>..\lib-ext\piton\piton-gui-win_x64.exe</AppHost_win-x64>
+        <AppHost_linux-x64>..\lib-ext\piton\piton-linux_x64</AppHost_linux-x64>
+        <AppHost_osx-x64>..\lib-ext\piton\piton-gui-macos_x64</AppHost_osx-x64>
     </PropertyGroup>
 
     <!-- Bind AppHosts for EverestBootSplash, just a trick to "compile" for all platforms in one publish -->
