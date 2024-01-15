@@ -31,6 +31,7 @@ namespace Celeste.Mod.UI {
         }
 
         public override void BeforeRender(Scene scene) {
+            Everest.Events.SubHudRenderer.BeforeRender(this, scene);
             if (!DrawToBuffer)
                 return;
 
@@ -62,7 +63,6 @@ namespace Celeste.Mod.UI {
             if (!scene.Entities.HasVisibleEntities(TagsExt.SubHUD))
                 return;
 
-            Everest.Events.SubHudRenderer.BeforeRender(this, scene);
             BeginRender(null, null);
             scene.Entities.RenderOnly(TagsExt.SubHUD);
             EndRender();
