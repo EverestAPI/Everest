@@ -10,6 +10,8 @@ using _OuiMainMenu = Celeste.OuiMainMenu;
 using _Player = Celeste.Player;
 using _Seeker = Celeste.Seeker;
 using _AngryOshiro = Celeste.AngryOshiro;
+using _SubHudRenderer = Celeste.Mod.UI.SubHudRenderer;
+using Monocle;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -293,6 +295,13 @@ namespace Celeste.Mod {
                 public static Action OnReloadAllMaps;
                 internal static void ReloadAllMaps()
                     => OnReloadAllMaps?.Invoke();
+            }
+
+            public static class SubHudRenderer {
+                public delegate void BeforeRenderHandler(_SubHudRenderer renderer, Scene scene);
+                public static event BeforeRenderHandler OnBeforeRender;
+                internal static void BeforeRender(_SubHudRenderer renderer, Scene scene)
+                    => OnBeforeRender?.Invoke(renderer, scene);
             }
         }
     }
