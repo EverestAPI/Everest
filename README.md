@@ -23,7 +23,7 @@ For information about mod development, check out the [Everest Wiki](https://gith
     - macOS: Right-click and browse the Celeste app in Finder, then navigate to `Contents`, then `MacOS`.
 - Clone the Everest repo **+ submodules**, either in your IDE or via the CLI.
 - Restore Nuget packages either via your IDE or the command line.
-- Everest requires version 7.0.200 or higher of .NET Core SDK, as well as the .NET 6.0 Core runtime, for the build process.
+- Everest requires version 7.0.200 or higher of .NET SDK, as well as the .NET 6.0 runtime, for the build process.
 
 ### Windows
 - Open the .sln in the repo with Visual Studio
