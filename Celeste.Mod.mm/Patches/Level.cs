@@ -839,9 +839,12 @@ namespace MonoMod {
             // Insert CheckForErrors() at the beginning so we can display an error screen if needed
             cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_CheckForErrors);
             // Insert an if statement that returns if we find an error at CheckForErrors
-            cursor.Emit(OpCodes.Brfalse, cursor.Next).Emit(OpCodes.Ret);
+            ILLabel rest = cursor.DefineLabel();
+            cursor.Emit(OpCodes.Brfalse, rest).Emit(OpCodes.Ret);
 
             // insert FixChaserStatesTimeStamp()
+            cursor.MarkLabel(rest);
+            cursor.MoveAfterLabels();
             cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_FixChaserStatesTimeStamp);
 
             /* We expect something similar enough to the following:
