@@ -217,11 +217,11 @@ namespace Celeste.Mod.UI {
                 writer.WriteLine($"Available Memory: {EvalSafe(() => FormatByteCount(memInfo.TotalAvailableMemoryBytes))}");
                 writer.WriteLine();
 
-                writer.WriteLine($"Loaded Mods");
+                writer.WriteLine("Loaded Mods");
                 try {
                     lock (Everest._Modules) {
                         foreach (EverestModule mod in Everest._Modules)
-                            writer.WriteLine($" - {mod.Metadata.Name}: {mod.Metadata.VersionString} [{mod.Metadata.Version}]");
+                            writer.WriteLine($" - {mod.Metadata.Name}: {mod.Metadata.VersionString}{mod switch {LuaModule => " [Lua module]", NullModule => "", _ => $" [{mod.GetType().FullName}]"}}");
                     }
                 } catch (Exception ex) {
                     writer.WriteLine($" - error listing mods: {ex.GetType().FullName}: {ex.Message}");
@@ -248,6 +248,7 @@ namespace Celeste.Mod.UI {
                 writer.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> AMENDED INFORMATION <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
                 writer.WriteLine();
                 writer.WriteLine($"Encountered an additional error after the initial crash: {descr}");
+                writer.WriteLine("!!!!!!!!!!!!!!!!!!!! THIS IS NOT THE MAIN CRASH! !!!!!!!!!!!!!!!!!!!!");
                 writer.WriteLine($"Exception: {error}");
 
                 Logger.Info("crit-error-handler", $"Amended backed up log file '{logFile}' after encountering an additional error after the initial crash");
@@ -337,7 +338,7 @@ namespace Celeste.Mod.UI {
 
                 Process.Start(new ProcessStartInfo() {
                    FileName = openProg,
-                   Arguments = Path.GetDirectoryName(LogFile),
+                   ArgumentList = { Path.GetDirectoryName(LogFile) },
                    UseShellExecute = true 
                 });
             }));

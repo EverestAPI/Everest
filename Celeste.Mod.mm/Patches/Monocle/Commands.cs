@@ -67,6 +67,12 @@ namespace Monocle {
 
         [MonoModReplace] // Don't create orig_ method.
         internal void UpdateClosed() {
+            if (installedListener) { 
+                // This is a really really really messy way to deal with this, but its simple enough to be viable
+                // And apparently `UpdateOpen` doesn't handle closing, so this goes here i guess
+                installedListener = false;
+                TextInput.OnInput -= HandleChar;
+            }
             if (!canOpen) {
                 canOpen = true;
             // Original code only checks OemTilde and Oem8, leaving QWERTZ users in the dark...
@@ -74,7 +80,7 @@ namespace Monocle {
                 Open = true;
                 currentState = Keyboard.GetState();
                 if (!installedListener) {
-                    // this should realistically be done in the constructor. if we ever patch the ctor move it there!
+                    // This has to be done here, since we'll be unsubscribing to stop the text input
                     installedListener = true;
                     TextInput.OnInput += HandleChar;
                 }
@@ -369,7 +375,7 @@ namespace Monocle {
         private void HandleChar(char key) {
             // this API seemingly handles repeating keys for us
             if (!Open) {
-                return;
+                return; // this should never execute, but it can if the update is delayed for some reason before this can get unsubscribed
             }
             if (char.IsControl(key)) {
                 return;
@@ -391,17 +397,17 @@ namespace Monocle {
         }
 
         private bool IsWordBoundary(int idx, bool forward) {
-                // for move forward that means t[i-1] is word and t[i] is nonword
-                // for move backward that means t[i] is word and t[i-1] is nonword
-                if (idx <= 0 || idx >= currentText.Length) {
-                    return true;
-                }
-                char chBack = currentText[idx - 1];
-                char chForward = currentText[idx];
-                bool backWord = IsWord(chBack);
-                bool foreWord = IsWord(chForward);
-                // oof
-                return (forward && backWord && !foreWord) || (!forward && !backWord && foreWord);
+            // for move forward that means t[i-1] is word and t[i] is nonword
+            // for move backward that means t[i] is word and t[i-1] is nonword
+            if (idx <= 0 || idx >= currentText.Length) {
+                return true;
+            }
+            char chBack = currentText[idx - 1];
+            char chForward = currentText[idx];
+            bool backWord = IsWord(chBack);
+            bool foreWord = IsWord(chForward);
+            // oof
+            return (forward && backWord && !foreWord) || (!forward && !backWord && foreWord);
         }
 
         // Fix for https://github.com/EverestAPI/Everest/issues/167

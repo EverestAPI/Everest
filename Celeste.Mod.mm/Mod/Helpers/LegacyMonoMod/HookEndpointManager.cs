@@ -32,7 +32,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
             foreach (StackFrame frame in new StackTrace().GetFrames())
                 if (frame.HasMethod() && frame.GetMethod()?.DeclaringType?.Assembly is Assembly asm && AssemblyLoadContext.GetLoadContext(asm) is EverestModuleAssemblyContext ctx)
                     // Check if the mod was relinked from legacy MonoMod
-                    return !ctx.ModuleMeta.IsNetCoreOnlyMod || asm.CustomAttributes.Any(attr => attr.AttributeType == typeof(RelinkedMonoModLegacyAttribute));
+                    return asm.CustomAttributes.Any(attr => attr.AttributeType == typeof(RelinkedMonoModLegacyAttribute));
                     
             return false;
         }

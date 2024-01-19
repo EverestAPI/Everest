@@ -818,7 +818,7 @@ namespace Monocle {
                 } else if (extension == ".png") {
                     // Hard.
                     using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
-                        return PreloadSizeFromPNG(stream);
+                        return PreloadSizeFromPNG(stream, Path);
 
                 } else {
                     // .xnb and other file formats - impossible.
@@ -830,7 +830,7 @@ namespace Monocle {
                 if (Metadata.Format == "png") {
                     // Hard.
                     using (Stream stream = Metadata.Stream)
-                        return PreloadSizeFromPNG(stream);
+                        return PreloadSizeFromPNG(stream, $"{Metadata.PathVirtual} (mod {Metadata.Source.Mod?.Name ?? "*unknown*"})");
 
                 } else {
                     // .xnb and other file formats - impossible.
@@ -841,21 +841,21 @@ namespace Monocle {
             return false;
         }
 
-        private bool PreloadSizeFromPNG(Stream stream) {
+        private bool PreloadSizeFromPNG(Stream stream, string path) {
             using (BinaryReader reader = new BinaryReader(stream)) {
                 ulong magic = reader.ReadUInt64();
                 if (magic != 0x0A1A0A0D474E5089U) {
-                    Logger.Error("vtex", $"Failed preloading PNG: Expected magic to be 0x0A1A0A0D474E5089, got 0x{magic.ToString("X16")} - {Path}");
+                    Logger.Error("vtex", $"Failed preloading PNG: Expected magic to be 0x0A1A0A0D474E5089, got 0x{magic.ToString("X16")} - {path}");
                     return false;
                 }
                 uint length = reader.ReadUInt32();
                 if (length != 0x0D000000U) {
-                    Logger.Error("vtex", $"Failed preloading PNG: Expected first chunk length to be 0x0D000000, got 0x{length.ToString("X8")} - {Path}");
+                    Logger.Error("vtex", $"Failed preloading PNG: Expected first chunk length to be 0x0D000000, got 0x{length.ToString("X8")} - {path}");
                     return false;
                 }
                 uint chunk = reader.ReadUInt32();
                 if (chunk != 0x52444849U) {
-                    Logger.Error("vtex", $"Failed preloading PNG: Expected IHDR marker 0x52444849, got 0x{chunk.ToString("X8")} - {Path}");
+                    Logger.Error("vtex", $"Failed preloading PNG: Expected IHDR marker 0x52444849, got 0x{chunk.ToString("X8")} - {path}");
                     return false;
                 }
                 Width = SwapEndian(reader.ReadInt32());

@@ -180,7 +180,7 @@ namespace Celeste {
             patch_Banks.ModCache[asset] = bank;
 
             bank.getID(out Guid id);
-            cachedBankPaths[id] = string.Format("bank:/mods/{0}", asset.PathVirtual.Substring("Audio/".Length));
+            cachedBankPaths[id] = $"bank:/mods/{asset.PathVirtual["Audio/".Length..]}";
             return bank;
         }
 
@@ -191,23 +191,21 @@ namespace Celeste {
             Logger.Verbose("Audio.IngestGUIDs", asset.PathVirtual);
             using (Stream stream = asset.Stream)
             using (StreamReader reader = new StreamReader(asset.Stream)) {
-                string line;
                 while (reader.Peek() != -1) {
-                    line = reader.ReadLine().Trim('\r', '\n').Trim();
+                    var line = reader.ReadLine().AsSpan().Trim("\r\n").Trim();
 
                     int indexOfSpace = line.IndexOf(' ');
                     if (indexOfSpace == -1)
                         continue;
 
-                    if (!Guid.TryParse(line.Substring(0, indexOfSpace), out Guid id) ||
-                        cachedPaths.ContainsKey(id))
+                    if (!Guid.TryParse(line[..indexOfSpace], out Guid id) || cachedPaths.ContainsKey(id))
                         continue;
 
                     // only ingest the GUID if the corresponding event exists.
                     if (system.getEventByID(id, out EventDescription _event) > RESULT.OK)
                         continue;
 
-                    string path = line.Substring(indexOfSpace + 1);
+                    string path = line[(indexOfSpace + 1)..].ToString();
                     if (!usedGuids.TryGetValue(path, out HashSet<Guid> used))
                         usedGuids[path] = used = new HashSet<Guid>();
                     if (!used.Add(id))
@@ -282,7 +280,7 @@ namespace Celeste {
                 status = RESULT.OK;
 
             } else if (path.StartsWith("guid://")) {
-                status = system.getEventByID(new Guid(path.Substring(7)), out desc);
+                status = system.getEventByID(Guid.Parse(path.AsSpan(7)), out desc);
 
             } else {
                 status = system.getEvent(path, out desc);
@@ -321,7 +319,7 @@ namespace Celeste {
                     return bank;
 
                 ModAsset asset;
-                if (Everest.Content.TryGet<AssetTypeBank>(string.Format("Audio/{0}", name), out asset)) {
+                if (Everest.Content.TryGet<AssetTypeBank>($"Audio/{name}", out asset)) {
                     bank = IngestBank(asset);
 
                 } else {
@@ -332,7 +330,7 @@ namespace Celeste {
                 }
 
                 if (loadStrings) {
-                    if (Everest.Content.TryGet<AssetTypeBank>(string.Format("Audio/{0}.strings", name), out asset)) {
+                    if (Everest.Content.TryGet<AssetTypeBank>($"Audio/{name}.strings", out asset)) {
                         IngestBank(asset);
                     } else {
                         Bank strings;

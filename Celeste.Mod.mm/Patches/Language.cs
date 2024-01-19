@@ -1,4 +1,6 @@
-﻿using Celeste.Mod;
+﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+
+using Celeste.Mod;
 using Monocle;
 using MonoMod;
 using System;
@@ -25,6 +27,13 @@ namespace Celeste {
         [MonoModIgnore]
         [PatchLoadLanguage]
         public static extern new Language FromTxt(string path);
+
+        public static extern Language orig_FromExport(string path);
+        public static new Language FromExport(string path) {
+            Language lang = orig_FromExport(path);
+            lang.FilePath = Path.GetFileNameWithoutExtension(path);
+            return lang;
+        }
 
         public static Language FromModExport(ModAsset asset) {
             Language lang = new Language();
@@ -56,6 +65,7 @@ namespace Celeste {
                 }
             }
 
+            lang.FilePath = Path.GetFileNameWithoutExtension(asset.PathVirtual);
             return lang;
         }
 

@@ -31,6 +31,7 @@ namespace Celeste.Mod.UI {
         }
 
         public override void BeforeRender(Scene scene) {
+            Everest.Events.SubHudRenderer.BeforeRender(this, scene);
             if (!DrawToBuffer)
                 return;
 

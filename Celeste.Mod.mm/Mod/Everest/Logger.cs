@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using Celeste.Mod.Core;
+using System.Globalization;
 
 namespace Celeste.Mod {
     public static class Logger {
@@ -143,9 +144,7 @@ namespace Celeste.Mod {
         public static void Log(LogLevel level, string tag, string str) {
             if (shouldLog(tag, level)) {
                 if (!CoreModule.Settings.ColorizedLogging) {
-                    // Despite what your IDE might be telling you, DO NOT omit the manual .ToString() call, as this will cause unnecessary boxing.
-                    // On modern runtimes string interpolation is much smarter and omitting that call reduces allocations, but not on Framework.
-                    Console.WriteLine($"({DateTime.Now.ToString()}) [Everest] [{level.FastToString()}] [{tag}] {str}");
+                    Console.WriteLine($"({DateTime.Now}) [Everest] [{level.FastToString()}] [{tag}] {str}");
                     return;
                 }
 
@@ -153,7 +152,7 @@ namespace Celeste.Mod {
                 string colorLevel = level.GetAnsiEscapeCodeForLevel();
                 string colorText = level.GetAnsiEscapeCodeForText();
 
-                string now_str = DateTime.Now.ToString();
+                string now_str = DateTime.Now.ToString(CultureInfo.InvariantCulture);
                 string level_str = level.FastToString();
                 outWriter.WriteLine($"({now_str}) [Everest] {colorLevel}[{level_str}] [{tag}] {colorText}{str}{colorReset}");
                 logWriter.WriteLine($"({now_str}) [Everest] [{level_str}] [{tag}] {str}");
@@ -186,7 +185,7 @@ namespace Celeste.Mod {
                 const string colorReset = "\x1b[0m";
                 string colorText = level.GetAnsiEscapeCodeForText();
 
-                outWriter.WriteLine($"{colorText}{new StackTrace(1, true).ToString()}{colorReset}");
+                outWriter.WriteLine($"{colorText}{new StackTrace(1, true)}{colorReset}");
                 logWriter.WriteLine(new StackTrace(1, true).ToString());
             }
         }

@@ -72,7 +72,11 @@ namespace Celeste.Mod {
                     await ReloadSemaphore.WaitAsync();
                     try {
                         Logger.Verbose("reload", $"Starting execution of silent reload action: {text}");
+                        Everest.Events.AssetReload.BeforeReload(true);
+
                         await action(true);
+
+                        Everest.Events.AssetReload.AfterReload(true);
                         Logger.Verbose("reload", $"Finished execution of silent reload action: {text}");
                     } finally {
                         ReloadSemaphore.Release();
@@ -198,6 +202,8 @@ namespace Celeste.Mod {
 
                 Logger.Info("reload", "Starting level reload...");
 
+                Everest.Events.AssetReload.ReloadLevel(lvl);
+
                 // Start the reload action
                 return Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGLEVEL"), async _ => {
                     try {
@@ -257,6 +263,8 @@ namespace Celeste.Mod {
 
         internal static object AreaReloadLock = new object();
         public static void ReloadAllMaps() {
+            Everest.Events.AssetReload.ReloadAllMaps();
+
             // Prevent anything from calling AreaData.Get while we are reloading
             lock (AreaReloadLock) {
                 SaveData saveData = SaveData.Instance;
@@ -280,7 +288,7 @@ namespace Celeste.Mod {
 
                 // Reload mountain data
                 MTNExt.ReloadMod();
-                MainThreadHelper.Schedule(() => MTNExt.ReloadModData());
+                MainThreadHelper.Schedule(MTNExt.ReloadModData);
             }
 
             // If we are on the overworld, fix it up
@@ -337,6 +345,8 @@ namespace Celeste.Mod {
                 DoImmediateSceneSwitch(helper);
                 Engine.OverloadGameLoop = helper.Update;
 
+                Everest.Events.AssetReload.BeforeReload(false);
+
                 Logger.Verbose("reload", "Started non-silent reload; switched to reload helper scene");
                 return helper;
             } catch {
@@ -360,6 +370,8 @@ namespace Celeste.Mod {
 
                 ReturnToScene = null;
                 ReturnToGameLoop = null;
+
+                Everest.Events.AssetReload.AfterReload(false);
 
                 Logger.Verbose("reload", $"Finished non-silent reload; switched back to scene {Engine.Scene}");
             } finally {
@@ -545,24 +557,26 @@ namespace Celeste.Mod {
             GraphicsDevice graphicsDev = Engine.Instance.GraphicsDevice;
 
             // Render the scene and get the back buffer data
-            int width = graphicsDev.PresentationParameters.BackBufferWidth, height = graphicsDev.PresentationParameters.BackBufferHeight;
+            Viewport engineViewport = Engine.Viewport, graphicsViewport = graphicsDev.Viewport;
+            int width = engineViewport.Width, height = engineViewport.Height;
             Color[] backbufData = new Color[width * height];
 
             try {
                 scene.BeforeRender();
         
-                graphicsDev.Viewport = Engine.Viewport;
+                graphicsDev.Viewport = engineViewport;
                 graphicsDev.SetRenderTarget(null);
                 graphicsDev.Clear(Engine.ClearColor);
                 scene.Render();
 
                 scene.AfterRender();
-                graphicsDev.GetBackBufferData<Color>(backbufData);
+                graphicsDev.GetBackBufferData<Color>(engineViewport.Bounds, backbufData, 0, backbufData.Length);
             } catch (Exception ex) {
                 Logger.Warn("reload", $"Failed to render original scene for reload snapshot:");
                 Logger.LogDetailed(ex, "reload");
             } finally {
                 graphicsDev.SetRenderTarget(null);
+                graphicsDev.Viewport = graphicsViewport;
 
                 try {
                     Draw.SpriteBatch.End();

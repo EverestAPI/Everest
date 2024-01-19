@@ -7,62 +7,83 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public static class QueuedTaskHelper {
 
-        private static readonly ConcurrentDictionary<object, object> Map = new ConcurrentDictionary<object, object>();
-        private static readonly ConcurrentDictionary<object, Stopwatch> Timers = new ConcurrentDictionary<object, Stopwatch>();
+        // Make sure to lock Timers and update both of those at the same time before unlocking!
+        private static readonly Dictionary<object, object> Map = new Dictionary<object, object>();
+        private static readonly Dictionary<object, Stopwatch> Timers = new Dictionary<object, Stopwatch>();
 
         public static readonly double DefaultDelay = 0.5D;
 
         public static void Cancel(object key) {
-            if (Timers.TryRemove(key, out Stopwatch timer)) {
-                timer.Stop();
-                if (!Map.TryRemove(key, out _))
-                    throw new Exception("Queued task cancellation failed!");
+            lock (Timers) {
+                if (Timers.Remove(key, out Stopwatch timer)) {
+                    timer.Stop();
+                    if (!Map.Remove(key))
+                        throw new Exception("Queued task cancellation failed!");
+                }
             }
         }
 
         public static Task Do(object key, Action a)
             => Do(key, DefaultDelay, a);
         public static Task Do(object key, double delay, Action a) {
-            object queued = Map.GetOrAdd(key, key => {
-                Stopwatch timer = Stopwatch.StartNew();
-                Timers[key] = timer;
-                return new Func<Task>(async () => {
-                    do {
-                        await Task.Delay(TimeSpan.FromSeconds(delay - timer.Elapsed.TotalSeconds));
-                    } while (timer.Elapsed.TotalSeconds < delay);
+            lock (Timers) {
+                if (!Timers.TryGetValue(key, out Stopwatch timer)) {
+                    timer = Stopwatch.StartNew();
+                    Timers.Add(key, timer);
+                }
 
-                    if (!timer.IsRunning)
-                        return;
+                if (!Map.TryGetValue(key, out object queued)) {
+                    queued = new Func<Task>(async () => {
+                        await Task.Yield();
 
-                    Cancel(key);
+                        do {
+                            await Task.Delay(TimeSpan.FromSeconds(delay - timer.Elapsed.TotalSeconds));
+                        } while (timer.Elapsed.TotalSeconds < delay);
 
-                    a?.Invoke();
-                })();
-            });
+                        if (!timer.IsRunning)
+                            return;
 
-            Timers[key].Restart();
-            return (Task) queued;
+                        Cancel(key);
+
+                        a?.Invoke();
+                    })();
+
+                    Map.Add(key, queued);
+                }
+
+                timer.Restart();
+                return (Task) queued;
+            }
         }
 
         public static Task<T> Get<T>(object key, Func<T> f)
             => Get(key, DefaultDelay, f);
         public static Task<T> Get<T>(object key, double delay, Func<T> f) {
-            object queued = Map.GetOrAdd(key, key => {
-                Stopwatch timer = Stopwatch.StartNew();
-                Timers[key] = timer;
-                return new Func<Task<T>>(async () => {
-                    do {
-                        await Task.Delay(TimeSpan.FromSeconds(delay - timer.Elapsed.TotalSeconds));
-                    } while (timer.Elapsed.TotalSeconds < delay);
+            lock (Timers) {
+                if (!Timers.TryGetValue(key, out Stopwatch timer)) {
+                    timer = Stopwatch.StartNew();
+                    Timers.Add(key, timer);
+                }
 
-                    Cancel(key);
+                if (!Map.TryGetValue(key, out object queued)) {
+                    queued = new Func<Task<T>>(async () => {
+                        await Task.Yield();
 
-                    return f != null ? f.Invoke() : default;
-                })();
-            });
+                        do {
+                            await Task.Delay(TimeSpan.FromSeconds(delay - timer.Elapsed.TotalSeconds));
+                        } while (timer.Elapsed.TotalSeconds < delay);
 
-            Timers[key].Restart();
-            return (Task<T>) queued;
+                        Cancel(key);
+
+                        return f != null ? f.Invoke() : default;
+                    })();
+
+                    Map.Add(key, queued);
+                }
+
+                timer.Restart();
+                return (Task<T>) queued;
+            }
         }
 
     }
