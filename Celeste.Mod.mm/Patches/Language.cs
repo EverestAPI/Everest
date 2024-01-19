@@ -134,7 +134,7 @@ namespace Celeste {
                 lang.LineSources[key] = lang.CurrentlyReadingFrom;
 
                 if (count >= 2)
-                    Logger.Log(LogLevel.Warn, "Language", $"Conflict for dialog key {lang.Id}/{key} ({sourcePrev} vs {lang.CurrentlyReadingFrom})");
+                    Logger.Warn("Language", $"Conflict for dialog key {lang.Id}/{key} ({sourcePrev} vs {lang.CurrentlyReadingFrom})");
             }
 
 

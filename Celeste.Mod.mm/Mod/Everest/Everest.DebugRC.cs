@@ -43,7 +43,7 @@ namespace Celeste.Mod {
                     Listener.Prefixes.Add($"http://localhost:{CoreModule.Settings.DebugRCPort}/");
                     Listener.Start();
                 } catch (Exception e) {
-                    e.LogDetailed();
+                    Logger.LogDetailed(e);
                     try {
                         Listener?.Stop();
                     } catch { }
@@ -51,7 +51,7 @@ namespace Celeste.Mod {
                 }
 
                 ThreadPool.QueueUserWorkItem(_ => {
-                    Logger.Log(LogLevel.Info, "debugrc", $"Started DebugRC thread, available via http://localhost:{CoreModule.Settings.DebugRCPort}/");
+                    Logger.Info("debugrc", $"Started DebugRC thread, available via http://localhost:{CoreModule.Settings.DebugRCPort}/");
                     try {
                         while (Listener.IsListening) {
                             ThreadPool.QueueUserWorkItem(c => {
@@ -66,7 +66,7 @@ namespace Celeste.Mod {
                                 } catch (ThreadInterruptedException) {
                                     throw;
                                 } catch (Exception e) {
-                                    Logger.Log(LogLevel.Error, "debugrc", $"DebugRC failed responding: {e}");
+                                    Logger.Error("debugrc", $"DebugRC failed responding: {e}");
                                 }
                             }, Listener.GetContext());
                         }
@@ -79,10 +79,10 @@ namespace Celeste.Mod {
                         // 995 = I/O abort due to thread abort or application shutdown.
                         if (e.ErrorCode != 500 &&
                             e.ErrorCode != 995) {
-                            Logger.Log(LogLevel.Error, "debugrc", $"DebugRC failed listening ({e.ErrorCode}): {e}");
+                            Logger.Error("debugrc", $"DebugRC failed listening ({e.ErrorCode}): {e}");
                         }
                     } catch (Exception e) {
-                        Logger.Log(LogLevel.Error, "debugrc", $"DebugRC failed listening: {e}");
+                        Logger.Error("debugrc", $"DebugRC failed listening: {e}");
                     }
                 });
             }
@@ -93,7 +93,7 @@ namespace Celeste.Mod {
             }
 
             private static void HandleRequest(HttpListenerContext c) {
-                Logger.Log(LogLevel.Verbose, "debugrc", $"Requested: {c.Request.RawUrl}");
+                Logger.Verbose("debugrc", $"Requested: {c.Request.RawUrl}");
 
                 string url = c.Request.RawUrl;
                 int indexOfSplit = url.IndexOf('?');

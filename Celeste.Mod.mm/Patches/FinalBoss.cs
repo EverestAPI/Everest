@@ -41,7 +41,7 @@ namespace Celeste {
         private void PushPlayer(Player player) {
             // ensure we are not hitting the last node
             if (nodeIndex >= nodes.Length) {
-                Logger.Log(LogLevel.Warn, "FinalBoss",
+                Logger.Warn("FinalBoss",
                     "FinalBoss entity was hit on its last node, please add an additional node outside of the current room to ensure the player never hits it.");
                 patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_bosslastnodehit");
             } else {

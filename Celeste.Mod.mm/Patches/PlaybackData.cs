@@ -25,12 +25,12 @@ namespace Celeste {
                     throw new InvalidDataException("String longer than 1024 characters!");
                 }
 
-                Logger.Log(LogLevel.Verbose, "PlaybackData.ImportVerbose", $"{info} = {value}");
+                Logger.Verbose("PlaybackData.ImportVerbose", $"{info} = {value}");
                 err = false;
                 return value;
             } finally {
                 if (err)
-                    Logger.Log(LogLevel.Verbose, "PlaybackData.ImportVerbose", $"{info} ERROR");
+                    Logger.Verbose("PlaybackData.ImportVerbose", $"{info} ERROR");
             }
         }
 
@@ -81,7 +81,7 @@ namespace Celeste {
                 try {
                     return ImportVerbose(buffer);
                 } catch (Exception e) {
-                    e.LogDetailed();
+                    Logger.LogDetailed(e);
                     return null;
                 }
             }
@@ -95,7 +95,7 @@ namespace Celeste {
             // load vanilla tutorials
             foreach (string path in Directory.GetFiles(Path.Combine(Engine.ContentDirectory, "Tutorials"))) {
                 string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-                Logger.Log(LogLevel.Verbose, "PlaybackData", $"Loading vanilla tutorial: {fileNameWithoutExtension}");
+                Logger.Verbose("PlaybackData", $"Loading vanilla tutorial: {fileNameWithoutExtension}");
 
                 List<Player.ChaserState> tutorial = Import(File.ReadAllBytes(path));
                 if (tutorial != null)
@@ -121,7 +121,7 @@ namespace Celeste {
                         tutorialPath = tutorialPath.Substring("Tutorials/".Length);
 
                     // load tutorial.
-                    Logger.Log(LogLevel.Verbose, "PlaybackData", $"Loading tutorial: {tutorialPath}");
+                    Logger.Verbose("PlaybackData", $"Loading tutorial: {tutorialPath}");
                     List<Player.ChaserState> tutorial = Import(child.Data);
                     if (tutorial != null)
                         Tutorials[tutorialPath] = tutorial;

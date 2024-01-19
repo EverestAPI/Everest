@@ -55,15 +55,15 @@ namespace Celeste.Mod {
                                 // Remap Celeste.Mod.mm.dll to the Celeste executable
                                 relinkedPath = typeof(Celeste).Assembly.Location;
                             else {
-                                Logger.Log(LogLevel.Warn, "relinker", $"Found unexpected mod assembly {name}!");
+                                Logger.Warn("relinker", $"Found unexpected mod assembly {name}!");
 
                                 // Remap XYZ.mm.dll to XYZ.dll, if it exists
                                 relinkedPath = name.Substring(0, modAsmName.Length - 3);
                                 string pathRelinked = Path.Combine(PathGame, relinkedPath + ".dll");    
                                 if (File.Exists(pathRelinked))
-                                    Logger.Log(LogLevel.Info, "relinker", $"-> remapping to {Path.GetFileName(pathRelinked)}");
+                                    Logger.Info("relinker", $"-> remapping to {Path.GetFileName(pathRelinked)}");
                                 else {
-                                    Logger.Log(LogLevel.Info, "relinker", $"-> couldn't remap, ignoring...");
+                                    Logger.Info("relinker", $"-> couldn't remap, ignoring...");
                                     continue;
                                 }
                             }
@@ -188,14 +188,14 @@ namespace Celeste.Mod {
                             if (tmpOutPath == null)
                                 File.WriteAllLines(cacheChecksumPath, checksums);
                         } catch (Exception e) {
-                            Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta} - {asmname}");
+                            Logger.Warn("relinker", $"Failed relinking {meta} - {asmname}");
                             e.LogDetailed();
                             return null;
                         }
                     } else
                         asm = cacheAsm;
 
-                    Logger.Log(LogLevel.Verbose, "relinker", $"Loading assembly for {meta} - {asmname} - {asm.FullName}");
+                    Logger.Verbose("relinker", $"Loading assembly for {meta} - {asmname} - {asm.FullName}");
                     return asm;
                 }
             }
@@ -220,13 +220,13 @@ namespace Celeste.Mod {
                 if (!ChecksumsEqual(curChecksums, File.ReadAllLines(cacheChecksumsPath)))
                     return null;
                 
-                Logger.Log(LogLevel.Verbose, "relinker", $"Loading cached assembly for {meta} - {asmName}");
+                Logger.Verbose("relinker", $"Loading cached assembly for {meta} - {asmName}");
 
                 // Try to load the assembly and the module definition
                 try {
                     return meta.AssemblyContext.LoadRelinkedAssembly(cachePath);
                 } catch (Exception e) {
-                    Logger.Log(LogLevel.Warn, "relinker", $"Failed loading cached assembly for {meta} - {asmName}");
+                    Logger.Warn("relinker", $"Failed loading cached assembly for {meta} - {asmName}");
                     e.LogDetailed();
                     return null;
                 }
@@ -238,7 +238,7 @@ namespace Celeste.Mod {
                 // Check if the assembly name is on the blacklist
                 AssemblyName inAsmName = AssemblyName.GetAssemblyName(inPath);
                 if (EverestModuleAssemblyContext.AssemblyLoadBlackList.Contains(inAsmName.Name, StringComparer.OrdinalIgnoreCase)) {
-                    Logger.Log(LogLevel.Warn, "relinker", $"Attempted load of blacklisted assembly {meta} - {inAsmName}");
+                    Logger.Warn("relinker", $"Attempted load of blacklisted assembly {meta} - {inAsmName}");
                     return null;
                 }
 
@@ -303,7 +303,7 @@ namespace Celeste.Mod {
                             modder.WriterParameters.WriteSymbols = false;
                             modder.Write();
                         } catch (Exception e) when (!temporaryASM) {
-                            Logger.Log(LogLevel.Warn, "relinker", "Couldn't write to intended output path - falling back to temporary file...");
+                            Logger.Warn("relinker", "Couldn't write to intended output path - falling back to temporary file...");
                             e.LogDetailed();
 
                             // Try writing to a temporary file
@@ -328,7 +328,7 @@ namespace Celeste.Mod {
                 try {
                     return meta.AssemblyContext.LoadRelinkedAssembly(outPath);
                 } catch (Exception e) {
-                    Logger.Log(LogLevel.Warn, "relinker", $"Failed loading relinked assembly {meta} - {asmname}");
+                    Logger.Warn("relinker", $"Failed loading relinked assembly {meta} - {asmname}");
                     e.LogDetailed();
                     return null;
                 }

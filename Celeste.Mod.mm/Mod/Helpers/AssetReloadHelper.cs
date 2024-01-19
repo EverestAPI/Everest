@@ -1,4 +1,4 @@
-﻿using Celeste.Mod.Helpers;
+using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -49,7 +49,7 @@ namespace Celeste.Mod {
         public static Task Do(string text, Func<bool, Task> action, bool silent = false, bool useWorkerThread = true) {
             // Check if the crash handler is currently active
             if (CriticalErrorHandler.CurrentHandler != null) {
-                Logger.Log(LogLevel.Warn, "reload", $"Delaying reload action until critical error handler is closed: {text}");
+                Logger.Warn("reload", $"Delaying reload action until critical error handler is closed: {text}");
                 return DelayReloadUntilAfterCrash(silent, text, action, useWorkerThread);
             }
 
@@ -60,7 +60,7 @@ namespace Celeste.Mod {
                 // Check if this thread is a loading thread, and as such allowed to silently reload
                 string name = Thread.CurrentThread.Name ?? "<null>";
                 if (!SilentThreadList.Contains(name)) {
-                    Logger.Log(LogLevel.Warn, "reload", $"Tried to silently reload on non-whitelisted thread {name}: {text}");
+                    Logger.Warn("reload", $"Tried to silently reload on non-whitelisted thread {name}: {text}");
                     silent = false;
                 }
             }
@@ -71,13 +71,13 @@ namespace Celeste.Mod {
                     // Grab the reload semaphore to ensure that there are no two simultaneous reloads
                     await ReloadSemaphore.WaitAsync();
                     try {
-                        Logger.Log(LogLevel.Verbose, "reload", $"Starting execution of silent reload action: {text}");
+                        Logger.Verbose("reload", $"Starting execution of silent reload action: {text}");
                         Everest.Events.AssetReload.BeforeReload(true);
 
                         await action(true);
 
                         Everest.Events.AssetReload.AfterReload(true);
-                        Logger.Log(LogLevel.Verbose, "reload", $"Finished execution of silent reload action: {text}");
+                        Logger.Verbose("reload", $"Finished execution of silent reload action: {text}");
                     } finally {
                         ReloadSemaphore.Release();
                     }
@@ -126,7 +126,7 @@ namespace Celeste.Mod {
                         return task;
                     }));
 
-                    Logger.Log(LogLevel.Verbose, "reload", $"Queued non-silent reload action: {text}");
+                    Logger.Verbose("reload", $"Queued non-silent reload action: {text}");
 
                     return complSrc.Task.Unwrap();
                 }).Unwrap();
@@ -156,7 +156,7 @@ namespace Celeste.Mod {
             // As such we can't immediately execute the callbacks, which *might* break some caller code
             // Log a warning and hope it didn't depend on us instantly executing ._.
             if (silent && MainThreadHelper.IsMainThread)
-                Logger.Log(LogLevel.Warn, "reload", $" - can't immediately execute the action silently because we are on the main thread; this might break caller logic!");
+                Logger.Warn("reload", $" - can't immediately execute the action silently because we are on the main thread; this might break caller logic!");
 
             // Asynchronously wait for the crash handler to close, then run the action
             TaskCompletionSource<Task> complSrc = new TaskCompletionSource<Task>();
@@ -200,7 +200,7 @@ namespace Celeste.Mod {
                 if (lvl == null)
                     return Task.CompletedTask;
 
-                Logger.Log(LogLevel.Info, "reload", "Starting level reload...");
+                Logger.Info("reload", "Starting level reload...");
 
                 Everest.Events.AssetReload.ReloadLevel(lvl);
 
@@ -250,7 +250,7 @@ namespace Celeste.Mod {
                     } catch (Exception ex) {
                         string sid = lvl.Session?.Area.GetSID() ?? "NULL";
 
-                        Logger.Log(LogLevel.Warn, "reload", $"Failed reloading level '{sid}':");
+                        Logger.Warn("reload", $"Failed reloading level '{sid}':");
                         Logger.LogDetailed(ex, "reload");
 
                         // Open an error postcard
@@ -347,7 +347,7 @@ namespace Celeste.Mod {
 
                 Everest.Events.AssetReload.BeforeReload(false);
 
-                Logger.Log(LogLevel.Verbose, "reload", "Started non-silent reload; switched to reload helper scene");
+                Logger.Verbose("reload", "Started non-silent reload; switched to reload helper scene");
                 return helper;
             } catch {
                 ReloadSemaphore.Release();
@@ -373,7 +373,7 @@ namespace Celeste.Mod {
 
                 Everest.Events.AssetReload.AfterReload(false);
 
-                Logger.Log(LogLevel.Verbose, "reload", $"Finished non-silent reload; switched back to scene {Engine.Scene}");
+                Logger.Verbose("reload", $"Finished non-silent reload; switched back to scene {Engine.Scene}");
             } finally {
                 // Dispose the helper and release the reload semaphore
                 helper.Dispose();
@@ -422,7 +422,7 @@ namespace Celeste.Mod {
             // End will never be called by us, as we bypass regular scene transitions
             // If its still called this means that an external source initiated a scene transition
             // As such cancel the reload (this is a bad idea; the initiator should had a *real* good reason for doing this)
-            Logger.Log(LogLevel.Warn, "reload", "Cancelling reload as an external source initiated a scene transition - THIS IS A BAD IDEA, THINGS MIGHT BREAK");
+            Logger.Warn("reload", "Cancelling reload as an external source initiated a scene transition - THIS IS A BAD IDEA, THINGS MIGHT BREAK");
 
             if (Engine.OverloadGameLoop == Update)
                 Engine.OverloadGameLoop = ReturnToGameLoop;
@@ -451,7 +451,7 @@ namespace Celeste.Mod {
             while (curTask?.IsCompleted ?? true) {
                 // Check if a reload task failed
                 if ((curTask?.IsFaulted ?? false) && curTask?.Exception is AggregateException ex) {
-                    Logger.Log(LogLevel.Error, "reload", $"Error while executing reload task '{curTaskText}':");
+                    Logger.Error("reload", $"Error while executing reload task '{curTaskText}':");
                     Logger.LogDetailed(ex, "reload");
 
                     // Trigger a crash screen
@@ -463,7 +463,7 @@ namespace Celeste.Mod {
                 if (!taskQueue.TryDequeue(out var newTask)) {
                     // There are no new tasks
                     if (curTask != null)
-                        Logger.Log(LogLevel.Verbose, "reload", $"Finished reload task '{curTaskText}'");
+                        Logger.Verbose("reload", $"Finished reload task '{curTaskText}'");
 
                     curTask = null;
                     break;
@@ -471,9 +471,9 @@ namespace Celeste.Mod {
 
                 // Switch to the new task
                 if (curTask != null)
-                    Logger.Log(LogLevel.Verbose, "reload", $"Finished reload task '{curTaskText}'; moving onto task '{newTask.text}'");
+                    Logger.Verbose("reload", $"Finished reload task '{curTaskText}'; moving onto task '{newTask.text}'");
                 else
-                    Logger.Log(LogLevel.Verbose, "reload", $"Starting reload task '{newTask.text}'");
+                    Logger.Verbose("reload", $"Starting reload task '{newTask.text}'");
 
                 curTask = newTask.task();
                 curTaskText = newTask.text;
@@ -488,7 +488,7 @@ namespace Celeste.Mod {
                 outTransition = true;
                 transitionTimer = 0;
             } else if (outTransition && (curTask != null || workerTaskScheduler.HasWork)) {
-                Logger.Log(LogLevel.Info, "reload", "A new reload task was enqueued during the out transition, restarting...");
+                Logger.Info("reload", "A new reload task was enqueued during the out transition, restarting...");
                 outTransition = false;
                 transitionTimer = TimeIn * (1 - transitionTimer / TimeOut);
             }
@@ -572,7 +572,7 @@ namespace Celeste.Mod {
                 scene.AfterRender();
                 graphicsDev.GetBackBufferData<Color>(engineViewport.Bounds, backbufData, 0, backbufData.Length);
             } catch (Exception ex) {
-                Logger.Log(LogLevel.Warn, "reload", $"Failed to render original scene for reload snapshot:");
+                Logger.Warn("reload", $"Failed to render original scene for reload snapshot:");
                 Logger.LogDetailed(ex, "reload");
             } finally {
                 graphicsDev.SetRenderTarget(null);
@@ -657,7 +657,7 @@ namespace Celeste.Mod {
                     // Whoops, we weren't ready to draw text yet...
                 }
             } catch (Exception ex) {
-                Logger.Log(LogLevel.Warn, "reload", $"Failed to draw reload scene contents:");
+                Logger.Warn("reload", $"Failed to draw reload scene contents:");
                 Logger.LogDetailed(ex, "reload");
             } finally {
                 Draw.SpriteBatch.End();

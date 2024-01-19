@@ -157,7 +157,7 @@ namespace Celeste {
                     if (atlas.Has(img)) {
                         Images.Add(atlas[img]);
                     } else {
-                        Logger.Log(LogLevel.Warn, "Atlas", $"Requested CompleteScreen texture that does not exist: {atlas.DataPath.Substring(17)}/{img}");
+                        Logger.Warn("Atlas", $"Requested CompleteScreen texture that does not exist: {atlas.DataPath.Substring(17)}/{img}");
                         Images.Add(null);
                     }
                 }

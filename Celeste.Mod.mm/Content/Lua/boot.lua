@@ -614,7 +614,7 @@ local function init(_preload, _vfs, _hook)
     bindingFlagsAll = luanet.enum(luanet.import_type("System.Reflection.BindingFlags"), "Public,NonPublic,Instance,Static")
 
     local cmod = require("cs.celeste.mod")
-    cmod.logger.log(cmod.logLevel.info, "Everest.LuaBoot", "Lua ready.")
+    cmod.logger.info("Everest.LuaBoot", "Lua ready.")
 
     --[[
     for k, v in pairs(cs) do

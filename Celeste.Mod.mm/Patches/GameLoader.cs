@@ -171,7 +171,7 @@ namespace Celeste {
             if (previousVersion < new Version(1, 2109, 0)) {
                 // user just upgraded: create mod save data backups.
                 // (this is very similar to OverworldLoader.CheckVariantsPostcardAtLaunch)
-                Logger.Log(LogLevel.Verbose, "core", $"User just upgraded from version {previousVersion}: creating mod save data backups.");
+                Logger.Verbose("core", $"User just upgraded from version {previousVersion}: creating mod save data backups.");
 
                 for (int i = 0; i < 3; i++) { // only the first 3 saves really matter.
                     if (!UserIO.Exists(SaveData.GetFilename(i))) {

@@ -29,7 +29,7 @@ namespace Celeste.Mod {
                     try {
                         deleg(handler);
                     } catch (Exception ex) {
-                        Logger.Log(LogLevel.Error, "crit-error-handler", $"Error invoking critical error event handler {deleg.Method}:");
+                        Logger.Error("crit-error-handler", $"Error invoking critical error event handler {deleg.Method}:");
                         Logger.LogDetailed(ex, "crit-error-handler");
                     }
                 }

@@ -359,7 +359,7 @@ namespace Celeste {
                 ModSaveData modSaveData = UserIO.Load<ModSaveData>(GetFilename(FileSlot) + "-modsavedata");
                 if (modSaveData != null) {
                     modSaveData.CopyToCelesteSaveData(this);
-                    Logger.Log(LogLevel.Warn, "SaveData", $"{LevelSets.Count} level set(s) were restored from mod backup for save slot {FileSlot}");
+                    Logger.Warn("SaveData", $"{LevelSets.Count} level set(s) were restored from mod backup for save slot {FileSlot}");
                 }
             }
 

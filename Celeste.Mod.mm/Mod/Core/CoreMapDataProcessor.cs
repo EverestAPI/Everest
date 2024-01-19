@@ -101,7 +101,7 @@ namespace Celeste.Mod.Core {
                             for (int i = 0; i <= MaximumBerryOrderPerCheckpoint[checkpoint]; i++) {
                                 if (!placedBerries.TryGetValue(i, out BinaryPacker.Element placedBerry)) {
                                     if (gaps == 0) {
-                                        Logger.Log(LogLevel.Warn, "core", $"Gap in berry order in checkpoint {checkpoint} of map {Mode.Path}. Reassigning berry order.");
+                                        Logger.Warn("core", $"Gap in berry order in checkpoint {checkpoint} of map {Mode.Path}. Reassigning berry order.");
                                     }
                                     gaps++;
                                 } else {
@@ -278,7 +278,7 @@ namespace Celeste.Mod.Core {
                                 MaximumBerryOrderPerCheckpoint[checkpoint] = -1;
                             }
                             if (PlacedBerriesPerCheckpoint[checkpoint].ContainsKey(order)) {
-                                Logger.Log(LogLevel.Warn, "core", $"Duplicate berry order {order} in checkpoint {checkpoint} of map {Mode.Path}. Reassigning berry order.");
+                                Logger.Warn("core", $"Duplicate berry order {order} in checkpoint {checkpoint} of map {Mode.Path}. Reassigning berry order.");
                                 if (!AutomaticBerriesPerCheckpoint.ContainsKey(checkpoint)) {
                                     AutomaticBerriesPerCheckpoint[checkpoint] = new List<BinaryPacker.Element>();
                                 }

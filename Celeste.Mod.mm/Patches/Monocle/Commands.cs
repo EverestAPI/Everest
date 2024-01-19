@@ -60,7 +60,7 @@ namespace Monocle {
                 orig_ProcessMethod(method);
             } catch (Exception e) {
                 // we probably met a method with some missing optional dependency, so just skip it.
-                Logger.Log(LogLevel.Warn, "commands", "Could not look for custom commands in method " + method.Name);
+                Logger.Warn("commands", "Could not look for custom commands in method " + method.Name);
                 Logger.LogDetailed(e);
             }
         }

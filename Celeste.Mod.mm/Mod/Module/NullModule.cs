@@ -21,11 +21,11 @@ namespace Celeste.Mod {
         }
 
         public override void LogRegistration() {
-            Logger.Log(LogLevel.Info, "core", $"Non-code module {Metadata} registered.");
+            Logger.Info("core", $"Non-code module {Metadata} registered.");
         }
         
         public override void LogUnregistration() {
-            Logger.Log(LogLevel.Info, "core", $"Non-code module {Metadata} unregistered.");
+            Logger.Info("core", $"Non-code module {Metadata} unregistered.");
         }
 
     }

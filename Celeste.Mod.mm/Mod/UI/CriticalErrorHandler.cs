@@ -49,7 +49,7 @@ namespace Celeste.Mod.UI {
                 Debugger.Break();
             }
 
-            Logger.Log(LogLevel.Error, "crit-error-handler", ">>>>>>>>>>>>>>> ENCOUNTERED A CRITICAL ERROR <<<<<<<<<<<<<<<");
+            Logger.Error("crit-error-handler", ">>>>>>>>>>>>>>> ENCOUNTERED A CRITICAL ERROR <<<<<<<<<<<<<<<");
             Logger.LogDetailed(error.SourceException, "crit-error-handler");
 
             // If there's no error handler yet, create one
@@ -92,7 +92,7 @@ namespace Celeste.Mod.UI {
                 try {
                     Celeste.Scene?.End();
                 } catch (Exception ex) {
-                    Logger.Log(LogLevel.Error, "crit-error-handler", "Error executing scene End function on immediate scene switch:");
+                    Logger.Error("crit-error-handler", "Error executing scene End function on immediate scene switch:");
                     Logger.LogDetailed(ex, "crit-error-handler");
                 }
 
@@ -101,7 +101,7 @@ namespace Celeste.Mod.UI {
                 try {
                     Celeste.Scene?.Begin();
                 } catch (Exception ex) {
-                    Logger.Log(LogLevel.Error, "crit-error-handler", "Error executing scene Begin function on immediate scene switch:");
+                    Logger.Error("crit-error-handler", "Error executing scene Begin function on immediate scene switch:");
                     Logger.LogDetailed(ex, "crit-error-handler");
                 }
             }
@@ -143,7 +143,7 @@ namespace Celeste.Mod.UI {
         }
 
         private static void ResetErrorHandler() {
-            Logger.Log(LogLevel.Info, "crit-error-handler", "Resetting critical error handler");
+            Logger.Info("crit-error-handler", "Resetting critical error handler");
             CurrentHandler?.Dispose();
             CurrentHandler?.OnClose?.Invoke();
             CurrentHandler = null;
@@ -230,13 +230,13 @@ namespace Celeste.Mod.UI {
                 writer.WriteLine();
                 writer.WriteLine($"Crash Exception: {error}");
             } catch (Exception ex) {
-                Logger.Log(LogLevel.Error, "crit-error-handler", "Error backing up log file:");
+                Logger.Error("crit-error-handler", "Error backing up log file:");
                 Logger.LogDetailed(ex, "crit-error-handler");
                 logFileError = $"<error backing up log file: {ex.Message}>";
                 return null;
             }
 
-            Logger.Log(LogLevel.Info, "crit-error-handler", $"Backed up log file to '{backupPath}'");
+            Logger.Info("crit-error-handler", $"Backed up log file to '{backupPath}'");
             logFileError = null;
             return backupPath;
         }
@@ -251,9 +251,9 @@ namespace Celeste.Mod.UI {
                 writer.WriteLine("!!!!!!!!!!!!!!!!!!!! THIS IS NOT THE MAIN CRASH! !!!!!!!!!!!!!!!!!!!!");
                 writer.WriteLine($"Exception: {error}");
 
-                Logger.Log(LogLevel.Info, "crit-error-handler", $"Amended backed up log file '{logFile}' after encountering an additional error after the initial crash");
+                Logger.Info("crit-error-handler", $"Amended backed up log file '{logFile}' after encountering an additional error after the initial crash");
             } catch (Exception ex) {
-                Logger.Log(LogLevel.Error, "crit-error-handler", "Error amending log file:");
+                Logger.Error("crit-error-handler", "Error amending log file:");
                 Logger.LogDetailed(ex, "crit-error-handler");
             }
         }
@@ -311,7 +311,7 @@ namespace Celeste.Mod.UI {
 
             beforeRenderInterceptor = new BeforeRenderInterceptor(BeforeRender);
             Add(new Coroutine(Routine()));
-            Logger.Log(LogLevel.Info, "crit-error-handler", $"Created critical error handler for exception {errorType}: {errorMessage}");
+            Logger.Info("crit-error-handler", $"Created critical error handler for exception {errorType}: {errorMessage}");
         }
 
         public void Dispose() {
@@ -398,7 +398,7 @@ namespace Celeste.Mod.UI {
         };
 
         private bool ExecuteUserChoice(UserChoice choice) {
-            Logger.Log(LogLevel.Info, "crit-error-handler", $"Executing user choice {Enum.GetName<UserChoice>(choice)}");
+            Logger.Info("crit-error-handler", $"Executing user choice {Enum.GetName<UserChoice>(choice)}");
             try {
                 SaveData save = SaveData.Instance;
                 switch (choice) {
@@ -413,7 +413,7 @@ namespace Celeste.Mod.UI {
 
                     case UserChoice.RetryLevel:
                         if (Session == null) {
-                            Logger.Log(LogLevel.Warn, "crit-error-handler", "Can't retry as no session is present!");
+                            Logger.Warn("crit-error-handler", "Can't retry as no session is present!");
                             return false;
                         }
 
@@ -422,7 +422,7 @@ namespace Celeste.Mod.UI {
 
                     case UserChoice.SaveAndQuit:
                         if (Session == null || save == null) {
-                            Logger.Log(LogLevel.Warn, "crit-error-handler", "Can't save-and-quit as either session or save data is not present!");
+                            Logger.Warn("crit-error-handler", "Can't save-and-quit as either session or save data is not present!");
                             return false;
                         }
 
@@ -441,7 +441,7 @@ namespace Celeste.Mod.UI {
                         break;
                 }
             } catch (Exception ex) {
-                Logger.Log(LogLevel.Error, "crit-error-handler", $"Error while executing user choice:");
+                Logger.Error("crit-error-handler", $"Error while executing user choice:");
                 Logger.LogDetailed(ex, "crit-error-handler");
                 AmendLogFile(LogFile, $"Error while executing user choice {Enum.GetName<UserChoice>(choice)}", ex);
                 return false;
@@ -575,7 +575,7 @@ namespace Celeste.Mod.UI {
                         Draw.SpriteBatch.End();
                     }
                 } catch (Exception ex) {
-                    Logger.Log(LogLevel.Error, "crit-error-handler", "Error while rendering player sprite:");
+                    Logger.Error("crit-error-handler", "Error while rendering player sprite:");
                     Logger.LogDetailed(ex, "crit-error-handler");
                     AmendLogFile(LogFile, "Error while rendering player sprite", ex);
                     disablePlayerSprite = true;
@@ -617,7 +617,7 @@ namespace Celeste.Mod.UI {
                         HudRenderer.EndRender();
                     }
                 } catch (Exception ex) {
-                    Logger.Log(LogLevel.Error, "crit-error-handler", "Error while rendering player sprite:");
+                    Logger.Error("crit-error-handler", "Error while rendering player sprite:");
                     Logger.LogDetailed(ex, "crit-error-handler");
                     AmendLogFile(LogFile, "Error while rendering player sprite", ex);
                     disablePlayerSprite = true;

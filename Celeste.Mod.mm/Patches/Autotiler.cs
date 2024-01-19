@@ -66,7 +66,7 @@ namespace Celeste {
             if (data.CustomFills == null && data.ScanWidth == 3 && data.ScanHeight == 3 && !xml.HasChild("define")) // ReadIntoCustomTemplate can handle vanilla templates but meh
                 orig_ReadInto(data, tileset, xml);
             else {
-                Logger.Log(LogLevel.Debug, "Autotiler", $"Reading template for tileset with id '{data.ID}', scan height {data.ScanHeight}, and scan width {data.ScanWidth}.");
+                Logger.Debug("Autotiler", $"Reading template for tileset with id '{data.ID}', scan height {data.ScanHeight}, and scan width {data.ScanWidth}.");
                 ReadIntoCustomTemplate(data, tileset, xml);
             }
 
@@ -91,12 +91,12 @@ namespace Celeste {
                         patch_Tiles tiles;
                         if (text == "center") {
                             if (data.CustomFills != null)
-                                Logger.Log(LogLevel.Warn, "Autotiler", $"\"Center\" tiles for tileset with id '{data.ID}' will not be used if custom fills are present.");
+                                Logger.Warn("Autotiler", $"\"Center\" tiles for tileset with id '{data.ID}' will not be used if custom fills are present.");
 
                             tiles = data.Center;
                         } else if (text == "padding") {
                             if (data.CustomFills != null)
-                                Logger.Log(LogLevel.Warn, "Autotiler", $"\"Padding\" tiles for tileset with id '{data.ID}' will not be used if custom fills are present.");
+                                Logger.Warn("Autotiler", $"\"Padding\" tiles for tileset with id '{data.ID}' will not be used if custom fills are present.");
 
                             tiles = data.Padded;
                         } else if (text.StartsWith("fill")) {
@@ -245,7 +245,7 @@ namespace Celeste {
 
             // Satisfies error handling for the orig_ method too.
             if (!lookup.TryGetValue(tile, out patch_TerrainType terrainType)) {
-                Logger.Log(LogLevel.Error, "Autotiler", $"Undefined tile id '{tile}' at ({x}, {y})");
+                Logger.Error("Autotiler", $"Undefined tile id '{tile}' at ({x}, {y})");
                 return new patch_Tiles {
                     Textures = { ((patch_Atlas) GFX.Game).GetFallback() },
                 };

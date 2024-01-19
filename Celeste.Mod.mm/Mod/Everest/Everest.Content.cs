@@ -180,8 +180,8 @@ namespace Celeste.Mod {
 
                 watcher.EnableRaisingEvents = true;
             } catch (Exception e) {
-                Logger.Log(LogLevel.Warn, "content", $"Failed watching folder: {path}");
-                e.LogDetailed();
+                Logger.Warn("content", $"Failed watching folder: {path}");
+                Logger.LogDetailed(e);
                 watcher?.Dispose();
                 watcher = null;
             }
@@ -206,7 +206,7 @@ namespace Celeste.Mod {
                 lastIndexOfSlash >= root.Length && // Make sure to not skip crawling in hidden mods.
                 dir.Length > lastIndexOfSlash + 1 &&
                 dir[lastIndexOfSlash + 1] == '.') {
-                // Logger.Log(LogLevel.Verbose, "content", $"Skipped crawling hidden file or directory {dir.Substring(root.Length + 1)}");
+                // Logger.Verbose("content", $"Skipped crawling hidden file or directory {dir.Substring(root.Length + 1)}");
                 return;
             }
 
@@ -282,12 +282,12 @@ namespace Celeste.Mod {
             if (e.ChangeType == WatcherChangeTypes.Changed && Directory.Exists(e.FullPath))
                 return;
 
-            Logger.Log(LogLevel.Verbose, "content", $"File updated: {e.FullPath} - {e.ChangeType}");
+            Logger.Verbose("content", $"File updated: {e.FullPath} - {e.ChangeType}");
             QueuedTaskHelper.Do(e.FullPath, () => Update(e.FullPath, e.FullPath));
         }
 
         private void FileRenamed(object source, RenamedEventArgs e) {
-            Logger.Log(LogLevel.Verbose, "content", $"File renamed: {e.OldFullPath} - {e.FullPath}");
+            Logger.Verbose("content", $"File renamed: {e.OldFullPath} - {e.FullPath}");
             QueuedTaskHelper.Do(Tuple.Create(e.OldFullPath, e.FullPath), () => Update(e.OldFullPath, e.FullPath));
         }
 
@@ -663,7 +663,7 @@ namespace Celeste.Mod {
 
                     } else {
                         if (Map.TryGetValue(path, out ModAsset existing) && existing != null && existing.Source != metadata.Source && !existing.Type.IsSubclassOf(typeof(AssetTypeNonConflict))) {
-                            Logger.Log(LogLevel.Warn, "content", $"CONFLICT for asset path {path} ({existing?.Source?.Name ?? "???"} vs {metadata?.Source?.Name ?? "???"})");
+                            Logger.Warn("content", $"CONFLICT for asset path {path} ({existing?.Source?.Name ?? "???"} vs {metadata?.Source?.Name ?? "???"})");
                         }
 
                         Map[path] = metadata;
@@ -954,7 +954,7 @@ namespace Celeste.Mod {
 
                 if (_ContentLoaded) {
                     // We're late-loading this mod and thus need to manually ingest new assets.
-                    Logger.Log(LogLevel.Verbose, "content", $"Late ingest via update for {meta.Name}");
+                    Logger.Verbose("content", $"Late ingest via update for {meta.Name}");
 
                     Stopwatch loadTimerPrev = Celeste.LoadTimer; // Trick AssetReloadHelper into insta-running callbacks.
                     Stopwatch loadTimer = Stopwatch.StartNew();
@@ -1024,7 +1024,7 @@ namespace Celeste.Mod {
                     if (Emoji.IsInitialized()) {
                         if (refreshEmojis(mapping)) {
                             MainThreadHelper.Schedule(() => {
-                                Logger.Log(LogLevel.Verbose, "content", "Reloading fonts after late emoji registration");
+                                Logger.Verbose("content", "Reloading fonts after late emoji registration");
                                 Fonts.Reload();
                             });
                         }
@@ -1055,7 +1055,7 @@ namespace Celeste.Mod {
                     }
                 } else if (mapping.PathVirtual.StartsWith("Graphics/Atlases/Gui/emoji/")) {
                     string emojiName = mapping.PathVirtual.Substring(27);
-                    Logger.Log(LogLevel.Verbose, "content", $"Late registering emoji: {emojiName}");
+                    Logger.Verbose("content", $"Late registering emoji: {emojiName}");
                     Emoji.Register(emojiName, GFX.Gui["emoji/" + emojiName]);
                     return true;
                 }
@@ -1092,7 +1092,7 @@ namespace Celeste.Mod {
 
                 // TODO: Find how to differentiate between Packer and PackerNoAtlas
                 foreach (string file in Directory.EnumerateFiles(Path.Combine(PathContentOrig, "Graphics", "Atlases"), "*.meta", SearchOption.AllDirectories)) {
-                    Logger.Log(LogLevel.Verbose, "dump-all-atlas-meta", "file: " + file);
+                    Logger.Verbose("dump-all-atlas-meta", "file: " + file);
                     // THIS IS HORRIBLE.
                     try {
                         Atlas.FromAtlas(file.Substring(0, file.Length - 5), Atlas.AtlasDataFormat.Packer).Dispose();
@@ -1119,7 +1119,7 @@ namespace Celeste.Mod {
                 string pathDump = Path.Combine(PathDUMP, assetName);
                 Directory.CreateDirectory(Path.GetDirectoryName(pathDump));
 
-                Logger.Log(LogLevel.Verbose, "dump", $"{assetNameFull} {asset.GetType().FullName}");
+                Logger.Verbose("dump", $"{assetNameFull} {asset.GetType().FullName}");
 
                 if (asset is IMeta) {
                     if (!File.Exists(pathDump + ".meta.yaml"))

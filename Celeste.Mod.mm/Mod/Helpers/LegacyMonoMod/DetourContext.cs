@@ -42,7 +42,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
             if (wcPrio != 0) {
                 if (prio != 0)
-                    Logger.Log(LogLevel.Warn, "legacy-monomod", $"Discarding DetourConfig '{id}' priority {prio} in favor of Before/After wildcard emulation priority {wcPrio}");
+                    Logger.Warn("legacy-monomod", $"Discarding DetourConfig '{id}' priority {prio} in favor of Before/After wildcard emulation priority {wcPrio}");
 
                 prio = wcPrio;
             }

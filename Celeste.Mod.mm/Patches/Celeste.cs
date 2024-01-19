@@ -181,9 +181,11 @@ namespace Celeste {
 
             using (Stream fileStream = new FileStream(logfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
             using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
-            using (LogWriter logWriter = new LogWriter(Console.Out, Console.Error, fileWriter))
+            using (LogWriter logWriter = new LogWriter(Console.Out, Console.Error, fileWriter)) {
+                Logger.outWriter = logWriter.STDOUT.Stream;
+                Logger.logWriter = logWriter.File;
                 MainInner(args);
-
+            }
         }
 
         private static void MainInner(string[] args) {
@@ -344,12 +346,12 @@ https://discord.gg/6qjaePQ");
                 orig_ctor_Celeste();
             }
 
-            Logger.Log(LogLevel.Info, "boot", $"Active compatibility mode: {Everest.CompatibilityMode}");
+            Logger.Info("boot", $"Active compatibility mode: {Everest.CompatibilityMode}");
 
             try {
                 Everest.Boot();
             } catch (Exception e) {
-                e.LogDetailed();
+                Logger.LogDetailed(e);
                 /*
                 ErrorLog.Write(e);
                 ErrorLog.Open();

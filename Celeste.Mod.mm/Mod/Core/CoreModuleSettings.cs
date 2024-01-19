@@ -4,6 +4,7 @@ using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod.Core {
@@ -263,6 +264,19 @@ namespace Celeste.Mod.Core {
 
                 // rebuild the main menu to make sure we show/hide the yaml error notice.
                 ((patch_OuiMainMenu) (Engine.Scene as Overworld)?.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
+            }
+        }
+
+        private bool _ColorizedLogging = true;
+        [SettingSubText("MODOPTIONS_COREMODULE_COLORIZEDLOGGING_DESC")]
+        [SettingInGame(false)]
+        public bool ColorizedLogging { 
+            get => _ColorizedLogging;
+            set {
+                if (value && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Logger.TryEnableWindowsVTSupport()) {
+                    Logger.Error("core", "Failed to enalbe Windows VT support!");
+                }
+                _ColorizedLogging = value;
             }
         }
 

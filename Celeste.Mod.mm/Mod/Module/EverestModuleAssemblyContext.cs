@@ -203,7 +203,7 @@ namespace Celeste.Mod {
                     if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory) && ModuleMeta.SupportsCodeReload && CoreModule.Settings.CodeReload)
                         RegisterCodeReloadWatcher(Path.GetFullPath(Path.GetDirectoryName(path)));
 
-                    Logger.Log(LogLevel.Info, "modasmctx", $"Loaded assembly {asm.FullName} from module '{ModuleMeta.Name}' path '{path}'");
+                    Logger.Info("modasmctx", $"Loaded assembly {asm.FullName} from module '{ModuleMeta.Name}' path '{path}'");
                 }
 
                 return asm;
@@ -230,15 +230,15 @@ namespace Celeste.Mod {
                     }
 
                     // Reload the assembly context
-                    Logger.Log(LogLevel.Info, "modasmctx", $"Reloading mod assembly context because of changed assembly: {e.FullPath}");
+                    Logger.Info("modasmctx", $"Reloading mod assembly context because of changed assembly: {e.FullPath}");
                     Everest.Loader.ReloadMod(ModuleMeta);
                 };
                 watcher.EnableRaisingEvents = true;
 
                 _AssemblyReloadWatchers.Add(asmDir, watcher);
-                Logger.Log(LogLevel.Verbose, "modasmctx", $"Started watching assembly folder: {asmDir}");
+                Logger.Verbose("modasmctx", $"Started watching assembly folder: {asmDir}");
             } catch (Exception e) {
-                Logger.Log(LogLevel.Warn, "modasmctx", $"Failed watching assembly folder: {asmDir}");
+                Logger.Warn("modasmctx", $"Failed watching assembly folder: {asmDir}");
                 e.LogDetailed();
                 watcher?.Dispose();
             }
@@ -274,7 +274,7 @@ namespace Celeste.Mod {
                     _LocalLoadCache.TryAdd(asmName, asm);
                     _AssemblyResolveCache.TryAdd(asmName, mod.Assembly);
                 } else
-                    Logger.Log(LogLevel.Warn, "modasmctx", $"Assembly name conflict for name '{asmName}' for module '{ModuleMeta.Name}'!");
+                    Logger.Warn("modasmctx", $"Assembly name conflict for name '{asmName}' for module '{ModuleMeta.Name}'!");
 
                 return asm;
             } catch {
@@ -293,7 +293,7 @@ namespace Celeste.Mod {
             Assembly asm = LoadLocal(asmName) ?? LoadGlobal(asmName);
 
             if (asm == null && (_ActiveLocalLoadContexts?.Count ?? 0) == 0)
-                Logger.Log(LogLevel.Warn, "modasmctx", $"Failed to load assembly '{asmName.FullName}' for module '{ModuleMeta.Name}'");
+                Logger.Warn("modasmctx", $"Failed to load assembly '{asmName.FullName}' for module '{ModuleMeta.Name}'");
 
             _AssemblyLoadCache.TryAdd(asmName.Name, asm);
             return asm;
@@ -433,7 +433,7 @@ namespace Celeste.Mod {
             // If yes add its context as a dependency
             foreach (EverestModule module in Everest.Modules)
                 if (module.Metadata.AssemblyContext?.LoadFromThisMod(asmName) is Assembly moduleAsm) {
-                    Logger.Log(LogLevel.Info, "modasmctx", $"Loading assembly '{asmName.FullName}' from non-dependency '{module.Metadata.Name}' for module '{ModuleMeta.Name}'");
+                    Logger.Info("modasmctx", $"Loading assembly '{asmName.FullName}' from non-dependency '{module.Metadata.Name}' for module '{ModuleMeta.Name}'");
                     DependencyContexts.Add(module.Metadata.AssemblyContext);
                     ActiveDependencyContexts.Add(module.Metadata.AssemblyContext);
                     return moduleAsm;
@@ -457,7 +457,7 @@ namespace Celeste.Mod {
                     try {
                         globalAsmDef = ModuleDefinition.ReadModule(globalAsm.Location).Assembly;
                     } catch (Exception e) {
-                        Logger.Log(LogLevel.Warn, "modasmctx", $"Failed to resolve global assembly definition '{asmName.FullName}'");
+                        Logger.Warn("modasmctx", $"Failed to resolve global assembly definition '{asmName.FullName}'");
                         e.LogDetailed();
                     }
                 }
@@ -472,7 +472,7 @@ namespace Celeste.Mod {
             try {
                 foreach (EverestModuleAssemblyContext alc in _AllContexts)
                     if (alc.ResolveFromThisMod(asmName) is AssemblyDefinition moduleAsm) {
-                        Logger.Log(LogLevel.Info, "modasmctx", $"Resolving assembly '{asmName.FullName}' in non-dependency '{alc.ModuleMeta.Name}' for module '{ModuleMeta.Name}'");
+                        Logger.Info("modasmctx", $"Resolving assembly '{asmName.FullName}' in non-dependency '{alc.ModuleMeta.Name}' for module '{ModuleMeta.Name}'");
                         DependencyContexts.Add(alc);
                         ActiveDependencyContexts.Add(alc);
                         return moduleAsm;

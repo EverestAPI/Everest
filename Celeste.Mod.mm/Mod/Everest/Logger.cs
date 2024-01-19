@@ -1,12 +1,21 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
+using Celeste.Mod.Core;
+using System.Globalization;
 
 namespace Celeste.Mod {
     public static class Logger {
+
+        // Console.Out will get mirrored to the log file, however we need to write to the log file ourselves,
+        // to avoid including color escape sequences in it.
+        internal static TextWriter outWriter;
+        internal static TextWriter logWriter;
 
         private static Dictionary<string, LogLevel> minimumLevels = new Dictionary<string, LogLevel>();
         private static Dictionary<string, LogLevel> minimumLevelsFromEverestSettings = new Dictionary<string, LogLevel>();
@@ -83,12 +92,49 @@ namespace Celeste.Mod {
         // TODO: Allow displaying mod log in future ImGui UI
 
         /// <summary>
+        /// Log a string to the console and to log.txt, using <see cref="LogLevel.Verbose"/>
+        /// </summary>
+        /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
+        /// <param name="str">The string / message to log.</param>
+        public static void Verbose(string tag, string str)
+            => Log(LogLevel.Verbose, tag, str);
+        /// <summary>
+        /// Log a string to the console and to log.txt, using <see cref="LogLevel.Debug"/>
+        /// </summary>
+        /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
+        /// <param name="str">The string / message to log.</param>
+        public static void Debug(string tag, string str)
+            => Log(LogLevel.Debug, tag, str);
+        /// <summary>
+        /// Log a string to the console and to log.txt, using <see cref="LogLevel.Info"/>
+        /// </summary>
+        /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
+        /// <param name="str">The string / message to log.</param>
+        public static void Info(string tag, string str)
+            => Log(LogLevel.Info, tag, str);
+        /// <summary>
+        /// Log a string to the console and to log.txt, using <see cref="LogLevel.Warn"/>
+        /// </summary>
+        /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
+        /// <param name="str">The string / message to log.</param>
+        public static void Warn(string tag, string str)
+            => Log(LogLevel.Warn, tag, str);
+        /// <summary>
+        /// Log a string to the console and to log.txt, using <see cref="LogLevel.Error"/>
+        /// </summary>
+        /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
+        /// <param name="str">The string / message to log.</param>
+        public static void Error(string tag, string str)
+            => Log(LogLevel.Error, tag, str);
+
+        /// <summary>
         /// Log a string to the console and to log.txt
         /// </summary>
         /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
         /// <param name="str">The string / message to log.</param>
         public static void Log(string tag, string str)
-            => Log(LogLevel.Verbose, tag, str);
+            => Verbose(tag, str);
+
         /// <summary>
         /// Log a string to the console and to log.txt
         /// </summary>
@@ -97,7 +143,19 @@ namespace Celeste.Mod {
         /// <param name="str">The string / message to log.</param>
         public static void Log(LogLevel level, string tag, string str) {
             if (shouldLog(tag, level)) {
-                Console.WriteLine($"({DateTime.Now}) [Everest] [{level.FastToString()}] [{tag}] {str}");
+                if (!CoreModule.Settings.ColorizedLogging) {
+                    Console.WriteLine($"({DateTime.Now}) [Everest] [{level.FastToString()}] [{tag}] {str}");
+                    return;
+                }
+
+                const string colorReset = "\x1b[0m";
+                string colorLevel = level.GetAnsiEscapeCodeForLevel();
+                string colorText = level.GetAnsiEscapeCodeForText();
+
+                string now_str = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+                string level_str = level.FastToString();
+                outWriter.WriteLine($"({now_str}) [Everest] {colorLevel}[{level_str}] [{tag}] {colorText}{str}{colorReset}");
+                logWriter.WriteLine($"({now_str}) [Everest] [{level_str}] [{tag}] {str}");
             }
         }
 
@@ -119,7 +177,16 @@ namespace Celeste.Mod {
         public static void LogDetailed(LogLevel level, string tag, string str) {
             if (shouldLog(tag, level)) {
                 Log(level, tag, str);
-                Console.WriteLine(new StackTrace(1, true).ToString());
+                if (!CoreModule.Settings.ColorizedLogging) {
+                    Console.WriteLine(new StackTrace(1, true).ToString());
+                    return;
+                }
+
+                const string colorReset = "\x1b[0m";
+                string colorText = level.GetAnsiEscapeCodeForText();
+
+                outWriter.WriteLine($"{colorText}{new StackTrace(1, true)}{colorReset}");
+                logWriter.WriteLine(new StackTrace(1, true).ToString());
             }
         }
 
@@ -127,6 +194,11 @@ namespace Celeste.Mod {
         /// Print the exception to the console, including extended loading / reflection data useful for mods.
         /// </summary>
         public static void LogDetailed(/*this*/ Exception e, string tag = null) {
+            if (CoreModule.Settings.ColorizedLogging) {
+                string colorText = LogLevel.Error.GetAnsiEscapeCodeForText();
+                outWriter.Write(colorText);
+            }
+
             if (tag == null) {
                 Console.WriteLine("--------------------------------");
                 Console.WriteLine("Detailed exception log:");
@@ -149,8 +221,45 @@ namespace Celeste.Mod {
                     Console.WriteLine("BadImageFormatException.FileName: " + ((BadImageFormatException) e_).FileName);
                 }
             }
+
+            if (CoreModule.Settings.ColorizedLogging) {
+                const string colorReset = "\x1b[0m";
+                outWriter.Write(colorReset);
+            }
         }
 
+        private const int STD_OUTPUT_HANDLE = -11;
+        private const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004;
+
+        [DllImport("kernel32.dll")]
+		private static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
+
+		[DllImport("kernel32.dll")]
+		private static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
+
+		[DllImport("kernel32.dll", SetLastError = true)]
+		private static extern IntPtr GetStdHandle(int nStdHandle);
+
+        private static bool enabledVTSupport = false;
+        internal static bool TryEnableWindowsVTSupport() {
+            if (enabledVTSupport) return true;
+
+            // Try to enable color support on Windows. Returns whether it was succesful.
+            // Taken from https://github.com/steamcore/TinyLogger/blob/ee4de5369db75b4da259768c7950c2cb53be665d/src/TinyLogger/Console/AnsiSupport.cs#L10-L24
+            var handle = GetStdHandle(STD_OUTPUT_HANDLE);
+
+            if (!GetConsoleMode(handle, out var consoleMode)) {
+                // Could fallback to slow Windows API if console mode can't be accessed, but we just disable colors
+                return false;
+            }
+
+            if ((consoleMode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == 0) {
+                SetConsoleMode(handle, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+                enabledVTSupport = true;
+                return true;
+            }
+            return false;
+        }
     }
     public enum LogLevel {
         Verbose,
@@ -172,6 +281,27 @@ namespace Celeste.Mod {
                 LogLevel.Warn => nameof(LogLevel.Warn),
                 LogLevel.Error => nameof(LogLevel.Error),
                 _ => level.ToString(),
+            };
+        }
+
+        internal static string GetAnsiEscapeCodeForText(this LogLevel level) {
+            return level switch {
+                LogLevel.Verbose => "\x1b[95m",
+                LogLevel.Debug => "\x1b[94m",
+                LogLevel.Info => "",
+                LogLevel.Warn => "\x1b[93m",
+                LogLevel.Error => "\x1b[91m",
+                _ => ""
+            };
+        }
+        internal static string GetAnsiEscapeCodeForLevel(this LogLevel level) {
+            return level switch {
+                LogLevel.Verbose => "\x1b[35m",
+                LogLevel.Debug => "\x1b[34m",
+                LogLevel.Info => "",
+                LogLevel.Warn => "\x1b[33m",
+                LogLevel.Error => "\x1b[31m",
+                _ => ""
             };
         }
     }
