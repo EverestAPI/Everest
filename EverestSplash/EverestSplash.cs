@@ -155,13 +155,14 @@ public class EverestSplashWindow {
                 StreamReader sr = new(ClientPipe);
                 sr.ReadLine(); // Once we read a line, send the stop event (for now)
             } catch (Exception e) {
-                Console.WriteLine(e);
+                Console.Error.WriteLine(e);
                 // We want to exit if a read error occurred, we must not be around when FNA's main loop starts
             }
             SDL.SDL_Event userEvent = new() { // Fake a user event, we don't need anything fancier for now
                 type = SDL.SDL_EventType.SDL_USEREVENT,
             };
             SDL.SDL_PushEvent(ref userEvent); // This is thread safe :)
+            Console.WriteLine("Exiting splash...");
         });
         
         Init(); // Init right away
@@ -387,6 +388,7 @@ public class EverestSplashWindow {
         StreamWriter sw = new(ClientPipe);
         sw.WriteLine("done");
         sw.Flush();
+        Console.WriteLine("Splash done!");
     }
 
     private IntPtr LoadTexture(TextureInfo sprite) {

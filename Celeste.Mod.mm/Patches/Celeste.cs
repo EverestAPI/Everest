@@ -244,13 +244,13 @@ namespace Celeste {
                         splashProcess.StartInfo.RedirectStandardOutput = true;
                         splashProcess.StartInfo.RedirectStandardError = true;
                         splashProcess.OutputDataReceived += (_, data) => {
-                            if (data.Data?.Trim() == "")
+                            if (data.Data == null || data.Data.Trim().TrimEnd('\n', '\r') == "")
                                 return; // Sometimes we may receive nulls or just blank lines, skip those
-                            Console.WriteLine(data.Data);
+                            Logger.Log(LogLevel.Info, "EverestSplash", data.Data);
                         };
                         splashProcess.ErrorDataReceived += (_, data) => {
-                            if (data.Data?.Trim() == "") return;
-                            Console.Error.WriteLine(data.Data);
+                            if (data.Data == null || data.Data.Trim().TrimEnd('\n', '\r') == "") return;
+                            Logger.Log(LogLevel.Error, "EverestSplash", data.Data);
                         };
 
                         splashProcess.Start();
