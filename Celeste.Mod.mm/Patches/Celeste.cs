@@ -20,9 +20,6 @@ using System.Text;
 using System.Reflection;
 using System.Runtime.Versioning;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO.Pipes;
-using System.Threading.Tasks;
 
 namespace Celeste {
     class patch_Celeste : Celeste {
@@ -30,11 +27,7 @@ namespace Celeste {
         // We're effectively in Celeste, but still need to "expose" private fields to our mod.
         private bool firstLoad;
 
-        // EverestSplash related, will be null when that is not loaded
-        private static Process splashProcess;
-        private static NamedPipeServerStream splashPipeServerStream;
-        private static Task splashPipeServerStreamConnection;
-        private static object splashPipeLock;
+        
 
         [PatchCelesteMain]
         public static extern void orig_Main(string[] args);
@@ -190,9 +183,8 @@ namespace Celeste {
 
         private static void MainInner(string[] args) {
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
-            splashPipeLock = new(); // FIXME: this should be statically initialized, but doing so,
-                                                // and in combination with the locks, it creates an invalid program (apparently)
-            // Get the splash up and running asap, currently disabled for macos, for technical issues
+
+            // Get the splash up and running asap
             if (!args.Contains("--disable-splash") && File.Exists(Path.Combine(".", "EverestSplash", "EverestSplash.dll"))) {
                 string targetRenderer = "";
                 for (int i = 0; i < args.Length; i++) { // The splash will use the same renderer as fna
@@ -201,73 +193,7 @@ namespace Celeste {
                     }
                 }
 
-                int currentPid = Environment.ProcessId;
-
-                try {
-                    lock (splashPipeLock) {
-                        splashPipeServerStream = new NamedPipeServerStream("EverestSplash" + currentPid);
-                        splashPipeServerStreamConnection = splashPipeServerStream.WaitForConnectionAsync();
-                    }
-                } catch (IOException e) { // Server address is in use
-                    Logger.Log(LogLevel.Error, "EverestSplash", "Could not start up splash server!, skipping splash");
-                    Logger.LogDetailed(e);
-                    splashPipeServerStreamConnection = null;
-                    if (splashPipeServerStream != null) {
-                        if (splashPipeServerStream.IsConnected) 
-                            splashPipeServerStream.Disconnect();
-
-                        splashPipeServerStream.Dispose();
-                        splashPipeServerStream = null;
-                    }
-                }
-
-                if (splashPipeServerStream != null) { // Only proceed if the server was successful
-                    try {
-                        splashProcess = new Process {
-                            StartInfo = new ProcessStartInfo(Path.Combine(".", "EverestSplash",
-                                    RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                                        ? RuntimeInformation.OSArchitecture == Architecture.X64
-                                            ? "EverestSplash-win64.exe"
-                                            : "EverestSplash-win.exe"
-                                        : RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-                                            ? "EverestSplash-linux"
-                                            : RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
-                                                ? "EverestSplash-osx"
-                                                : throw new Exception("Unknown OS platform")
-                                ),
-                                (targetRenderer != "" ? "--graphics " + targetRenderer : "") +
-                                " " +
-                                "--server-postfix " + currentPid),
-                        };
-
-                        // Required for the logger to pick up the splash stdout as well
-                        splashProcess.StartInfo.RedirectStandardOutput = true;
-                        splashProcess.StartInfo.RedirectStandardError = true;
-                        splashProcess.OutputDataReceived += (_, data) => {
-                            if (data.Data == null || data.Data.Trim().TrimEnd('\n', '\r') == "")
-                                return; // Sometimes we may receive nulls or just blank lines, skip those
-                            Logger.Log(LogLevel.Info, "EverestSplash", data.Data);
-                        };
-                        splashProcess.ErrorDataReceived += (_, data) => {
-                            if (data.Data == null || data.Data.Trim().TrimEnd('\n', '\r') == "") return;
-                            Logger.Log(LogLevel.Error, "EverestSplash", data.Data);
-                        };
-
-                        splashProcess.Start();
-                        splashProcess.BeginOutputReadLine(); // This is required for the event to even be sent
-                        splashProcess.BeginErrorReadLine();
-                    } catch (Exception e) {
-                        Logger.Log(LogLevel.Error, "EverestSplash", "Starting splash failed!");
-                        Logger.LogDetailed(e);
-                        // Destroy the server asap
-                        if (splashPipeServerStream.IsConnected)
-                            splashPipeServerStream.Disconnect();
-                        splashPipeServerStream.Dispose();
-                        splashPipeServerStream = null;
-                        splashPipeServerStreamConnection = null;
-                        splashProcess = null;
-                    }
-                }
+                EverestSplashHandler.RunSplash(targetRenderer);
             }
 
             try {
@@ -423,56 +349,9 @@ https://discord.gg/6qjaePQ");
         }
 
         protected override void BeginRun() {
-            // This is as close as we can get to the showwindow call
             base.BeginRun();
-            lock (splashPipeLock) {
-                if (splashPipeServerStream != null) {
-                    if (!splashPipeServerStreamConnection.IsCompleted) {
-                        Logger.Log(LogLevel.Error, "EverestSplash", "Could not connect to splash");
-                        if (!splashProcess.HasExited) { // if it hangs up, just kill it
-                            splashProcess.Kill();
-                            Logger.Log(LogLevel.Error, "EverestSplash", "Splash was still alive. Killed splash!");
-                        }
-                        return;
-                    }
-
-                    try {
-                        StreamWriter sw = new(splashPipeServerStream);
-                        sw.WriteLine("stop");
-                        sw.Flush();
-                        Thread splashFeedbackThread = new(() => {
-                            try {
-                                StreamReader sr = new(splashPipeServerStream);
-                                // yes, this, inevitably, slows down the everest boot process, but, see EverestSplashWindow.FeedBack
-                                // for more info
-                                sr.ReadLine();
-                            } catch (Exception e) {
-                                Logger.Log(LogLevel.Error, "EverestSplash", "Could not read line!");
-                                Logger.LogDetailed(e);
-                            }
-                        });
-                        splashFeedbackThread.Start();
-                        bool stopSuccessful = splashFeedbackThread.Join(TimeSpan.FromSeconds(10)); // Big enough timeout for any modern computer
-                        if (!stopSuccessful) {
-                            Logger.Log(LogLevel.Error, "EverestSplash", "Timeout!, splash did not respond, continuing...");
-                            if (!splashProcess.HasExited) { // if it hangs up, just kill it
-                                splashProcess.Kill();
-                                Logger.Log(LogLevel.Error, "EverestSplash", "Splash was still alive. Killed splash!");
-                            }
-                        }
-                        // Destroy the server asap for any future boots
-                        if (splashPipeServerStream.IsConnected)
-                            splashPipeServerStream.Disconnect();
-                        splashPipeServerStream.Dispose();
-                        splashPipeServerStream = null;
-                        splashPipeServerStreamConnection = null;
-                        splashProcess = null;
-                    } catch (Exception e) {
-                        Logger.Log(LogLevel.Error, "EverestSplash", "Could not stop splash!");
-                        Logger.LogDetailed(e);
-                    }
-                }
-            }
+            // This is as close as we can get to the showwindow call
+            EverestSplashHandler.StopSplash();
         }
 
         protected override void OnExiting(object sender, EventArgs args) {

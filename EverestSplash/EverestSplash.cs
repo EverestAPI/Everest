@@ -380,9 +380,10 @@ public class EverestSplashWindow {
 
     /// <summary>
     /// Notifies the server that we're done.
-    /// When running this script as a thread with another SDL app loading up, which is the case for Everest with Celeste,
-    /// the event loop from this program is going to mess with the one from the main app, so we *must* have exited before
-    /// that one starts because in the case where that other loop eats up our stop event, disaster will strike.
+    /// There would be no issue if we just closed the splash after the game window has been created (since its on diferent processes)
+    /// But if, for some reason, the splash does not recieve the stop command everest will assume it is about to close,
+    /// leaving the splash alive (and confusing users), this way it is possible to know when the splash is gone, and when
+    /// to kill it if its not responding.
     /// </summary>
     private void FeedBack() {
         StreamWriter sw = new(ClientPipe);
