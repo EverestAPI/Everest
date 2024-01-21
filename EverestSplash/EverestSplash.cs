@@ -428,7 +428,7 @@ public class EverestSplashWindow {
         unsafe {
             // About the lifetime of this pointer: this has to live until after we convert the RWops into a texture
             // because it's at that point that SDL will copy to GPU memory and we're free to free that
-            IntPtr data_ptr = Marshal.AllocHGlobal((int) (stream.Length * sizeof(byte)));
+            IntPtr data_ptr = SDL.SDL_malloc((int) (stream.Length * sizeof(byte)));
             Span<byte> data = new((byte*) data_ptr, (int) stream.Length);
             int read = stream.Read(data);
             if (read == 0) { // Basic error checking, we don't really know how many we should read anyways
