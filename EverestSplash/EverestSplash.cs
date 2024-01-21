@@ -209,9 +209,11 @@ public class EverestSplashWindow {
         windowInfo = new WindowInfo() { window = window, renderer = renderer, };
         SDL.SDL_SetHint( SDL.SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
-        IntPtr appIconRWops = LoadRWopsFromEmbeddedResource(AppIcon.path);
+        (IntPtr appIconRWops, IntPtr appIconBytes) = LoadRWopsFromEmbeddedResource(AppIcon.path);
         IntPtr appIconSurface = SDL_image.IMG_Load_RW(appIconRWops, (int) SDL.SDL_bool.SDL_TRUE); // Make sure to always free the RWops
         SDL.SDL_SetWindowIcon(window, appIconSurface);
+        SDL.SDL_free(appIconBytes);
+        SDL.SDL_FreeSurface(appIconSurface); // Here the surface has already been copied so its safe to free
         
         // FNA fixes
         // FNA disables the cursor on game creation and when creating the window
@@ -361,6 +363,7 @@ public class EverestSplashWindow {
         // Do not call this under any circumstance when running together with Everest
         // It will mess with FNA and cause a hangup/segfault
         // I mean it makes sense, this un-initializes everything, something FNA doesn't expect :P
+        SDL_image.IMG_Quit();
         SDL.SDL_Quit();
 
         foreach (Timer timer in timers) {
@@ -410,8 +413,9 @@ public class EverestSplashWindow {
     }
 
     private IntPtr LoadTextureFromEmbeddedResource(string embeddedResourcePath) {
-        IntPtr rwData = LoadRWopsFromEmbeddedResource(embeddedResourcePath);
+        (IntPtr rwData, IntPtr byteData) = LoadRWopsFromEmbeddedResource(embeddedResourcePath);
         IntPtr texture = SDL_image.IMG_LoadTexture_RW(windowInfo.renderer, rwData, (int)SDL.SDL_bool.SDL_TRUE);
+        SDL.SDL_free(byteData);
         // Implicit free on the call above by sdl
         if (texture == IntPtr.Zero) {
             throw new Exception(SDL_image.IMG_GetError());
@@ -419,7 +423,8 @@ public class EverestSplashWindow {
         return texture;
     }
 
-    private IntPtr LoadRWopsFromEmbeddedResource(string embeddedResourcePath) {
+    // Returns a pointer to the created RWops and one to the data that the RWops hods, since closing it wont release the data
+    private (IntPtr, IntPtr) LoadRWopsFromEmbeddedResource(string embeddedResourcePath) {
         // If this project is built on Windows the embedded resource path will use backslashes
         Stream stream = currentAssembly.GetManifestResourceStream(embeddedResourcePath) 
              ?? currentAssembly.GetManifestResourceStream(embeddedResourcePath.Replace('/', '\\')) 
@@ -436,15 +441,12 @@ public class EverestSplashWindow {
                     $"Could not read embedded resource stream for resource: {embeddedResourcePath}");
             }
 
-            IntPtr rwData;
-            fixed (byte* data_bytes = data) {
-                rwData = SDL.SDL_RWFromConstMem(new IntPtr(data_bytes), read);
-            }
+            IntPtr rwData = SDL.SDL_RWFromConstMem(data_ptr, read);
 
             if (rwData == IntPtr.Zero)
                 throw new Exception(SDL.SDL_GetError());
 
-            return rwData;
+            return (rwData, data_ptr);
         }
     }
 
@@ -557,6 +559,9 @@ public class EverestSplashWindow {
         
         [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int IMG_Init(IMG_InitFlags flags);
+        
+        [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void IMG_Quit();
         
         /* src refers to an SDL_RWops*, IntPtr to an SDL_Surface* */
         /* THIS IS A PUBLIC RWops FUNCTION! */
