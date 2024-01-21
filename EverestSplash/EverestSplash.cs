@@ -1,5 +1,4 @@
-﻿#nullable enable
-using SDL2;
+﻿using EverestSplash.SDL2;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,31 +9,63 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 
-namespace Celeste.Mod;
+namespace EverestSplash;
 
 /// <summary>
 /// EverestSplash is a simple program whose task is to display a `loading in progress` window coded in pure SDL.
 /// It is designed to work together with Everest and communicate via named pipes, where it'll listen for any data,
 /// and once a line can be read, the splash will disappear.
-/// This program could also be loaded as a library and run by calling `LaunchWindow`.
-/// It uses a separate thread to run SDL, even if not necessary, to not accidentally create any gl, vk or directx context
-/// and conflict with FNA.
-/// For testing, see message at end of file.
+/// This program could also be loaded as a library and ran by calling `LaunchWindow`.
+/// It is intended to run in another OS level process to not cause issues with any other engine (mainly FNA)
+/// For testing, you can run this as a standalone, providing `--testmode (seconds)` as an argument will make it run for
+/// that amount of seconds
 /// </summary>
 public static class EverestSplash {
     public const string Name = "EverestSplash";
 
     /// <summary>
+    /// Main function.
+    /// </summary>
+    /// <param name="args">
+    /// `--testmode` is inteded for testing this as a separate project, runs it for 5s,
+    /// `--graphics` is the sdl_renderer to use,
+    /// `--server-postfix` is a string to append to the named pipe client address to not cause issues with multiple instances
+    /// </param>
+    public static void Main(string[] args) {
+        string targetRenderer = "";
+        string postFix = "";
+        int runSeconds = 0;
+        for (int i = 0; i < args.Length; i++) {
+            if (args[i] == "--graphics" && args.Length > i + 1) {
+                targetRenderer = args[i + 1];
+            } else if (args[i] == "--server-postfix" && args.Length > i + 1) {
+                postFix = args[i + 1];
+            } else if (args[i] == "--testmode") {
+                if (args.Length > i + 1) {
+                    runSeconds = int.Parse(args[i + 1]);
+                } else {
+                    runSeconds = 5;
+                }
+            }
+        }
+
+        EverestSplashWindow window = CreateWindow(targetRenderer, postFix);
+        
+        if (runSeconds != 0) {
+            RunWindowSeconds(window, runSeconds);
+        } else {
+            window.Run();
+        }
+    }
+
+    /// <summary>
     /// This method always requires the targetRenderer, for ease of use with reflection.
     /// </summary>
     /// <param name="targetRenderer">The SDL2 renderer to use or "" for any renderer.</param>
+    /// <param name="postFix">A post fix to the server name, to not conflict with other instances</param>
     /// <returns>The window created.</returns>
-    public static EverestSplashWindow CreateWindow(string targetRenderer) {
-        return EverestSplashWindow.CreateNewWindow(targetRenderer);
-    }
-
-    public static void RunWindow(EverestSplashWindow window) {
-        window.Run();
+    public static EverestSplashWindow CreateWindow(string targetRenderer = "", string postFix = "") {
+        return EverestSplashWindow.CreateNewWindow(targetRenderer, postFix);
     }
 
     /// <summary>
@@ -45,15 +76,12 @@ public static class EverestSplash {
         window.Run();
     }
 
-    public static void LaunchWindowDefault() {
-        LaunchWindowSeconds(5);
-    }
-
     /// <summary>
-    /// Launches a new window, which will last s seconds.
+    /// Runs the window, which will last s seconds.
     /// </summary>
+    /// <param name="window">The window to operate on</param>
     /// <param name="s">The window lifespan.</param>
-    public static void LaunchWindowSeconds(int s) {
+    public static void RunWindowSeconds(EverestSplashWindow window, int s) {
         Task.Run(async () => {
             NamedPipeServerStream server = new(Name);
             await server.WaitForConnectionAsync();
@@ -67,7 +95,6 @@ public static class EverestSplash {
             await sr.ReadLineAsync();
             Console.WriteLine("Close confirmation received");
         });
-        EverestSplashWindow window = EverestSplashWindow.CreateNewWindow();
         window.Run();
     }
 }
@@ -81,16 +108,16 @@ public class EverestSplashWindow {
     private static int WindowHeight = 340; // Currently hardcoded, TODO: fractional scaling
     private static int WindowWidth = 800;
     private static readonly TextureInfo EverestLogoTexture = new() {
-        path = "Content/Graphics/Atlases/Gui/splash/everest_centered.png",
+        path = "SplashContent/everest_centered.png",
     };
     private static readonly TextureInfo StartingEverestTexture = new() {
-        path = "Content/Graphics/Atlases/Gui/splash/starting_everest_text.png",
+        path = "SplashContent/starting_everest_text.png",
     };
     private static readonly TextureInfo WheelTexture = new() {
-        path = "Content/Graphics/Atlases/Gui/splash/splash_wheel_blur.png",
+        path = "SplashContent/splash_wheel_blur.png",
     };
     private static readonly TextureInfo BgGradientTexture = new() {
-        path = "Content/Graphics/Atlases/Gui/splash/bg_gradient_2x.png",
+        path = "SplashContent/bg_gradient_2x.png",
     };
     private static readonly TextureInfo AppIcon = new() {
         path = "../lib-stripped/Celeste-icon.png",
@@ -104,34 +131,38 @@ public class EverestSplashWindow {
     private static EverestSplashWindow? instance;
 
     
-    private readonly NamedPipeClientStream ClientPipe = new(".", EverestSplash.Name);
+    private readonly NamedPipeClientStream ClientPipe;
     private WindowInfo windowInfo;
     private readonly FNAFixes fnaFixes = new();
     private readonly string targetRenderer;
     private readonly Assembly currentAssembly;
 
-    public static EverestSplashWindow CreateNewWindow(string targetRenderer = "") {
+    public static EverestSplashWindow CreateNewWindow(string targetRenderer = "", string postFix = "") {
         if (instance != null)
             throw new InvalidOperationException(EverestSplash.Name + "Window created multiple times!");
-        return new EverestSplashWindow(targetRenderer);
+        return new EverestSplashWindow(targetRenderer, postFix);
     }
 
-    private EverestSplashWindow(string targetRenderer) {
+    private EverestSplashWindow(string targetRenderer, string postFix) {
         instance = this;
         this.targetRenderer = targetRenderer;
         currentAssembly = GetType().Assembly;
+        string serverName = EverestSplash.Name + postFix;
+        Console.WriteLine("Running splash on " + serverName);
+        ClientPipe = new(".", serverName);
         ClientPipe.ConnectAsync().ContinueWith(_ => {
             try {
                 StreamReader sr = new(ClientPipe);
                 sr.ReadLine(); // Once we read a line, send the stop event (for now)
             } catch (Exception e) {
-                Console.WriteLine(e);
+                Console.Error.WriteLine(e);
                 // We want to exit if a read error occurred, we must not be around when FNA's main loop starts
             }
             SDL.SDL_Event userEvent = new() { // Fake a user event, we don't need anything fancier for now
                 type = SDL.SDL_EventType.SDL_USEREVENT,
             };
             SDL.SDL_PushEvent(ref userEvent); // This is thread safe :)
+            Console.WriteLine("Exiting splash...");
         });
         
         Init(); // Init right away
@@ -178,9 +209,11 @@ public class EverestSplashWindow {
         windowInfo = new WindowInfo() { window = window, renderer = renderer, };
         SDL.SDL_SetHint( SDL.SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
-        IntPtr appIconRWops = LoadRWopsFromEmbeddedResource(AppIcon.path);
+        (IntPtr appIconRWops, IntPtr appIconBytes) = LoadRWopsFromEmbeddedResource(AppIcon.path);
         IntPtr appIconSurface = SDL_image.IMG_Load_RW(appIconRWops, (int) SDL.SDL_bool.SDL_TRUE); // Make sure to always free the RWops
         SDL.SDL_SetWindowIcon(window, appIconSurface);
+        SDL.SDL_free(appIconBytes);
+        SDL.SDL_FreeSurface(appIconSurface); // Here the surface has already been copied so its safe to free
         
         // FNA fixes
         // FNA disables the cursor on game creation and when creating the window
@@ -330,7 +363,8 @@ public class EverestSplashWindow {
         // Do not call this under any circumstance when running together with Everest
         // It will mess with FNA and cause a hangup/segfault
         // I mean it makes sense, this un-initializes everything, something FNA doesn't expect :P
-        // SDL.SDL_Quit();
+        SDL_image.IMG_Quit();
+        SDL.SDL_Quit();
 
         foreach (Timer timer in timers) {
             timer.Stop();
@@ -349,14 +383,16 @@ public class EverestSplashWindow {
 
     /// <summary>
     /// Notifies the server that we're done.
-    /// When running this script as a thread with another SDL app loading up, which is the case for Everest with Celeste,
-    /// the event loop from this program is going to mess with the one from the main app, so we *must* have exited before
-    /// that one starts because in the case where that other loop eats up our stop event, disaster will strike.
+    /// There would be no issue if we just closed the splash after the game window has been created (since its on diferent processes)
+    /// But if, for some reason, the splash does not recieve the stop command everest will assume it is about to close,
+    /// leaving the splash alive (and confusing users), this way it is possible to know when the splash is gone, and when
+    /// to kill it if its not responding.
     /// </summary>
     private void FeedBack() {
         StreamWriter sw = new(ClientPipe);
         sw.WriteLine("done");
         sw.Flush();
+        Console.WriteLine("Splash done!");
     }
 
     private IntPtr LoadTexture(TextureInfo sprite) {
@@ -377,8 +413,9 @@ public class EverestSplashWindow {
     }
 
     private IntPtr LoadTextureFromEmbeddedResource(string embeddedResourcePath) {
-        IntPtr rwData = LoadRWopsFromEmbeddedResource(embeddedResourcePath);
+        (IntPtr rwData, IntPtr byteData) = LoadRWopsFromEmbeddedResource(embeddedResourcePath);
         IntPtr texture = SDL_image.IMG_LoadTexture_RW(windowInfo.renderer, rwData, (int)SDL.SDL_bool.SDL_TRUE);
+        SDL.SDL_free(byteData);
         // Implicit free on the call above by sdl
         if (texture == IntPtr.Zero) {
             throw new Exception(SDL_image.IMG_GetError());
@@ -386,7 +423,8 @@ public class EverestSplashWindow {
         return texture;
     }
 
-    private IntPtr LoadRWopsFromEmbeddedResource(string embeddedResourcePath) {
+    // Returns a pointer to the created RWops and one to the data that the RWops hods, since closing it wont release the data
+    private (IntPtr, IntPtr) LoadRWopsFromEmbeddedResource(string embeddedResourcePath) {
         // If this project is built on Windows the embedded resource path will use backslashes
         Stream stream = currentAssembly.GetManifestResourceStream(embeddedResourcePath) 
              ?? currentAssembly.GetManifestResourceStream(embeddedResourcePath.Replace('/', '\\')) 
@@ -395,7 +433,7 @@ public class EverestSplashWindow {
         unsafe {
             // About the lifetime of this pointer: this has to live until after we convert the RWops into a texture
             // because it's at that point that SDL will copy to GPU memory and we're free to free that
-            IntPtr data_ptr = Marshal.AllocHGlobal((int) (stream.Length * sizeof(byte)));
+            IntPtr data_ptr = SDL.SDL_malloc((int) (stream.Length * sizeof(byte)));
             Span<byte> data = new((byte*) data_ptr, (int) stream.Length);
             int read = stream.Read(data);
             if (read == 0) { // Basic error checking, we don't really know how many we should read anyways
@@ -403,15 +441,12 @@ public class EverestSplashWindow {
                     $"Could not read embedded resource stream for resource: {embeddedResourcePath}");
             }
 
-            IntPtr rwData;
-            fixed (byte* data_bytes = data) {
-                rwData = SDL.SDL_RWFromConstMem(new IntPtr(data_bytes), read);
-            }
+            IntPtr rwData = SDL.SDL_RWFromConstMem(data_ptr, read);
 
             if (rwData == IntPtr.Zero)
                 throw new Exception(SDL.SDL_GetError());
 
-            return rwData;
+            return (rwData, data_ptr);
         }
     }
 
@@ -504,7 +539,6 @@ public class EverestSplashWindow {
             public void HasRan() => HasFixed = true;
         }
     }
-#nullable disable
     
     /// <summary>
     /// Stripped down version of SDL_image from https://github.com/flibitijibibo/SDL2-CS
@@ -525,6 +559,9 @@ public class EverestSplashWindow {
         
         [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int IMG_Init(IMG_InitFlags flags);
+        
+        [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void IMG_Quit();
         
         /* src refers to an SDL_RWops*, IntPtr to an SDL_Surface* */
         /* THIS IS A PUBLIC RWops FUNCTION! */
@@ -600,11 +637,4 @@ public class EverestSplashWindow {
         }
     }
 }
-/* In order to modify and test this module, it may be beneficial to detach it
- * from Everest and work on it in a separate environment.
- * Consequently, to run this file you could just, if your IDE supports it,
- * run the `LaunchWindow` method. Otherwise "hacking" it and adding a `Main`
- * method and changing the output type to `Exe` is also valid for developing,
- * just make sure to revert it. Finally, there are tools that are capable of
- * loading a dll and running a method from it via CLI arguments.
- */
+
