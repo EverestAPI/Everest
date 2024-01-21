@@ -624,9 +624,23 @@ namespace Celeste.Mod {
                     client.Timeout = TimeSpan.FromMilliseconds(10000);
                     client.DefaultRequestHeaders.Add("Accept", "application/octet-stream");
 
+                    Task<HttpResponseMessage> responseTask = client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+                    HttpResponseMessage response;
+                    try {
+                        response = responseTask.Result;
+                    } catch (AggregateException ae) {
+                        // GetAsync throws a TaskCanceledException if the client times out instead of a TimeoutException
+                        // ":screwms:" ~Popax21
+                        if (responseTask.IsCanceled)
+                            throw new TimeoutException($"The request to {url} timed out.", ae.InnerException);
+
+                        // don't "throw ex;" here, as that resets the stacktrace (which is bad)
+                        throw;
+                    }
+
                     // Manual buffered copy from web input to file output.
                     // Allows us to measure speed and progress.
-                    using (HttpResponseMessage response = client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).Result)
+                    using (response)
                     using (Stream input = response.Content.ReadAsStream())
                     using (FileStream output = File.OpenWrite(destPath)) {
                         if (input.CanTimeout)
