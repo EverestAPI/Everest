@@ -38,6 +38,7 @@ namespace Celeste.Mod {
     public sealed class AssetTypeDirectory : AssetTypeNonConflict { private AssetTypeDirectory() { } }
     public sealed class AssetTypeMetadataYaml : AssetTypeNonConflict { private AssetTypeMetadataYaml() { } }
     public sealed class AssetTypeSpriteBank : AssetTypeNonConflict { private AssetTypeSpriteBank() { } }
+    public sealed class AssetTypeEverestIgnore : AssetTypeNonConflict { private AssetTypeEverestIgnore() { } }
 
     // Generic asset types
     public sealed class AssetTypeLua { private AssetTypeLua() { } }
@@ -788,6 +789,10 @@ namespace Celeste.Mod {
                         file = file.Substring(0, file.Length - 4 - 6);
                         file += ".guids";
                     }
+
+                } else if (file == ".everestignore") {
+                    type = typeof(AssetTypeEverestIgnore);
+                    file = "";
 
                 } else if (OnGuessType != null) {
                     // Parse custom types from mods
