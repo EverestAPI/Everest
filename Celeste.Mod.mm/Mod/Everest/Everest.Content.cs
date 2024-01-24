@@ -511,7 +511,7 @@ namespace Celeste.Mod {
             };
 
             internal readonly static HashSet<string> BlacklistExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
-                ".cs", ".csproj", ".md", ".pdb", ".sln", ".yaml-backup"
+                ".cs", ".csproj", ".md", ".pdb", ".sln", ".yaml-backup", ".gitignore"
             };
 
             internal readonly static HashSet<string> BlacklistRootFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
