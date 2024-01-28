@@ -21,6 +21,7 @@ namespace Celeste {
 
         // We're effectively in Player, but still need to "expose" private fields to our mod.
         private bool wasDashB;
+        private float starFlyTimer;
         private HashSet<Trigger> triggersInside;
         private List<Entity> temp;
 
@@ -239,7 +240,14 @@ namespace Celeste {
                 return wasDashB ? NormalBadelineHairColor : UsedBadelineHairColor;
             return wasDashB ? NormalHairColor : UsedHairColor;
         }
-        
+
+        /// <summary>
+        /// Get starFlyTimer of the current player.
+        /// </summary>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public float GetStarFlyTimer() => starFlyTimer;
+
         /// <summary>
         /// Adds a new state to this player with the given behaviour, and returns the index of the new state.
         ///
