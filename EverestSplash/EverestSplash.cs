@@ -166,7 +166,6 @@ public class EverestSplashWindow {
                         }
                     }
                 }
-                sr.ReadLine(); // Once we read a line, send the stop event (for now)
             } catch (Exception e) {
                 Console.Error.WriteLine(e);
                 // We want to exit if a read error occurred, we must not be around when FNA's main loop starts
