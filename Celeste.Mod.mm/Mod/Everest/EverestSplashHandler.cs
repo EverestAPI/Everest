@@ -15,7 +15,7 @@ namespace Celeste.Mod {
         private static readonly object splashPipeLock = new();
         public static bool SplashRan { get; private set; }
         public static void RunSplash(string targetRenderer = "") {
-            
+
             int currentPid = Environment.ProcessId;
 
             try {
@@ -35,10 +35,10 @@ namespace Celeste.Mod {
                     splashPipeServerStream = null;
                 }
             }
-            
+
             // Only proceed if the server was successful
             if (splashPipeServerStream == null) return;
-             
+
             try {
                 splashProcess = new Process {
                     StartInfo = new ProcessStartInfo(Path.Combine(".", "EverestSplash",
@@ -87,6 +87,41 @@ namespace Celeste.Mod {
             }
         }
 
+        private static int loadedMods = 0, totalMods = 0;
+
+        public static void SetSplashLoadingModCount(int modCount) {
+            totalMods = modCount;
+        }
+
+        public static void IncreaseLoadedModCount() {
+            loadedMods++;
+            UpdateSplashLoadingProgress();
+        }
+
+        public static void AllModsLoaded() {
+            loadedMods = totalMods;
+            UpdateSplashLoadingProgress();
+        }
+
+        private static void UpdateSplashLoadingProgress() {
+            if (totalMods == 0)
+                return;
+            float progress = (float) loadedMods / totalMods;
+            lock (splashPipeLock) {
+                if (splashPipeServerStream == null)
+                    return; // If the splash never ran, no-op
+                if (!splashPipeServerStreamConnection.IsCompleted)
+                    return; // If the splash never connected, no-op
+                try {
+                    StreamWriter sw = new(splashPipeServerStream);
+                    sw.WriteLine("progress " + progress);
+                    sw.Flush();
+                } catch (Exception e) {
+                    Logger.Log(LogLevel.Error, "EverestSplash", "Could not send progress to splash!");
+                    Logger.LogDetailed(e);
+                }
+            }
+        }
 
         public static void StopSplash() {
             lock (splashPipeLock) {

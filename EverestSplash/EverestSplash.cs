@@ -50,7 +50,7 @@ public static class EverestSplash {
         }
 
         EverestSplashWindow window = CreateWindow(targetRenderer, postFix);
-        
+
         if (runSeconds != 0) {
             RunWindowSeconds(window, runSeconds);
         } else {
@@ -130,12 +130,14 @@ public class EverestSplashWindow {
     };
     private static EverestSplashWindow? instance;
 
-    
+
     private readonly NamedPipeClientStream ClientPipe;
     private WindowInfo windowInfo;
     private readonly FNAFixes fnaFixes = new();
     private readonly string targetRenderer;
     private readonly Assembly currentAssembly;
+
+    private float loadingProgress = 0;
 
     public static EverestSplashWindow CreateNewWindow(string targetRenderer = "", string postFix = "") {
         if (instance != null)
@@ -153,6 +155,17 @@ public class EverestSplashWindow {
         ClientPipe.ConnectAsync().ContinueWith(_ => {
             try {
                 StreamReader sr = new(ClientPipe);
+                string message;
+                while ((message = sr.ReadLine()) != null) {
+                    if (message == "stop") { // Stop the splash
+                        break;
+                    } else if (message.StartsWith("progress")) { // Mod loading progress message received: "progress (float){progress}"
+                        string[] parts = message.Split(' ');
+                        if (parts.Length == 2) {
+                            loadingProgress = float.Parse(parts[1]);
+                        }
+                    }
+                }
                 sr.ReadLine(); // Once we read a line, send the stop event (for now)
             } catch (Exception e) {
                 Console.Error.WriteLine(e);
@@ -164,18 +177,18 @@ public class EverestSplashWindow {
             SDL.SDL_PushEvent(ref userEvent); // This is thread safe :)
             Console.WriteLine("Exiting splash...");
         });
-        
+
         Init(); // Init right away
     }
 
     public void Run() { // Calling this multiple times is asking for trouble
         // init is done in constructor
         LoadTextures();
-        
+
         HandleWindow();
-        
+
         Cleanup();
-        
+
         FeedBack();
     }
 
@@ -187,7 +200,7 @@ public class EverestSplashWindow {
             WindowHeight = 720;
             WindowWidth = (int) (720.0 * 16 / 9); // 1280
         }
-        
+
         if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO | SDL.SDL_INIT_EVENTS) != 0) { // Init as little as we can, we need to go fast
             throw new Exception("Failed to SDL init!\n" + SDL.SDL_GetError());
         }
@@ -214,7 +227,7 @@ public class EverestSplashWindow {
         SDL.SDL_SetWindowIcon(window, appIconSurface);
         SDL.SDL_free(appIconBytes);
         SDL.SDL_FreeSurface(appIconSurface); // Here the surface has already been copied so its safe to free
-        
+
         // FNA fixes
         // FNA disables the cursor on game creation and when creating the window
         fnaFixes.Add(
@@ -229,9 +242,9 @@ public class EverestSplashWindow {
     private void LoadTextures() {
         windowInfo.everestLogoTexture =
             LoadTexture(EverestLogoTexture);
-        windowInfo.startingEverestTexture = 
+        windowInfo.startingEverestTexture =
             LoadTexture(StartingEverestTexture);
-        windowInfo.wheelTexture = 
+        windowInfo.wheelTexture =
             LoadTexture(WheelTexture);
         SDL.SDL_SetTextureAlphaMod(windowInfo.wheelTexture, 25);
         windowInfo.bgGradientTexture =
@@ -245,7 +258,7 @@ public class EverestSplashWindow {
         SDL.SDL_QueryTexture(windowInfo.wheelTexture, out _, out _, out int wheelW, out int wheelH);
         SDL.SDL_QueryTexture(windowInfo.everestLogoTexture, out _, out _, out int logoW, out int logoH);
         SDL.SDL_QueryTexture(windowInfo.startingEverestTexture, out _, out _, out int textW, out int allTextH);
-        
+
         SDL.SDL_ShowWindow(windowInfo.window);
 
         // Animation values, SDL timers are a pain to use, this is easier
@@ -266,10 +279,10 @@ public class EverestSplashWindow {
             wheelAngle += 0.1;
             // No value reset, it's an angle anyways
         });
-        
+
         while (true) { // while true :trolloshiro: (on a serious note, for our use case its fineee :))
             fnaFixes.CheckAndFix();
-            
+
             while (SDL.SDL_PollEvent(out SDL.SDL_Event e) != 0) {
                 // An SDL_USEREVENT is sent when the splash receives the quit command
                 if (e.type is SDL.SDL_EventType.SDL_QUIT or SDL.SDL_EventType.SDL_USEREVENT) {
@@ -281,7 +294,7 @@ public class EverestSplashWindow {
             Color bgColor = bgDark;
             SDL.SDL_SetRenderDrawColor(windowInfo.renderer, bgColor.R, bgColor.G, bgColor.B, bgColor.A);
             SDL.SDL_RenderClear(windowInfo.renderer);
-            
+
             // BG bloom drawing
             SDL.SDL_Rect bgRect = new() {
                 x = 0,
@@ -296,8 +309,8 @@ public class EverestSplashWindow {
             // Finally, draw another one below the first one (mostly for 16:9 mode)
             bgRect.y = bgBloomPos + bgRect.h;
             SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.bgGradientTexture, IntPtr.Zero, ref bgRect);
-            
-            
+
+
             // Background wheel
             float scale = (float) WindowWidth / wheelW;
             SDL.SDL_Rect wheelRect = new() {
@@ -308,8 +321,8 @@ public class EverestSplashWindow {
             };
             SDL.SDL_RenderCopyEx(windowInfo.renderer, windowInfo.wheelTexture, IntPtr.Zero,
                 ref wheelRect, wheelAngle, IntPtr.Zero, SDL.SDL_RendererFlip.SDL_FLIP_NONE);
-            
-            
+
+
             // Render one sprite
             const int LRmargin = 32*2; // Left right margin
             const int Tmargin = 32; // Top margin
@@ -322,11 +335,26 @@ public class EverestSplashWindow {
                 h = (int) ((float) realWindowWidth/logoW*logoH), // no need to subtract margin here since it ignores the height
             };
             SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.everestLogoTexture, IntPtr.Zero, ref everestLogoRect);
-            
+
+            // Render the loading progress bar
+            int barHeight = 4;
+            int barY = WindowHeight - barHeight;
+            int barX = 0;
+            int barWidth = WindowWidth;
+            int progressWidth = (int) Math.Round((float) loadingProgress * barWidth);
+            SDL.SDL_Rect progressRect = new() {
+                x = barX,
+                y = barY,
+                w = progressWidth,
+                h = barHeight,
+            };
+            SDL.SDL_SetRenderDrawColor(windowInfo.renderer, 255, 255, 255, 230);
+            SDL.SDL_RenderFillRect(windowInfo.renderer, ref progressRect);
+
             // Render the other
             realWindowWidth /= 2; // Make it half the width
             int textH = allTextH / 3; // theres 3 texts
-            SDL.SDL_Rect startingEverestRect = new() { 
+            SDL.SDL_Rect startingEverestRect = new() {
                 x = LRmargin,
                 y = Tmargin + (everestLogoRect.y+everestLogoRect.h),
                 w = realWindowWidth,
@@ -338,9 +366,9 @@ public class EverestSplashWindow {
                 w = textW,
                 h = textH,
             };
-            SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.startingEverestTexture, 
+            SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.startingEverestTexture,
                 ref sourceStartingEverestRect, ref startingEverestRect);
-                        
+
             // Present
             SDL.SDL_RenderPresent(windowInfo.renderer); // Note: this has vsync, so no sleep after this
         }
@@ -353,13 +381,13 @@ public class EverestSplashWindow {
             if (texture != IntPtr.Zero)
                 SDL.SDL_DestroyTexture(texture);
         }
-        
+
         if (windowInfo.renderer != IntPtr.Zero)
             SDL.SDL_DestroyRenderer(windowInfo.renderer);
 
         if (windowInfo.window != IntPtr.Zero)
             SDL.SDL_DestroyWindow(windowInfo.window);
-        
+
         // Do not call this under any circumstance when running together with Everest
         // It will mess with FNA and cause a hangup/segfault
         // I mean it makes sense, this un-initializes everything, something FNA doesn't expect :P
@@ -396,8 +424,8 @@ public class EverestSplashWindow {
     }
 
     private IntPtr LoadTexture(TextureInfo sprite) {
-        IntPtr tex = File.Exists(sprite.path) ? 
-            LoadTextureFromPath(sprite.path) : 
+        IntPtr tex = File.Exists(sprite.path) ?
+            LoadTextureFromPath(sprite.path) :
             LoadTextureFromEmbeddedResource(sprite.path);
         if (tex != IntPtr.Zero)
             windowInfo.loadedTextures.Add(tex);
@@ -426,8 +454,8 @@ public class EverestSplashWindow {
     // Returns a pointer to the created RWops and one to the data that the RWops hods, since closing it wont release the data
     private (IntPtr, IntPtr) LoadRWopsFromEmbeddedResource(string embeddedResourcePath) {
         // If this project is built on Windows the embedded resource path will use backslashes
-        Stream stream = currentAssembly.GetManifestResourceStream(embeddedResourcePath) 
-             ?? currentAssembly.GetManifestResourceStream(embeddedResourcePath.Replace('/', '\\')) 
+        Stream stream = currentAssembly.GetManifestResourceStream(embeddedResourcePath)
+             ?? currentAssembly.GetManifestResourceStream(embeddedResourcePath.Replace('/', '\\'))
              ?? throw new FileNotFoundException($"Cannot find sprite with path as embeddedResource: {embeddedResourcePath}");
 
         unsafe {
@@ -472,8 +500,8 @@ public class EverestSplashWindow {
         animTimer.Enabled = true;
         timers.Add(animTimer);
     }
-    
-    
+
+
     private struct WindowInfo {
         public IntPtr window = IntPtr.Zero;
         public IntPtr renderer = IntPtr.Zero;
@@ -498,10 +526,10 @@ public class EverestSplashWindow {
 
     private static Color LerpColor(Color s, Color e, float p) {
         return new Color {
-            R = LerpByte(s.R, e.R, p), 
-            G = LerpByte(s.G, e.G, p), 
-            B = LerpByte(s.B, e.B, p), 
-            A = LerpByte(s.A, e.A, p), 
+            R = LerpByte(s.R, e.R, p),
+            G = LerpByte(s.G, e.G, p),
+            B = LerpByte(s.B, e.B, p),
+            A = LerpByte(s.A, e.A, p),
         };
     }
 
@@ -539,15 +567,15 @@ public class EverestSplashWindow {
             public void HasRan() => HasFixed = true;
         }
     }
-    
+
     /// <summary>
     /// Stripped down version of SDL_image from https://github.com/flibitijibibo/SDL2-CS
     /// </summary>
     public static class SDL_image {
         /* Used by DllImport to load the native library. */
         private const string nativeLibName = "SDL2_image";
-        
-        
+
+
         [Flags]
         public enum IMG_InitFlags
         {
@@ -556,38 +584,38 @@ public class EverestSplashWindow {
         	IMG_INIT_TIF =	0x00000004,
         	IMG_INIT_WEBP =	0x00000008
         }
-        
+
         [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int IMG_Init(IMG_InitFlags flags);
-        
+
         [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void IMG_Quit();
-        
+
         /* src refers to an SDL_RWops*, IntPtr to an SDL_Surface* */
         /* THIS IS A PUBLIC RWops FUNCTION! */
         [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr IMG_Load_RW(
-        	IntPtr src,
-        	int freesrc
+            IntPtr src,
+            int freesrc
         );
-        
+
         /* IntPtr refers to an SDL_Texture*, renderer to an SDL_Renderer* */
         [DllImport(nativeLibName, EntryPoint = "IMG_LoadTexture", CallingConvention = CallingConvention.Cdecl)]
         private static extern unsafe IntPtr INTERNAL_IMG_LoadTexture(
-        	IntPtr renderer,
-        	byte* file
+            IntPtr renderer,
+            byte* file
         );
         public static unsafe IntPtr IMG_LoadTexture(
-        	IntPtr renderer,
-        	string file
+            IntPtr renderer,
+            string file
         ) {
-        	byte* utf8File = Utf8EncodeHeap(file);
-        	IntPtr handle = INTERNAL_IMG_LoadTexture(
-        		renderer,
-        		utf8File
-        	);
-        	Marshal.FreeHGlobal((IntPtr) utf8File);
-        	return handle;
+            byte* utf8File = Utf8EncodeHeap(file);
+            IntPtr handle = INTERNAL_IMG_LoadTexture(
+                renderer,
+                utf8File
+            );
+            Marshal.FreeHGlobal((IntPtr) utf8File);
+            return handle;
         }
 
         /* renderer refers to an SDL_Renderer*.
@@ -597,16 +625,16 @@ public class EverestSplashWindow {
         /* THIS IS A PUBLIC RWops FUNCTION! */
         [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr IMG_LoadTexture_RW(
-        	IntPtr renderer,
-        	IntPtr src,
-			int freesrc
+            IntPtr renderer,
+            IntPtr src,
+            int freesrc
         );
-        
+
         public static string IMG_GetError()
         {
-        	return SDL.SDL_GetError();
+            return SDL.SDL_GetError();
         }
-        
+
         /* Used for heap allocated string marshaling.
         * Returned byte* must be free'd with FreeHGlobal.
         */
@@ -614,26 +642,26 @@ public class EverestSplashWindow {
         {
         	if (str == null)
         	{
-        		return (byte*) 0;
-        	}
+                return (byte*) 0;
+            }
 
-        	int bufferSize = Utf8Size(str);
-        	byte* buffer = (byte*) Marshal.AllocHGlobal(bufferSize);
+            int bufferSize = Utf8Size(str);
+            byte* buffer = (byte*) Marshal.AllocHGlobal(bufferSize);
         	fixed (char* strPtr = str)
         	{
-        		Encoding.UTF8.GetBytes(strPtr, str.Length + 1, buffer, bufferSize);
-        	}
-        	return buffer;
+                Encoding.UTF8.GetBytes(strPtr, str.Length + 1, buffer, bufferSize);
+            }
+            return buffer;
         }
-        
+
         /* Used for stack allocated string marshaling. */
         private static int Utf8Size(string str)
         {
         	if (str == null)
         	{
-        		return 0;
-        	}
-        	return (str.Length * 4) + 1;
+                return 0;
+            }
+            return (str.Length * 4) + 1;
         }
     }
 }

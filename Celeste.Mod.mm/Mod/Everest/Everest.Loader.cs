@@ -176,27 +176,34 @@ namespace Celeste.Mod {
 
                 enforceOptionalDependencies = true;
 
-                string[] files = Directory.GetFiles(PathMods);
-                Array.Sort(files); //Prevent inode loading jank
-                for (int i = 0; i < files.Length; i++) {
-                    string file = Path.GetFileName(files[i]);
-                    if (!file.EndsWith(".zip") || !ShouldLoadFile(file))
-                        continue;
+                string[] files = Directory
+                    .GetFiles(PathMods)
+                    .OrderBy(f => f) //Prevent inode loading jank
+                    .Select(Path.GetFileName)
+                    .Where(file => file.EndsWith(".zip") && ShouldLoadFile(file))
+                    .ToArray();
+                   
+                string[] dirs = Directory
+                    .GetDirectories(PathMods)
+                    .OrderBy(f => f) //Prevent inode loading jank
+                    .Select(Path.GetFileName)
+                    .Where(file => file != "Cache" && ShouldLoadFile(file))
+                    .ToArray();
+
+                EverestSplashHandler.SetSplashLoadingModCount(files.Length + dirs.Length);
+
+                foreach (string file in files) {
                     LoadZip(Path.Combine(PathMods, file));
                 }
-
-                files = Directory.GetDirectories(PathMods);
-                Array.Sort(files); //Prevent inode loading jank
-                for (int i = 0; i < files.Length; i++) {
-                    string file = Path.GetFileName(files[i]);
-                    if (file == "Cache" || !ShouldLoadFile(file))
-                        continue;
-                    LoadDir(Path.Combine(PathMods, file));
+                foreach (string dir in dirs) {
+                    LoadZip(Path.Combine(PathMods, dir));
                 }
 
                 enforceOptionalDependencies = false;
                 Logger.Log(LogLevel.Info, "loader", "Loading mods with unsatisfied optional dependencies (if any)");
                 Everest.CheckDependenciesOfDelayedMods();
+
+                EverestSplashHandler.AllModsLoaded();
 
                 watch.Stop();
                 Logger.Log(LogLevel.Verbose, "loader", $"ALL MODS LOADED IN {watch.ElapsedMilliseconds}ms");
@@ -245,8 +252,10 @@ namespace Celeste.Mod {
 
                 if (!File.Exists(archive)) // Relative path? Let's just make it absolute.
                     archive = Path.Combine(PathMods, archive);
-                if (!File.Exists(archive)) // It just doesn't exist.
+                if (!File.Exists(archive)) { // It just doesn't exist.
+                    EverestSplashHandler.IncreaseLoadedModCount();
                     return;
+                }
 
                 Logger.Log(LogLevel.Verbose, "loader", $"Loading mod .zip: {archive}");
 
@@ -343,8 +352,10 @@ namespace Celeste.Mod {
 
                 if (!Directory.Exists(dir)) // Relative path?
                     dir = Path.Combine(PathMods, dir);
-                if (!Directory.Exists(dir)) // It just doesn't exist.
+                if (!Directory.Exists(dir)) { // It just doesn't exist.
+                    EverestSplashHandler.IncreaseLoadedModCount();
                     return;
+                }
 
                 Logger.Log(LogLevel.Verbose, "loader", $"Loading mod directory: {dir}");
 
@@ -455,6 +466,7 @@ namespace Celeste.Mod {
                 callback?.Invoke();
 
                 LoadMod(meta);
+                EverestSplashHandler.IncreaseLoadedModCount();
             }
 
             /// <summary>
