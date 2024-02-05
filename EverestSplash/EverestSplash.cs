@@ -81,13 +81,17 @@ public static class EverestSplash {
     /// </summary>
     /// <param name="window">The window to operate on</param>
     /// <param name="s">The window lifespan.</param>
-    public static void RunWindowSeconds(EverestSplashWindow window, int s) {
+    public static void RunWindowSeconds(EverestSplashWindow window, int s, int progBarSteps = 3) {
         Task.Run(async () => {
             NamedPipeServerStream server = new(Name);
             await server.WaitForConnectionAsync();
             Console.WriteLine($"Running for {s} seconds...");
-            await Task.Delay(s*1000);
             StreamWriter sw = new(server);
+            for (int i = 0; i < progBarSteps; i++) {
+                await sw.WriteLineAsync("progress " + (float)i / progBarSteps);
+                await sw.FlushAsync();
+                await Task.Delay(s*1000/progBarSteps);
+            }
             await sw.WriteLineAsync("stop");
             await sw.FlushAsync();
             Console.WriteLine("Close request sent");
@@ -126,7 +130,7 @@ public class EverestSplashWindow {
         R = 59, G = 45, B = 74, A = 255,
     };
     private static readonly Color bgLight = new() { // Lighter color
-        R = 81, G = 62, B = 101, A = 255,
+        R = 63, G = 48, B = 79, A = 255,
     };
     private static EverestSplashWindow? instance;
 
@@ -155,8 +159,7 @@ public class EverestSplashWindow {
         ClientPipe.ConnectAsync().ContinueWith(_ => {
             try {
                 StreamReader sr = new(ClientPipe);
-                string message;
-                while ((message = sr.ReadLine()) != null) {
+                while (sr.ReadLine() is { } message) {
                     if (message == "stop") { // Stop the splash
                         break;
                     } else if (message.StartsWith("progress")) { // Mod loading progress message received: "progress (float){progress}"
@@ -166,7 +169,6 @@ public class EverestSplashWindow {
                         }
                     }
                 }
-                sr.ReadLine(); // Once we read a line, send the stop event (for now)
             } catch (Exception e) {
                 Console.Error.WriteLine(e);
                 // We want to exit if a read error occurred, we must not be around when FNA's main loop starts
@@ -279,6 +281,12 @@ public class EverestSplashWindow {
             wheelAngle += 0.1;
             // No value reset, it's an angle anyways
         });
+        float progressWidth = 0;
+        float prevProgress = 0;
+        AnimTimer(16, () => {
+            progressWidth = loadingProgress * WindowWidth*0.25f + prevProgress*0.75f;
+            prevProgress = progressWidth;
+        });
 
         while (true) { // while true :trolloshiro: (on a serious note, for our use case its fineee :))
             fnaFixes.CheckAndFix();
@@ -336,20 +344,7 @@ public class EverestSplashWindow {
             };
             SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.everestLogoTexture, IntPtr.Zero, ref everestLogoRect);
 
-            // Render the loading progress bar
-            int barHeight = 4;
-            int barY = WindowHeight - barHeight;
-            int barX = 0;
-            int barWidth = WindowWidth;
-            int progressWidth = (int) Math.Round((float) loadingProgress * barWidth);
-            SDL.SDL_Rect progressRect = new() {
-                x = barX,
-                y = barY,
-                w = progressWidth,
-                h = barHeight,
-            };
-            SDL.SDL_SetRenderDrawColor(windowInfo.renderer, 255, 255, 255, 230);
-            SDL.SDL_RenderFillRect(windowInfo.renderer, ref progressRect);
+
 
             // Render the other
             realWindowWidth /= 2; // Make it half the width
@@ -368,6 +363,17 @@ public class EverestSplashWindow {
             };
             SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.startingEverestTexture,
                 ref sourceStartingEverestRect, ref startingEverestRect);
+            
+            // Render the loading progress bar
+            const int barHeight = 4;
+            SDL.SDL_Rect progressRect = new() {
+                x = 0,
+                y = WindowHeight - barHeight,
+                w = (int) progressWidth,
+                h = barHeight,
+            };
+            SDL.SDL_SetRenderDrawColor(windowInfo.renderer, 255, 255, 255, 255); // White
+            SDL.SDL_RenderFillRect(windowInfo.renderer, ref progressRect);
 
             // Present
             SDL.SDL_RenderPresent(windowInfo.renderer); // Note: this has vsync, so no sleep after this
