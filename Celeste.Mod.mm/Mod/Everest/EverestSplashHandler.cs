@@ -114,7 +114,7 @@ namespace Celeste.Mod {
                     return; // If the splash never connected, no-op
                 try {
                     StreamWriter sw = new(splashPipeServerStream);
-                    sw.WriteLine("progress " + progress);
+                    sw.WriteLine("#progress" + progress);
                     sw.Flush();
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Error, "EverestSplash", "Could not send progress to splash!");
@@ -141,7 +141,7 @@ namespace Celeste.Mod {
 
                 try {
                     StreamWriter sw = new(splashPipeServerStream);
-                    sw.WriteLine("stop");
+                    sw.WriteLine("#stop");
                     sw.Flush();
                     Thread splashFeedbackThread = new(() => {
                         try {

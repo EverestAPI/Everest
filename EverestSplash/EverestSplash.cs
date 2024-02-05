@@ -88,7 +88,7 @@ public static class EverestSplash {
             Console.WriteLine($"Running for {s} seconds...");
             StreamWriter sw = new(server);
             for (int i = 0; i < progBarSteps; i++) {
-                await sw.WriteLineAsync("progress " + (float)i / progBarSteps);
+                await sw.WriteLineAsync("progress" + (float)i / progBarSteps);
                 await sw.FlushAsync();
                 await Task.Delay(s*1000/progBarSteps);
             }
@@ -160,13 +160,13 @@ public class EverestSplashWindow {
             try {
                 StreamReader sr = new(ClientPipe);
                 while (sr.ReadLine() is { } message) {
-                    if (message == "stop") { // Stop the splash
+                    if (message == "#stop") { // Stop the splash
                         break;
-                    } else if (message.StartsWith("progress")) { // Mod loading progress message received: "progress (float){progress}"
-                        string[] parts = message.Split(' ');
-                        if (parts.Length == 2) {
-                            loadingProgress = float.Parse(parts[1]);
-                        }
+                    }
+
+                    const string progressPfx = "#progress";
+                    if (message.StartsWith(progressPfx)) { // Mod loading progress message received: "progress (float){progress}"
+                        loadingProgress = float.Parse(message[progressPfx.Length..]);
                     }
                 }
             } catch (Exception e) {
