@@ -87,12 +87,12 @@ public static class EverestSplash {
             await server.WaitForConnectionAsync();
             Console.WriteLine($"Running for {s} seconds...");
             StreamWriter sw = new(server);
-            for (int i = 0; i < progBarSteps; i++) {
-                await sw.WriteLineAsync("progress" + (float)i / progBarSteps);
+            for (int i = 1; i < progBarSteps + 1; i++) {
+                await sw.WriteLineAsync("#progress" + (float)i / progBarSteps);
                 await sw.FlushAsync();
                 await Task.Delay(s*1000/progBarSteps);
             }
-            await sw.WriteLineAsync("stop");
+            await sw.WriteLineAsync("#stop");
             await sw.FlushAsync();
             Console.WriteLine("Close request sent");
             StreamReader sr = new(server);
@@ -207,10 +207,6 @@ public class EverestSplashWindow {
             throw new Exception("Failed to SDL init!\n" + SDL.SDL_GetError());
         }
 
-        if (SDL_image.IMG_Init(SDL_image.IMG_InitFlags.IMG_INIT_PNG) == 0) { // IMG_Init returns 0 on failure...
-            throw new Exception("Failed to SDL_image init!\n" + SDL.SDL_GetError());
-        }
-
         IntPtr window = SDL.SDL_CreateWindow(WindowTitle, SDL.SDL_WINDOWPOS_CENTERED, SDL.SDL_WINDOWPOS_CENTERED,
             WindowWidth, WindowHeight, SDL.SDL_WindowFlags.SDL_WINDOW_BORDERLESS | SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN);
         if (window == IntPtr.Zero)
@@ -224,11 +220,25 @@ public class EverestSplashWindow {
         windowInfo = new WindowInfo() { window = window, renderer = renderer, };
         SDL.SDL_SetHint( SDL.SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
-        (IntPtr appIconRWops, IntPtr appIconBytes) = LoadRWopsFromEmbeddedResource(AppIcon.path);
-        IntPtr appIconSurface = SDL_image.IMG_Load_RW(appIconRWops, (int) SDL.SDL_bool.SDL_TRUE); // Make sure to always free the RWops
+        using Stream appIconStream = GetStreamFromEmbeddedResource(AppIcon.path);
+        IntPtr appIconPixels = FNA3D.ReadImageStream(appIconStream, out int w, out int h, out int _);
+        if (appIconPixels == IntPtr.Zero) 
+            throw new Exception("Could not read stream!");
+                
+        IntPtr appIconSurface = SDL.SDL_CreateRGBSurfaceFrom(appIconPixels,
+            w, 
+            h, 
+            8 * 4 /* byte per 4 channels */, 
+            w * 4, 
+            0x000000FF, 
+            0x0000FF00,
+            0x00FF0000, 
+            0xFF000000);
+        if (appIconSurface == IntPtr.Zero) 
+            throw new Exception("Could not create surface! " + SDL.SDL_GetError());
         SDL.SDL_SetWindowIcon(window, appIconSurface);
-        SDL.SDL_free(appIconBytes);
         SDL.SDL_FreeSurface(appIconSurface); // Here the surface has already been copied so its safe to free
+        FNA3D.FNA3D_Image_Free(appIconPixels);
 
         // FNA fixes
         // FNA disables the cursor on game creation and when creating the window
@@ -397,7 +407,6 @@ public class EverestSplashWindow {
         // Do not call this under any circumstance when running together with Everest
         // It will mess with FNA and cause a hangup/segfault
         // I mean it makes sense, this un-initializes everything, something FNA doesn't expect :P
-        SDL_image.IMG_Quit();
         SDL.SDL_Quit();
 
         foreach (Timer timer in timers) {
@@ -429,59 +438,56 @@ public class EverestSplashWindow {
         Console.WriteLine("Splash done!");
     }
 
+    // Loads a texture from the provided sprite, defaults to local paths
     private IntPtr LoadTexture(TextureInfo sprite) {
         IntPtr tex = File.Exists(sprite.path) ?
-            LoadTextureFromPath(sprite.path) :
-            LoadTextureFromEmbeddedResource(sprite.path);
+            LoadTextureFromPathFNA3D(sprite.path) :
+            LoadTextureFromEmbeddedResourceFNA3D(sprite.path);
         if (tex != IntPtr.Zero)
             windowInfo.loadedTextures.Add(tex);
         return tex;
     }
 
-    private IntPtr LoadTextureFromPath(string path) {
-        IntPtr texture = SDL_image.IMG_LoadTexture(windowInfo.renderer, path);
-        if (texture == IntPtr.Zero) {
-            throw new Exception(SDL_image.IMG_GetError());
-        }
+    // Uses FNA3D to load an SDL Texture from a Stream
+    private IntPtr LoadTextureFromStreamFNA3D(Stream stream) {
+        IntPtr pixels = FNA3D.ReadImageStream(stream, out int w, out int h, out int _);
+        if (pixels == IntPtr.Zero) 
+            throw new Exception("Could not read stream!");
+        
+        IntPtr surface = SDL.SDL_CreateRGBSurfaceFrom(pixels,
+            w, 
+            h, 
+            8 * 4 /* byte per 4 channels */, 
+            w * 4, 
+            0x000000FF, 
+            0x0000FF00,
+            0x00FF0000, 
+            0xFF000000);
+        if (surface == IntPtr.Zero) 
+            throw new Exception("Could not create surface! " + SDL.SDL_GetError());
+        
+        IntPtr texture = SDL.SDL_CreateTextureFromSurface(windowInfo.renderer, surface);
+        if (texture == IntPtr.Zero)
+            throw new Exception("Could not create texture from surface! " + SDL.SDL_GetError());
+        SDL.SDL_FreeSurface(surface);
+        FNA3D.FNA3D_Image_Free(pixels);
         return texture;
     }
-
-    private IntPtr LoadTextureFromEmbeddedResource(string embeddedResourcePath) {
-        (IntPtr rwData, IntPtr byteData) = LoadRWopsFromEmbeddedResource(embeddedResourcePath);
-        IntPtr texture = SDL_image.IMG_LoadTexture_RW(windowInfo.renderer, rwData, (int)SDL.SDL_bool.SDL_TRUE);
-        SDL.SDL_free(byteData);
-        // Implicit free on the call above by sdl
-        if (texture == IntPtr.Zero) {
-            throw new Exception(SDL_image.IMG_GetError());
-        }
-        return texture;
-    }
-
-    // Returns a pointer to the created RWops and one to the data that the RWops hods, since closing it wont release the data
-    private (IntPtr, IntPtr) LoadRWopsFromEmbeddedResource(string embeddedResourcePath) {
+    
+    private Stream GetStreamFromEmbeddedResource(string embeddedResourcePath) {
         // If this project is built on Windows the embedded resource path will use backslashes
-        Stream stream = currentAssembly.GetManifestResourceStream(embeddedResourcePath)
+        return currentAssembly.GetManifestResourceStream(embeddedResourcePath)
              ?? currentAssembly.GetManifestResourceStream(embeddedResourcePath.Replace('/', '\\'))
              ?? throw new FileNotFoundException($"Cannot find sprite with path as embeddedResource: {embeddedResourcePath}");
+    }
+    private IntPtr LoadTextureFromEmbeddedResourceFNA3D(string embeddedResourcePath) {
+        using Stream stream = GetStreamFromEmbeddedResource(embeddedResourcePath);
+        return LoadTextureFromStreamFNA3D(stream);
+    }
 
-        unsafe {
-            // About the lifetime of this pointer: this has to live until after we convert the RWops into a texture
-            // because it's at that point that SDL will copy to GPU memory and we're free to free that
-            IntPtr data_ptr = SDL.SDL_malloc((int) (stream.Length * sizeof(byte)));
-            Span<byte> data = new((byte*) data_ptr, (int) stream.Length);
-            int read = stream.Read(data);
-            if (read == 0) { // Basic error checking, we don't really know how many we should read anyways
-                throw new InvalidDataException(
-                    $"Could not read embedded resource stream for resource: {embeddedResourcePath}");
-            }
-
-            IntPtr rwData = SDL.SDL_RWFromConstMem(data_ptr, read);
-
-            if (rwData == IntPtr.Zero)
-                throw new Exception(SDL.SDL_GetError());
-
-            return (rwData, data_ptr);
-        }
+    private IntPtr LoadTextureFromPathFNA3D(string path) {
+        using Stream stream = File.OpenRead(path);
+        return LoadTextureFromStreamFNA3D(stream);
     }
 
     private int GetSDLRendererIdx() {
@@ -575,100 +581,127 @@ public class EverestSplashWindow {
     }
 
     /// <summary>
-    /// Stripped down version of SDL_image from https://github.com/flibitijibibo/SDL2-CS
+    /// Stripped down version of https://github.com/FNA-XNA/FNA/blob/master/src/Graphics/FNA3D.cs, suited for our needs.
     /// </summary>
-    public static class SDL_image {
-        /* Used by DllImport to load the native library. */
-        private const string nativeLibName = "SDL2_image";
-
-
-        [Flags]
-        public enum IMG_InitFlags
-        {
-        	IMG_INIT_JPG =	0x00000001,
-        	IMG_INIT_PNG =	0x00000002,
-        	IMG_INIT_TIF =	0x00000004,
-        	IMG_INIT_WEBP =	0x00000008
-        }
-
+    public static class FNA3D {
+        
+        #region FNA3D Bindings 
+        private const string nativeLibName = "FNA3D"; 
+        
         [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int IMG_Init(IMG_InitFlags flags);
-
-        [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void IMG_Quit();
-
-        /* src refers to an SDL_RWops*, IntPtr to an SDL_Surface* */
-        /* THIS IS A PUBLIC RWops FUNCTION! */
-        [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr IMG_Load_RW(
-            IntPtr src,
-            int freesrc
+        public static extern IntPtr FNA3D_Image_Load(
+            FNA3D_Image_ReadFunc readFunc,
+            FNA3D_Image_SkipFunc skipFunc,
+            FNA3D_Image_EOFFunc eofFunc,
+            IntPtr context,
+            out int width,
+            out int height,
+            out int len,
+            int forceW,
+            int forceH,
+            byte zoom
+        );
+        
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate int FNA3D_Image_ReadFunc(
+            IntPtr context,
+            IntPtr data,
+            int size
         );
 
-        /* IntPtr refers to an SDL_Texture*, renderer to an SDL_Renderer* */
-        [DllImport(nativeLibName, EntryPoint = "IMG_LoadTexture", CallingConvention = CallingConvention.Cdecl)]
-        private static extern unsafe IntPtr INTERNAL_IMG_LoadTexture(
-            IntPtr renderer,
-            byte* file
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void FNA3D_Image_SkipFunc(
+            IntPtr context,
+            int n
         );
-        public static unsafe IntPtr IMG_LoadTexture(
-            IntPtr renderer,
-            string file
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate int FNA3D_Image_EOFFunc(IntPtr context);
+        
+        [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void FNA3D_Image_Free(IntPtr mem);
+
+        #endregion
+
+        #region Image Loading
+        private static int INTERNAL_Read(
+            IntPtr context,
+            IntPtr data,
+            int size
         ) {
-            byte* utf8File = Utf8EncodeHeap(file);
-            IntPtr handle = INTERNAL_IMG_LoadTexture(
-                renderer,
-                utf8File
+            Stream stream;
+            lock (readStreams)
+            {
+                stream = readStreams[context];
+            }
+            byte[] buf = new byte[size]; // FIXME: Preallocate!
+            int result = stream.Read(buf, 0, size);
+            Marshal.Copy(buf, 0, data, result);
+            return result;
+        }
+
+        private static void INTERNAL_Skip(IntPtr context, int n)
+        {
+            Stream stream;
+            lock (readStreams)
+            {
+                stream = readStreams[context];
+            }
+            stream.Seek(n, SeekOrigin.Current);
+        }
+
+        private static int INTERNAL_EOF(IntPtr context)
+        {
+            Stream stream;
+            lock (readStreams)
+            {
+                stream = readStreams[context];
+            }
+            return (stream.Position == stream.Length) ? 1 : 0;
+        }
+        
+        private static FNA3D_Image_ReadFunc readFunc = INTERNAL_Read;
+        private static FNA3D_Image_SkipFunc skipFunc = INTERNAL_Skip;
+        private static FNA3D_Image_EOFFunc eofFunc = INTERNAL_EOF;
+
+        private static int readGlobal = 0;
+        private static Dictionary<IntPtr, Stream> readStreams = new();
+
+        public static IntPtr ReadImageStream(
+            Stream stream,
+            out int width,
+            out int height,
+            out int len,
+            int forceW = -1,
+            int forceH = -1,
+            bool zoom = false
+        ) {
+            IntPtr context;
+            lock (readStreams)
+            {
+                context = (IntPtr) readGlobal++;
+                readStreams.Add(context, stream);
+            }
+            IntPtr pixels = FNA3D_Image_Load(
+                readFunc,
+                skipFunc,
+                eofFunc,
+                context,
+                out width,
+                out height,
+                out len,
+                forceW,
+                forceH,
+                (byte) (zoom ? 1 : 0)
             );
-            Marshal.FreeHGlobal((IntPtr) utf8File);
-            return handle;
-        }
-
-        /* renderer refers to an SDL_Renderer*.
-         * src refers to an SDL_RWops*.
-         * IntPtr to an SDL_Texture*.
-         */
-        /* THIS IS A PUBLIC RWops FUNCTION! */
-        [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr IMG_LoadTexture_RW(
-            IntPtr renderer,
-            IntPtr src,
-            int freesrc
-        );
-
-        public static string IMG_GetError()
-        {
-            return SDL.SDL_GetError();
-        }
-
-        /* Used for heap allocated string marshaling.
-        * Returned byte* must be free'd with FreeHGlobal.
-        */
-        private static unsafe byte* Utf8EncodeHeap(string str)
-        {
-        	if (str == null)
-        	{
-                return (byte*) 0;
+            lock (readStreams)
+            {
+                readStreams.Remove(context);
             }
-
-            int bufferSize = Utf8Size(str);
-            byte* buffer = (byte*) Marshal.AllocHGlobal(bufferSize);
-        	fixed (char* strPtr = str)
-        	{
-                Encoding.UTF8.GetBytes(strPtr, str.Length + 1, buffer, bufferSize);
-            }
-            return buffer;
+            return pixels;
         }
 
-        /* Used for stack allocated string marshaling. */
-        private static int Utf8Size(string str)
-        {
-        	if (str == null)
-        	{
-                return 0;
-            }
-            return (str.Length * 4) + 1;
-        }
+        #endregion
     }
 }
 
