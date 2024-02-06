@@ -1,5 +1,6 @@
 ﻿using Celeste.Mod;
 using Celeste.Mod.Core;
+using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -423,6 +424,217 @@ namespace Celeste {
                     position2 = position + new Vector2(Container.Width - 40f + ((lastDir > 0) ? (ValueWiggler.Value * 8f) : 0f), 0f) + (Index < max ? vector : Vector2.Zero);
                     ActiveFont.DrawOutline(">", position2, new Vector2(0.5f, 0.5f), Vector2.One, Index < max ? color : (Color.DarkSlateGray * alpha), 2f, strokeColor);
                 }
+            }
+        }
+
+
+        /// <summary>
+        /// A Slider optimized for float ranges.<br></br>
+        /// Inherits directly from <see cref="TextMenu.Item"/>
+        /// </summary>
+        public class FloatSlider : TextMenu.Item {
+            public string Label;
+
+            private float _Value;
+            public float Value {
+                get => MathF.Round(_Value, Precision);
+                set => _Value = Calc.Clamp(value, Min, Max);
+            }
+            private float _PreviousValue;
+            public float PreviousValue {
+                get => MathF.Round(_PreviousValue, Precision);
+                set => _PreviousValue = value;
+            }
+
+            public Action<float> OnValueChange;
+            private readonly Func<float, string> ValueFormat;
+
+            // let's be reasonable here
+            private const int MaxPrecision = 5;
+            private const int MinPrecision = 1;
+
+            private readonly int Precision;
+
+            private readonly float Min;
+            private readonly float Max;
+
+            private readonly int MaxScrollOrderOfMagnitude;
+
+            // increase order of magnitude after a second, every 2 seconds of holding the direction
+            // but don't go too high, we don't want to overshoot
+            private int ScrollOrderOfMagnitude 
+                => (int) Calc.Clamp(MathF.Truncate((ScrollTimer + 1) / 2), 0f, MaxScrollOrderOfMagnitude);
+
+            private float Sine;
+            private int LastScrollDirection;
+            private float ScrollTimer;
+
+            /// <summary>
+            /// Creates a new <see cref="FloatSlider"/>.
+            /// </summary>
+            /// <param name="label">Slider label</param>
+            /// <param name="min">Minimum allowed value</param>
+            /// <param name="max">Maximum allowed value</param>
+            /// <param name="value">Initial value, restricted between <paramref name="min"/> and <paramref name="max"/></param>
+            /// <param name="precision">Slider precision; between 1 and 5 digits of precision</param>
+            /// <param name="valueFormat">Value formatter, defaults to <see cref="float.ToString()"/></param>
+            public FloatSlider(string label, float min, float max, float value = 0, int precision = 1, Func<float, string> valueFormat = null) {
+                Label = label;
+                Selectable = true;
+
+                Precision = Calc.Clamp(precision, MinPrecision, MaxPrecision);
+
+                Min = min;
+                Max = max;
+
+                // find the max order of magnitude to scroll by
+                // floor(log_10(x))+1 returns the number of digits in x (before the decimal point)
+                // then we add the digits after the decimal point (precision)
+                MaxScrollOrderOfMagnitude = (int) MathF.Floor(MathF.Log10(max - min)) + 1 + precision;
+
+                ValueFormat = valueFormat ?? (value => value.ToString());
+
+                Value = value; // the accessor will clamp our value
+            }
+
+            /// <inheritdoc cref="TextMenu.Option{T}.Change(Action{T})"/>
+            public FloatSlider Change(Action<float> action) {
+                OnValueChange = action;
+                return this;
+            }
+
+            public override void Added() {
+                Container.InnerContent = TextMenu.InnerContentMode.TwoColumn;
+            }
+
+            public override void LeftPressed() {
+                if (Input.MenuLeft.Repeating)
+                    ScrollTimer += Engine.RawDeltaTime * 8;
+                else
+                    ScrollTimer = 0;
+
+                if (Value > Min) {
+                    Audio.Play(SFX.ui_main_button_toggle_off);
+
+                    PreviousValue = Value;
+                    Value -= MathF.Pow(10, ScrollOrderOfMagnitude - Precision);
+                    Value = Math.Max(Min, Value); // ensure we stay within bounds
+                    LastScrollDirection = -1;
+
+                    ValueWiggler.Start();
+                    OnValueChange?.Invoke(Value);
+                }
+            }
+
+            public override void RightPressed() {
+                if (Input.MenuRight.Repeating)
+                    ScrollTimer += Engine.RawDeltaTime * 8;
+                else
+                    ScrollTimer = 0;
+
+                if (Value < Max) {
+                    Audio.Play(SFX.ui_main_button_toggle_on);
+
+                    PreviousValue = Value;
+                    Value += MathF.Pow(10, ScrollOrderOfMagnitude - Precision);
+                    Value = Math.Min(Max, Value); // ensure we stay within bounds
+                    LastScrollDirection = 1;
+
+                    ValueWiggler.Start();
+                    OnValueChange?.Invoke(Value);
+                }
+            }
+
+            public override void ConfirmPressed() {
+                if (Engine.Scene is not Overworld overworld) {
+                    // can't enter OUIs in-game!
+                    Audio.Play(SFX.ui_main_button_invalid);
+                    return;
+                }
+                overworld.Goto<OuiNumberEntry>().Init<OuiModOptions>(
+                    Value,
+                    (value) => {
+                        PreviousValue = Value;
+                        Value = Calc.Clamp(value, Min, Max);
+                        LastScrollDirection = 0;
+
+                        OnValueChange?.Invoke(value);
+                    },
+                    maxValueLength: (int) MathF.Floor(MathF.Log10(Max - Min)) + 1 + Precision,
+                    allowDecimals: true,
+                    allowNegatives: Min < 0
+                );
+            }
+
+            public override void Update() {
+                Sine += Engine.RawDeltaTime;
+            }
+
+            public override float LeftWidth() {
+                return ActiveFont.Measure(Label).X + 32f;
+            }
+
+            public override float RightWidth() {
+                // Measure value in case it is externally set ouside the bounds
+                float width = Calc.Max(
+                    0f,
+                    ActiveFont.Measure(ValueFormat.Invoke(Max)).X,
+                    ActiveFont.Measure(ValueFormat.Invoke(Min)).X,
+                    ActiveFont.Measure(ValueFormat.Invoke(Value)).X
+                );
+                return width + 120f;
+            }
+
+            public override float Height() {
+                return ActiveFont.LineHeight;
+            }
+
+            public override void Render(Vector2 position, bool highlighted) {
+                float alpha = Container.Alpha;
+                Color strokeColor = Color.Black * (alpha * alpha * alpha);
+                Color color = Disabled
+                    ? Color.DarkSlateGray
+                    : ((highlighted ? Container.HighlightColor : Color.White) * alpha);
+                Color disabledColor = Color.DarkSlateGray * alpha;
+
+                ActiveFont.DrawOutline(
+                    Label,
+                    position, new Vector2(0f, 0.5f), Vector2.One,
+                    color,
+                    2f, strokeColor
+                );
+
+                // someone messed up the ranges! we're outta here
+                if (Max - Min <= 0)
+                    return;
+
+                float rWidth = RightWidth();
+                ActiveFont.DrawOutline(
+                    ValueFormat.Invoke(Value),
+                    position + new Vector2(Container.Width - rWidth * 0.5f + LastScrollDirection * ValueWiggler.Value * 8f, 0f), new Vector2(0.5f, 0.5f), Vector2.One * 0.8f,
+                    color,
+                    2f, strokeColor
+                );
+
+                Vector2 sineOffset = Vector2.UnitX * (highlighted ? (MathF.Sin(Sine * 4f) * 4f) : 0f);
+
+                Vector2 adjustmentIndicatorPosition =
+                    position
+                    + new Vector2(Container.Width - rWidth + 40f + ((LastScrollDirection < 0) ? (-ValueWiggler.Value * 8f) : 0f), 0f)
+                    - (Value > Min ? sineOffset : Vector2.Zero);
+
+                ActiveFont.DrawOutline(
+                    "<",
+                    adjustmentIndicatorPosition, new Vector2(0.5f, 0.5f), Vector2.One,
+                    Value > Min ? color : disabledColor,
+                    2f, strokeColor
+                );
+
+                adjustmentIndicatorPosition =
+                    position
+                    + new Vector2(Container.Width - 40f + ((LastScrollDirection > 0) ? (ValueWiggler.Value * 8f) : 0f), 0f)
+                    + (Value < Max ? sineOffset : Vector2.Zero);
+                ActiveFont.DrawOutline(">", adjustmentIndicatorPosition, new Vector2(0.5f, 0.5f), Vector2.One, Value < Max ? color : disabledColor, 2f, strokeColor);
             }
         }
 
