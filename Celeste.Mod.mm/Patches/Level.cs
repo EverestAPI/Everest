@@ -616,7 +616,6 @@ namespace Celeste {
 
         [ThreadStatic]
         internal static bool _isLoadingTriggers;
-    }
 
         public static void LinkEntityToData(Entity entity, EntityData data) {
             if(data == null) {
@@ -1471,6 +1470,12 @@ namespace MonoMod {
             MethodReference m_LoadStrings_ctor = MonoModRule.Modder.Module.ImportReference(t_LoadStrings.Resolve().FindMethod("System.Void .ctor()"));
             m_LoadStrings_Add.DeclaringType = t_LoadStrings;
             m_LoadStrings_ctor.DeclaringType = t_LoadStrings;
+
+            FieldReference f_isLoadingTriggers = context.Method.DeclaringType.FindField("_isLoadingTriggers")!;
+            MethodReference m_IsInDoNotLoadIncreased = context.Method.DeclaringType.FindMethod("_IsInDoNotLoadIncreased")!;
+
+            VariableDefinition[] vars_entityData = context.Body.Variables.Where(v => v.VariableType.FullName == "Celeste.EntityData").ToArray();
+            FieldDefinition m_Level_temporaryEntityData = context.Method.DeclaringType.FindField("temporaryEntityData");
 
             ILCursor cursor = new ILCursor(context);
 
