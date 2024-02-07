@@ -21,8 +21,9 @@ For information about mod development, check out the [Everest Wiki](https://gith
 - ***If you just want to install Everest, go to the [Everest website](https://everestapi.github.io/).***
 - If you've **previously installed Everest and updated Celeste** or switched betas / branches, delete the `orig` directory where Celeste is installed.
     - macOS: Right-click and browse the Celeste app in Finder, then navigate to `Contents`, then `MacOS`.
-- Clone the Everest repo **+ submodules**, either in your IDE, via the CLI, or by downloading the .zip from GitHub.
+- Clone the Everest repo **+ submodules**, either in your IDE or via the CLI.
 - Restore Nuget packages either via your IDE or the command line.
+- Everest requires version 7.0.200 or higher of .NET SDK, as well as the .NET 6.0 runtime, for the build process.
 
 ### Windows
 - Open the .sln in the repo with Visual Studio

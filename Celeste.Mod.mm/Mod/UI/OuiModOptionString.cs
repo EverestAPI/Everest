@@ -113,7 +113,8 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Enter(Oui from) {
-            TextInput.OnInput += OnTextInput;
+            if (UseKeyboardInput) 
+                TextInput.OnInput += OnTextInput;
 
             Overworld.ShowInputUI = false;
 
@@ -183,6 +184,7 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Leave(Oui next) {
+            // Non existent unhooks aren't dangerous, and can get us out of weird situations
             TextInput.OnInput -= OnTextInput;
 
             Overworld.ShowInputUI = true;
@@ -209,10 +211,6 @@ namespace Celeste.Mod.UI {
         }
 
         public void OnTextInput(char c) {
-            if (!UseKeyboardInput) {
-                return;
-            }
-
             if (c == (char) 13) {
                 // Enter - confirm.
                 Finish();

@@ -106,9 +106,7 @@ namespace Celeste.Mod {
                 if (dep.Name == "API")
                     dep.Name = CoreModule.Instance.Metadata.Name;
                 if (dep.Name == CoreModule.Instance.Metadata.Name || dep.Name == CoreModule.NETCoreMetaName) {
-                    const int FirstStableCoreBuild = 4465;
-
-                    if (dep.Name == CoreModule.NETCoreMetaName || dep.Version.Minor >= FirstStableCoreBuild || dep.Version.Build >= FirstStableCoreBuild)
+                    if (dep.Name == CoreModule.NETCoreMetaName)
                         IsNetCoreOnlyMod = true;
 
                     dependsOnAPI = true;

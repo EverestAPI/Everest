@@ -598,7 +598,6 @@ namespace Celeste.Mod {
                             ConstructorInfo ctor;
                             MethodInfo gen;
 
-
                             gen = type.GetMethod(genName, new Type[] { typeof(Level), typeof(LevelData), typeof(Vector2), typeof(EntityData) });
                             if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
                                 loader = (level, levelData, offset, entityData) => {

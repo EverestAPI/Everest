@@ -77,6 +77,7 @@
     <EmbeddedResource Remove="Content\Dialog\Fonts\chinese-noto.bmfc" />
     <EmbeddedResource Remove="Content\Dialog\Fonts\chinese_additional_characters.txt" />
     <EmbeddedResource Remove="Content\**\*.xcf" />
+
   </ItemGroup>
 
   <ItemGroup>
@@ -99,6 +100,14 @@
   <ItemGroup>
     <ProjectReference Include="..\DiscordGameSDK\DiscordGameSDK.csproj" />
     <ProjectReference Include="..\NETCoreifier\NETCoreifier.csproj" />
+    <ProjectReference Include="..\EverestSplash\EverestSplash.csproj" /> <!-- Forces correct build dependency order -->
   </ItemGroup>
+  
+  <Target Name="CopyEverestSplashFiles" AfterTargets="Publish">
+    <ItemGroup> <!-- For some reason to use wildcards you have to use a property -->
+      <SplashBinaries Include="$(OutputPath)\publish\EverestSplash*;$(OutputPath)\publish\piton-runtime.yaml" />
+    </ItemGroup>
+    <Move SourceFiles="@(SplashBinaries)" DestinationFolder="$(OutputPath)\publish\EverestSplash\" />
+  </Target>
 
 </Project>

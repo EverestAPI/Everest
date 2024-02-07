@@ -612,6 +612,12 @@ namespace Celeste {
             return errorPresent;
         }
 
+        private bool _IsInDoNotLoadIncreased(LevelData level, EntityData entity) => Session.DoNotLoad.Contains(new EntityID(level.Name, entity.ID + 20000000));
+
+        [ThreadStatic]
+        internal static bool _isLoadingTriggers;
+    }
+
         public static void LinkEntityToData(Entity entity, EntityData data) {
             if(data == null) {
                 if (temporaryEntityData == null)
@@ -1465,9 +1471,7 @@ namespace MonoMod {
             MethodReference m_LoadStrings_ctor = MonoModRule.Modder.Module.ImportReference(t_LoadStrings.Resolve().FindMethod("System.Void .ctor()"));
             m_LoadStrings_Add.DeclaringType = t_LoadStrings;
             m_LoadStrings_ctor.DeclaringType = t_LoadStrings;
-            // These are used for the EntityData patch
-            VariableDefinition[] vars_entityData = context.Body.Variables.Where(v => v.VariableType.FullName == "Celeste.EntityData").ToArray();
-            FieldDefinition m_Level_temporaryEntityData = context.Method.DeclaringType.FindField("temporaryEntityData");
+
             ILCursor cursor = new ILCursor(context);
 
             // Insert our custom entity loader and use it for levelData.Entities and levelData.Triggers
@@ -1488,6 +1492,37 @@ namespace MonoMod {
                 cursor.Emit(OpCodes.Ldstr, "");
                 cursor.Emit(OpCodes.Br_S, cursor.Next.Next); // True -> custom entity loaded, so skip the vanilla handler by saving "" as the entity name
                 cursor.Index++;
+            }
+
+            // Reset to apply trigger loading patches
+            cursor.Index = 0;
+            int v_levelData = -1;
+            cursor.GotoNext(MoveType.Before, instr => instr.MatchLdloc(out v_levelData), instr => instr.MatchLdfld("Celeste.LevelData", "Triggers"));
+            // set global flag _isLoadingTriggers to true
+            cursor.EmitLdcI4(1);
+            cursor.EmitStsfld(f_isLoadingTriggers);
+            int v_entityData = -1;
+            cursor.GotoNext(instr => instr.MatchLdloc(out v_entityData), instr => instr.MatchLdfld("Celeste.EntityData", "ID"));
+            ILLabel continueLabel = null;
+            cursor.GotoNext(MoveType.After, instr => instr.MatchBrtrue(out continueLabel));
+            // add
+            // || _IsInDoNotLoadIncreased(levelData, trigger)
+            // to if condition for continue to handle triggers that already add 10000000 to their DoNotLoad entry
+            cursor.EmitLdarg0();
+            cursor.EmitLdloc(v_levelData);
+            cursor.EmitLdloc(v_entityData);
+            cursor.EmitCall(m_IsInDoNotLoadIncreased);
+            cursor.EmitBrtrue(continueLabel);
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdloc(out _), instr => instr.MatchLdfld("Celeste.LevelData", "FgDecals"));
+            Instruction oldFinallyEnd = cursor.Next;
+            // set _isLoadingTriggers to false
+            cursor.EmitLdcI4(0);
+            Instruction newFinallyEnd = cursor.Prev;
+            cursor.EmitStsfld(f_isLoadingTriggers);
+            // fix end of finally block
+            foreach (ExceptionHandler handler in context.Body.ExceptionHandlers.Where(handler => handler.HandlerEnd == oldFinallyEnd)) {
+                handler.HandlerEnd = newFinallyEnd;
+                break;
             }
 
             // Reset to apply entity patches
@@ -1605,9 +1640,12 @@ namespace MonoMod {
             // Insert CheckForErrors() at the beginning so we can display an error screen if needed
             cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_CheckForErrors);
             // Insert an if statement that returns if we find an error at CheckForErrors
-            cursor.Emit(OpCodes.Brfalse, cursor.Next).Emit(OpCodes.Ret);
+            ILLabel rest = cursor.DefineLabel();
+            cursor.Emit(OpCodes.Brfalse, rest).Emit(OpCodes.Ret);
 
             // insert FixChaserStatesTimeStamp()
+            cursor.MarkLabel(rest);
+            cursor.MoveAfterLabels();
             cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_FixChaserStatesTimeStamp);
 
             /* We expect something similar enough to the following:

@@ -10,8 +10,10 @@ namespace Celeste.Mod.Core {
         public Dictionary<int, Dictionary<int, BinaryPacker.Element>> PlacedBerriesPerCheckpoint;
         public Dictionary<int, int> MaximumBerryOrderPerCheckpoint;
         public Dictionary<int, List<BinaryPacker.Element>> AutomaticBerriesPerCheckpoint;
-        public int MaxBerryCheckpoint; // future compatibility in case support for too high checkpoints gets added
+        public int MaxBerryCheckpoint;
         public List<CheckpointData> CheckpointsAuto;
+        public Dictionary<int, CheckpointData> CheckpointsManual;
+        public int MaxManualCheckpoint;
         public string[] LevelTags;
         public string LevelName;
         public int TotalStrawberriesIncludingUntracked;
@@ -23,6 +25,8 @@ namespace Celeste.Mod.Core {
             AutomaticBerriesPerCheckpoint = new Dictionary<int, List<BinaryPacker.Element>>();
             MaxBerryCheckpoint = -1;
             CheckpointsAuto = new List<CheckpointData>();
+            CheckpointsManual = new Dictionary<int, CheckpointData>();
+            MaxManualCheckpoint = -1;
             TotalStrawberriesIncludingUntracked = 0;
         }
 
@@ -54,20 +58,34 @@ namespace Celeste.Mod.Core {
                                 foreach (BinaryPacker.Element levelChild in level.Children)
                                     Context.Run(levelChild.Name, levelChild);
                         }
+
+                        // do checkpoint post-processing
+                        for (int checkpoint = 0; checkpoint <= MaxManualCheckpoint; checkpoint++) {
+                            if (!CheckpointsManual.TryGetValue(checkpoint, out CheckpointData data)) {
+                                continue;
+                            }
+                            if (checkpoint <= CheckpointsAuto.Count) {
+                                CheckpointsAuto.Insert(checkpoint, data);
+                            } else {
+                                Logger.Log(LogLevel.Warn, "core", $"Checkpoint ID {checkpoint} exceeds checkpoint count in room {data.Level} of map {Mode.Path}. Reassigning checkpoint ID.");
+                                CheckpointsAuto.Add(data);
+                            }
+                        }
+
                         // do berry order post-processing
                         for (int checkpoint = 0; checkpoint <= MaxBerryCheckpoint; checkpoint++) {
                             if (!PlacedBerriesPerCheckpoint.ContainsKey(checkpoint) && !AutomaticBerriesPerCheckpoint.ContainsKey(checkpoint)) {
                                 continue;
                             }
-                            if (!PlacedBerriesPerCheckpoint.ContainsKey(checkpoint)) {
-                                PlacedBerriesPerCheckpoint[checkpoint] = new Dictionary<int, BinaryPacker.Element>();
+                            if (!PlacedBerriesPerCheckpoint.TryGetValue(checkpoint, out Dictionary<int, BinaryPacker.Element> placedBerries)) {
+                                PlacedBerriesPerCheckpoint[checkpoint] = placedBerries = new Dictionary<int, BinaryPacker.Element>();
                                 MaximumBerryOrderPerCheckpoint[checkpoint] = -1;
                             }
-                            Dictionary<int, BinaryPacker.Element> placedBerries = PlacedBerriesPerCheckpoint[checkpoint];
+                            
                             // automatically assign berries without specified order
-                            if (AutomaticBerriesPerCheckpoint.ContainsKey(checkpoint)) {
+                            if (AutomaticBerriesPerCheckpoint.TryGetValue(checkpoint, out List<BinaryPacker.Element> berries)) {
                                 int strawberryInCheckpoint = 0;
-                                foreach (BinaryPacker.Element berry in AutomaticBerriesPerCheckpoint[checkpoint]) {
+                                foreach (BinaryPacker.Element berry in berries) {
                                     while (placedBerries.ContainsKey(strawberryInCheckpoint)) {
                                         strawberryInCheckpoint++;
                                     }
@@ -77,16 +95,28 @@ namespace Celeste.Mod.Core {
                                     strawberryInCheckpoint++;
                                 }
                             }
+
                             // eliminate gaps in berry order
                             int gaps = 0;
                             for (int i = 0; i <= MaximumBerryOrderPerCheckpoint[checkpoint]; i++) {
-                                if (!placedBerries.ContainsKey(i)) {
+                                if (!placedBerries.TryGetValue(i, out BinaryPacker.Element placedBerry)) {
                                     if (gaps == 0) {
                                         Logger.Log(LogLevel.Warn, "core", $"Gap in berry order in checkpoint {checkpoint} of map {Mode.Path}. Reassigning berry order.");
                                     }
                                     gaps++;
                                 } else {
-                                    placedBerries[i].SetAttr("order", placedBerries[i].AttrInt("order") - gaps);
+                                    placedBerry.SetAttr("order", placedBerry.AttrInt("order") - gaps);
+                                }
+                            }
+
+                            // assign berries with invalid checkpoint ID to final checkpoint
+                            if (checkpoint > Checkpoint) {
+                                for (int i = 0; i <= MaximumBerryOrderPerCheckpoint[checkpoint]; i++) {
+                                    Logger.Log(LogLevel.Warn, "core", $"Invalid checkpoint ID {checkpoint} for berry in map {Mode.Path}. Reassigning to last checkpoint.");
+                                    BinaryPacker.Element berry = placedBerries[i];
+                                    berry.SetAttr("checkpointID", Checkpoint);
+                                    berry.SetAttr("order", MaximumBerryOrderPerCheckpoint[Checkpoint] + 1);
+                                    MaximumBerryOrderPerCheckpoint[Checkpoint]++;
                                 }
                             }
                         }
@@ -201,9 +231,12 @@ namespace Celeste.Mod.Core {
                                 if (id == -1) {
                                     CheckpointsAuto.Add(c);
                                 } else {
-                                    while (CheckpointsAuto.Count <= id)
-                                        CheckpointsAuto.Add(null);
-                                    CheckpointsAuto[id] = c;
+                                    if (CheckpointsManual.TryAdd(id, c)) {
+                                        MaxManualCheckpoint = Math.Max(MaxManualCheckpoint, id);
+                                    } else {
+                                        Logger.Log(LogLevel.Warn, "core", $"Duplicate checkpoint ID {id} in room {LevelName} of map {Mode.Path}. Reassigning checkpoint ID.");
+                                        CheckpointsAuto.Add(c); // treat duplicate ID as -1
+                                    }
                                 }
                             }
                             Checkpoint++;
@@ -261,24 +294,25 @@ namespace Celeste.Mod.Core {
             };
 
         public override void Run(string stepName, BinaryPacker.Element el) {
-            if (StrawberryRegistry.TrackableContains(el))
-                stepName = "entity:strawberry";
-
-            if (StrawberryRegistry.GetRegisteredBerries().Any(berry => berry.entityName == el.Name))
+            if (StrawberryRegistry.IsRegisteredBerry(el.Name)) {
                 TotalStrawberriesIncludingUntracked++;
+                
+                if (StrawberryRegistry.TrackableContains(el))
+                    stepName = "entity:strawberry";
+            }
 
             base.Run(stepName, el);
         }
 
         public override void End() {
             if (Mode.Checkpoints == null)
-                Mode.Checkpoints = CheckpointsAuto.Where(c => c != null).ToArray();
+                Mode.Checkpoints = CheckpointsAuto.ToArray();
 
             if (Mode != ParentMode) {
                 if (ParentMode.Checkpoints == null)
-                    ParentMode.Checkpoints = CheckpointsAuto.Where(c => c != null).ToArray();
+                    ParentMode.Checkpoints = CheckpointsAuto.ToArray();
                 else
-                    ParentMode.Checkpoints = ParentMode.Checkpoints.Concat(CheckpointsAuto.Where(c => c != null)).ToArray();
+                    ParentMode.Checkpoints = ParentMode.Checkpoints.Concat(CheckpointsAuto).ToArray();
             }
 
             MapData.DetectedStrawberriesIncludingUntracked = TotalStrawberriesIncludingUntracked;

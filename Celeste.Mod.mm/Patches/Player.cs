@@ -15,7 +15,6 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
-using System.Collections;
 
 namespace Celeste {
     class patch_Player : Player {

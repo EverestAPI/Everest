@@ -10,6 +10,7 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using System.Text;
 
 
 namespace Celeste {
@@ -88,7 +89,7 @@ namespace Celeste {
 
         public static void RefreshLanguages() {
             PostLanguageLoad();
-
+            MissingDialogIds.Clear();
             Dialog.Language = Dialog.Languages[Dialog.Language.Id];
         }
 
@@ -172,16 +173,10 @@ namespace Celeste {
                 return false;
 
             name = name.DialogKeyify();
-            if (language == null)
-                language = Dialog.Language;
+            language ??= Dialog.Language;
 
-            if (language.Dialog.ContainsKey(name))
-                return true;
-
-            if (language != FallbackLanguage)
-                return Has(name, FallbackLanguage);
-
-            return false;
+            return language.Dialog.ContainsKey(name)
+                || (language != FallbackLanguage && FallbackLanguage.Dialog.ContainsKey(name));
         }
 
         /// <inheritdoc cref="Dialog.Get(string, Language)"/>
@@ -191,15 +186,15 @@ namespace Celeste {
                 return "";
 
             name = name.DialogKeyify();
-            if (language == null)
-                language = Dialog.Language;
+            language ??= Dialog.Language;
 
             if (language.Dialog.TryGetValue(name, out string result))
                 return result;
 
-            if (language != FallbackLanguage)
-                return Get(name, FallbackLanguage);
+            if (language != FallbackLanguage && FallbackLanguage.Dialog.TryGetValue(name, out result))
+                return result;
 
+            WarnMissingDialogId(name, language);
             return "[" + name + "]";
         }
 
@@ -210,15 +205,15 @@ namespace Celeste {
                 return "";
 
             name = name.DialogKeyify();
-            if (language == null)
-                language = Dialog.Language;
+            language ??= Dialog.Language;
 
             if (language.Cleaned.TryGetValue(name, out string result))
                 return result;
 
-            if (language != FallbackLanguage)
-                return Clean(name, FallbackLanguage);
+            if (language != FallbackLanguage && FallbackLanguage.Cleaned.TryGetValue(name, out result))
+                return result;
 
+            WarnMissingDialogId(name, language);
             return "{" + name + "}";
         }
 
@@ -227,11 +222,54 @@ namespace Celeste {
         /// Tries to find a value under both "LEVELSET_NAME" and "NAME", otherwise returns name.SpacedPascalCase()
         /// </summary>
         public static string CleanLevelSet(string name) {
-            if (string.IsNullOrEmpty(name)) {
+            if (string.IsNullOrEmpty(name))
                 return Dialog.Clean("levelset_");
-            }
-            return ("levelset_" + name).DialogCleanOrNull() ?? name.DialogCleanOrNull() ?? name.SpacedPascalCase();
+
+            name = name.DialogKeyify();
+
+            string cleaned = ("levelset_" + name).DialogCleanOrNull() ?? name.DialogCleanOrNull();
+
+            if (cleaned != null)
+                return cleaned;
+
+            WarnMissingDialogId(name, isLevelSet: true);
+            return name.SpacedPascalCase();
         }
+
+        /// <summary>
+        /// Log a warn whenever a Dialog ID has no translation in the current language or the fallback language (<tt>English.txt</tt>).
+        /// </summary>
+        /// <param name="dialogId">Dialog ID which is missing a translation</param>
+        /// <param name="language">The language to check (defaults to <see cref="Dialog.Language"/>)</param>
+        /// <param name="isLevelSet">Whether this is a level set Dialog ID</param>
+        private static void WarnMissingDialogId(string dialogId, Language language = null, bool isLevelSet = false) {
+            if (!MissingDialogIds.Add(dialogId))
+                return;
+
+            language ??= Dialog.Language;
+            StringBuilder logBuilder = new();
+
+            if (isLevelSet)
+                logBuilder.Append("Level set ");
+
+            logBuilder.AppendFormat("Dialog ID \"{0}\" has no translation in {1}", dialogId, language.FilePath);
+
+            if (language != FallbackLanguage)
+                logBuilder.AppendFormat(" or {0}", FallbackLanguage.FilePath);
+
+            logBuilder.Append('!');
+
+            Logger.Log(LogLevel.Warn, "Dialog", logBuilder.ToString());
+        }
+
+        // can't move the field higher up, else MonoMod causes a member name conflict in a compiler generated class
+        // see https://github.com/MonoMod/MonoMod/issues/73
+
+        /// <summary>
+        /// Contains all Dialog IDs which don't have a translation in the current language or <tt>English.txt</tt>.
+        /// It is reset whenever <see cref="AssetReloadHelper"/> reloads the current language.
+        /// </summary>
+        public static readonly HashSet<string> MissingDialogIds = new();
 
     }
     public static class DialogExt {

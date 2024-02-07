@@ -27,6 +27,8 @@ namespace Celeste {
         // We're effectively in Celeste, but still need to "expose" private fields to our mod.
         private bool firstLoad;
 
+        
+
         [PatchCelesteMain]
         public static extern void orig_Main(string[] args);
         [MonoModPublic]
@@ -182,6 +184,18 @@ namespace Celeste {
         private static void MainInner(string[] args) {
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
 
+            // Get the splash up and running asap
+            if (!args.Contains("--disable-splash") && File.Exists(Path.Combine(".", "EverestSplash", "EverestSplash.dll"))) {
+                string targetRenderer = "";
+                for (int i = 0; i < args.Length; i++) { // The splash will use the same renderer as fna
+                    if (args[i] == "--graphics" && args.Length > i + 1) {
+                        targetRenderer = args[i + 1];
+                    }
+                }
+
+                EverestSplashHandler.RunSplash(targetRenderer);
+            }
+
             try {
                 Everest.ParseArgs(args);
                 ParseFNAArgs(args);
@@ -332,6 +346,12 @@ https://discord.gg/6qjaePQ");
             patch_VirtualTexture.StopFastTextureLoading();
 
             Everest._ContentLoaded = true;
+        }
+
+        protected override void BeginRun() {
+            base.BeginRun();
+            // This is as close as we can get to the showwindow call
+            EverestSplashHandler.StopSplash();
         }
 
         protected override void OnExiting(object sender, EventArgs args) {

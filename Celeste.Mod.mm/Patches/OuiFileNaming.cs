@@ -25,10 +25,6 @@ namespace Celeste {
         }
 
         public void OnTextInput(char c) {
-            if (!UseKeyboardInput) {
-                return;
-            }
-
             if (c == (char) 13) {
                 // Enter - confirm.
                 Finish();
@@ -68,13 +64,16 @@ namespace Celeste {
         public extern IEnumerator orig_Enter(Oui from);
         public override IEnumerator Enter(Oui from) {
             Engine.Commands.Enabled = false;
-            TextInput.OnInput += OnTextInput;
+            // only subscribe if we're going to use the keyboard
+            if (UseKeyboardInput) 
+                TextInput.OnInput += OnTextInput;
             return orig_Enter(from);
         }
 
         public extern IEnumerator orig_Leave(Oui next);
         public override IEnumerator Leave(Oui next) {
             Engine.Commands.Enabled = (Celeste.PlayMode == Celeste.PlayModes.Debug);
+            // Non existent unhooks aren't dangerous, and can get us out of weird situations
             TextInput.OnInput -= OnTextInput;
             return orig_Leave(next);
         }

@@ -38,6 +38,7 @@ namespace Celeste.Mod {
     public sealed class AssetTypeDirectory : AssetTypeNonConflict { private AssetTypeDirectory() { } }
     public sealed class AssetTypeMetadataYaml : AssetTypeNonConflict { private AssetTypeMetadataYaml() { } }
     public sealed class AssetTypeSpriteBank : AssetTypeNonConflict { private AssetTypeSpriteBank() { } }
+    public sealed class AssetTypeEverestIgnore : AssetTypeNonConflict { private AssetTypeEverestIgnore() { } }
 
     // Generic asset types
     public sealed class AssetTypeLua { private AssetTypeLua() { } }
@@ -510,7 +511,7 @@ namespace Celeste.Mod {
             };
 
             internal readonly static HashSet<string> BlacklistExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
-                ".cs", ".csproj", ".md", ".pdb", ".sln", ".yaml-backup"
+                ".cs", ".csproj", ".md", ".pdb", ".sln", ".yaml-backup", ".gitignore"
             };
 
             internal readonly static HashSet<string> BlacklistRootFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
@@ -788,6 +789,10 @@ namespace Celeste.Mod {
                         file = file.Substring(0, file.Length - 4 - 6);
                         file += ".guids";
                     }
+
+                } else if (file == ".everestignore") {
+                    type = typeof(AssetTypeEverestIgnore);
+                    file = "";
 
                 } else if (OnGuessType != null) {
                     // Parse custom types from mods

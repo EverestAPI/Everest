@@ -1,6 +1,8 @@
 
 using Monocle;
 using System;
+using System.Buffers;
+using System.Buffers.Binary;
 using System.Diagnostics;
 using System.IO.MemoryMappedFiles;
 using System.Linq;
@@ -13,10 +15,10 @@ namespace Celeste.Mod {
     /// <summary>
     /// Manages the in-memory autosplitter info
     /// </summary>
-    public unsafe static class AutoSplitter {
+    public static class AutoSplitter {
 #region Splitter Info
         [StructLayout(LayoutKind.Explicit)]
-        public struct CoreAutoSplitterInfo {
+        public unsafe struct CoreAutoSplitterInfo {
             public const byte CurrentVersion = 3;
 
             public const int MagicSize = 0x14;
@@ -77,13 +79,12 @@ namespace Celeste.Mod {
 
         private static bool _IsInitialized;
         private static MemoryMappedFile _SplitterInfoFile;
-        private static MemoryMappedViewAccessor _SplitterInfoView, _StringPoolAView, _StringPoolBView;
-        private static byte* _SplitterInfoPtr;
-        private static byte* _StringPoolAPtr, _StringPoolBPtr;
+        private static InfoMemoryManager _SplitterInfoMemManager;
+        private static Memory<byte> _SplitterInfoBuf, _StringPoolA, _StringPoolB;
         private static bool _UseStringPoolB;
-        private static long _StringPoolOffset;
+        private static int _StringPoolOffset;
 
-        internal static ref CoreAutoSplitterInfo SplitterInfo => ref Unsafe.AsRef<CoreAutoSplitterInfo>((void*) _SplitterInfoPtr);
+        internal static ref CoreAutoSplitterInfo SplitterInfo => ref Unsafe.As<byte, CoreAutoSplitterInfo>(ref _SplitterInfoBuf.Span[0]);
 
         internal static void Init() {
             Trace.Assert(!_IsInitialized);
@@ -92,21 +93,22 @@ namespace Celeste.Mod {
 
             // Initialize the memory mapped file
             _SplitterInfoFile = MemoryMappedFile.CreateNew(null, 3 * PAGE_SIZE);
-            _SplitterInfoView = _SplitterInfoFile.CreateViewAccessor(0*PAGE_SIZE, PAGE_SIZE);
-            _StringPoolAView =  _SplitterInfoFile.CreateViewAccessor(1*PAGE_SIZE, PAGE_SIZE);
-            _StringPoolBView =  _SplitterInfoFile.CreateViewAccessor(2*PAGE_SIZE, PAGE_SIZE);
+            _SplitterInfoMemManager = new InfoMemoryManager(_SplitterInfoFile);
 
-            // Acquire pointers
-            _SplitterInfoView.SafeMemoryMappedViewHandle.AcquirePointer(ref _SplitterInfoPtr);
-            _StringPoolAView.SafeMemoryMappedViewHandle.AcquirePointer(ref _StringPoolAPtr);
-            _StringPoolBView.SafeMemoryMappedViewHandle.AcquirePointer(ref _StringPoolBPtr);
+            // Setup memory objects
+            Memory<byte> mem = _SplitterInfoMemManager.Memory;
+            _SplitterInfoBuf    = mem.Slice(0*PAGE_SIZE, PAGE_SIZE);
+            _StringPoolB        = mem.Slice(2*PAGE_SIZE, PAGE_SIZE);
+            _StringPoolA        = mem.Slice(1*PAGE_SIZE, PAGE_SIZE);
 
             // Initialize the header
             ref CoreAutoSplitterInfo info = ref SplitterInfo;
 
             // - magic bytes
-            fixed (byte* magicSrcPtr = CoreAutoSplitterInfo.MagicBytes, magicDstPtr = info.Magic)
-                Buffer.MemoryCopy(magicSrcPtr, magicDstPtr, CoreAutoSplitterInfo.MagicSize, CoreAutoSplitterInfo.MagicSize);
+            unsafe {
+                fixed (byte* magicSrcPtr = CoreAutoSplitterInfo.MagicBytes, magicDstPtr = info.Magic)
+                    Buffer.MemoryCopy(magicSrcPtr, magicDstPtr, CoreAutoSplitterInfo.MagicSize, CoreAutoSplitterInfo.MagicSize);
+            }
 
             // - version numbers
             info.CelesteVersionMajor = (byte) Celeste.Instance.Version.Major;
@@ -115,8 +117,8 @@ namespace Celeste.Mod {
             info.InfoVersion = CoreAutoSplitterInfo.CurrentVersion;
 
             // - Everest version string
-            long strOff = Marshal.SizeOf<CoreAutoSplitterInfo>();
-            info.EverestVersionStrPtr = (nint) (_SplitterInfoPtr + WriteString(_SplitterInfoView, ref strOff, Everest.VersionString));
+            int strOff = Marshal.SizeOf<CoreAutoSplitterInfo>();
+            info.EverestVersionStrPtr = WriteString(_SplitterInfoBuf.Span, ref strOff, Everest.VersionString);
 
             _IsInitialized = true;
         }
@@ -125,18 +127,12 @@ namespace Celeste.Mod {
             if (!_IsInitialized)
                 return;
 
-            // Release pointers
-            if (_SplitterInfoPtr != null)
-                _SplitterInfoView.SafeMemoryMappedViewHandle.ReleasePointer();
-            if (_StringPoolAPtr != null)
-                _StringPoolAView.SafeMemoryMappedViewHandle.ReleasePointer();
-            if (_StringPoolBPtr != null)
-                _StringPoolBView.SafeMemoryMappedViewHandle.ReleasePointer();
+            // Release buffers
+            _SplitterInfoBuf = Memory<byte>.Empty;
+            _StringPoolA = Memory<byte>.Empty;
+            _StringPoolB = Memory<byte>.Empty;
 
             // Dispose the memory mapped file
-            _SplitterInfoView.Dispose();
-            _StringPoolAView.Dispose();
-            _StringPoolBView.Dispose();
             _SplitterInfoFile.Dispose();
 
             _IsInitialized = false;
@@ -147,26 +143,28 @@ namespace Celeste.Mod {
             _StringPoolOffset = 0;
         }
 
-        private static long WriteString(MemoryMappedViewAccessor view, ref long offset, string str) {
-            //Strings are encoded as null-terminated UTF8 strings
-            //Additionally, the length of the string is stored as a ushort right before the string data at offset -2
-            byte[] utf8Str = Encoding.UTF8.GetBytes(str);
-            view.Write(offset, (ushort) utf8Str.Length);
-            view.WriteArray(offset + 2, utf8Str, 0, utf8Str.Length);
-            view.Write(offset + 2 + utf8Str.Length, (byte) 0);
-
-            long ptrOff = offset + 2;
-            offset += 2 + utf8Str.Length + 1;
-            return ptrOff;
-        }
-
-        private static nint AppendStringToPool(string str) {
+        private static nint WriteString(Span<byte> mem, ref int offset, string str) {
             if (string.IsNullOrEmpty(str))
                 return 0;
 
-            long ptrOff = WriteString(_UseStringPoolB ? _StringPoolBView : _StringPoolAView, ref _StringPoolOffset, str);
-            return (nint) ((_UseStringPoolB ? _StringPoolBPtr : _StringPoolAPtr) + ptrOff);
+            //Strings are encoded as null-terminated UTF8 strings
+            //Additionally, the length of the string is stored as a ushort right before the string data at offset -2
+            byte[] utf8Str = Encoding.UTF8.GetBytes(str);
+
+            mem = mem[offset..];
+            offset += 2 + utf8Str.Length + 1;
+
+            BinaryPrimitives.WriteUInt16LittleEndian(mem[..2], (ushort) utf8Str.Length);
+            utf8Str.CopyTo(mem[2..(2+utf8Str.Length)]);
+            mem[2+utf8Str.Length] = 0;
+
+            unsafe {
+                fixed (byte* memPtr = mem)
+                    return (nint) (memPtr + 2);
+            }
         }
+
+        private static nint AppendStringToPool(string str) => WriteString(_UseStringPoolB ? _StringPoolB.Span : _StringPoolA.Span, ref _StringPoolOffset, str);
 
         public static void Update() {
             if (!_IsInitialized)
@@ -245,5 +243,40 @@ namespace Celeste.Mod {
 
         public delegate void InfoUpdateHandler(ref CoreAutoSplitterInfo info, Func<string, nint> stringWriter);
         public static event InfoUpdateHandler OnUpdateInfo;
+
+        private unsafe class InfoMemoryManager : MemoryManager<byte> {
+
+            private MemoryMappedViewAccessor _SplitterInfoView;
+            private byte* _SplitterInfoPtr;
+
+            public InfoMemoryManager(MemoryMappedFile memFile) {
+                _SplitterInfoView = memFile.CreateViewAccessor();
+
+                _SplitterInfoPtr = null;
+                _SplitterInfoView.SafeMemoryMappedViewHandle.AcquirePointer(ref _SplitterInfoPtr);
+                _SplitterInfoPtr += _SplitterInfoView.PointerOffset;
+            }
+
+            public override Span<byte> GetSpan() {
+                return new Span<byte>(_SplitterInfoPtr, (int) _SplitterInfoView.Capacity);
+            }
+
+            public override MemoryHandle Pin(int elementIndex = 0) {
+                return new MemoryHandle(_SplitterInfoPtr + elementIndex);
+            }
+
+            public override void Unpin() {}
+
+            protected override void Dispose(bool disposing) {
+                if (_SplitterInfoPtr != null) {
+                    _SplitterInfoView.SafeMemoryMappedViewHandle.ReleasePointer();
+                    _SplitterInfoPtr = null;
+                }
+
+                _SplitterInfoView.Dispose();
+            }
+
+        }
+
     }
 }

@@ -273,7 +273,7 @@ namespace Celeste.Mod {
                         data = new byte[length];
                         dataPtr = IntPtr.Zero;
                     } else {
-                        data = new byte[0];
+                        data = Array.Empty<byte>();
                         dataPtr = Marshal.AllocHGlobal(length);
                     }
 
@@ -323,7 +323,7 @@ namespace Celeste.Mod {
                         data = new byte[length];
                         dataPtr = IntPtr.Zero;
                     } else {
-                        data = new byte[0];
+                        data = Array.Empty<byte>();
                         dataPtr = Marshal.AllocHGlobal(length);
                     }
 
@@ -400,7 +400,7 @@ namespace Celeste.Mod {
                 Texture2D.TextureDataFromStreamEXT(stream, out w, out h, out data);
                 dataPtr = IntPtr.Zero;
             } else {
-                data = new byte[0];
+                data = Array.Empty<byte>();
                 dataPtr = FNA3D_ReadImageStream(stream, out w, out h, out _);
             }
         }
@@ -416,7 +416,7 @@ namespace Celeste.Mod {
                 dataPtr = IntPtr.Zero;
                 length = data.Length;
             } else {
-                data = new byte[0];
+                data = Array.Empty<byte>();
                 dataPtr = FNA3D_ReadImageStream(stream, out w, out h, out length);
             }
 
@@ -425,12 +425,13 @@ namespace Celeste.Mod {
                 for (int i = length - 1 - 3; i > -1; i -= 4) {
                     byte a = raw[i + 3];
 
-                    if (a == 0 || a == 255)
+                    if (a is 0 or 255)
                         continue;
 
-                    raw[i + 0] = (byte) (raw[i + 0] * a / 255D);
-                    raw[i + 1] = (byte) (raw[i + 1] * a / 255D);
-                    raw[i + 2] = (byte) (raw[i + 2] * a / 255D);
+                    double by = a / 255D;
+                    raw[i + 0] = (byte) (raw[i + 0] * by);
+                    raw[i + 1] = (byte) (raw[i + 1] * by);
+                    raw[i + 2] = (byte) (raw[i + 2] * by);
                     // raw[i + 3] = a;
                 }
             }

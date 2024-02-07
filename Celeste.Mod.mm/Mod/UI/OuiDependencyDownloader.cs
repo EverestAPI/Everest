@@ -442,7 +442,7 @@ namespace Celeste.Mod.UI {
 
                 try {
                     Everest.Updater.DownloadFileWithProgress(mod.URL, downloadDestination, progressCallback);
-                } catch (WebException e) {
+                } catch (Exception e) when (e is WebException or TimeoutException) {
                     Logger.Log(LogLevel.Warn, "OuiDependencyDownloader", $"Download failed, trying mirror {mod.MirrorURL}");
                     Logger.LogDetailed(e);
 
