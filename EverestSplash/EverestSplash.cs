@@ -88,7 +88,7 @@ public static class EverestSplash {
             Console.WriteLine($"Running for {s} seconds...");
             StreamWriter sw = new(server);
             for (int i = 1; i < progBarSteps + 1; i++) {
-                await sw.WriteLineAsync("#progress" + (float)i / progBarSteps);
+                await sw.WriteLineAsync("#progress" + i + ";" + progBarSteps + ";" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
                 await sw.FlushAsync();
                 await Task.Delay(s*1000/progBarSteps);
             }
@@ -231,8 +231,12 @@ public class EverestSplashWindow {
 
         windowInfo = new WindowInfo() { window = window, renderer = renderer, };
         SDL.SDL_SetHint( SDL.SDL_HINT_RENDER_SCALE_QUALITY, "1");
-
-        using Stream appIconStream = GetStreamFromEmbeddedResource(AppIcon.path);
+        
+        // Ugly part, look a way for a sec
+        // This is the only place where we have a good reason to load an image into a surface, so no abstraction here
+        using Stream appIconStream = File.Exists(AppIcon.path)
+            ? File.OpenRead(AppIcon.path)
+            : GetStreamFromEmbeddedResource(AppIcon.path);
         IntPtr appIconPixels = FNA3D.ReadImageStream(appIconStream, out int w, out int h, out int _);
         if (appIconPixels == IntPtr.Zero) 
             throw new Exception("Could not read stream!");
@@ -251,6 +255,8 @@ public class EverestSplashWindow {
         SDL.SDL_SetWindowIcon(window, appIconSurface);
         SDL.SDL_FreeSurface(appIconSurface); // Here the surface has already been copied so its safe to free
         FNA3D.FNA3D_Image_Free(appIconPixels);
+        
+        // Okay, good code continues here
 
         // FNA fixes
         // FNA disables the cursor on game creation and when creating the window
@@ -324,7 +330,7 @@ public class EverestSplashWindow {
             prevProgress = progressWidth;
         });
 
-        windowInfo.modLoadingProgressCache.SetText("0.00%"); // Default to 0.00%
+        windowInfo.modLoadingProgressCache.SetText("Loading..."); // Default to "Loading..."
 
         while (true) { // while true :trolloshiro: (on a serious note, for our use case its fineee :))
             fnaFixes.CheckAndFix();
@@ -391,7 +397,7 @@ public class EverestSplashWindow {
             windowInfo.startingEverestFontCache.Render(windowInfo.renderer, startingEverestPoint, 0.60F);
 
             SDL.SDL_Point modLoadingProgressPoint = new() {
-                x = LRmargin,
+                x = LRmargin+2, // Apparently this text looks misaligned compared to the above text, likely because of the change in font size, anyhow this lessens the effect
                 y = (int)(Tmargin + everestLogoRect.y + everestLogoRect.h +
                           windowInfo.startingEverestFontCache.GetCachedTextureSize().y * 0.60F),
             };

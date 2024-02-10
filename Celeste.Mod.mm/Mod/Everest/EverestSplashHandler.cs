@@ -106,12 +106,11 @@ namespace Celeste.Mod {
         private static void UpdateSplashLoadingProgress(string latestLoadedMod) {
             if (totalMods == 0)
                 return;
-            float progress = (float) loadedMods / totalMods;
             lock (splashPipeLock) {
                 if (splashPipeServerStream == null)
                     return; // If the splash never ran, no-op
-                if (!splashPipeServerStreamConnection.IsCompleted)
-                    return; // If the splash never connected, no-op
+                if (!splashPipeServerStreamConnection.IsCompleted || !splashPipeServerStream.IsConnected)
+                    return; // If the splash never connected or its no longer alive, no-op
                 try {
                     StreamWriter sw = new(splashPipeServerStream);
                     sw.WriteLine("#progress" + loadedMods + ";" + totalMods + ";" + latestLoadedMod);
