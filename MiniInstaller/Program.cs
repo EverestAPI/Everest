@@ -65,6 +65,9 @@ namespace MiniInstaller {
                 return 1;
             }
 
+            // Set working directory
+            Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!);
+            
             // Handle creating backup symlinks after obtaining elevation
             if (args.Length > 0 && args[0] == $"{nameof(CreateBackupSymlinksWithElevation)}_PostElevationRequest") {
                 PathGame = args[1];
