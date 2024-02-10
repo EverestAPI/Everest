@@ -196,7 +196,7 @@ namespace Celeste.Mod {
                     LoadZip(Path.Combine(PathMods, file));
                 }
                 foreach (string dir in dirs) {
-                    LoadZip(Path.Combine(PathMods, dir));
+                    LoadDir(Path.Combine(PathMods, dir));
                 }
 
                 enforceOptionalDependencies = false;
