@@ -139,13 +139,13 @@ public class EverestSplashWindow {
     private readonly Assembly currentAssembly;
 
     private FontLoader renogareFont = null!;
-    private float _loadingProgress = 0;
+    private LoadingProgress _loadingProgress = new(0, 0, "");
 
-    private float loadingProgress {
+    private LoadingProgress loadingProgress {
         get => _loadingProgress;
         set {
-            _loadingProgress = value;
-            windowInfo.modLoadingProgressCache?.SetText(value.ToString("F2") + "%");
+            _loadingProgress = value with { lastMod = value.lastMod == "" ? _loadingProgress.lastMod : value.lastMod };
+            windowInfo.modLoadingProgressCache?.SetText("Loading " + _loadingProgress.lastMod + " [" + _loadingProgress.loadedMods + "/" + _loadingProgress.totalMods + "]");
         }
     }
 
@@ -172,7 +172,11 @@ public class EverestSplashWindow {
 
                     const string progressPfx = "#progress";
                     if (message.StartsWith(progressPfx)) { // Mod loading progress message received: "progress (float){progress}"
-                        loadingProgress = float.Parse(message[progressPfx.Length..]);
+                        int countEnd = message.IndexOf(";", StringComparison.Ordinal);
+                        int totalEnd = message.IndexOf(";", countEnd + 1, StringComparison.Ordinal);
+                        int loadedMods = int.Parse(message[progressPfx.Length..countEnd]);
+                        int totalMods = int.Parse(message[(countEnd+1)..totalEnd]);
+                        loadingProgress = new LoadingProgress(loadedMods, totalMods, message[(totalEnd+1)..]);
                     }
                 }
             } catch (Exception e) {
@@ -315,7 +319,8 @@ public class EverestSplashWindow {
         float progressWidth = 0;
         float prevProgress = 0;
         AnimTimer(16, () => {
-            progressWidth = loadingProgress * WindowWidth*0.25f + prevProgress*0.75f;
+            if (loadingProgress.totalMods == 0) return;
+            progressWidth = (((float)loadingProgress.loadedMods)/loadingProgress.totalMods) * WindowWidth*0.25f + prevProgress*0.75f;
             prevProgress = progressWidth;
         });
 
@@ -390,7 +395,7 @@ public class EverestSplashWindow {
                 y = (int)(Tmargin + everestLogoRect.y + everestLogoRect.h +
                           windowInfo.startingEverestFontCache.GetCachedTextureSize().y * 0.60F),
             };
-            windowInfo.modLoadingProgressCache.Render(windowInfo.renderer, modLoadingProgressPoint, 0.60F);
+            windowInfo.modLoadingProgressCache.Render(windowInfo.renderer, modLoadingProgressPoint, 0.30F);
 
             // Render the loading progress bar
             const int barHeight = 4;
@@ -567,6 +572,7 @@ public class EverestSplashWindow {
             public void HasRan() => HasFixed = true;
         }
     }
+    public record LoadingProgress(int loadedMods, int totalMods, string lastMod);
 
     /// <summary>
     /// Stripped down version of https://github.com/FNA-XNA/FNA/blob/master/src/Graphics/FNA3D.cs, suited for our needs.

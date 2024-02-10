@@ -196,7 +196,7 @@ namespace Celeste.Mod {
                     LoadZip(Path.Combine(PathMods, file));
                 }
                 foreach (string dir in dirs) {
-                    LoadZip(Path.Combine(PathMods, dir));
+                    LoadDir(Path.Combine(PathMods, dir));
                 }
 
                 enforceOptionalDependencies = false;
@@ -253,7 +253,7 @@ namespace Celeste.Mod {
                 if (!File.Exists(archive)) // Relative path? Let's just make it absolute.
                     archive = Path.Combine(PathMods, archive);
                 if (!File.Exists(archive)) { // It just doesn't exist.
-                    EverestSplashHandler.IncreaseLoadedModCount();
+                    EverestSplashHandler.IncreaseLoadedModCount(null);
                     return;
                 }
 
@@ -353,7 +353,7 @@ namespace Celeste.Mod {
                 if (!Directory.Exists(dir)) // Relative path?
                     dir = Path.Combine(PathMods, dir);
                 if (!Directory.Exists(dir)) { // It just doesn't exist.
-                    EverestSplashHandler.IncreaseLoadedModCount();
+                    EverestSplashHandler.IncreaseLoadedModCount(null);
                     return;
                 }
 
@@ -466,7 +466,7 @@ namespace Celeste.Mod {
                 callback?.Invoke();
 
                 LoadMod(meta);
-                EverestSplashHandler.IncreaseLoadedModCount();
+                EverestSplashHandler.IncreaseLoadedModCount(meta.Name);
             }
 
             /// <summary>

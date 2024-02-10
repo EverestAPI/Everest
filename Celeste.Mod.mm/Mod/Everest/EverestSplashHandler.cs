@@ -93,17 +93,17 @@ namespace Celeste.Mod {
             totalMods = modCount;
         }
 
-        public static void IncreaseLoadedModCount() {
+        public static void IncreaseLoadedModCount(string latestLoadedMod) {
             loadedMods++;
-            UpdateSplashLoadingProgress();
+            UpdateSplashLoadingProgress(latestLoadedMod);
         }
 
         public static void AllModsLoaded() {
             loadedMods = totalMods;
-            UpdateSplashLoadingProgress();
+            UpdateSplashLoadingProgress(null);
         }
 
-        private static void UpdateSplashLoadingProgress() {
+        private static void UpdateSplashLoadingProgress(string latestLoadedMod) {
             if (totalMods == 0)
                 return;
             float progress = (float) loadedMods / totalMods;
@@ -114,7 +114,7 @@ namespace Celeste.Mod {
                     return; // If the splash never connected, no-op
                 try {
                     StreamWriter sw = new(splashPipeServerStream);
-                    sw.WriteLine("#progress" + progress);
+                    sw.WriteLine("#progress" + loadedMods + ";" + totalMods + ";" + latestLoadedMod);
                     sw.Flush();
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Error, "EverestSplash", "Could not send progress to splash!");
