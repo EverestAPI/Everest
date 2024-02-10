@@ -114,9 +114,6 @@ public class EverestSplashWindow {
     private static readonly TextureInfo EverestLogoTexture = new() {
         path = "SplashContent/everest_centered.png",
     };
-    private static readonly TextureInfo StartingEverestTexture = new() {
-        path = "SplashContent/starting_everest_text.png",
-    };
     private static readonly TextureInfo WheelTexture = new() {
         path = "SplashContent/splash_wheel_blur.png",
     };
@@ -141,7 +138,16 @@ public class EverestSplashWindow {
     private readonly string targetRenderer;
     private readonly Assembly currentAssembly;
 
-    private float loadingProgress = 0;
+    private FontLoader renogareFont = null!;
+    private float _loadingProgress = 0;
+
+    private float loadingProgress {
+        get => _loadingProgress;
+        set {
+            _loadingProgress = value;
+            windowInfo.modLoadingProgressCache?.SetText(value.ToString("F2") + "%");
+        }
+    }
 
     public static EverestSplashWindow CreateNewWindow(string targetRenderer = "", string postFix = "") {
         if (instance != null)
@@ -213,7 +219,9 @@ public class EverestSplashWindow {
             throw new Exception("Failed to create window!\n" + SDL.SDL_GetError());
 
         IntPtr renderer = SDL.SDL_CreateRenderer(window, GetSDLRendererIdx(),
-            SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
+            SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED 
+            | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC 
+            | SDL.SDL_RendererFlags.SDL_RENDERER_TARGETTEXTURE /* Required for fast font rendering */);
         if (renderer == IntPtr.Zero)
             throw new Exception("Failed to create renderer!\n" + SDL.SDL_GetError());
 
@@ -254,31 +262,44 @@ public class EverestSplashWindow {
     private void LoadTextures() {
         windowInfo.everestLogoTexture =
             LoadTexture(EverestLogoTexture);
-        windowInfo.startingEverestTexture =
-            LoadTexture(StartingEverestTexture);
         windowInfo.wheelTexture =
             LoadTexture(WheelTexture);
-        SDL.SDL_SetTextureAlphaMod(windowInfo.wheelTexture, 25);
+        SDL.SDL_SetTextureAlphaMod(windowInfo.wheelTexture.Handle, 25);
         windowInfo.bgGradientTexture =
             LoadTexture(BgGradientTexture);
-        SDL.SDL_SetTextureAlphaMod(windowInfo.bgGradientTexture, 25);
+        SDL.SDL_SetTextureAlphaMod(windowInfo.bgGradientTexture.Handle, 25);
+        
+        // Load the font
+        using (Stream fontDataStream = GetStreamFromEmbeddedResource("SplashContent/fonts/renogare.bin"))
+        using (Stream fontPixelsStream = GetStreamFromEmbeddedResource("SplashContent/fonts/renogare_0.png"))
+            renogareFont = new FontLoader(
+                fontDataStream,
+                STexture.FromStream(fontPixelsStream, windowInfo.renderer)
+            );
+
+        // Setup the font cache
+        windowInfo.startingEverestFontCache = new FontCache(renogareFont);
+        windowInfo.modLoadingProgressCache = new FontCache(renogareFont);
+        
+        windowInfo.loadedTextures.Add(renogareFont); // Not textures, but those need to be disposed as well
+        windowInfo.loadedTextures.Add(windowInfo.startingEverestFontCache);
+        windowInfo.loadedTextures.Add(windowInfo.modLoadingProgressCache);
     }
 
     private void HandleWindow() {
-        // Query all the textures in one go, as those cannot change
-        SDL.SDL_QueryTexture(windowInfo.bgGradientTexture, out _, out _, out int bgW, out int bgH);
-        SDL.SDL_QueryTexture(windowInfo.wheelTexture, out _, out _, out int wheelW, out int wheelH);
-        SDL.SDL_QueryTexture(windowInfo.everestLogoTexture, out _, out _, out int logoW, out int logoH);
-        SDL.SDL_QueryTexture(windowInfo.startingEverestTexture, out _, out _, out int textW, out int allTextH);
-
         SDL.SDL_ShowWindow(windowInfo.window);
 
         // Animation values, SDL timers are a pain to use, this is easier
         int startEverestSpriteIdx = 0;
+        string[] startingCelesteText = { // DO Make sure that the longest string goes first, for caching reasons
+            "Starting Celeste...", "Starting Celeste", "Starting Celeste.", "Starting Celeste.."
+        };
         AnimTimer(500, () => {
-            startEverestSpriteIdx = (startEverestSpriteIdx + 1) % 3/*startEverestSpriteCount*/;
+            windowInfo.startingEverestFontCache.SetText(startingCelesteText[startEverestSpriteIdx]);
+            startEverestSpriteIdx = (startEverestSpriteIdx + 1) % startingCelesteText.Length;
         });
-        int realBgH = bgH * WindowWidth / bgW;
+        
+        int realBgH = windowInfo.bgGradientTexture.Height * WindowWidth / windowInfo.bgGradientTexture.Width;
         int bgBloomPos = -realBgH/2;
         AnimTimer(16, () => {
             bgBloomPos += 1;
@@ -298,9 +319,11 @@ public class EverestSplashWindow {
             prevProgress = progressWidth;
         });
 
+        windowInfo.modLoadingProgressCache.SetText("0.00%"); // Default to 0.00%
+
         while (true) { // while true :trolloshiro: (on a serious note, for our use case its fineee :))
             fnaFixes.CheckAndFix();
-
+            
             while (SDL.SDL_PollEvent(out SDL.SDL_Event e) != 0) {
                 // An SDL_USEREVENT is sent when the splash receives the quit command
                 if (e.type is SDL.SDL_EventType.SDL_QUIT or SDL.SDL_EventType.SDL_USEREVENT) {
@@ -320,24 +343,24 @@ public class EverestSplashWindow {
                 w = WindowWidth,
                 h = realBgH, // We calculated this earlier for the animation
             };
-            SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.bgGradientTexture, IntPtr.Zero, ref bgRect);
+            SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.bgGradientTexture.Handle, IntPtr.Zero, ref bgRect);
             // Draw another one above because it tiles nicely
             bgRect.y = bgBloomPos - bgRect.h;
-            SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.bgGradientTexture, IntPtr.Zero, ref bgRect);
+            SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.bgGradientTexture.Handle, IntPtr.Zero, ref bgRect);
             // Finally, draw another one below the first one (mostly for 16:9 mode)
             bgRect.y = bgBloomPos + bgRect.h;
-            SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.bgGradientTexture, IntPtr.Zero, ref bgRect);
+            SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.bgGradientTexture.Handle, IntPtr.Zero, ref bgRect);
 
 
             // Background wheel
-            float scale = (float) WindowWidth / wheelW;
+            float scale = (float) WindowWidth / windowInfo.wheelTexture.Width;
             SDL.SDL_Rect wheelRect = new() {
-                x = (int)(-wheelW*scale/2),
-                y = (int)(-wheelH*scale/2),
-                w = (int)(wheelW*scale),
-                h = (int)(wheelH*scale),
+                x = (int)(-windowInfo.wheelTexture.Width*scale/2),
+                y = (int)(-windowInfo.wheelTexture.Height*scale/2),
+                w = (int)(windowInfo.wheelTexture.Width*scale),
+                h = (int)(windowInfo.wheelTexture.Height*scale),
             };
-            SDL.SDL_RenderCopyEx(windowInfo.renderer, windowInfo.wheelTexture, IntPtr.Zero,
+            SDL.SDL_RenderCopyEx(windowInfo.renderer, windowInfo.wheelTexture.Handle, IntPtr.Zero,
                 ref wheelRect, wheelAngle, IntPtr.Zero, SDL.SDL_RendererFlip.SDL_FLIP_NONE);
 
 
@@ -350,30 +373,25 @@ public class EverestSplashWindow {
                 x = LRmargin, // Add some margin
                 y = Tmargin,
                 w = realWindowWidth,
-                h = (int) ((float) realWindowWidth/logoW*logoH), // no need to subtract margin here since it ignores the height
+                h = (int) ((float) realWindowWidth/windowInfo.everestLogoTexture.Width*windowInfo.everestLogoTexture.Height), // no need to subtract margin here since it ignores the height
             };
-            SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.everestLogoTexture, IntPtr.Zero, ref everestLogoRect);
+            SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.everestLogoTexture.Handle, IntPtr.Zero, ref everestLogoRect);
 
 
-
-            // Render the other
-            realWindowWidth /= 2; // Make it half the width
-            int textH = allTextH / 3; // theres 3 texts
-            SDL.SDL_Rect startingEverestRect = new() {
+            // Render the starting everest text
+            SDL.SDL_Point startingEverestPoint = new() {
                 x = LRmargin,
-                y = Tmargin + (everestLogoRect.y+everestLogoRect.h),
-                w = realWindowWidth,
-                h = (int) ((float) realWindowWidth/textW*textH),
+                y = Tmargin + (everestLogoRect.y + everestLogoRect.h),
             };
-            SDL.SDL_Rect sourceStartingEverestRect = new() {
-                x = 0,
-                y = startEverestSpriteIdx*textH,
-                w = textW,
-                h = textH,
+            windowInfo.startingEverestFontCache.Render(windowInfo.renderer, startingEverestPoint, 0.60F);
+
+            SDL.SDL_Point modLoadingProgressPoint = new() {
+                x = LRmargin,
+                y = (int)(Tmargin + everestLogoRect.y + everestLogoRect.h +
+                          windowInfo.startingEverestFontCache.GetCachedTextureSize().y * 0.60F),
             };
-            SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.startingEverestTexture,
-                ref sourceStartingEverestRect, ref startingEverestRect);
-            
+            windowInfo.modLoadingProgressCache.Render(windowInfo.renderer, modLoadingProgressPoint, 0.60F);
+
             // Render the loading progress bar
             const int barHeight = 4;
             SDL.SDL_Rect progressRect = new() {
@@ -393,10 +411,11 @@ public class EverestSplashWindow {
     private void Cleanup() {
         fnaFixes.Dispose(); // Do this asap, theres no reason to (theoretically), but it wont hurt
 
-        foreach (IntPtr texture in windowInfo.loadedTextures) {
-            if (texture != IntPtr.Zero)
-                SDL.SDL_DestroyTexture(texture);
+        foreach (IDisposable texture in windowInfo.loadedTextures) {
+            texture.Dispose();
         }
+        
+        renogareFont.Dispose();
 
         if (windowInfo.renderer != IntPtr.Zero)
             SDL.SDL_DestroyRenderer(windowInfo.renderer);
@@ -439,55 +458,22 @@ public class EverestSplashWindow {
     }
 
     // Loads a texture from the provided sprite, defaults to local paths
-    private IntPtr LoadTexture(TextureInfo sprite) {
-        IntPtr tex = File.Exists(sprite.path) ?
-            LoadTextureFromPathFNA3D(sprite.path) :
-            LoadTextureFromEmbeddedResourceFNA3D(sprite.path);
-        if (tex != IntPtr.Zero)
-            windowInfo.loadedTextures.Add(tex);
+    private STexture LoadTexture(TextureInfo sprite) {
+        STexture tex;
+        using (Stream stream = File.Exists(sprite.path) ? File.OpenRead(sprite.path) : GetStreamFromEmbeddedResource(sprite.path))
+            tex = STexture.FromStream(stream, windowInfo.renderer);
+
+        windowInfo.loadedTextures.Add(tex);
         return tex;
     }
 
-    // Uses FNA3D to load an SDL Texture from a Stream
-    private IntPtr LoadTextureFromStreamFNA3D(Stream stream) {
-        IntPtr pixels = FNA3D.ReadImageStream(stream, out int w, out int h, out int _);
-        if (pixels == IntPtr.Zero) 
-            throw new Exception("Could not read stream!");
-        
-        IntPtr surface = SDL.SDL_CreateRGBSurfaceFrom(pixels,
-            w, 
-            h, 
-            8 * 4 /* byte per 4 channels */, 
-            w * 4, 
-            0x000000FF, 
-            0x0000FF00,
-            0x00FF0000, 
-            0xFF000000);
-        if (surface == IntPtr.Zero) 
-            throw new Exception("Could not create surface! " + SDL.SDL_GetError());
-        
-        IntPtr texture = SDL.SDL_CreateTextureFromSurface(windowInfo.renderer, surface);
-        if (texture == IntPtr.Zero)
-            throw new Exception("Could not create texture from surface! " + SDL.SDL_GetError());
-        SDL.SDL_FreeSurface(surface);
-        FNA3D.FNA3D_Image_Free(pixels);
-        return texture;
-    }
+   
     
     private Stream GetStreamFromEmbeddedResource(string embeddedResourcePath) {
         // If this project is built on Windows the embedded resource path will use backslashes
         return currentAssembly.GetManifestResourceStream(embeddedResourcePath)
              ?? currentAssembly.GetManifestResourceStream(embeddedResourcePath.Replace('/', '\\'))
              ?? throw new FileNotFoundException($"Cannot find sprite with path as embeddedResource: {embeddedResourcePath}");
-    }
-    private IntPtr LoadTextureFromEmbeddedResourceFNA3D(string embeddedResourcePath) {
-        using Stream stream = GetStreamFromEmbeddedResource(embeddedResourcePath);
-        return LoadTextureFromStreamFNA3D(stream);
-    }
-
-    private IntPtr LoadTextureFromPathFNA3D(string path) {
-        using Stream stream = File.OpenRead(path);
-        return LoadTextureFromStreamFNA3D(stream);
     }
 
     private int GetSDLRendererIdx() {
@@ -506,6 +492,7 @@ public class EverestSplashWindow {
 
     private List<Timer> timers = new();
     private void AnimTimer(int ms, Action cb) {
+        cb(); // Call it instantly to guarantee all cb have ran before the update loop
         Timer animTimer = new(ms);
         animTimer.Elapsed += (_, _) => { cb(); };
         animTimer.AutoReset = true;
@@ -517,11 +504,12 @@ public class EverestSplashWindow {
     private struct WindowInfo {
         public IntPtr window = IntPtr.Zero;
         public IntPtr renderer = IntPtr.Zero;
-        public IntPtr everestLogoTexture = IntPtr.Zero;
-        public IntPtr startingEverestTexture = IntPtr.Zero;
-        public IntPtr wheelTexture = IntPtr.Zero;
-        public IntPtr bgGradientTexture = IntPtr.Zero;
-        public readonly List<IntPtr> loadedTextures = new();
+        public STexture everestLogoTexture = null!;
+        public FontCache startingEverestFontCache = null!;
+        public FontCache modLoadingProgressCache = null!;
+        public STexture wheelTexture = null!;
+        public STexture bgGradientTexture = null!;
+        public readonly List<IDisposable> loadedTextures = new();
 
         public WindowInfo() {
         }
