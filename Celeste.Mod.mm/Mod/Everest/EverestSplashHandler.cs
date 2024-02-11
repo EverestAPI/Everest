@@ -69,6 +69,16 @@ namespace Celeste.Mod {
                     if (data.Data == null || data.Data.Trim().TrimEnd('\n', '\r') == "") return;
                     Logger.Log(LogLevel.Error, "EverestSplash", data.Data);
                 };
+                
+                // Dirty fix: really make sure the splash is executable on *nix
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
+                    RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                    Process chmod = Process.Start(new ProcessStartInfo("chmod", $"u+x \"{splashProcess.StartInfo.FileName}"));
+                    if (chmod == null) Logger.Log(LogLevel.Error, "EverestSplash", "Could not chmod splash!");
+                    chmod?.WaitForExit();
+                    if (chmod?.ExitCode != 0)
+                        Logger.Log(LogLevel.Error, "EverestSplash", "Chmod failed for the splash!");
+                }
 
                 splashProcess.Start();
                 splashProcess.BeginOutputReadLine(); // This is required for the event to even be sent
