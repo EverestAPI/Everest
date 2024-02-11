@@ -438,30 +438,12 @@ namespace Celeste.Mod {
             core.Metadata.RegisterMod();
 
             // Note: Everest fulfills some mod dependencies by itself.
-            new NullModule(new EverestModuleMetadata {
+            NullModule vanilla = new NullModule(new EverestModuleMetadata {
                 Name = "Celeste",
                 VersionString = $"{Celeste.Instance.Version.ToString()}-{(Flags.IsFNA ? "fna" : "xna")}"
-            }).Register();
-            new NullModule(new EverestModuleMetadata {
-                Name = "DialogCutscene",
-                VersionString = "1.0.0"
-            }).Register();
-            new NullModule(new EverestModuleMetadata {
-                Name = "UpdateChecker",
-                VersionString = "1.0.2"
-            }).Register();
-            new NullModule(new EverestModuleMetadata {
-                Name = "InfiniteSaves",
-                VersionString = "1.0.0"
-            }).Register();
-            new NullModule(new EverestModuleMetadata {
-                Name = "DebugRebind",
-                VersionString = "1.0.0"
-            }).Register();
-            new NullModule(new EverestModuleMetadata {
-                Name = "RebindPeriod",
-                VersionString = "1.0.0"
-            }).Register();
+            });
+            vanilla.Register();
+            vanilla.Metadata.RegisterMod();
 
             LuaLoader.Initialize();
 
