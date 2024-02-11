@@ -88,7 +88,7 @@ public static class EverestSplash {
             Console.WriteLine($"Running for {s} seconds...");
             StreamWriter sw = new(server);
             for (int i = 1; i < progBarSteps + 1; i++) {
-                await sw.WriteLineAsync("#progress" + i + ";" + progBarSteps + ";" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+                await sw.WriteLineAsync("#progress" + i + ";" + progBarSteps + ";" + "ABCDEFGHIJKLMNOPQRSTUVWXYZá");
                 await sw.FlushAsync();
                 await Task.Delay(s*1000/progBarSteps);
             }
@@ -144,8 +144,18 @@ public class EverestSplashWindow {
     private LoadingProgress loadingProgress {
         get => _loadingProgress;
         set {
+            if (renogareFont == null) return; // Too early :/ (ignore data received when the splash was still initializing)
             _loadingProgress = value with { lastMod = value.lastMod == "" ? _loadingProgress.lastMod : value.lastMod };
-            windowInfo.modLoadingProgressCache?.SetText("Loading " + _loadingProgress.lastMod + " [" + _loadingProgress.loadedMods + "/" + _loadingProgress.totalMods + "]");
+            char[] sanitizedName = _loadingProgress.lastMod.ToCharArray();
+            // Sanitize the sent mod name, it could contain forbidden characters
+            // I KNOW I KNOW, this is absolutely slow and painful to your eyes, TWO whole string copies and a loop O(n*3), painful,
+            // so feel free to optimize it :D
+            for (int i = 0; i < sanitizedName.Length; i++) {
+                if (!renogareFont.IsValidChar(sanitizedName[i]))
+                    sanitizedName[i] = '?'; // Fallback char
+            }
+
+            windowInfo.modLoadingProgressCache?.SetText("Loading " + new string(sanitizedName) + " [" + _loadingProgress.loadedMods + "/" + _loadingProgress.totalMods + "]");
         }
     }
 

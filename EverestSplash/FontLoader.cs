@@ -197,6 +197,15 @@ public class FontLoader : IDisposable {
     public uint GetFontFormat() {
         return fontTexture.Format;
     }
+    
+    /// <summary>
+    /// Obtain whether the a char present in the current font.
+    /// </summary>
+    /// <param name="chr">The char to check.</param>
+    /// <returns>Whether the char has a glyph in this font.</returns>
+    public bool IsValidChar(char chr) {
+        return CharSizes.ContainsKey(chr);
+    }
 
     #endregion
 
