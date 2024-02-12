@@ -638,8 +638,14 @@ namespace Celeste {
         public static void SetSubHudRenderer(this Level self, SubHudRenderer value)
             => ((patch_Level) self).SubHudRenderer = value;
 
-
-        public static bool LoadEntity(this Level self, EntityData entity3, LevelData levelData = null, Vector2? roomOffset = null) {
+        /// <summary>
+        /// Loads a Vanilla Entity into the Level
+        /// </summary>
+        /// <param name="entity3">the EntityData for the Entity. Name should be one of the vanilla-defined entities.</param>
+        /// <param name="levelData">Optional; the Level the entity should be added into. You shouldn't use this unless your entity is global.</param>
+        /// <param name="roomOffset">Optional; used for setting the relative position of the entity</param>
+        /// <returns>Whether or not the entity successfully loaded</returns>
+        public static bool LoadVanillaEntity(this Level self, EntityData entity3, LevelData levelData = null, Vector2? roomOffset = null) {
             patch_Level.temporaryEntityData = entity3;
             levelData ??= self.Session.LevelData;
             entity3.Level = levelData;

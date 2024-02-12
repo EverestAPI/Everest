@@ -13,18 +13,8 @@ using System.Threading.Tasks;
 namespace Celeste.Mod.Helpers {
     public static class TypeHelper {
         static TypeHelper() {
-            BakeVanillaEntityData(); // Creates a dictionary for EntityData::Name => Type and bakes vanilla values into it.
             FullName_to_Type = new(); // Creates a Dictionary between Type.FullName => Type.
-        }
-
-        public readonly static Dictionary<string, Type> FullName_to_Type;
-
-        public readonly static Dictionary<string, Type> EntityDataName_to_Type;
-        /// <summary>
-        /// Bakes the vanilla EntityData names to their corresponding types
-        /// </summary>
-        internal static void BakeVanillaEntityData() {
-            EntityDataName_to_Type.AddRange(new Dictionary<string, Type> {
+            EntityDataName_to_Type = new Dictionary<string, Type> { // Creates a dictionary for EntityData::Name => Type and bakes vanilla values into it.
                 ["checkpoint"] = typeof(Checkpoint),
                 ["jumpThru"] = typeof(JumpthruPlatform),
                 ["refill"] = typeof(Refill),
@@ -215,8 +205,12 @@ namespace Celeste.Mod.Helpers {
                 ["birdPathTrigger"] = typeof(BirdPathTrigger),
                 ["spawnFacingTrigger"] = typeof(SpawnFacingTrigger),
                 ["detachFollowersTrigger"] = typeof(DetachStrawberryTrigger)
-            });
+            };
         }
+
+        public readonly static Dictionary<string, Type> FullName_to_Type;
+
+        public readonly static Dictionary<string, Type> EntityDataName_to_Type;
 
         /// <summary>
         /// Adds a relationship between an entity Data Name to an object Type. This should *only* be used in situations where you are using a Load method in your CustomEntityAttribute,
