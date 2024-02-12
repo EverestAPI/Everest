@@ -462,6 +462,8 @@ namespace Celeste.Mod {
                 VersionString = "1.0.0"
             }).Register();
 
+
+            TypeHelper.Type_to_FullName = new(); 
             LuaLoader.Initialize();
             Loader.LoadAuto();
 
