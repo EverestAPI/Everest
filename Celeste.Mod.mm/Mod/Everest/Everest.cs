@@ -428,7 +428,6 @@ namespace Celeste.Mod {
 
             MainThreadHelper.Instance = new MainThreadHelper(Celeste.Instance);
             STAThreadHelper.Instance = new STAThreadHelper(Celeste.Instance);
-            TypeHelper.BakeVanillaEntityData(); // Creates a dictionary for EntityData::Name => Type and bakes vanilla values into it.
             // Register our core module and load any other modules.
             CoreModule core = new CoreModule();
             core.Register();
@@ -462,8 +461,6 @@ namespace Celeste.Mod {
                 VersionString = "1.0.0"
             }).Register();
 
-
-            TypeHelper.Type_to_FullName = new(); 
             LuaLoader.Initialize();
             Loader.LoadAuto();
 

@@ -12,15 +12,18 @@ using System.Threading.Tasks;
 
 namespace Celeste.Mod.Helpers {
     public static class TypeHelper {
+        static TypeHelper() {
+            BakeVanillaEntityData(); // Creates a dictionary for EntityData::Name => Type and bakes vanilla values into it.
+            FullName_to_Type = new(); // Creates a Dictionary between Type.FullName => Type.
+        }
 
-        public static Dictionary<string, Type> Type_to_FullName;
+        public readonly static Dictionary<string, Type> FullName_to_Type;
 
-        public static Dictionary<string, Type> EntityDataName_to_Type;
+        public readonly static Dictionary<string, Type> EntityDataName_to_Type;
         /// <summary>
         /// Bakes the vanilla EntityData names to their corresponding types
         /// </summary>
         internal static void BakeVanillaEntityData() {
-            EntityDataName_to_Type ??= new Dictionary<string, Type>();
             EntityDataName_to_Type.AddRange(new Dictionary<string, Type> {
                 ["checkpoint"] = typeof(Checkpoint),
                 ["jumpThru"] = typeof(JumpthruPlatform),
@@ -239,28 +242,46 @@ namespace Celeste.Mod.Helpers {
                     entityDataNameToType[kvp.Key] = kvp.Value;
             }
         }
-
+        /// <summary>
+        /// Given an Entity, checks whether the Name of the EntityData that constructed it (if any exists) matches the string provided
+        /// </summary>
+        /// <param name="entity">an Entity</param>
+        /// <param name="entityDataName">an EntityData Name to compare to</param>
+        /// <returns>whether the EntityData that constructed the Entity (if it exists) matches the provided string</returns>
         public static bool CheckEntityByDataName(Entity entity, string entityDataName) {
             return (entity as patch_Entity).EntityData?.Name == entityDataName;
         }
-
+        /// <summary>
+        /// Checks whether an Entity has an EntityData and if that EntityData matches a criterion. 
+        /// </summary>
+        /// <param name="entity">an Entity</param>
+        /// <param name="predicate">what the EntityData within that Entity "should" meet the criterion of</param>
+        /// <returns>whether the Entity meets that EntityData criterion</returns>
         public static bool CheckEntityByData(Entity entity, Predicate<EntityData> predicate) {
             return (entity as patch_Entity).EntityData is { } ed && predicate(ed);
         }
+
+        /// <summary>
+        /// "Safe" variant of GetType. Attempts to get the type (class) based on the *full name* of the Type provided. Use this in your `if` statements, instead of GetType
+        /// </summary>
+        /// <param name="fullname">The Full Name (Name including namespaces) of the Type you are trying to find. Example: Celeste's Level class is 'Celeste.Level'</param>
+        /// <param name="type">The type as a class found. Returns null if not found</param>
+        /// <param name="cache">Set this to false if you have no intention of obtaining this type with this method after your first use.</param>
+        /// <returns>Whether or not a type (class) was able to be found given the provided FullName</returns>
         public static bool TryGetType(string fullname, out Type type, bool cache = true) {
-            if (Type_to_FullName.ContainsKey(fullname)) {
-                type = Type_to_FullName[fullname];
+            if (FullName_to_Type.ContainsKey(fullname)) {
+                type = FullName_to_Type[fullname];
                 return true;
             }
             type = FakeAssembly.GetFakeEntryAssembly().GetType(fullname);
             bool ret = type != null;
             if (cache && ret)
-                Type_to_FullName[fullname] = type;
+                FullName_to_Type[fullname] = type;
             return ret;
         }
 
         /// <summary>
-        /// Gets the type based on the full name of the Type
+        /// Attempts to get the type (class) based on the *full name* of the Type provided
         /// </summary>
         /// <param name="fullname">The Full Name (Name including namespaces) of the Type you are trying to find. Example: Celeste's Level class is 'Celeste.Level'</param>
         /// <param name="cache">Set this to false if you have no intention of obtaining this type with this method after your first use.</param>
@@ -299,13 +320,13 @@ namespace Celeste.Mod.Helpers {
             } else if (name.Contains('/')) { } // Eliminates the large chance of unknown CustomEntityAttribute names
               else if (name.Contains('.')) { // Checks the fullname case for the majority of entities (any that are in a namespace lol)
 
-                if (Type_to_FullName.ContainsKey(name)) {
-                    type = Type_to_FullName[name];
+                if (FullName_to_Type.ContainsKey(name)) {
+                    type = FullName_to_Type[name];
                 } else {
                     try {
                         type = FakeAssembly.GetFakeEntryAssembly().GetType(name);
                         if (type != null)
-                            Type_to_FullName[name] = type;
+                            FullName_to_Type[name] = type;
                     }
                     catch { }
                 }
