@@ -463,7 +463,7 @@ namespace Celeste.Mod {
             }).Register();
 
             LuaLoader.Initialize();
-            TypeHelper.entityDataNameToType = new();
+            TypeHelper.Type_to_FullName = new();
             Loader.LoadAuto();
 
             if (!Flags.IsHeadless) {

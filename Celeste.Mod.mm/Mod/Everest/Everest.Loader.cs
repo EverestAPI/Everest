@@ -605,6 +605,8 @@ namespace Celeste.Mod {
                                     (e as patch_Entity).EntityData = entityData;
                                     return e;
                                 };
+                                // You cannot consistently determine the Type from the Method construction, so you can't map EntityDataName to Type from this method.
+// example: Load(Level level, LevelData levelData, Vector2 offset, EntityData entityData) => entityData.Bool("legacy") ? new ExampleClassOld(entityData, offset) : new ExampleClassNew(entityData, offset);
                                 goto RegisterEntityLoader;
                             }
 
@@ -615,8 +617,8 @@ namespace Celeste.Mod {
                                     (e as patch_Entity).EntityData = entityData;
                                     return e;
                                 };
-                                if (!TypeHelper.entityDataNameToType.ContainsKey(id))
-                                    TypeHelper.entityDataNameToType[id] = type;
+                                if (!TypeHelper.EntityDataName_to_Type.ContainsKey(id))
+                                    TypeHelper.EntityDataName_to_Type[id] = type;
                                 goto RegisterEntityLoader;
                             }
 
@@ -627,8 +629,8 @@ namespace Celeste.Mod {
                                     (e as patch_Entity).EntityData = entityData;
                                     return e;
                                 };
-                                if (!TypeHelper.entityDataNameToType.ContainsKey(id))
-                                    TypeHelper.entityDataNameToType[id] = type;
+                                if (!TypeHelper.EntityDataName_to_Type.ContainsKey(id))
+                                    TypeHelper.EntityDataName_to_Type[id] = type;
                                 goto RegisterEntityLoader;
                             }
 
@@ -639,20 +641,20 @@ namespace Celeste.Mod {
                                     (e as patch_Entity).EntityData = entityData;
                                     return e;
                                 };
-                                if (!TypeHelper.entityDataNameToType.ContainsKey(id))
-                                    TypeHelper.entityDataNameToType[id] = type;
+                                if (!TypeHelper.EntityDataName_to_Type.ContainsKey(id))
+                                    TypeHelper.EntityDataName_to_Type[id] = type;
                                 goto RegisterEntityLoader;
                             }
 
                             ctor = type.GetConstructor(Type.EmptyTypes);
                             if (ctor != null) {
                                 loader = (level, levelData, offset, entityData) => {
-                                    Entity e = (Entity) ctor.Invoke(_EmptyObjectArray);
+                                    Entity e = (Entity) ctor.Invoke(Array.Empty<object>());
                                     (e as patch_Entity).EntityData = entityData;
                                     return e;
                                 };
-                                if (!TypeHelper.entityDataNameToType.ContainsKey(id))
-                                    TypeHelper.entityDataNameToType[id] = type;
+                                if (!TypeHelper.EntityDataName_to_Type.ContainsKey(id))
+                                    TypeHelper.EntityDataName_to_Type[id] = type;
                                 goto RegisterEntityLoader;
                             }
 

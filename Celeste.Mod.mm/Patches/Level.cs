@@ -617,13 +617,10 @@ namespace Celeste {
         [ThreadStatic]
         internal static bool _isLoadingTriggers;
 
-        public static void LinkEntityToData(Entity entity, EntityData data) {
-            if(data == null) {
-                if (temporaryEntityData == null)
-                    return;
-                data = temporaryEntityData;
-            }
-            (entity as patch_Entity).EntityData = data;
+        private static void LinkEntityToData(Entity entity) {
+            if (temporaryEntityData == null)
+                return;
+            (entity as patch_Entity).EntityData = temporaryEntityData;
         }
 
         [MonoModIgnore]
