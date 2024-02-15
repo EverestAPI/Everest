@@ -81,12 +81,14 @@ namespace Celeste.Mod {
                         using StreamReader reader = new StreamReader(stream);
                         Dictionary<object, object> settings = new Deserializer().Deserialize<Dictionary<object, object>>(reader);
 
-                        if (settings.TryGetValue(nameof(CoreModuleSettings.CompatibilityMode), out object val)) {
-                            Everest.CompatibilityMode = Enum.Parse<Everest.CompatMode>((string) val);
-                            Console.WriteLine($"Loaded compatibility mode setting: {Everest.CompatibilityMode}");
+                        if (settings != null) {
+                            if (settings.TryGetValue(nameof(CoreModuleSettings.CompatibilityMode), out object val)) {
+                                Everest.CompatibilityMode = Enum.Parse<Everest.CompatMode>((string) val);
+                                Console.WriteLine($"Loaded compatibility mode setting: {Everest.CompatibilityMode}");
+                            }
+                            if (settings.TryGetValue(nameof(CoreModuleSettings.D3D11UseExclusiveFullscreen), out val))
+                                useExclusiveFullscreen = bool.Parse((string) val);
                         }
-                        if (settings.TryGetValue(nameof(CoreModuleSettings.D3D11UseExclusiveFullscreen), out val))
-                            useExclusiveFullscreen = bool.Parse((string) val);
                     }
                 } catch (Exception ex) {
                     LogError("COMPAT-MODE-LOAD", ex);
