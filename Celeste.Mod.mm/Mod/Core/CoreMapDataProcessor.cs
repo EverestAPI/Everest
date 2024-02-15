@@ -60,6 +60,12 @@ namespace Celeste.Mod.Core {
                         }
 
                         // do checkpoint post-processing
+                        bool oneIndexed = false;
+                        if (!CheckpointsManual.ContainsKey(0) && CheckpointsManual.ContainsKey(1)) {
+                            // assume one-indexed checkpoints
+                            oneIndexed = true;
+                            CheckpointsAuto.Insert(0, null);
+                        }
                         for (int checkpoint = 0; checkpoint <= MaxManualCheckpoint; checkpoint++) {
                             if (!CheckpointsManual.TryGetValue(checkpoint, out CheckpointData data)) {
                                 continue;
@@ -70,6 +76,9 @@ namespace Celeste.Mod.Core {
                                 Logger.Log(LogLevel.Warn, "core", $"Checkpoint ID {checkpoint} exceeds checkpoint count in room {data.Level} of map {Mode.Path}. Reassigning checkpoint ID.");
                                 CheckpointsAuto.Add(data);
                             }
+                        }
+                        if (oneIndexed) {
+                            CheckpointsAuto.RemoveAt(0);
                         }
 
                         // do berry order post-processing
