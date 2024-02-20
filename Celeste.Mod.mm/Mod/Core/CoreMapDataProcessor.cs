@@ -121,11 +121,12 @@ namespace Celeste.Mod.Core {
                             // assign berries with invalid checkpoint ID to final checkpoint
                             if (checkpoint > Checkpoint) {
                                 Logger.Log(LogLevel.Warn, "core", $"Invalid checkpoint ID {checkpoint} for berries in map {Mode.Path}. Reassigning to last checkpoint.");
+                                int order = MaximumBerryOrderPerCheckpoint.GetValueOrDefault(Checkpoint, -1);
                                 foreach (var placedBerry in placedBerries.OrderBy(kv => kv.Key)) {
                                     BinaryPacker.Element berry = placedBerry.Value;
                                     berry.SetAttr("checkpointID", Checkpoint);
-                                    berry.SetAttr("order", MaximumBerryOrderPerCheckpoint[Checkpoint] + 1);
-                                    MaximumBerryOrderPerCheckpoint[Checkpoint]++;
+                                    berry.SetAttr("order", order + 1);
+                                    order++;
                                 }
                             }
                         }
