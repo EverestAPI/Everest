@@ -271,10 +271,8 @@ namespace Celeste.Mod.Helpers {
         /// <param name="cache">Set this to false if you have no intention of obtaining this type with this method after your first use.</param>
         /// <returns>Whether or not a type (class) was able to be found given the provided FullName</returns>
         public static bool TryGetType(string fullname, out Type type, bool cache = true) {
-            if (_FullNameToType.ContainsKey(fullname)) {
-                type = _FullNameToType[fullname];
+            if (_FullNameToType.TryGetValue(fullname, out type))
                 return true;
-            }
             type = FakeAssembly.GetFakeEntryAssembly().GetType(fullname);
             bool ret = type != null;
             if (cache && ret)
