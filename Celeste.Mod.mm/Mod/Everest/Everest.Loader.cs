@@ -617,8 +617,7 @@ namespace Celeste.Mod {
                                     (e as patch_Entity).EntityData = entityData;
                                     return e;
                                 };
-                                if (!TypeHelper.EntityDataName_to_Type.ContainsKey(id))
-                                    TypeHelper.EntityDataName_to_Type[id] = type;
+                                TypeHelper.LinkDataNameToType(id, type, false);
                                 goto RegisterEntityLoader;
                             }
 
@@ -629,8 +628,7 @@ namespace Celeste.Mod {
                                     (e as patch_Entity).EntityData = entityData;
                                     return e;
                                 };
-                                if (!TypeHelper.EntityDataName_to_Type.ContainsKey(id))
-                                    TypeHelper.EntityDataName_to_Type[id] = type;
+                                TypeHelper.LinkDataNameToType(id, type, false);
                                 goto RegisterEntityLoader;
                             }
 
@@ -641,8 +639,7 @@ namespace Celeste.Mod {
                                     (e as patch_Entity).EntityData = entityData;
                                     return e;
                                 };
-                                if (!TypeHelper.EntityDataName_to_Type.ContainsKey(id))
-                                    TypeHelper.EntityDataName_to_Type[id] = type;
+                                TypeHelper.LinkDataNameToType(id, type, false);
                                 goto RegisterEntityLoader;
                             }
 
@@ -653,8 +650,7 @@ namespace Celeste.Mod {
                                     (e as patch_Entity).EntityData = entityData;
                                     return e;
                                 };
-                                if (!TypeHelper.EntityDataName_to_Type.ContainsKey(id))
-                                    TypeHelper.EntityDataName_to_Type[id] = type;
+                                TypeHelper.LinkDataNameToType(id, type, false);
                                 goto RegisterEntityLoader;
                             }
 

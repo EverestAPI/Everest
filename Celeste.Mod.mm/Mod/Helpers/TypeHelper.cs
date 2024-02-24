@@ -4,6 +4,7 @@ using Monocle;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -13,8 +14,8 @@ using System.Threading.Tasks;
 namespace Celeste.Mod.Helpers {
     public static class TypeHelper {
         static TypeHelper() {
-            FullName_to_Type = new(); // Creates a Dictionary between Type.FullName => Type.
-            EntityDataName_to_Type = new Dictionary<string, Type> { // Creates a dictionary for EntityData::Name => Type and bakes vanilla values into it.
+            _FullNameToType = new(); // Creates a Dictionary between Type.FullName => Type.
+            _EntityDataNameToType = new Dictionary<string, Type> { // Creates a dictionary for EntityData::Name => Type and bakes vanilla values into it.
                 ["checkpoint"] = typeof(Checkpoint),
                 ["jumpThru"] = typeof(JumpthruPlatform),
                 ["refill"] = typeof(Refill),
@@ -208,9 +209,12 @@ namespace Celeste.Mod.Helpers {
             };
         }
 
-        public readonly static Dictionary<string, Type> FullName_to_Type;
+        private readonly static Dictionary<string, Type> _FullNameToType;
 
-        public readonly static Dictionary<string, Type> EntityDataName_to_Type;
+        private readonly static Dictionary<string, Type> _EntityDataNameToType;
+
+        public static IReadOnlyDictionary<string, Type> FullNameToType => _FullNameToType;
+        public static IReadOnlyDictionary<string, Type> EntityDataNameToType => _EntityDataNameToType;
 
         /// <summary>
         /// Adds a relationship between an entity Data Name to an object Type. This should *only* be used in situations where you are using a Load method in your CustomEntityAttribute,
@@ -219,9 +223,11 @@ namespace Celeste.Mod.Helpers {
         /// <param name="entityDataName">The name of the entity Data, found in your CustomEntityAttribute</param>
         /// <param name="type">The class that the CustomEntityAttribute would be assigned to.</param>
         /// <param name="overwrite">Whether or not you want to override previous data added to the Dictionary.</param>
-        public static void Link_DataName_To_Type(string entityDataName, Type type, bool overwrite = false) {
-            if (overwrite || !EntityDataName_to_Type.ContainsKey(entityDataName))
-                EntityDataName_to_Type[entityDataName] = type;
+        public static void LinkDataNameToType(string entityDataName, Type type, bool overwrite = false) {
+            if (overwrite)
+                _EntityDataNameToType[entityDataName] = type; // Forcibly set the value
+            else
+                _EntityDataNameToType.TryAdd(entityDataName, type); // Set the value if the value is not already in the dictionary
         }
 
         /// <summary>
@@ -230,10 +236,12 @@ namespace Celeste.Mod.Helpers {
         /// </summary>
         /// <param name="entityDataNameToType">The Dictionary featuring the relationship between names and types.</param>
         /// <param name="overwrite">Whether or not you want to override previous data added to the Dictionary.</param>
-        public static void Link_DataNames_To_Types(Dictionary<string, Type> entityDataNameToType, bool overwrite = false) {
+        public static void LinkDataNamesToType(Dictionary<string, Type> entityDataNameToType, bool overwrite = false) {
             foreach(KeyValuePair<string,Type> kvp in entityDataNameToType) {
-                if(overwrite || !entityDataNameToType.ContainsKey(kvp.Key))
-                    entityDataNameToType[kvp.Key] = kvp.Value;
+                if (overwrite)
+                    _EntityDataNameToType[kvp.Key] = kvp.Value; // Forcibly set the value
+                else
+                    _EntityDataNameToType.TryAdd(kvp.Key, kvp.Value); // Set the value if the value is not already in the dictionary
             }
         }
         /// <summary>
@@ -263,14 +271,14 @@ namespace Celeste.Mod.Helpers {
         /// <param name="cache">Set this to false if you have no intention of obtaining this type with this method after your first use.</param>
         /// <returns>Whether or not a type (class) was able to be found given the provided FullName</returns>
         public static bool TryGetType(string fullname, out Type type, bool cache = true) {
-            if (FullName_to_Type.ContainsKey(fullname)) {
-                type = FullName_to_Type[fullname];
+            if (_FullNameToType.ContainsKey(fullname)) {
+                type = _FullNameToType[fullname];
                 return true;
             }
             type = FakeAssembly.GetFakeEntryAssembly().GetType(fullname);
             bool ret = type != null;
             if (cache && ret)
-                FullName_to_Type[fullname] = type;
+                _FullNameToType[fullname] = type;
             return ret;
         }
 
@@ -308,19 +316,19 @@ namespace Celeste.Mod.Helpers {
             Type type = null;
             EverestModule mod = null;
             //Check for CustomEntityAttribute first, since that is the main cached item
-            if (EntityDataName_to_Type.ContainsKey(name)) {
+            if (_EntityDataNameToType.ContainsKey(name)) {
                 EntityDataName = name;
-                type = EntityDataName_to_Type[name];
+                type = _EntityDataNameToType[name];
             } else if (name.Contains('/')) { } // Eliminates the large chance of unknown CustomEntityAttribute names
               else if (name.Contains('.')) { // Checks the fullname case for the majority of entities (any that are in a namespace lol)
 
-                if (FullName_to_Type.ContainsKey(name)) {
-                    type = FullName_to_Type[name];
+                if (_FullNameToType.ContainsKey(name)) {
+                    type = _FullNameToType[name];
                 } else {
                     try {
                         type = FakeAssembly.GetFakeEntryAssembly().GetType(name);
                         if (type != null)
-                            FullName_to_Type[name] = type;
+                            _FullNameToType[name] = type;
                     }
                     catch { }
                 }
@@ -346,7 +354,7 @@ namespace Celeste.Mod.Helpers {
             }
             if (EntityDataName == null) {
                 List<string> strings = new List<string>();
-                foreach(KeyValuePair<string, Type> kvp in EntityDataName_to_Type) {
+                foreach(KeyValuePair<string, Type> kvp in _EntityDataNameToType) {
                     if(kvp.Value.FullName == type.FullName) {
                         strings.Add(kvp.Key);
                     }
