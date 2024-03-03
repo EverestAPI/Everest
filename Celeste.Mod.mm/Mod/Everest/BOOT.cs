@@ -107,7 +107,7 @@ namespace Celeste.Mod {
 
                 // Start vanilla if instructed to
                 string vanillaDummy = Path.Combine(Path.GetDirectoryName(everestPath), "nextLaunchIsVanilla.txt");
-                if (File.Exists(vanillaDummy) || args.FirstOrDefault() == "--vanilla") {
+                if (File.Exists(vanillaDummy) || args.Contains("--vanilla")) {
                     File.Delete(vanillaDummy);
                     StartVanilla();
                     goto Exit;
