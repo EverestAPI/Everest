@@ -360,50 +360,21 @@ namespace Celeste.Mod.UI {
             modLoadingTask.Start();
         }
 
-        private static bool WrappingLinearSearch<T>(List<T> items, Func<T, bool> predicate, int startIndex, bool inReverse, out int nextModIndex) {
-            int step = inReverse ? -1 : 1;
-
-            if (startIndex > items.Count) {
-                nextModIndex = 0;
-                return false;
-            }
-
-            for (int currentIndex = (startIndex + step) % items.Count; currentIndex != startIndex; currentIndex = (currentIndex + step) % items.Count) {
-                if (currentIndex < 0) {
-                    currentIndex = items.Count - 1;
-                }
-
-                if (predicate(items[currentIndex])) {
-                    nextModIndex = currentIndex;
-                    return true;
-                }
-            }
-
-            nextModIndex = startIndex;
-            return predicate(items[nextModIndex]);
-        }
-
         private void AddSearchBox(TextMenu menu) {
             TextMenuExt.TextBox textBox = new(Overworld) {
                 PlaceholderText = Dialog.Clean("MODOPTIONS_MODTOGGLE_SEARCHBOX_PLACEHOLDER")
             };
 
-            TextMenuExt.Modal modal = new(absoluteY: 85, textBox);
+            TextMenuExt.Modal modal = new(textBox, absoluteX: null, absoluteY: 85);
             menu.Add(modal);
+            menu.Add(new TextMenuExt.SearchToolTip());
 
             startSearching = () => {
                 modal.Visible = true;
                 textBox.StartTyping();
-
-                if (((patch_TextMenu) menu).Items[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption
-                    && modToggles.ContainsKey(currentOption.Label)) {
-                    currentOption.UnselectedColor = currentOption.Container.HighlightColor;
-                }
             };
 
             Action<TextMenuExt.TextBox> searchNextMod(bool inReverse) => (TextMenuExt.TextBox textBox) => {
-                updateHighlightedMods();
-
                 string searchTarget = textBox.Text.ToLower();
                 List<TextMenu.Item> menuItems = ((patch_TextMenu) menu).Items;
                 int currentSelection = menu.Selection;
@@ -412,8 +383,7 @@ namespace Celeste.Mod.UI {
                                                             && modToggles.ContainsKey(currentOption.Label)
                                                             && currentOption.Label.ToLower().Contains(searchTarget);
 
-                if (WrappingLinearSearch(menuItems, searchPredicate, menu.Selection, inReverse, out int targetSelectionIndex)) {
-
+                if (TextMenuExt.TextBox.WrappingLinearSearch(menuItems, searchPredicate, menu.Selection + (inReverse ? -1 : 1), inReverse, out int targetSelectionIndex)) {
                     if (targetSelectionIndex >= menu.Selection) {
                         Audio.Play(SFX.ui_main_roll_down);
                     } else {
@@ -421,9 +391,6 @@ namespace Celeste.Mod.UI {
                     }
 
                     menu.Selection = targetSelectionIndex;
-                    if (menuItems[targetSelectionIndex] is patch_TextMenu.patch_Option<bool> currentOption) {
-                        currentOption.UnselectedColor = currentOption.Container.HighlightColor;
-                    }
                 } else {
                     Audio.Play(SFX.ui_main_button_invalid);
                 }
@@ -433,7 +400,6 @@ namespace Celeste.Mod.UI {
                 textBox.StopTyping();
                 modal.Visible = false;
                 textBox.ClearText();
-                updateHighlightedMods();
             }
 
             textBox.OnTextInputCharActions['\t'] = searchNextMod(false);
@@ -755,18 +721,6 @@ namespace Celeste.Mod.UI {
 
         public override void Render() {
             base.Render();
-
-            if (modLoadingTask == null) {
-                MTexture searchIcon = GFX.Gui["menu/mapsearch"];
-
-                const float PREFERRED_ICON_X = 100f;
-                float spaceNearMenu = (Engine.Width - menu.Width) / 2;
-                float scaleFactor = Math.Min(spaceNearMenu / (PREFERRED_ICON_X + searchIcon.Width / 2), 1);
-
-                Vector2 searchIconLocation = new(PREFERRED_ICON_X * scaleFactor, 952f);
-                searchIcon.DrawCentered(searchIconLocation, Color.White, scaleFactor);
-                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White, scaleFactor);
-            }
         }
 
         public override IEnumerator Leave(Oui next) {
