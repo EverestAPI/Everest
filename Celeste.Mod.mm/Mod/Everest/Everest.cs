@@ -696,6 +696,7 @@ namespace Celeste.Mod {
                                         Loader.LoadMod(entry.Item1);
                                     }
                                     Loader.Delayed.RemoveAt(i);
+                                    EverestSplashHandler.IncreaseLoadedModCount(entry.Item1.Name);
 
                                     // we now loaded an extra mod, consider all delayed mods again to deal with transitive dependencies.
                                     i = -1;

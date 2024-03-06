@@ -15,7 +15,7 @@ namespace Celeste.Mod {
         private static readonly object splashPipeLock = new();
         public static bool SplashRan { get; private set; }
         public static void RunSplash(string targetRenderer = "") {
-            
+
             int currentPid = Environment.ProcessId;
 
             try {
@@ -35,10 +35,10 @@ namespace Celeste.Mod {
                     splashPipeServerStream = null;
                 }
             }
-            
+
             // Only proceed if the server was successful
             if (splashPipeServerStream == null) return;
-             
+
             try {
                 splashProcess = new Process {
                     StartInfo = new ProcessStartInfo(Path.Combine(".", "EverestSplash",
@@ -69,6 +69,16 @@ namespace Celeste.Mod {
                     if (data.Data == null || data.Data.Trim().TrimEnd('\n', '\r') == "") return;
                     Logger.Log(LogLevel.Error, "EverestSplash", data.Data);
                 };
+                
+                // Dirty fix: really make sure the splash is executable on *nix
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
+                    RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                    Process chmod = Process.Start(new ProcessStartInfo("chmod", $"u+x \"{splashProcess.StartInfo.FileName}\""));
+                    if (chmod == null) Logger.Log(LogLevel.Error, "EverestSplash", "Could not chmod splash!");
+                    chmod?.WaitForExit();
+                    if (chmod?.ExitCode != 0)
+                        Logger.Log(LogLevel.Error, "EverestSplash", "Chmod failed for the splash!");
+                }
 
                 splashProcess.Start();
                 splashProcess.BeginOutputReadLine(); // This is required for the event to even be sent
@@ -87,6 +97,40 @@ namespace Celeste.Mod {
             }
         }
 
+        private static int loadedMods = 0, totalMods = 0;
+
+        public static void SetSplashLoadingModCount(int modCount) {
+            totalMods = modCount;
+        }
+
+        public static void IncreaseLoadedModCount(string latestLoadedMod) {
+            loadedMods++;
+            UpdateSplashLoadingProgress(latestLoadedMod);
+        }
+
+        public static void AllModsLoaded() {
+            loadedMods = totalMods;
+            UpdateSplashLoadingProgress(null);
+        }
+
+        private static void UpdateSplashLoadingProgress(string latestLoadedMod) {
+            if (totalMods == 0)
+                return;
+            lock (splashPipeLock) {
+                if (splashPipeServerStream == null)
+                    return; // If the splash never ran, no-op
+                if (!splashPipeServerStreamConnection.IsCompleted || !splashPipeServerStream.IsConnected)
+                    return; // If the splash never connected or its no longer alive, no-op
+                try {
+                    StreamWriter sw = new(splashPipeServerStream);
+                    sw.WriteLine("#progress" + loadedMods + ";" + totalMods + ";" + latestLoadedMod);
+                    sw.Flush();
+                } catch (Exception e) {
+                    Logger.Log(LogLevel.Error, "EverestSplash", "Could not send progress to splash!");
+                    Logger.LogDetailed(e);
+                }
+            }
+        }
 
         public static void StopSplash() {
             lock (splashPipeLock) {
@@ -106,7 +150,7 @@ namespace Celeste.Mod {
 
                 try {
                     StreamWriter sw = new(splashPipeServerStream);
-                    sw.WriteLine("stop");
+                    sw.WriteLine("#stop");
                     sw.Flush();
                     Thread splashFeedbackThread = new(() => {
                         try {
