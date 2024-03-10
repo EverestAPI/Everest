@@ -221,7 +221,7 @@ namespace Celeste.Mod.UI {
                 try {
                     lock (Everest._Modules) {
                         foreach (EverestModule mod in Everest._Modules)
-                            writer.WriteLine($" - {mod.Metadata.Name}: {mod.Metadata.VersionString}{mod switch {LuaModule => " [Lua module]", NullModule => "", _ => $" [{mod.GetType().FullName}]"}}");
+                            writer.WriteLine($" - {mod.Metadata.Name}: {mod.Metadata.VersionString}{mod switch {NullModule => "", _ => $" [{mod.GetType().FullName}]"}}");
                     }
                 } catch (Exception ex) {
                     writer.WriteLine($" - error listing mods: {ex.GetType().FullName}: {ex.Message}");
