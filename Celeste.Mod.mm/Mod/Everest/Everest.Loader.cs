@@ -601,8 +601,8 @@ namespace Celeste.Mod {
                             gen = type.GetMethod(genName, new Type[] { typeof(Level), typeof(LevelData), typeof(Vector2), typeof(EntityData) });
                             if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
                                 loader = (level, levelData, offset, entityData) => {
+                                    patch_Level.temporaryEntityData = entityData;
                                     Entity e = (Entity) gen.Invoke(null, new object[] { level, levelData, offset, entityData });
-                                    (e as patch_Entity).EntityData = entityData;
                                     return e;
                                 };
                                 // You cannot consistently determine the Type from the Method construction, so you can't map EntityDataName to Type from this method.
@@ -613,8 +613,8 @@ namespace Celeste.Mod {
                             ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2), typeof(EntityID) });
                             if (ctor != null) {
                                 loader = (level, levelData, offset, entityData) => {
-                                    Entity e = (Entity) ctor.Invoke(new object[] { entityData, offset, new EntityID(levelData.Name, entityData.ID) });
-                                    (e as patch_Entity).EntityData = entityData;
+                                    patch_Level.temporaryEntityData = entityData;
+                                    Entity e = (Entity) ctor.Invoke(new object[] { entityData, offset, patch_Entity._ApplyID(entityData) });
                                     return e;
                                 };
                                 TypeHelper.LinkDataNameToType(id, type, false);
@@ -624,8 +624,8 @@ namespace Celeste.Mod {
                             ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2) });
                             if (ctor != null) {
                                 loader = (level, levelData, offset, entityData) => {
+                                    patch_Level.temporaryEntityData = entityData;
                                     Entity e = (Entity) ctor.Invoke(new object[] { entityData, offset });
-                                    (e as patch_Entity).EntityData = entityData;
                                     return e;
                                 };
                                 TypeHelper.LinkDataNameToType(id, type, false);
@@ -635,8 +635,8 @@ namespace Celeste.Mod {
                             ctor = type.GetConstructor(new Type[] { typeof(Vector2) });
                             if (ctor != null) {
                                 loader = (level, levelData, offset, entityData) => {
+                                    patch_Level.temporaryEntityData = entityData;
                                     Entity e = (Entity) ctor.Invoke(new object[] { offset });
-                                    (e as patch_Entity).EntityData = entityData;
                                     return e;
                                 };
                                 TypeHelper.LinkDataNameToType(id, type, false);
@@ -646,8 +646,8 @@ namespace Celeste.Mod {
                             ctor = type.GetConstructor(Type.EmptyTypes);
                             if (ctor != null) {
                                 loader = (level, levelData, offset, entityData) => {
+                                    patch_Level.temporaryEntityData = entityData;
                                     Entity e = (Entity) ctor.Invoke(Array.Empty<object>());
-                                    (e as patch_Entity).EntityData = entityData;
                                     return e;
                                 };
                                 TypeHelper.LinkDataNameToType(id, type, false);
