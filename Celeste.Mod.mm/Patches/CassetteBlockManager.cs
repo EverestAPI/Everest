@@ -2,6 +2,7 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 #pragma warning disable CS0169 // The field is never used
 
+using Celeste.Mod.Entities;
 using Celeste.Mod.Meta;
 using FMOD.Studio;
 using Monocle;
@@ -149,8 +150,58 @@ namespace Celeste {
             SilentUpdateBlocks();
         }
 
-        [MonoModIgnore]
-        private extern void SilentUpdateBlocks();
+        [MonoModReplace]
+        private void SilentUpdateBlocks() {
+            foreach (CassetteBlock entity in Scene.Tracker.GetEntities<CassetteBlock>()) {
+                if (entity.ID.Level == SceneAs<Level>().Session.Level) {
+                    entity.SetActivatedSilently(entity.Index == currentIndex);
+                }
+            }
 
+            foreach (CassetteListener listener in Scene.Tracker.GetComponents<CassetteListener>()) {
+                if (listener.ID.ID == EntityID.None.ID || listener.ID.Level == SceneAs<Level>().Session.Level) {
+                    listener.Start(listener.Index == currentIndex);
+                }
+            }
+        }
+
+        [MonoModReplace]
+        public new void SetActiveIndex(int index) {
+            foreach (CassetteBlock entity in Scene.Tracker.GetEntities<CassetteBlock>()) {
+                entity.Activated = entity.Index == index;
+            }
+
+            foreach (CassetteListener listener in Scene.Tracker.GetComponents<CassetteListener>()) {
+                listener.SetActivated(listener.Index == index);
+            }
+        }
+
+        [MonoModReplace]
+        public new void SetWillActivate(int index) {
+            foreach (CassetteBlock entity in Scene.Tracker.GetEntities<CassetteBlock>()) {
+                if (entity.Index == index || entity.Activated) {
+                    entity.WillToggle();
+                }
+            }
+
+            foreach (CassetteListener listener in Scene.Tracker.GetComponents<CassetteListener>()) {
+                if (listener.Index == index || listener.Activated) {
+                    listener.WillToggle();
+                }
+            }
+        }
+
+        [MonoModReplace]
+        public new void StopBlocks() {
+            foreach (CassetteBlock entity in base.Scene.Tracker.GetEntities<CassetteBlock>()) {
+                entity.Finish();
+            }
+            foreach (CassetteListener listener in base.Scene.Tracker.GetComponents<CassetteListener>()) {
+                listener.Finish();
+            }
+            if (!isLevelMusic) {
+                Audio.Stop(sfx);
+            }
+        }
     }
 }
