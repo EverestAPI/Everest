@@ -272,7 +272,6 @@ public class FontCache : IDisposable {
     public void RenderToCache(IntPtr renderer) {
         if (renderedText == "") return;
         if (cacheValid && cachedTexture != null && cachedTexture.Handle != IntPtr.Zero) return; // Cache is ok, no-op
-        Console.WriteLine("Regenerating cache!");
         SDL.SDL_Point textSize = fontRenderer.GetTextSize(renderedText);
         if (cachedTexture == null || cachedTexture.Width < textSize.x || cachedTexture.Height < textSize.y) {
             cachedTexture?.Dispose();
