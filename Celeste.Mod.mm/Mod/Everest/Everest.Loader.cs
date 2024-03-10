@@ -488,19 +488,6 @@ namespace Celeste.Mod {
                 // Create an assembly context
                 meta.AssemblyContext ??= new EverestModuleAssemblyContext(meta);
 
-                // Try to load a Lua module
-                bool hasLuaModule = false;
-                if (!string.IsNullOrEmpty(meta.PathArchive))
-                    using (ZipFile zip = new ZipFile(meta.PathArchive))
-                        hasLuaModule = zip.ContainsEntry("main.lua");
-                else if (!string.IsNullOrEmpty(meta.PathDirectory))
-                    hasLuaModule = File.Exists(Path.Combine(meta.PathDirectory, "main.lua"));
-
-                if (hasLuaModule) {
-                    new LuaModule(meta).Register();
-                    goto success;
-                }
-
                 // Try to load a module from a DLL
                 if (!string.IsNullOrEmpty(meta.DLL)) {
                     if (meta.AssemblyContext.LoadAssemblyFromModPath(meta.DLL) is not Assembly asm) {
