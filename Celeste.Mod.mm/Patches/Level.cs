@@ -617,12 +617,6 @@ namespace Celeste {
         [ThreadStatic]
         internal static bool _isLoadingTriggers;
 
-        private static void LinkEntityToData(Entity entity) {
-            if (temporaryEntityData == null)
-                return;
-            (entity as patch_Entity).EntityData = temporaryEntityData;
-        }
-
         [MonoModIgnore]
         internal extern bool GotCollectables(EntityData data);
     }
@@ -639,13 +633,13 @@ namespace Celeste {
             => ((patch_Level) self).SubHudRenderer = value;
 
         /// <summary>
-        /// Loads a Vanilla Entity into the Level
+        /// Loads an Entity into the Level
         /// </summary>
-        /// <param name="entity3">the EntityData for the Entity. Name should be one of the vanilla-defined entities.</param>
-        /// <param name="levelData">Optional; the Level the entity should be added into. You shouldn't use this unless your entity is global.</param>
+        /// <param name="entity3">the EntityData for the Entity.</param>
+        /// <param name="levelData">Optional; the Level (note: room) the entity should be added into. You shouldn't use this unless your entity is global.</param>
         /// <param name="roomOffset">Optional; used for setting the relative position of the entity</param>
         /// <returns>Whether or not the entity successfully loaded</returns>
-        public static bool LoadVanillaEntity(this Level self, EntityData entity3, LevelData levelData = null, Vector2? roomOffset = null) {
+        public static bool LoadEntity(this Level self, EntityData entity3, LevelData levelData = null, Vector2? roomOffset = null) {
             patch_Level.temporaryEntityData = entity3;
             levelData ??= self.Session.LevelData;
             entity3.Level = levelData;
@@ -1320,95 +1314,153 @@ namespace Celeste {
                         }
                         break;
                     case "eventTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new EventTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "musicFadeTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new MusicFadeTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "musicTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new MusicTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "altMusicTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new AltMusicTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "cameraOffsetTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new CameraOffsetTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "lightFadeTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new LightFadeTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "bloomFadeTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new BloomFadeTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "cameraTargetTrigger": {
+                            patch_Level._isLoadingTriggers = true;
                             string text2 = entity3.Attr("deleteFlag");
                             if (string.IsNullOrEmpty(text2) || !self.Session.GetFlag(text2)) {
                                 self.Add(new CameraTargetTrigger(entity3, vector));
                             }
+                            patch_Level._isLoadingTriggers = false;
                             break;
                         }
                     case "cameraAdvanceTargetTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new CameraAdvanceTargetTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "respawnTargetTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new RespawnTargetTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "changeRespawnTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new ChangeRespawnTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "windTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new WindTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "windAttackTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new WindAttackTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "minitextboxTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new MiniTextboxTrigger(entity3, vector, new EntityID(levelData.Name, entity3.ID + 10000000)));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "oshiroTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new OshiroTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "interactTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new InteractTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "checkpointBlockerTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new CheckpointBlockerTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "lookoutBlocker":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new LookoutBlocker(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "stopBoostTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new StopBoostTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "noRefillTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new NoRefillTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "ambienceParamTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new AmbienceParamTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "creditsTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new CreditsTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "goldenBerryCollectTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new GoldBerryCollectTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "moonGlitchBackgroundTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new MoonGlitchBackgroundTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "blackholeStrength":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new BlackholeStrengthTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "rumbleTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new RumbleTrigger(entity3, vector, new EntityID(levelData.Name, entity3.ID + 10000000)));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "birdPathTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new BirdPathTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "spawnFacingTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new SpawnFacingTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     case "detachFollowersTrigger":
+                        patch_Level._isLoadingTriggers = true;
                         self.Add(new DetachStrawberryTrigger(entity3, vector));
+                        patch_Level._isLoadingTriggers = false;
                         break;
                     default:
                         return false;
@@ -1467,6 +1519,7 @@ namespace MonoMod {
             MethodDefinition m_LoadNewPlayer = context.Method.DeclaringType.FindMethod("Celeste.Player LoadNewPlayerForLevel(Microsoft.Xna.Framework.Vector2,Celeste.PlayerSpriteMode,Celeste.Level)");
             MethodDefinition m_LoadCustomEntity = context.Method.DeclaringType.FindMethod("System.Boolean LoadCustomEntity(Celeste.EntityData,Celeste.Level)");
             MethodDefinition m_PatchHeartGemBehavior = context.Method.DeclaringType.FindMethod("Celeste.AreaMode _PatchHeartGemBehavior(Celeste.AreaMode)");
+
             // These are used for the static constructor patch
             FieldDefinition f_LoadStrings = context.Method.DeclaringType.FindField("_LoadStrings");
             TypeReference t_LoadStrings = f_LoadStrings.FieldType;
@@ -1536,6 +1589,7 @@ namespace MonoMod {
 
             // Reset to apply entity patches
             cursor.Index = 0;
+
             // Patch the winged golden berry so it counts golden deaths as a valid restart
             //  Before: if (this.Session.Dashes == 0 && this.Session.StartedFromBeginning)
             //  After:  if (this.Session.Dashes == 0 && (this.Session.StartedFromBeginning || this.Session.RestartedFromGolden))
@@ -1568,6 +1622,7 @@ namespace MonoMod {
 
             // Reset to apply static constructor patch
             cursor.Index = 0;
+
             // Patch the static constructor to populate the _LoadStrings hashset with every vanilla entity name
             // We use _LoadStrings in LoadCustomEntity to determine if an entity name is missing/invalid
             // We manually add "theoCrystalHoldingBarrier" first since its entity handler was removed (unused but still in 5A bin)
@@ -1588,9 +1643,9 @@ namespace MonoMod {
                 );
                 cctorCursor.Emit(OpCodes.Stsfld, f_LoadStrings);
             });
-            // EntityData patch: replaces all instances of adding a vanilla entity with that same entity with a reference to its entityData
             // Reset to apply EntityData patch
             cursor.Index = 0;
+            // EntityData patch: replaces all instances of adding a vanilla entity with that same entity with a reference to its entityData
             ILLabel label = null;
             foreach(VariableDefinition data in vars_entityData) {
                 cursor.GotoNext(MoveType.After, instr => instr.MatchStloc(data.Index + 1)); // This is jank but works

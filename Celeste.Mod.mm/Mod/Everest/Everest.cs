@@ -428,6 +428,7 @@ namespace Celeste.Mod {
 
             MainThreadHelper.Instance = new MainThreadHelper(Celeste.Instance);
             STAThreadHelper.Instance = new STAThreadHelper(Celeste.Instance);
+
             // Register our core module and load any other modules.
             CoreModule core = new CoreModule();
             core.Register();
@@ -462,6 +463,7 @@ namespace Celeste.Mod {
             }).Register();
 
             LuaLoader.Initialize();
+
             Loader.LoadAuto();
 
             if (!Flags.IsHeadless) {
@@ -545,6 +547,7 @@ namespace Celeste.Mod {
         public static void Register(this EverestModule module) {
             lock (_Modules)
                 _Modules.Add(module);
+
             module.LoadSettings();
             module.Load();
             if (_ContentLoaded) {
