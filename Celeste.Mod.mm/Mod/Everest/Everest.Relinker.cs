@@ -252,8 +252,8 @@ namespace Celeste.Mod {
                     InputPath = inPath,
                     OutputPath = outPath,
 
-                    RelinkModuleMap = SharedRelinkModuleMap,
-                    RelinkMap = SharedRelinkMap,
+                    RelinkModuleMap = new Dictionary<string, ModuleDefinition>(SharedRelinkModuleMap),
+                    RelinkMap = new Dictionary<string, object>(SharedRelinkMap),
 
                     AssemblyResolver = meta.AssemblyContext,
                     MissingDependencyResolver = depResolver
