@@ -146,16 +146,27 @@ public class EverestSplashWindow {
         set {
             if (renogareFont == null) return; // Too early :/ (ignore data received when the splash was still initializing)
             _loadingProgress = value with { lastMod = value.lastMod == "" ? _loadingProgress.lastMod : value.lastMod };
+            if (_loadingProgress.raw) { // .raw means no extra decorations on the mod name
+                // also skip sanitization since this is not arbitrary data
+                windowInfo.modLoadingProgressCache?.SetText(_loadingProgress.lastMod);
+                return;
+            }
             char[] sanitizedName = _loadingProgress.lastMod.ToCharArray();
             // Sanitize the sent mod name, it could contain forbidden characters
-            // I KNOW I KNOW, this is absolutely slow and painful to your eyes, TWO whole string copies and a loop O(n*3), painful,
+            // I KNOW I KNOW, this is absolutely slow and painful to your eyes, TWO whole string copies, and a loop O(n*3), painful
             // so feel free to optimize it :D
             for (int i = 0; i < sanitizedName.Length; i++) {
                 if (!renogareFont.IsValidChar(sanitizedName[i]))
                     sanitizedName[i] = '?'; // Fallback char
             }
-
-            windowInfo.modLoadingProgressCache?.SetText("Loading " + new string(sanitizedName) + " [" + _loadingProgress.loadedMods + "/" + _loadingProgress.totalMods + "]");
+            
+            
+            windowInfo.modLoadingProgressCache?.SetText(
+                "Loading " +
+                new string(sanitizedName) +
+                " [" + _loadingProgress.loadedMods +
+                "/" +
+                _loadingProgress.totalMods + "]");
         }
     }
 
@@ -181,12 +192,21 @@ public class EverestSplashWindow {
                     }
 
                     const string progressPfx = "#progress";
-                    if (message.StartsWith(progressPfx)) { // Mod loading progress message received: "progress (float){progress}"
+                    if (message.StartsWith(progressPfx)) { // Mod loading progress message received: "#progress{loadedMods}{totalMods}{modName}"
                         int countEnd = message.IndexOf(";", StringComparison.Ordinal);
                         int totalEnd = message.IndexOf(";", countEnd + 1, StringComparison.Ordinal);
+                        
                         int loadedMods = int.Parse(message[progressPfx.Length..countEnd]);
                         int totalMods = int.Parse(message[(countEnd+1)..totalEnd]);
                         loadingProgress = new LoadingProgress(loadedMods, totalMods, message[(totalEnd+1)..]);
+                    }
+
+                    const string finishPfx = "#finish";
+                    if (message.StartsWith(finishPfx)) { // Mod finish progress message received: "#finish{totalMods}{message}"
+                        int totalEnd = message.IndexOf(";", StringComparison.Ordinal);
+
+                        int totalMods = int.Parse(message[finishPfx.Length..totalEnd]);
+                        loadingProgress = new LoadingProgress(totalMods, totalMods, message[(totalEnd + 1)..], true);
                     }
                 }
             } catch (Exception e) {
@@ -335,8 +355,10 @@ public class EverestSplashWindow {
         float progressWidth = 0;
         float prevProgress = 0;
         AnimTimer(16, () => {
-            if (loadingProgress.totalMods == 0) return;
-            progressWidth = (((float)loadingProgress.loadedMods)/loadingProgress.totalMods) * WindowWidth*0.25f + prevProgress*0.75f;
+            if (loadingProgress.totalMods == 0) { // skip updating since it must have not initialized yet
+                return;
+            }
+            progressWidth = (float)loadingProgress.loadedMods/loadingProgress.totalMods * WindowWidth*0.25f + prevProgress*0.75f;
             prevProgress = progressWidth;
         });
 
@@ -588,7 +610,7 @@ public class EverestSplashWindow {
             public void HasRan() => HasFixed = true;
         }
     }
-    public record LoadingProgress(int loadedMods, int totalMods, string lastMod);
+    public record LoadingProgress(int loadedMods, int totalMods, string lastMod, bool raw = false);
 
     /// <summary>
     /// Stripped down version of https://github.com/FNA-XNA/FNA/blob/master/src/Graphics/FNA3D.cs, suited for our needs.
