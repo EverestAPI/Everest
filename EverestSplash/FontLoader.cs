@@ -1,9 +1,7 @@
 using EverestSplash.SDL2;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
-using System.Runtime.InteropServices;
 
 namespace EverestSplash;
 

@@ -143,6 +143,10 @@ public class EverestSplashWindow {
 
     private FontLoader renogareFont = null!;
     private LoadingProgress _loadingProgress = new(0, 0, "");
+    private readonly Randomness randomness;
+
+    private bool rightSidedWheel = false;
+    public string LoadingText = "Loading %s";
 
     private LoadingProgress loadingProgress {
         get => _loadingProgress;
@@ -156,7 +160,7 @@ public class EverestSplashWindow {
             }
             char[] sanitizedName = _loadingProgress.lastMod.ToCharArray();
             // Sanitize the sent mod name, it could contain forbidden characters
-            // I KNOW I KNOW, this is absolutely slow and painful to your eyes, TWO whole string copies, and a loop O(n*3), painful
+            // I KNOW I KNOW, this is absolutely slow and painful to your eyes, TWO whole string copies, and a loop, O(n*3), painful
             // so feel free to optimize it :D
             for (int i = 0; i < sanitizedName.Length; i++) {
                 if (!renogareFont.IsValidChar(sanitizedName[i]))
@@ -164,12 +168,9 @@ public class EverestSplashWindow {
             }
             
             
+            // windowInfo.modLoadingProgressCache?.SetText($"Loading {sanitizedName.AsSpan()} [{_loadingProgress.loadedMods}/{_loadingProgress.totalMods}");
             windowInfo.modLoadingProgressCache?.SetText(
-                "Loading " +
-                new string(sanitizedName) +
-                " [" + _loadingProgress.loadedMods +
-                "/" +
-                _loadingProgress.totalMods + "]");
+                $"{LoadingText.Replace("%s", new string(sanitizedName))} [{_loadingProgress.loadedMods}/{_loadingProgress.totalMods}]");
         }
     }
 
@@ -185,6 +186,8 @@ public class EverestSplashWindow {
         currentAssembly = GetType().Assembly;
         string serverName = EverestSplash.Name + postFix;
         Console.WriteLine("Running splash on " + serverName);
+        randomness = new Randomness();
+        // randomness.ForceChance = true;
         ClientPipe = new(".", serverName);
         ClientPipe.ConnectAsync().ContinueWith(_ => {
             try {
@@ -291,6 +294,29 @@ public class EverestSplashWindow {
         
         // Okay, good code continues here
 
+        if (randomness.WithChance(0.01)) {
+            string[] possibleTexts = {
+                "Adding %s to the pie",
+                "Asking Madeline for %s",
+                // "Fighting your inner %s", 
+                // "Adding golden berries to %s",
+                "Looking for %s",
+                // "Installing %s to PICO-8",
+                // "Making granny play %s", 
+                // "Sending %s to your friends", 
+                // "Adding secret rooms to %s",
+                // "%s caught fire",
+                // "Adding bad gameplay to %s",
+                // "Hiding secrets in %s",
+                // "Removing Mr. Oshiro from %s",
+                // "Adding Theo to %s",
+            };
+            LoadingText = possibleTexts[new Random().Next(possibleTexts.Length)];
+        }
+
+        if (randomness.WithChance(0.05)) {
+            rightSidedWheel = true;
+        }
     }
 
     private void LoadTextures() {
@@ -328,6 +354,8 @@ public class EverestSplashWindow {
         string[] startingCelesteText = { // DO Make sure that the longest string goes first, for caching reasons
             "Starting Celeste...", "Starting Celeste", "Starting Celeste.", "Starting Celeste.."
         };
+        if (randomness.WithChance(0.1))
+            (startingCelesteText[1], startingCelesteText[3]) = (startingCelesteText[3], startingCelesteText[1]);
         AnimTimer(500, () => {
             windowInfo.startingEverestFontCache.SetText(startingCelesteText[startEverestSpriteIdx]);
             startEverestSpriteIdx = (startEverestSpriteIdx + 1) % startingCelesteText.Length;
@@ -391,7 +419,7 @@ public class EverestSplashWindow {
             // Background wheel
             float scale = (float) WindowWidth / windowInfo.wheelTexture.Width;
             SDL.SDL_Rect wheelRect = new() {
-                x = (int)(-windowInfo.wheelTexture.Width*scale/2),
+                x = (int)(-windowInfo.wheelTexture.Width*scale/2 + (rightSidedWheel ? WindowWidth : 0)),
                 y = (int)(-windowInfo.wheelTexture.Height*scale/2),
                 w = (int)(windowInfo.wheelTexture.Width*scale),
                 h = (int)(windowInfo.wheelTexture.Height*scale),
@@ -572,6 +600,20 @@ public class EverestSplashWindow {
     }
 
     public record LoadingProgress(int loadedMods, int totalMods, string lastMod, bool raw = false);
+
+    public class Randomness {
+        private Random rng;
+
+        public bool ForceChance = false;
+        public Randomness(int? seed = null) {
+            rng = seed == null ? new Random() : new Random(seed.Value);
+        }
+
+        public bool WithChance(double chance) {
+            if (ForceChance) return true;
+            return rng.NextDouble() <= chance;
+        }
+    }
 
     /// <summary>
     /// Stripped down version of https://github.com/FNA-XNA/FNA/blob/master/src/Graphics/FNA3D.cs, suited for our needs.
