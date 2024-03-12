@@ -110,7 +110,7 @@ namespace Celeste.Mod {
 
         public static void AllModsLoaded() {
             loadedMods = totalMods;
-            SendMessageToSplash("#finish" + totalMods + ";" + "Final touches...");
+            SendMessageToSplash("#finish" + totalMods + ";" + "Almost done...");
         }
 
         private static void SendMessageToSplash(string message) {
