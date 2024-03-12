@@ -85,6 +85,7 @@ public static class EverestSplash {
         Task.Run(async () => {
             NamedPipeServerStream server = new(Name);
             await server.WaitForConnectionAsync();
+            await Task.Delay(300); // Wait a bit for the splash to load the font
             Console.WriteLine($"Running for {s} seconds...");
             StreamWriter sw = new(server);
             for (int i = 1; i < progBarSteps + 1; i++) {
@@ -92,6 +93,9 @@ public static class EverestSplash {
                 await sw.FlushAsync();
                 await Task.Delay(s*1000/progBarSteps);
             }
+            await sw.WriteLineAsync($"#finish{progBarSteps};Almost done...");
+            await sw.FlushAsync();
+            await Task.Delay(300);
             await sw.WriteLineAsync("#stop");
             await sw.FlushAsync();
             Console.WriteLine("Close request sent");
@@ -134,7 +138,6 @@ public class EverestSplashWindow {
 
     private readonly NamedPipeClientStream ClientPipe;
     private WindowInfo windowInfo;
-    private readonly FNAFixes fnaFixes = new();
     private readonly string targetRenderer;
     private readonly Assembly currentAssembly;
 
@@ -288,15 +291,6 @@ public class EverestSplashWindow {
         
         // Okay, good code continues here
 
-        // FNA fixes
-        // FNA disables the cursor on game creation and when creating the window
-        fnaFixes.Add(
-            new FNAFixes.FNAFix(
-            () => SDL.SDL_ShowCursor(SDL.SDL_QUERY) == SDL.SDL_DISABLE,
-            () => SDL.SDL_ShowCursor(SDL.SDL_ENABLE),
-            () => SDL.SDL_ShowCursor(SDL.SDL_DISABLE)
-            )
-        );
     }
 
     private void LoadTextures() {
@@ -365,7 +359,6 @@ public class EverestSplashWindow {
         windowInfo.modLoadingProgressCache.SetText("Loading..."); // Default to "Loading..."
 
         while (true) { // while true :trolloshiro: (on a serious note, for our use case its fineee :))
-            fnaFixes.CheckAndFix();
             
             while (SDL.SDL_PollEvent(out SDL.SDL_Event e) != 0) {
                 // An SDL_USEREVENT is sent when the splash receives the quit command
@@ -452,8 +445,6 @@ public class EverestSplashWindow {
     }
 
     private void Cleanup() {
-        fnaFixes.Dispose(); // Do this asap, theres no reason to (theoretically), but it wont hurt
-
         foreach (IDisposable texture in windowInfo.loadedTextures) {
             texture.Dispose();
         }
@@ -580,36 +571,6 @@ public class EverestSplashWindow {
         return (byte)(s + (e - s) * p);
     }
 
-    /// <summary>
-    /// Simple class to manage FNA fixes and modifications and easily undo them
-    /// </summary>
-    public class FNAFixes : IDisposable {
-        private readonly List<FNAFix> fixes = new();
-
-        public void Add(FNAFix fnaFix) {
-            fixes.Add(fnaFix);
-        }
-
-        public void CheckAndFix() {
-            foreach (FNAFix fix in fixes) {
-                if (fix.Predicate()) {
-                    fix.HasRan();
-                    fix.Fix();
-                }
-            }
-        }
-
-        public void Dispose() {
-            foreach (FNAFix fix in fixes) {
-                if (fix.HasFixed)
-                    fix.Undo();
-            }
-        }
-        public record FNAFix(Func<bool> Predicate, Action Fix, Action Undo) {
-            public bool HasFixed { get; private set; }
-            public void HasRan() => HasFixed = true;
-        }
-    }
     public record LoadingProgress(int loadedMods, int totalMods, string lastMod, bool raw = false);
 
     /// <summary>
