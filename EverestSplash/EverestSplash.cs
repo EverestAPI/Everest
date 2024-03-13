@@ -141,12 +141,12 @@ public class EverestSplashWindow {
     private readonly string targetRenderer;
     private readonly Assembly currentAssembly;
 
-    private FontLoader renogareFont = null!;
+    private FontLoader? renogareFont;
     private LoadingProgress _loadingProgress = new(0, 0, "");
     private readonly Randomness randomness;
 
     private bool rightSidedWheel = false;
-    public string LoadingText = "Loading %s";
+    private string loadingText = "Loading {0}";
 
     private LoadingProgress loadingProgress {
         get => _loadingProgress;
@@ -168,9 +168,8 @@ public class EverestSplashWindow {
             }
             
             
-            // windowInfo.modLoadingProgressCache?.SetText($"Loading {sanitizedName.AsSpan()} [{_loadingProgress.loadedMods}/{_loadingProgress.totalMods}");
             windowInfo.modLoadingProgressCache?.SetText(
-                $"{LoadingText.Replace("%s", new string(sanitizedName))} [{_loadingProgress.loadedMods}/{_loadingProgress.totalMods}]");
+                $"{string.Format(loadingText, new string(sanitizedName))} [{_loadingProgress.loadedMods}/{_loadingProgress.totalMods}]");
         }
     }
 
@@ -180,15 +179,18 @@ public class EverestSplashWindow {
         return new EverestSplashWindow(targetRenderer, postFix);
     }
 
-    private EverestSplashWindow(string targetRenderer, string postFix) {
+    private EverestSplashWindow(string targetRendererName, string postFix) {
         instance = this;
-        this.targetRenderer = targetRenderer;
+        targetRenderer = targetRendererName;
         currentAssembly = GetType().Assembly;
+        randomness = new Randomness {
+            ForceChance = Environment.GetEnvironmentVariable("EVERESTSPLASH_FORCE_CHANCE") == "1"
+        };
+        
         string serverName = EverestSplash.Name + postFix;
         Console.WriteLine("Running splash on " + serverName);
-        randomness = new Randomness();
-        // randomness.ForceChance = true;
-        ClientPipe = new(".", serverName);
+        
+        ClientPipe = new NamedPipeClientStream(".", serverName);
         ClientPipe.ConnectAsync().ContinueWith(_ => {
             try {
                 StreamReader sr = new(ClientPipe);
@@ -295,23 +297,11 @@ public class EverestSplashWindow {
         // Okay, good code continues here
 
         if (randomness.WithChance(0.01)) {
+            // May be expanded on the future
             string[] possibleTexts = {
-                "Adding %s to the pie",
-                "Asking Madeline for %s",
-                // "Fighting your inner %s", 
-                // "Adding golden berries to %s",
-                "Looking for %s",
-                // "Installing %s to PICO-8",
-                // "Making granny play %s", 
-                // "Sending %s to your friends", 
-                // "Adding secret rooms to %s",
-                // "%s caught fire",
-                // "Adding bad gameplay to %s",
-                // "Hiding secrets in %s",
-                // "Removing Mr. Oshiro from %s",
-                // "Adding Theo to %s",
+                "Adding {0} to the pie",
             };
-            LoadingText = possibleTexts[new Random().Next(possibleTexts.Length)];
+            loadingText = possibleTexts[new Random().Next(possibleTexts.Length)];
         }
 
         if (randomness.WithChance(0.05)) {
@@ -354,7 +344,7 @@ public class EverestSplashWindow {
         string[] startingCelesteText = { // DO Make sure that the longest string goes first, for caching reasons
             "Starting Celeste...", "Starting Celeste", "Starting Celeste.", "Starting Celeste.."
         };
-        if (randomness.WithChance(0.1))
+        if (randomness.WithChance(0.05))
             (startingCelesteText[1], startingCelesteText[3]) = (startingCelesteText[3], startingCelesteText[1]);
         AnimTimer(500, () => {
             windowInfo.startingEverestFontCache.SetText(startingCelesteText[startEverestSpriteIdx]);
@@ -477,7 +467,7 @@ public class EverestSplashWindow {
             texture.Dispose();
         }
         
-        renogareFont.Dispose();
+        renogareFont?.Dispose();
 
         if (windowInfo.renderer != IntPtr.Zero)
             SDL.SDL_DestroyRenderer(windowInfo.renderer);
