@@ -334,10 +334,13 @@ namespace Celeste.Mod {
                 }
             }
 
-            private static ModuleDefinition _RuntimeRulesModule;
+            // FIXME: Celeste.Mod.mm.dll caching is currently absolutely borked because GetNextCustomAttribute nukes attributes while iterating :)))
+            // Once this is fixed on MM's side, uncomment the caching code again to reduce loading times
+
+            // private static ModuleDefinition _RuntimeRulesModule;
             private static ModuleDefinition LoadRuntimeRulesModule() {
-                if (_RuntimeRulesModule != null)
-                    return _RuntimeRulesModule;
+                // if (_RuntimeRulesModule != null)
+                //     return _RuntimeRulesModule;
 
                 // Find our rules .Mod.mm.dll
                 string rulesPath = Path.Combine(
@@ -357,7 +360,7 @@ namespace Celeste.Mod {
                     throw new InvalidOperationException($"Couldn't find runtime rules .Mod.mm.dll!");
 
                 // Load the module
-                return _RuntimeRulesModule = ModuleDefinition.ReadModule(rulesPath, new ReaderParameters(ReadingMode.Immediate));
+                return /* _RuntimeRulesModule = */ ModuleDefinition.ReadModule(rulesPath, new ReaderParameters(ReadingMode.Immediate));
             }
 
             /// <summary>
