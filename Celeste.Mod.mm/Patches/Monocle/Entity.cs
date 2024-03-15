@@ -16,12 +16,6 @@ using Monocle;
 namespace Monocle {
     class patch_Entity : Entity {
 
-        internal static EntityID _ApplyID(EntityData data) {
-            if (data == null)
-                return EntityID.None;
-            return new EntityID(data.Level.Name, data.ID + (patch_Level._isLoadingTriggers ? 10000000 : 0));
-        }
-
         [MonoModIgnore]
         [MonoModConstructor]
         [PatchEntityCtor]
@@ -34,8 +28,8 @@ namespace Monocle {
             private set;
         }
 
-        public readonly EntityData EntityData; 
-        public readonly EntityID EntityID;
+        public readonly EntityData EntityData;
+        public EntityID EntityID => (EntityData as patch_EntityData).EntityID;
         public event Action<Entity> PreUpdate;
         public event Action<Entity> PostUpdate;
 
@@ -60,10 +54,8 @@ namespace MonoMod {
         // If there's a way to store this object to a living stack where it's only allocated to the stack for a short time that would be more ideal but I don't know of a way to do so.
         public static void PatchEntityCtor(ILContext context, CustomAttribute attrib) {
             FieldReference f_Entity_EntityData = context.Method.DeclaringType.FindField("EntityData");
-            FieldReference f_Entity_EntityID = context.Method.DeclaringType.FindField("EntityID");
-            MethodReference m_Entity__ApplyID = context.Method.DeclaringType.FindMethod("_ApplyID");
+            FieldReference f_EntityData_EntityID = MonoModRule.Modder.Module.GetType("Celeste.EntityData").FindField("EntityID");
             FieldReference f_Level_temporaryEntityData = MonoModRule.Modder.Module.GetType("Celeste.Level").FindField("temporaryEntityData");
-            FieldReference f_Level__isLoadingTriggers = MonoModRule.Modder.Module.GetType("Celeste.Level").FindField("_isLoadingTriggers");
 
             ILCursor cursor = new ILCursor(context);
             cursor.GotoNext(MoveType.Before, instr => instr.MatchLdarg(0), instr => instr.MatchLdarg(1));
@@ -72,14 +64,9 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Stfld, f_Entity_EntityData);
             cursor.Emit(OpCodes.Ldnull);
             cursor.Emit(OpCodes.Stsfld, f_Level_temporaryEntityData);
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Ldfld, f_Entity_EntityData);
-            cursor.Emit(OpCodes.Call, m_Entity__ApplyID);
-            cursor.Emit(OpCodes.Stfld, f_Entity_EntityID);
             /* Resulting code:
             +  this.EntityData = Level.temporaryEntityData;
 		    +  Level.temporaryEntityData = null;
-            +  this.EntityID = Entity._ApplyID(this.EntityData);
 		       Position = position;
 	           Components = new ComponentList(this); 
             */

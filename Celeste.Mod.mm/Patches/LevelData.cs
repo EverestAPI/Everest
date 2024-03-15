@@ -10,9 +10,12 @@ using MonoMod.InlineRT;
 using MonoMod.Utils;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace Celeste {
     public class patch_LevelData : LevelData {
+        [ThreadStatic]
+        internal static bool _isRegisteringTriggers;
 
         public Vector2? DefaultSpawn;
 
@@ -24,6 +27,7 @@ namespace Celeste {
         [PatchLevelDataBerryTracker]
         [PatchLevelDataDecalLoader]
         [PatchLevelDataSpawnpointLoader]
+        [PatchLevelDataTriggerIDResolver]
         public extern void orig_ctor(BinaryPacker.Element data);
 
         [MonoModConstructor]
@@ -40,7 +44,7 @@ namespace Celeste {
         // Optimise the method
         [MonoModReplace]
         private EntityData CreateEntityData(BinaryPacker.Element entity) {
-            EntityData entityData = new() {
+            patch_EntityData entityData = new patch_EntityData() {
                 Name = entity.Name,
                 Level = this
             };
@@ -51,6 +55,7 @@ namespace Celeste {
                     {
                         case "id":
                             entityData.ID = (int) value;
+                            entityData.SetEntityID();
                             break;
                         case "x":
                             entityData.Position.X = Convert.ToSingle(value, CultureInfo.InvariantCulture);
@@ -123,6 +128,13 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelDataSpawnpointLoader))]
     class PatchLevelDataSpawnpointLoaderAttribute : Attribute { }
+
+
+    /// <summary>
+    /// Patch the constructor to handle EntityID values for Trigger Loading.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelDataTriggerIDResolver))]
+    class PatchLevelDataTriggerIDResolverAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -233,6 +245,38 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldloc, v_spawnCoords);
             cursor.Emit(OpCodes.Callvirt, m_LevelDataCheckForDefaultSpawn);
             cursor.Emit(OpCodes.Ldloc, v_spawnCoords);
+        }
+
+        public static void PatchLevelDataTriggerIDResolver(ILContext context, CustomAttribute attrib) {
+            // Code Changes:
+            //  elseif(child.Name == "triggers") {
+            //      if (child.Children == null) continue;
+            // +    LevelData._isRegisteringTriggers = true;
+            //      foreach (BinaryPacker.Element child3 in child.Children)
+            //  		Triggers.Add(CreateEntityData(child3));
+            // +    LevelData._isRegisteringTriggers = false;
+            //  }
+
+            FieldDefinition f_LevelData__isRegisteringTriggers = context.Method.DeclaringType.FindField(nameof(Celeste.patch_LevelData._isRegisteringTriggers));
+
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdstr("triggers")); // Naive check to get to the general location of the hook
+            cursor.GotoNext(MoveType.Before, instr => instr.MatchStloc(8));
+            cursor.GotoPrev(MoveType.AfterLabel, instr => instr.MatchLdloc(7));
+            cursor.Emit(OpCodes.Ldc_I4_1);
+            cursor.Emit(OpCodes.Stsfld, f_LevelData__isRegisteringTriggers);
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdloc(7), instr => true, instr => instr.MatchLdstr("bgdecals"));
+            Instruction oldFinallyEnd = cursor.Next;
+            // set _isLoadingTriggers to false
+            cursor.Emit(OpCodes.Ldc_I4_0);
+            Instruction newFinallyEnd = cursor.Prev;
+            cursor.EmitStsfld(f_LevelData__isRegisteringTriggers);
+            // fix end of finally block
+            foreach (ExceptionHandler handler in context.Body.ExceptionHandlers.Where(handler => handler.HandlerEnd == oldFinallyEnd)) {
+                handler.HandlerEnd = newFinallyEnd;
+                break;
+            }
+
         }
     }
 }
