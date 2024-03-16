@@ -249,8 +249,14 @@ namespace Celeste {
         public static void CriticalFailureHandler(Exception e) {
             Everest.LogDetours();
 
-            (e ?? new Exception("Unknown exception")).LogDetailed("CRITICAL");
+            e ??= new Exception("Unknown exception");
 
+            e.LogDetailed("CRITICAL");
+
+            // here (ever) rests a tribute to everest in your everest
+            // 2020/02/24 - 2024/03/12
+
+            /*
             ErrorLog.Write(
 @"Yo, I heard you like Everest so I put Everest in your Everest so you can Ever Rest while you Ever Rest.
 
@@ -259,7 +265,9 @@ In other words: Celeste has encountered a catastrophic failure.
 IF YOU WANT TO HELP US FIX THIS:
 Please join the Celeste Discord server and drag and drop your log.txt into #modding_help.
 https://discord.gg/6qjaePQ");
+            */
 
+            ErrorLog.Write(e);
             ErrorLog.Open();
             if (!_CriticalFailureIsUnhandledException)
                 Environment.Exit(-1);
