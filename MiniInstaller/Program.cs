@@ -209,7 +209,7 @@ namespace MiniInstaller {
                 Directory.CreateDirectory(Path.Combine(PathGame, "Mods"));
             }
 
-            // Can't check for platform as some morons^Wuninformed people could be running MiniInstaller via wine.
+            // Can't check for platform as some people could be running MiniInstaller via wine.
             if (PathGame.Replace(Path.DirectorySeparatorChar, '/').Trim('/').EndsWith(".app/Contents/Resources")) {
                 PathOSXExecDir = Path.Combine(Path.GetDirectoryName(PathGame), "MacOS");
                 if (!Directory.Exists(PathOSXExecDir))
@@ -457,11 +457,11 @@ namespace MiniInstaller {
 
         private static void CreateBackupSymlinks() {
             if (!Directory.Exists(Path.Combine(PathOrig, "Content")))
-                Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Content"), Path.Combine(PathGame, "Content"));
+                Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Content"), Path.GetRelativePath(PathOrig, Path.Combine(PathGame, "Content")));
 
             if (Platform == InstallPlatform.Windows && !Directory.Exists(Path.Combine(PathOrig, "Saves"))) {
                 Directory.CreateDirectory(Path.Combine(PathGame, "Saves"));
-                Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Saves"), Path.Combine(PathGame, "Saves"));
+                Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Saves"), Path.GetRelativePath(PathOrig, Path.Combine(PathGame, "Saves")));
             }
         }
 
@@ -617,7 +617,7 @@ namespace MiniInstaller {
 
                     if (symlinkPath != null && symlinkPath != dst) {
                         File.Delete(symlinkPath);
-                        File.CreateSymbolicLink(symlinkPath, dst);
+                        File.CreateSymbolicLink(symlinkPath, Path.GetRelativePath(Path.GetDirectoryName(symlinkPath)!, dst));
                     }
                 }
 
@@ -911,7 +911,8 @@ namespace MiniInstaller {
                     HostWriter.CreateAppHost(Path.Combine(hostsDir, "osx"), Path.ChangeExtension(appExe, null), Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll));
 
                     File.Delete(Path.Combine(PathOSXExecDir, Path.GetFileNameWithoutExtension(appExe)));
-                    File.CreateSymbolicLink(Path.Combine(PathOSXExecDir, Path.GetFileNameWithoutExtension(appExe)), Path.ChangeExtension(appExe, null));
+                    File.CreateSymbolicLink(Path.Combine(PathOSXExecDir, Path.GetFileNameWithoutExtension(appExe)),
+                                            Path.GetRelativePath(PathOSXExecDir, Path.ChangeExtension(appExe, null)));
                 } break;
             }
         }
