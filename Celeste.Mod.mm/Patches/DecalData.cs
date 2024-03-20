@@ -5,6 +5,15 @@ namespace Celeste {
 
         public float Rotation;
         public string ColorHex;
+        public int? Depth;
+
+        public int GetDepth(int fallback) {
+            return Depth ?? fallback;
+        }
+
+        public bool HasDepth() {
+            return Depth.HasValue;
+        }
 
     }
 }

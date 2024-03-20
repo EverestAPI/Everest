@@ -165,12 +165,16 @@ namespace MonoMod {
         public static void PatchLevelDataDecalLoader(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_DecalData = MonoModRule.Modder.FindType("Celeste.DecalData").Resolve();
             TypeDefinition t_BinaryPackerElement = MonoModRule.Modder.FindType("Celeste.BinaryPacker/Element").Resolve();
+            TypeDefinition t_Extensions = MonoModRule.Modder.FindType("Celeste.Mod.Extensions").Resolve();
 
-            MethodDefinition m_BinaryPackerElementAttr = t_BinaryPackerElement.FindMethod("Attr");
-            MethodDefinition m_BinaryPackerElementAttrFloat = t_BinaryPackerElement.FindMethod("AttrFloat");
+            MethodDefinition m_BinaryPackerElementHasAttr         = t_BinaryPackerElement.FindMethod("HasAttr");
+            MethodDefinition m_BinaryPackerElementAttr            = t_BinaryPackerElement.FindMethod("Attr");
+            MethodDefinition m_BinaryPackerElementAttrFloat       = t_BinaryPackerElement.FindMethod("AttrFloat");
+            MethodDefinition m_BinaryPackerElementAttrNullableInt = t_Extensions.FindMethod("AttrNullableInt");
 
             FieldDefinition f_DecalDataRotation = t_DecalData.FindField("Rotation");
             FieldDefinition f_DecalDataColorHex = t_DecalData.FindField("ColorHex");
+            FieldDefinition f_DecalDataDepth    = t_DecalData.FindField("Depth");
 
             ILCursor cursor = new ILCursor(context);
 
@@ -186,6 +190,8 @@ namespace MonoMod {
                 // we are trying to add:
                 //   decaldata.Rotation = element.AttrFloat("rotation", 0.0f);
                 //   decaldata.ColorHex = element.AttrString("color", "");
+                //   if (element.HasAttr("depth"))
+                //      decaldata.Depth = element.AttrNullableInt("depth");
 
                 // copy the reference to the DecalData
                 cursor.Emit(OpCodes.Dup);
@@ -193,7 +199,7 @@ namespace MonoMod {
                 cursor.Emit(OpCodes.Ldloc, loc_element);
                 cursor.Emit(OpCodes.Ldstr, "rotation");
                 cursor.Emit(OpCodes.Ldc_R4, 0.0f);
-                cursor.Emit(OpCodes.Callvirt, m_BinaryPackerElementAttrFloat);
+                cursor.Emit(OpCodes.Call, m_BinaryPackerElementAttrFloat);
                 // put the rotation into the DecalData
                 cursor.Emit(OpCodes.Stfld, f_DecalDataRotation);
 
@@ -203,9 +209,28 @@ namespace MonoMod {
                 cursor.Emit(OpCodes.Ldloc, loc_element);
                 cursor.Emit(OpCodes.Ldstr, "color");
                 cursor.Emit(OpCodes.Ldstr, "");
-                cursor.Emit(OpCodes.Callvirt, m_BinaryPackerElementAttr);
+                cursor.Emit(OpCodes.Call, m_BinaryPackerElementAttr);
                 // put the color into the DecalData
                 cursor.Emit(OpCodes.Stfld, f_DecalDataColorHex);
+
+                // find out if there is a depth field in the BinaryPacker.Element
+                cursor.Emit(OpCodes.Ldloc, loc_element);
+                cursor.Emit(OpCodes.Ldstr, "depth");
+                cursor.Emit(OpCodes.Call, m_BinaryPackerElementHasAttr);
+                // if not, skip to after setting it
+                ILLabel after_attr_depth = cursor.DefineLabel();
+                cursor.Emit(OpCodes.Brfalse_S, after_attr_depth);
+
+                // copy the reference to the DecalData again
+                cursor.Emit(OpCodes.Dup);
+                // load the depth from the BinaryPacker.Element
+                cursor.Emit(OpCodes.Ldloc, loc_element);
+                cursor.Emit(OpCodes.Ldstr, "depth");
+                cursor.Emit(OpCodes.Call, m_BinaryPackerElementAttrNullableInt);
+                // put the depth into the DecalData
+                cursor.Emit(OpCodes.Stfld, f_DecalDataDepth);
+
+                cursor.MarkLabel(after_attr_depth);
 
                 matches++;
             }

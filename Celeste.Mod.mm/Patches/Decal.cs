@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0414 // The field is assigned but its value is never used
 
 using Celeste.Mod;
@@ -35,6 +35,8 @@ namespace Celeste {
         public float Rotation = 0f;
 
         public Color Color;
+
+        public bool DepthSetByPlacement;
 
         private bool scaredAnimal;
 
@@ -281,7 +283,13 @@ namespace Celeste {
 
         public extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
+            int depth = Depth;
+
             orig_Added(scene);
+
+            if (DepthSetByPlacement)
+                Depth = depth;
+
             // Handle the Decal Registry
             string text = Name.ToLower();
             if (text.StartsWith("decals/")) {

@@ -404,8 +404,16 @@ namespace Celeste.Mod {
         public static int AttrInt(this BinaryPacker.Element el, string name, int defaultValue = 0) {
             if (el.Attributes == null || !el.Attributes.TryGetValue(name, out object obj))
                 return defaultValue;
-            if (obj is int)
-                return (int) obj;
+            if (obj is int v)
+                return v;
+            return int.Parse(obj.ToString(), CultureInfo.InvariantCulture);
+        }
+
+        public static int? AttrNullableInt(this BinaryPacker.Element el, string name) {
+            if (el.Attributes == null || !el.Attributes.TryGetValue(name, out object obj))
+                return null;
+            if (obj is int v)
+                return v;
             return int.Parse(obj.ToString(), CultureInfo.InvariantCulture);
         }
 
