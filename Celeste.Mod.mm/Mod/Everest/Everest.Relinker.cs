@@ -258,6 +258,58 @@ namespace Celeste.Mod {
                 // Load the module
                 return /* _RuntimeRulesModule = */ ModuleDefinition.ReadModule(rulesPath, new ReaderParameters(ReadingMode.Immediate));
             }
+            
+            
+            /// <summary>
+            /// Get the cached path of a given mod's relinked .dll
+            /// </summary>
+            /// <param name="meta">The mod metadata.</param>
+            /// <returns>The full path to the cached relinked .dll</returns>
+            [Obsolete("Use the variant with an explicit assembly name instead.")]
+            public static string GetCachedPath(EverestModuleMetadata meta)
+                => GetCachedPath(meta, Path.GetFileNameWithoutExtension(meta.DLL));
+
+            /// <summary>
+            /// Get the cached path of a given mod's relinked .dll
+            /// </summary>
+            /// <param name="meta">The mod metadata.</param>
+            /// <param name="asmname"></param>
+            /// <returns>The full path to the cached relinked .dll</returns>
+            [Obsolete("Use EverestModuleAssemblyContext.GetCachedPath instead.")]
+            public static string GetCachedPath(EverestModuleMetadata meta, string asmname)
+                => EverestModuleAssemblyContext.GetCachedPath(meta, asmname);
+
+            /// <summary>
+            /// Get the checksum for a given mod's .dll or the containing .zip
+            /// </summary>
+            /// <param name="meta">The mod metadata.</param>
+            /// <returns>A checksum.</returns>
+            [Obsolete("Use meta.Hash instead.")]
+            public static string GetChecksum(EverestModuleMetadata meta) {
+                string path = meta.PathArchive;
+                if (string.IsNullOrEmpty(path))
+                    path = meta.DLL;
+                return GetChecksum(path);
+            }
+            /// <summary>
+            /// Get the checksum for a given file.
+            /// </summary>
+            /// <param name="path">The file path.</param>
+            /// <returns>A checksum.</returns>
+            [Obsolete("Use Everest.GetChecksum instead.")]
+            public static string GetChecksum(string path) {
+                using (FileStream fs = File.OpenRead(path))
+                    return ChecksumHasher.ComputeHash(fs).ToHexadecimalString();
+            }
+
+            /// <summary>
+            /// Determine if both checksum collections are equal.
+            /// </summary>
+            /// <param name="a">The first checksum array.</param>
+            /// <param name="b">The second checksum array.</param>
+            /// <returns>True if the contents of both arrays match, false otherwise.</returns>
+            [Obsolete("Use Everest.ChecksumsEqual instead")]
+            public static bool ChecksumsEqual(string[] a, string[] b) => Everest.ChecksumsEqual(a, b);
 
             [PatchInitMMFlags]
             private static void InitMMFlags(MonoModder modder) {
