@@ -165,32 +165,38 @@ namespace Celeste.Mod {
                 // This can fix self referential assemblies blowing up
                 _LoadedAssemblies.Add(asmPath, null);
 
+                // Determine cache paths
+                string cachePath = GetCachedPath(ModuleMeta, asmName);
+                string cacheChecksumPath = Path.ChangeExtension(cachePath, ".sum");
+
+                // Calculate checksums
+                string[] checksums = { Everest.Relinker.GameChecksum, ModuleMeta.Hash.ToHexadecimalString() };
+
                 // Try to load + relink the assembly
                 // Do this on the main thread, as otherwise stuff can break
                 Stack<EverestModuleAssemblyContext> prevCtxs = _ActiveLocalLoadContexts;
                 _ActiveLocalLoadContexts = null;
                 try {
-                    if (!string.IsNullOrEmpty(ModuleMeta.PathArchive))
-                        using (ZipFile zip = new ZipFile(ModuleMeta.PathArchive)) {
-                            // Try to find + load the (symbol) entry
-                            string entryPath = osSepPath.Replace(Path.DirectorySeparatorChar, '/');
-                            ZipEntry entry = zip.Entries.FirstOrDefault(entry => entry.FileName == entryPath);
+                    if (TryLoadCachedAssembly(ModuleMeta, asmName, cachePath, cacheChecksumPath, checksums) is not { } relinkedAsm) {
+                        File.Delete(cachePath);
+                        File.Delete(cacheChecksumPath);
 
-                            string symEntryPath = Path.ChangeExtension(osSepPath, ".pdb").Replace(Path.DirectorySeparatorChar, '/');
-                            ZipEntry symEntry = zip.Entries.FirstOrDefault(entry => entry.FileName == symEntryPath);
+                        (string asmFilePath, string symPath) = GetAssemblyFilePathsForRelinking(asmPath);
 
-                            if (entry != null)
-                                using (Stream stream = entry.ExtractStream())
-                                using (Stream symStream = symEntry?.ExtractStream())
-                                    asm = Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream, symStream);
+                        if (asmFilePath == null) {
+                            return null;
                         }
-                    else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory)) {
-                        string symPath = Path.ChangeExtension(path, ".pdb");
-                        if (File.Exists(path))
-                            using (Stream stream = File.OpenRead(path))
-                            using (Stream symStream = File.Exists(symPath) ? File.OpenRead(symPath) : null)
-                                asm = Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream, symStream);
+
+                        relinkedAsm = Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, asmFilePath, symPath, cachePath, out string tmpOutPath);
+                        
+                        // Write the checksums for the cached assembly to be loaded in the future
+                        // Skip this step if the relinker had to fall back to using a temporary output file
+                        if (tmpOutPath == null) {
+                            File.WriteAllLines(cacheChecksumPath, checksums);
+                        }
                     }
+
+                    asm = relinkedAsm;
                 } finally {
                     _ActiveLocalLoadContexts = prevCtxs;
                 }
@@ -207,6 +213,82 @@ namespace Celeste.Mod {
                 }
 
                 return asm;
+            }
+        }
+
+        private (string, string) GetAssemblyFilePathsForRelinking(string assemblyPath) {
+            string symPath = Path.ChangeExtension(assemblyPath, "pdb");
+
+            if (ModuleMeta.PathDirectory != null) {
+                return (assemblyPath, symPath);
+            }
+
+            if (ModuleMeta.PathArchive != null) {
+                using ZipFile zip = new(ModuleMeta.PathArchive);
+
+                // Try to find + load the (symbol) entry
+                string entryPath = assemblyPath.Replace(Path.DirectorySeparatorChar, '/');
+                ZipEntry entry = zip.Entries.FirstOrDefault(entry => entry.FileName == entryPath);
+
+                string symEntryPath = symPath.Replace(Path.DirectorySeparatorChar, '/');
+                ZipEntry symEntry = zip.Entries.FirstOrDefault(entry => entry.FileName == symEntryPath);
+
+                if (entry == null) {
+                    return default;
+                }
+
+                var asmZipStream = entry.ExtractStream();
+                var symZipStream = symEntry?.ExtractStream();
+
+                string assemblyOutPath = Path.GetTempFileName();
+                using (FileStream tmpFs = File.OpenWrite(assemblyOutPath))
+                    asmZipStream.CopyTo(tmpFs);
+
+                string symOutPath = null;
+                if (symZipStream != null) {
+                    symOutPath = Path.GetTempFileName();
+                    using (FileStream tmpFs = File.OpenWrite(symOutPath))
+                        symZipStream.CopyTo(tmpFs);
+                }
+
+                return (assemblyOutPath, symOutPath);
+            }
+
+            return default;
+        }
+        
+        /// <summary>
+        /// Get the cached path of a given mod's relinked .dll
+        /// </summary>
+        /// <param name="meta">The mod metadata.</param>
+        /// <param name="asmname"></param>
+        /// <returns>The full path to the cached relinked .dll</returns>
+        public static string GetCachedPath(EverestModuleMetadata meta, string asmname)
+            => Path.Combine(Everest.Loader.PathCache, meta.Name + "." + asmname + ".dll");
+        
+        private static Assembly TryLoadCachedAssembly(EverestModuleMetadata meta, string asmName, string cachePath, string cacheChecksumPath, string[] checksums) {
+            // Check if the cached assembly + its checksums exist on disk, and if the checksums match
+            if (!File.Exists(cachePath) || !File.Exists(cacheChecksumPath)) {
+                Logger.Log(LogLevel.Verbose, "relinker", $"Cache miss - no cache file for {meta} - {asmName}");
+                return null;
+            }
+
+            if (!Everest.ChecksumsEqual(checksums, File.ReadAllLines(cacheChecksumPath))) {
+                Logger.Log(LogLevel.Verbose, "relinker", $"Cache miss - checksum mismatch for {meta} - {asmName}");
+                return null;
+            }
+
+            Logger.Log(LogLevel.Verbose, "relinker", $"Loading cached assembly for {meta} - {asmName}");
+
+            // Try to load the assembly and the module definition
+            try {
+                Assembly assembly = meta.AssemblyContext.LoadRelinkedAssembly(cachePath);
+                Logger.Log(LogLevel.Verbose, "relinker", $"Cache hit - loaded cached assembly for {meta} - {asmName}");
+                return assembly;
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Warn, "relinker", $"Cache miss - failed loading cached assembly for {meta} - {asmName}");
+                e.LogDetailed();
+                return null;
             }
         }
 
