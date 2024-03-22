@@ -258,8 +258,7 @@ namespace Celeste.Mod {
                 // Load the module
                 return /* _RuntimeRulesModule = */ ModuleDefinition.ReadModule(rulesPath, new ReaderParameters(ReadingMode.Immediate));
             }
-            
-            
+
             /// <summary>
             /// Get the cached path of a given mod's relinked .dll
             /// </summary>
