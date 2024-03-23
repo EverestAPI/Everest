@@ -710,6 +710,14 @@ namespace Celeste.Mod {
             public static void Add(string path, ModAsset metadata)
                 => TryAdd(path, metadata);
 
+            private static readonly string[] METADATA_YAML_NAMES = {
+                "metadata", "multimetadata", "everest"
+            };
+
+            private static readonly string[] SPRITEBANK_XML_NAMES = {
+                "Graphics/Sprites", "Graphics/SpritesGui", "Graphics/Portraits"
+            };
+
             /// <summary>
             /// Invoked when GuessType can't guess the asset type.
             /// Subscribe to this event to register your own custom types.
@@ -724,7 +732,7 @@ namespace Celeste.Mod {
             /// <returns>The passed asset path, trimmed if required.</returns>
             public static string GuessType(string file, out Type type, out string format) {
                 type = typeof(object);
-                format = Path.GetExtension(file) ?? "";
+                format = Path.GetExtension(file).ToLowerInvariant() ?? "";
                 if (format.Length >= 1)
                     format = format.Substring(1);
 
@@ -740,20 +748,20 @@ namespace Celeste.Mod {
                     type = typeof(ObjModel);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file.EndsWith(".obj.export")) {
+                } else if (file.EndsWith(".obj.export", StringComparison.OrdinalIgnoreCase)) {
                     type = typeof(AssetTypeObjModelExport);
                     file = file.Substring(0, file.Length - 7);
 
-                } else if (file == "metadata.yaml" || file == "multimetadata.yaml" || file == "everest.yaml" || file == "everest.yml") {
+                } else if ((format == "yaml" || format == "yml") && METADATA_YAML_NAMES.Contains(file.Substring(0, file.Length - format.Length - 1))) {
                     type = typeof(AssetTypeMetadataYaml);
                     file = file.Substring(0, file.Length - format.Length - 1);
                     format = "yml";
 
-                } else if (file == "DecalRegistry.xml") {
+                } else if (format == "xml" && file.Substring(0, file.Length - 4) == "DecalRegistry") {
                     type = typeof(AssetTypeDecalRegistry);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file == "Graphics/Sprites.xml" || file == "Graphics/SpritesGui.xml" || file == "Graphics/Portraits.xml") {
+                } else if (format == "xml" && SPRITEBANK_XML_NAMES.Contains(file.Substring(0, file.Length - 4))) {
                     type = typeof(AssetTypeSpriteBank);
                     file = file.Substring(0, file.Length - 4);
 
@@ -761,9 +769,10 @@ namespace Celeste.Mod {
                     if (format == "txt") {
                         type = typeof(AssetTypeDialog);
                         file = file.Substring(0, file.Length - 4);
-                    } else if (file.EndsWith(".txt.export")) {
+                    } else if (file.EndsWith(".txt.export", StringComparison.OrdinalIgnoreCase)) {
                         type = typeof(AssetTypeDialogExport);
-                        file = file.Substring(0, file.Length - 7);
+                        file = file.Substring(0, file.Length - 7 - 4);
+                        file += ".txt";
                     } else if (format == "fnt") {
                         type = typeof(AssetTypeFont);
                         file = file.Substring(0, file.Length - 4);
@@ -781,10 +790,7 @@ namespace Celeste.Mod {
                     if (format == "bank") {
                         type = typeof(AssetTypeBank);
                         file = file.Substring(0, file.Length - 5);
-                    } else if (file.EndsWith(".guids.txt")) {
-                        type = typeof(AssetTypeGUIDs);
-                        file = file.Substring(0, file.Length - 4);
-                    } else if (file.EndsWith(".GUIDs.txt")) { // Default FMOD casing
+                    } else if (file.EndsWith(".guids.txt", StringComparison.OrdinalIgnoreCase)) {
                         type = typeof(AssetTypeGUIDs);
                         file = file.Substring(0, file.Length - 4 - 6);
                         file += ".guids";
