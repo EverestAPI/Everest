@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Celeste.Mod.Registry.DecalRegistryHandlers;
+using Microsoft.Xna.Framework;
 using Monocle;
 using System;
 using System.Collections.Generic;
@@ -14,178 +15,62 @@ namespace Celeste.Mod {
         /// <summary>
         /// Mapping of decal paths to decal registry properties.
         /// </summary>
-        public static readonly Dictionary<string, DecalInfo> RegisteredDecals = new Dictionary<string, DecalInfo>();
+        public static readonly Dictionary<string, DecalInfo> RegisteredDecals = new();
 
         /// <summary>
-        /// Everest-defined decal registry properties. See <see cref="AddPropertyHandler"/> to add a custom property.
+        /// Stores factory methods which create DecalRegistryHandler instances
         /// </summary>
-        internal static Dictionary<string, Action<Decal, XmlAttributeCollection>> PropertyHandlers = new Dictionary<string, Action<Decal, XmlAttributeCollection>>() {
-            { "parallax", delegate(Decal decal, XmlAttributeCollection attrs) {
-                if (attrs["amount"] != null)
-                    ((patch_Decal)decal).MakeParallax(float.Parse(attrs["amount"].Value));
-            }},
-            { "scale", delegate(Decal decal, XmlAttributeCollection attrs) {
-                float scaleX = attrs["multiplyX"] != null ? float.Parse(attrs["multiplyX"].Value) : 1f;
-                float scaleY = attrs["multiplyY"] != null ? float.Parse(attrs["multiplyY"].Value) : 1f;
-                ((patch_Decal)decal).Scale *= new Vector2(scaleX, scaleY);
-            }},
-            { "smoke", delegate(Decal decal, XmlAttributeCollection attrs) {
-                float offX = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
-                float offY = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
-                bool inbg = attrs["inbg"] != null ? bool.Parse(attrs["inbg"].Value) : false;
-
-                Vector2 offset = decal.GetScaledOffset(offX, offY);
-
-                ((patch_Decal)decal).CreateSmoke(offset, inbg);
-            }},
-            { "depth", delegate(Decal decal, XmlAttributeCollection attrs) {
-                if (attrs["value"] != null)
-                    decal.Depth = int.Parse(attrs["value"].Value);
-            }},
-            { "animationSpeed", delegate(Decal decal, XmlAttributeCollection attrs) {
-                if (attrs["value"] != null)
-                    decal.AnimationSpeed = int.Parse(attrs["value"].Value);
-            }},
-            { "floaty", delegate(Decal decal, XmlAttributeCollection attrs) {
-                ((patch_Decal)decal).MakeFloaty();
-            }},
-            { "sound", delegate(Decal decal, XmlAttributeCollection attrs) {
-                if (attrs["event"] != null)
-                    decal.Add(new SoundSource(attrs["event"].Value));
-            }},
-            { "bloom", delegate(Decal decal, XmlAttributeCollection attrs) {
-                float offX = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
-                float offY = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
-                float alpha = attrs["alpha"] != null ? float.Parse(attrs["alpha"].Value) : 1f;
-                float radius = attrs["radius"] != null ? float.Parse(attrs["radius"].Value) : 1f;
-
-                Vector2 offset = decal.GetScaledOffset(offX, offY);
-                radius = decal.GetScaledRadius(radius);
-
-                decal.Add(new BloomPoint(offset, alpha, radius));
-            }},
-            { "coreSwap", delegate(Decal decal, XmlAttributeCollection attrs) {
-                ((patch_Decal)decal).MakeFlagSwap("cold", attrs["hotPath"]?.Value, attrs["coldPath"]?.Value);
-            }},
-            { "mirror", delegate(Decal decal, XmlAttributeCollection attrs) {
-                string text = decal.Name.ToLower();
-                if (text.StartsWith("decals/"))
-                    text = text.Substring(7);
-                bool keepOffsetsClose = attrs["keepOffsetsClose"] != null ? bool.Parse(attrs["keepOffsetsClose"].Value) : false;
-                ((patch_Decal)decal).MakeMirror(text, keepOffsetsClose);
-            }},
-            { "banner", delegate(Decal decal, XmlAttributeCollection attrs) {
-                float speed = attrs["speed"] != null ? float.Parse(attrs["speed"].Value) : 1f;
-                float amplitude = attrs["amplitude"] != null ? float.Parse(attrs["amplitude"].Value) : 1f;
-                int sliceSize = attrs["sliceSize"] != null ? int.Parse(attrs["sliceSize"].Value) : 1;
-                float sliceSinIncrement = attrs["sliceSinIncrement"] != null ? float.Parse(attrs["sliceSinIncrement"].Value) : 1f;
-                bool easeDown = attrs["easeDown"] != null ? bool.Parse(attrs["easeDown"].Value) : false;
-                float offset = attrs["offset"] != null ? float.Parse(attrs["offset"].Value) : 0f;
-                bool onlyIfWindy = attrs["onlyIfWindy"] != null ? bool.Parse(attrs["onlyIfWindy"].Value): false;
-
-                amplitude *= ((patch_Decal)decal).Scale.X;
-                offset *= Math.Sign(((patch_Decal)decal).Scale.X) * Math.Abs(((patch_Decal)decal).Scale.Y);
-
-                ((patch_Decal)decal).MakeBanner(speed, amplitude, sliceSize, sliceSinIncrement, easeDown, offset, onlyIfWindy);
-            }},
-            { "solid", delegate(Decal decal, XmlAttributeCollection attrs) {
-                float x = attrs["x"] != null ? float.Parse(attrs["x"].Value) : 0f;
-                float y = attrs["y"] != null ? float.Parse(attrs["y"].Value) : 0f;
-                float width = attrs["width"] != null ? float.Parse(attrs["width"].Value) : 16f;
-                float height = attrs["height"] != null ? float.Parse(attrs["height"].Value) : 16f;
-                int index = attrs["index"] != null ? int.Parse(attrs["index"].Value) : SurfaceIndex.ResortRoof;
-                bool blockWaterfalls = attrs["blockWaterfalls"] != null ? bool.Parse(attrs["blockWaterfalls"].Value) : true;
-                bool safe = attrs["safe"] != null ? bool.Parse(attrs["safe"].Value) : true;
-
-                decal.ScaleRectangle(ref x, ref y, ref width, ref height);
-
-                ((patch_Decal)decal).MakeSolid(x, y, width, height, index, blockWaterfalls, safe);
-            }},
-            { "staticMover", delegate(Decal decal, XmlAttributeCollection attrs) {
-                int x = attrs["x"] != null ? int.Parse(attrs["x"].Value) : 0;
-                int y = attrs["y"] != null ? int.Parse(attrs["y"].Value) : 0;
-                int width = attrs["width"] != null ? int.Parse(attrs["width"].Value) : 16;
-                int height = attrs["height"] != null ? int.Parse(attrs["height"].Value) : 16;
-
-                decal.ScaleRectangle(ref x, ref y, ref width, ref height);
-
-                ((patch_Decal)decal).MakeStaticMover(x, y, width, height);
-            }},
-            { "animation", delegate(Decal decal, XmlAttributeCollection attrs) {
-                int[] frames = Calc.ReadCSVIntWithTricks(attrs["frames"]?.Value ?? "0");
-
-                ((patch_Decal)decal).MakeAnimation(frames);
-            }},
-            { "scared", delegate(Decal decal, XmlAttributeCollection attrs) {
-                int hideRange = 32;
-                int showRange = 48;
-                if (attrs["range"] != null)
-                    hideRange = showRange = int.Parse(attrs["range"].Value);
-                if (attrs["hideRange"] != null)
-                    hideRange = int.Parse(attrs["hideRange"].Value);
-                if (attrs["showRange"] != null)
-                    showRange = int.Parse(attrs["showRange"].Value);
-                int[] idleFrames = Calc.ReadCSVIntWithTricks(attrs["idleFrames"]?.Value ?? "0");
-                int[] hiddenFrames = Calc.ReadCSVIntWithTricks(attrs["hiddenFrames"]?.Value ?? "0");
-                int[] hideFrames = Calc.ReadCSVIntWithTricks(attrs["hideFrames"]?.Value ?? "0");
-                int[] showFrames = Calc.ReadCSVIntWithTricks(attrs["showFrames"]?.Value ?? "0");
-
-                hideRange = (int) decal.GetScaledRadius(hideRange);
-                showRange = (int) decal.GetScaledRadius(showRange);
-
-                ((patch_Decal)decal).MakeScaredAnimation(hideRange, showRange, idleFrames, hiddenFrames, showFrames, hideFrames);
-            }},
-            { "randomizeFrame", delegate(Decal decal, XmlAttributeCollection attrs) {
-                ((patch_Decal)decal).RandomizeStartingFrame();
-            }},
-            { "light", delegate(Decal decal, XmlAttributeCollection attrs) {
-                float offX = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
-                float offY = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
-                Color color = attrs["color"] != null ? Calc.HexToColor(attrs["color"].Value) : Color.White;
-                float alpha = attrs["alpha"] != null ? float.Parse(attrs["alpha"].Value) : 1f;
-                int startFade = attrs["startFade"] != null ? int.Parse(attrs["startFade"].Value) : 16;
-                int endFade = attrs["endFade"] != null ? int.Parse(attrs["endFade"].Value) : 24;
-
-                Vector2 offset = decal.GetScaledOffset(offX, offY);
-                startFade = (int) decal.GetScaledRadius(startFade);
-                endFade = (int) decal.GetScaledRadius(endFade);
-
-                decal.Add(new VertexLight(offset, color, alpha, startFade, endFade));
-            }},
-            { "lightOcclude", delegate(Decal decal, XmlAttributeCollection attrs) {
-                int x = attrs["x"] != null ? int.Parse(attrs["x"].Value) : 0;
-                int y = attrs["y"] != null ? int.Parse(attrs["y"].Value) : 0;
-                int width = attrs["width"] != null ? int.Parse(attrs["width"].Value) : 16;
-                int height = attrs["height"] != null ? int.Parse(attrs["height"].Value) : 16;
-                float alpha = attrs["alpha"] != null ? float.Parse(attrs["alpha"].Value) : 1f;
-
-                decal.ScaleRectangle(ref x, ref y, ref width, ref height);
-
-                decal.Add(new LightOcclude(new Rectangle(x, y, width, height), alpha));
-            }},
-            { "overlay", delegate(Decal decal, XmlAttributeCollection attrs) {
-                ((patch_Decal)decal).MakeOverlay();
-            }},
-            { "flagSwap", delegate(Decal decal, XmlAttributeCollection attrs) {
-                if (attrs["flag"] != null)
-                    ((patch_Decal)decal).MakeFlagSwap(attrs["flag"].Value, attrs["offPath"]?.Value, attrs["onPath"]?.Value);
-            }},
-        };
+        internal static Dictionary<string, Func<DecalRegistryHandler>> PropertyHandlerFactories { get; } = new();
 
         /// <summary>
-        /// Adds a custom property to the decal registry. See <see cref="PropertyHandlers"/> for the list of Everest-defined properties.
+        /// Stores whether Everest's DecalRegistryHandlers have been registered already.
         /// </summary>
+        internal static bool EverestHandlersRegistered;
+        
+        /// <summary>
+        /// Adds a custom property to the decal registry. See the Celeste.Mod.Registry.DecalRegistryHandlers namespace to see Everest-defined properties.
+        /// </summary>
+        [Obsolete("Use AddPropertyHandler<T>() instead")]
         public static void AddPropertyHandler(string propertyName, Action<Decal, XmlAttributeCollection> action) {
-            if (PropertyHandlers.ContainsKey(propertyName)) {
-                string asmName = Assembly.GetCallingAssembly().GetName().Name;
-                string modName = Everest.Content.Mods
-                                 .FirstOrDefault(mod => mod is AssemblyModContent && mod.DefaultName == asmName)?.Name;
-                string conflictSource = !string.IsNullOrEmpty(modName) ? modName : asmName;
-                Logger.Log(LogLevel.Warn, "Decal Registry", $"Property handler for '{propertyName}' already exists! Replacing with new handler from {conflictSource}.");
-                PropertyHandlers[propertyName] = action;
-            } else {
-                PropertyHandlers.Add(propertyName, action);
+            if (PropertyHandlerFactories.ContainsKey(propertyName)) {
+                LogConflict(propertyName, Assembly.GetCallingAssembly());
             }
+            
+            string asmName = action.Method.DeclaringType?.Assembly.GetName().Name ?? "";
+            Logger.Log(LogLevel.Warn, "Decal Registry", $"Assembly {asmName} is using the legacy DecalRegistry.AddPropertyHandler(string, Action<Decal, XmlAttributeCollection>) method for property {propertyName}!");
+            
+            PropertyHandlerFactories[propertyName] = () => new LegacyDecalRegistryHandler(propertyName, action);
+        }
+
+        /// <summary>
+        /// Adds a custom property to the decal registry. See the Celeste.Mod.Registry.DecalRegistryHandlers namespace to see Everest-defined properties.
+        /// </summary>
+        /// <typeparam name="T">The type of DecalRegistryHandler to use</typeparam>
+        public static void AddPropertyHandler<T>() where T : DecalRegistryHandler, new() {
+            var dummyHandler = new T();
+            if (PropertyHandlerFactories.ContainsKey(dummyHandler.Name)) {
+                LogConflict(dummyHandler.Name, Assembly.GetCallingAssembly());
+            }
+            
+            PropertyHandlerFactories[dummyHandler.Name] = () => new T();
+        }
+
+        internal static DecalRegistryHandler CreateHandlerOrNull(string decalName, string propertyName, XmlAttributeCollection xmlAttributes) {
+            if (!PropertyHandlerFactories.TryGetValue(propertyName, out var factory)) {
+                Logger.Log(LogLevel.Warn, "Decal Registry", $"Unknown property {propertyName} in decal {decalName}");
+                return null;
+            }
+            
+            var handler = factory();
+            handler.Parse(xmlAttributes);
+            return handler;
+        }
+
+        private static void LogConflict(string propertyName, Assembly callingAsm) {
+            string asmName = callingAsm.GetName().Name;
+            string modName = Everest.Content.Mods.FirstOrDefault(mod => mod is AssemblyModContent && mod.DefaultName == asmName)?.Name;
+            string conflictSource = !string.IsNullOrEmpty(modName) ? modName : asmName;
+            Logger.Log(LogLevel.Warn, "Decal Registry", $"Property handler for '{propertyName}' already exists! Replacing with new handler from {conflictSource}.");
         }
 
         /// <summary>
@@ -234,11 +119,42 @@ namespace Celeste.Mod {
         /// Loads the decal registry for every enabled mod.
         /// </summary>
         internal static void LoadDecalRegistry() {
+            RegisterEverestHandlers();
+            
             foreach (ModContent mod in Everest.Content.Mods) {
                 if (mod.Map.TryGetValue("DecalRegistry", out ModAsset asset) && asset.Type == typeof(AssetTypeDecalRegistry)) {
                     LoadModDecalRegistry(asset);
                 }
             }
+        }
+
+        internal static void RegisterEverestHandlers() {
+            if (EverestHandlersRegistered) {
+                return;
+            }
+
+            EverestHandlersRegistered = true;
+            
+            AddPropertyHandler<AnimationDecalRegistryHandler>();
+            AddPropertyHandler<AnimationSpeedDecalRegistryHandler>();
+            AddPropertyHandler<BannerDecalRegistryHandler>();
+            AddPropertyHandler<BloomDecalRegistryHandler>();
+            AddPropertyHandler<CoreSwapDecalRegistryHandler>();
+            AddPropertyHandler<DepthDecalRegistryHandler>();
+            AddPropertyHandler<FlagSwapDecalRegistryHandler>();
+            AddPropertyHandler<FloatyDecalRegistryHandler>();
+            AddPropertyHandler<LightDecalRegistryHandler>();
+            AddPropertyHandler<LightOccludeDecalRegistryHandler>();
+            AddPropertyHandler<MirrorDecalRegistryHandler>();
+            AddPropertyHandler<OverlayDecalRegistryHandler>();
+            AddPropertyHandler<ParallaxDecalRegistryHandler>();
+            AddPropertyHandler<RandomizeFrameDecalRegistryHandler>();
+            AddPropertyHandler<ScaleDecalRegistryHandler>();
+            AddPropertyHandler<ScaredDecalRegistryHandler>();
+            AddPropertyHandler<SmokeDecalRegistryHandler>();
+            AddPropertyHandler<SolidDecalRegistryHandler>();
+            AddPropertyHandler<SoundDecalRegistryHandler>();
+            AddPropertyHandler<StaticMoverDecalRegistryHandler>();
         }
 
         /// <summary>
@@ -247,11 +163,10 @@ namespace Celeste.Mod {
         internal static void LoadModDecalRegistry(ModAsset decalRegistry) {
             Logger.Log(LogLevel.Debug, "Decal Registry", $"Loading registry for {decalRegistry.Source.Name}");
 
-            char[] digits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
             string basePath = ((patch_Atlas) GFX.Game).RelativeDataPath + "decals/";
             List<string> localDecals = decalRegistry.Source.Map.Keys
-                .Where(s => s.StartsWith(basePath))
-                .Select(s => s.Substring(basePath.Length).TrimEnd(digits).ToLower())
+                .Where(s => s.StartsWith(basePath, StringComparison.Ordinal))
+                .Select(s => s.AsSpan(basePath.Length).TrimEnd("0123456789").ToString().ToLower())
                 .Distinct()
                 .ToList();
 
@@ -260,13 +175,21 @@ namespace Celeste.Mod {
                 DecalInfo info = decalRegistration.Value;
 
                 bool found = false;
-                if (registeredPath.EndsWith("*") || registeredPath.EndsWith("/")) {
-                    registeredPath = registeredPath.TrimEnd('*');
-                    foreach (string decalPath in localDecals) {
+                if (registeredPath.EndsWith("*", StringComparison.Ordinal) || registeredPath.EndsWith("/", StringComparison.Ordinal)) {
+                    var registeredPathTrimmed = registeredPath.AsSpan().TrimEnd('*');
+                    foreach (string decalPathStr in localDecals) {
+                        var decalPath = decalPathStr.AsSpan();
                         // Wildcard matches must be longer than the subpath, and don't match on decals in subfolders
-                        if (decalPath.StartsWith(registeredPath) && decalPath.Length > registeredPath.Length
-                            && decalPath.LastIndexOf('/') <= registeredPath.Length - 1) {
-                            RegisterDecal(decalPath, info);
+                        if (decalPath.Length <= registeredPathTrimmed.Length) {
+                            continue;
+                        }
+
+                        if (!decalPath.StartsWith(registeredPathTrimmed)) {
+                            continue;
+                        }
+                        
+                        if (decalPath.LastIndexOf('/') <= registeredPathTrimmed.Length - 1) {
+                            RegisterDecal(decalPathStr, info);
                             found = true;
                         }
                     }
@@ -338,13 +261,27 @@ namespace Celeste.Mod {
         }
 
         private static void RegisterDecal(string decalPath, DecalInfo info) {
+            if (info.Handlers is null) {
+                info.Handlers = new(info.CustomProperties.Count);
+                
+                // Apply "scale" first since it affects other properties.
+                if (info.CustomProperties.Find(p => p.Key == "scale") is { Value: {} } scaleProp) {
+                    if (CreateHandlerOrNull(decalPath, scaleProp.Key, scaleProp.Value) is { } handler)
+                        info.Handlers.Add(handler);
+                }
+                
+                foreach ((string propertyName, var xml) in info.CustomProperties) {
+                    if (propertyName != "scale" && CreateHandlerOrNull(decalPath, propertyName, xml) is { } handler)
+                        info.Handlers.Add(handler);
+                }
+            }
+            
             if (RegisteredDecals.ContainsKey(decalPath)) {
                 Logger.Log(LogLevel.Verbose, "Decal Registry", $"Replaced decal {decalPath}");
-                RegisteredDecals[decalPath] = info;
             } else {
                 Logger.Log(LogLevel.Verbose, "Decal Registry", $"Registered decal {decalPath}");
-                RegisteredDecals.Add(decalPath, info);
             }
+            RegisteredDecals[decalPath] = info;
         }
 
         public struct DecalInfo {
@@ -352,6 +289,8 @@ namespace Celeste.Mod {
             /// PropertyName -> AttributeCollection
             /// </summary>
             public List<KeyValuePair<string, XmlAttributeCollection>> CustomProperties;
+
+            internal List<DecalRegistryHandler> Handlers { get; set; }
         }
     }
 }

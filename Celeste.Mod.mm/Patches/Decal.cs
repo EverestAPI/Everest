@@ -284,35 +284,32 @@ namespace Celeste {
             orig_Added(scene);
             // Handle the Decal Registry
             string text = Name.ToLower();
-            if (text.StartsWith("decals/")) {
+            if (text.StartsWith("decals/", StringComparison.Ordinal)) {
                 text = text.Substring(7);
             }
-            if (DecalRegistry.RegisteredDecals.ContainsKey(text)) {
-                Remove(image);
-                image = null;
-                DecalRegistry.DecalInfo info = DecalRegistry.RegisteredDecals[text];
 
-                // Handle properties. Apply "scale" first since it affects other properties.
-                foreach (KeyValuePair<string, XmlAttributeCollection> property in info.CustomProperties.OrderByDescending(p => p.Equals("scale"))) {
-                    if (DecalRegistry.PropertyHandlers.ContainsKey(property.Key)) {
-                        try {
-                            DecalRegistry.PropertyHandlers[property.Key].Invoke(this, property.Value);
-                        } catch (Exception e) {
-                            patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_decalregerror").Replace("((property))", property.Key).Replace("((decal))", text);
-                            Logger.Log(LogLevel.Warn, "Decal Registry", $"Failed to apply property '{property.Key}' to {text}");
-                            e.LogDetailed();
-                        }
-
-                    } else {
-                        Logger.Log(LogLevel.Warn, "Decal Registry", $"Unknown property {property.Key} in decal {text}");
-                    }
+            if (!DecalRegistry.RegisteredDecals.TryGetValue(text, out DecalRegistry.DecalInfo info))
+                return;
+            
+            Remove(image);
+            image = null;
+            
+            // apply all decal registry handlers.
+            foreach (var handler in info.Handlers) {
+                try {
+                    handler.ApplyTo(this);
+                } catch (Exception e) {
+                    patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_decalregerror")
+                        .Replace("((property))", handler.Name)
+                        .Replace("((decal))", text);
+                    Logger.Log(LogLevel.Warn, "Decal Registry", $"Failed to apply property '{handler.Name}' to {text}");
+                    e.LogDetailed();
                 }
+            }
 
-                Everest.Events.Decal.HandleDecalRegistry(this, info);
-                if (image == null) {
-                    Add(image = new patch_DecalImage());
-                }
-
+            Everest.Events.Decal.HandleDecalRegistry(this, info);
+            if (image == null) {
+                Add(image = new patch_DecalImage());
             }
         }
 
