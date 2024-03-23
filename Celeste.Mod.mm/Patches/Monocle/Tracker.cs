@@ -2,7 +2,12 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Helpers;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -123,5 +128,40 @@ namespace Monocle {
             // don't hold references to all the types anymore
             _temporaryAllTypes = null;
         }
+
+        [MonoModIgnore]
+        [MonoModConstructor]
+        [PatchTrackerCtorEqualityComparer]
+        public extern void ctor();
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patches the method to use name-based comparisons for tracked types.
+    /// This means that the tracker keeps working across assembly reloads.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTrackerCtorEqualityComparer))]
+    class PatchTrackerCtorEqualityComparer : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchTrackerCtorEqualityComparer(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(context);
+
+            TypeDefinition t_TrackerDictionaryHelper = MonoModRule.Modder.FindType("Celeste.Mod.TrackerDictionaryHelper").Resolve();
+
+            MethodDefinition m_MakeEntityDictionary = t_TrackerDictionaryHelper.FindMethod("MakeDictionaryForEntityTracker", true);
+            MethodDefinition m_MakeComponentDictionary = t_TrackerDictionaryHelper.FindMethod("MakeDictionaryForComponentTracker", true);
+
+            cursor.GotoNext(instr => instr.MatchNewobj("System.Collections.Generic.Dictionary`2<System.Type,System.Collections.Generic.List`1<Monocle.Entity>>"));
+            cursor.Remove();
+            cursor.Emit(OpCodes.Call, m_MakeEntityDictionary);
+
+            cursor.GotoNext(instr => instr.MatchNewobj("System.Collections.Generic.Dictionary`2<System.Type,System.Collections.Generic.List`1<Monocle.Component>>"));
+            cursor.Remove();
+            cursor.Emit(OpCodes.Call, m_MakeComponentDictionary);
+        }
+
     }
 }
