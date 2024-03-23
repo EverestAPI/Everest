@@ -77,7 +77,9 @@ namespace Celeste.Mod {
         /// <summary>
         /// The runtime mod hash. Might not be determined by all mod content.
         /// </summary>
-        public byte[] Hash { get; set; }
+        public byte[] Hash => _hash ??= Everest.GetChecksum(this);
+        
+        private byte[] _hash;
 
         /// <summary>
         /// Whether this module supports experimental live code reloading or not.
@@ -126,7 +128,6 @@ namespace Celeste.Mod {
         /// </summary>
         internal void RegisterMod() {
             Everest.InvalidateInstallationHash();
-            Hash = Everest.GetChecksum(this);
 
             // Audio banks are cached, and as such use the module's hash. We can only ingest those now.
             if (patch_Audio.AudioInitialized) {

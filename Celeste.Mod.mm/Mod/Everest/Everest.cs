@@ -169,6 +169,21 @@ namespace Celeste.Mod {
             stream.Seek(pos, SeekOrigin.Begin);
             return hash;
         }
+        
+        /// <summary>
+        /// Determine if both checksum collections are equal.
+        /// </summary>
+        /// <param name="a">The first checksum array.</param>
+        /// <param name="b">The second checksum array.</param>
+        /// <returns>True if the contents of both arrays match, false otherwise.</returns>
+        public static bool ChecksumsEqual(string[] a, string[] b) {
+            if (a.Length != b.Length)
+                return false;
+            for (int i = 0; i < a.Length; i++)
+                if (a[i].Trim() != b[i].Trim())
+                    return false;
+            return true;
+        }
 
         private static byte[] _InstallationHash;
         public static byte[] InstallationHash {
