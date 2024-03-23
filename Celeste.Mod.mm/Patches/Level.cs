@@ -94,6 +94,10 @@ namespace Celeste {
         [PatchLevelUpdate] // ... except for manually manipulating the method via MonoModRules
         public extern new void Update();
 
+        [MonoModIgnore] // We don't want to change anything about the method...
+        [PatchLevelReload] // ... except for manually manipulating the method via MonoModRules
+        public extern new void Reload();
+
         [MonoModReplace]
         public new void RegisterAreaComplete() {
             bool completed = Completed;
@@ -649,6 +653,12 @@ namespace MonoMod {
     class PatchLevelRenderAttribute : Attribute { }
 
     /// <summary>
+    /// Patch the method to remove the very aggressive GC call.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelReload))]
+    class PatchLevelReloadAttribute : Attribute { }
+
+    /// <summary>
     /// Patch the Godzilla-sized level transition method instead of reimplementing it in Everest.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTransitionRoutine))]
@@ -915,5 +925,15 @@ namespace MonoMod {
             c.Emit(OpCodes.Ldc_I4_0);
         }
 
+        public static void PatchLevelReload(ILContext context, CustomAttribute attrib) {
+            ILCursor c = new ILCursor(context);
+
+            // Remove this overly aggressive gc call:
+            // GC.Collect();
+            // GC.WaitForPendingFinalizers();
+            c.GotoNext(MoveType.Before, instr => instr.MatchCall("System.GC", "Collect"));
+            c.Remove();
+            c.Remove();
+        }
     }
 }
