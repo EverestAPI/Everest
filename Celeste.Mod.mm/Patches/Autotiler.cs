@@ -70,7 +70,7 @@ namespace Celeste {
                 ReadIntoCustomTemplate(data, tileset, xml);
             }
 
-            if (xml.HasAttr("soundPath") && xml.HasAttr("sound")) { // Could accommodate for no sound attr, but requiring it should improve clarity on user's end 
+            if (xml.HasAttr("soundPath") && xml.HasAttr("sound")) { // Could accommodate for no sound attr, but requiring it should improve clarity on user's end
                 SurfaceIndex.TileToIndex[xml.AttrChar("id")] = xml.AttrInt("sound");
                 patch_SurfaceIndex.IndexToCustomPath[xml.AttrInt("sound")] = (xml.Attr("soundPath").StartsWith("event:/") ? "" : "event:/") + xml.Attr("soundPath");
             } else if (xml.HasAttr("sound")) {
@@ -81,6 +81,14 @@ namespace Celeste {
 
             if (xml.HasAttr("debris"))
                 data.Debris = xml.Attr("debris");
+
+            if (xml.HasAttr("unignores")) {
+                string[] array = xml.Attr("unignores").Split(',');
+
+                foreach (string text in array)
+					if (text.Length > 0)
+						data.Unignores.Add(text[0]);
+            }
         }
 
         private void ReadIntoCustomTemplate(patch_TerrainType data, Tileset tileset, XmlElement xml) {
@@ -132,10 +140,10 @@ namespace Celeste {
                                             if (char.IsLetter(c))
                                                 masked.Mask[i++] = GetByteLookup(c);
                                             break;
-                                        /* 
-                                         * Error handling for characters that don't exist in a defined filter could be added,
-                                         * but is slightly more likely to break old custom tilesets if someone has defined a mask that containes nonstandard spacers (usually '-')
-                                        */
+                                            /*
+                                             * Error handling for characters that don't exist in a defined filter could be added,
+                                             * but is slightly more likely to break old custom tilesets if someone has defined a mask that containes nonstandard spacers (usually '-')
+                                            */
                                     }
                                 }
                             } catch (IndexOutOfRangeException e) {
@@ -389,6 +397,9 @@ namespace Celeste {
         // Required because TerrainType is private.
         private class patch_TerrainType {
             public char ID;
+
+            public HashSet<char> Unignores;
+
             public List<patch_Masked> Masked;
             public patch_Tiles Center;
             public patch_Tiles Padded;
@@ -402,16 +413,20 @@ namespace Celeste {
             public Dictionary<byte, string> whitelists;
             public Dictionary<byte, string> blacklists;
 
-            [MonoModIgnore]
-            public extern bool Ignore(char c);
-
             public extern void orig_ctor(char id);
             [MonoModConstructor]
             public void ctor(char id) {
                 orig_ctor(id);
 
+                Unignores = new HashSet<char>();
+
                 whitelists = new Dictionary<byte, string>();
                 blacklists = new Dictionary<byte, string>();
+            }
+
+            public extern bool orig_Ignore(char c);
+            public bool Ignore(char c) {
+                return orig_Ignore(c) && !Unignores.Contains(c);
             }
 
         }
