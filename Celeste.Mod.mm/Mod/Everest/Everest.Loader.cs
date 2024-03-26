@@ -615,7 +615,7 @@ namespace Celeste.Mod {
                             if (ctor != null) {
                                 loader = (level, levelData, offset, entityData) => {
                                     patch_Level.temporaryEntityData = entityData;
-                                    Entity e = (Entity) ctor.Invoke(new object[] { entityData, offset, (entityData as patch_EntityData).ID });
+                                    Entity e = (Entity) ctor.Invoke(new object[] { entityData, offset, (entityData as patch_EntityData).EntityID });
                                     return e;
                                 };
                                 TypeHelper.LinkDataNameToType(id, type, false);
