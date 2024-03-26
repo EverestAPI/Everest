@@ -28,6 +28,11 @@ namespace Celeste {
         private bool recalculatingSizeInBatchMode;
 
         /// <summary>
+        /// Force the TextMenu to render as focused
+        /// </summary>
+        public bool RenderAsFocused = false;
+
+        /// <summary>
         /// The items contained in this menu.
         /// </summary>
         public List<Item> Items => items;
@@ -225,7 +230,7 @@ namespace Celeste {
                         Vector2 drawPosition = currentPosition + new Vector2(0f, itemHeight * 0.5f + item.SelectWiggler.Value * 8f);
                         // skip rendering the option if it is off-screen.
                         if (((patch_Item) item).AlwaysRender || (drawPosition.Y + itemHeight * 0.5f > 0 && drawPosition.Y - itemHeight * 0.5f < Engine.Height)) {
-                            item.Render(drawPosition, Focused && Current == item);
+                            item.Render(drawPosition, (Focused || RenderAsFocused) && Current == item);
                         }
                     } else {
                         skippedItems = true;
@@ -344,6 +349,13 @@ namespace Celeste {
             }
         }
 
+        [MonoModPatch("Celeste.TextMenu/Option`1")]
+        public class SecondOptionPatch<T> : patch_Item {
+            public override string SearchLabel() {
+                return ((Option<T>) (object) this).Label;
+            }
+        }
+
         public class patch_Option<T> : Option<T> {
             private float cachedRightWidth;
             private List<string> cachedRightWidthContent;
@@ -394,6 +406,10 @@ namespace Celeste {
             /// Set this property to true to force the Item to render even when off-screen.
             /// </summary>
             public virtual bool AlwaysRender { get; } = false;
+
+            public virtual string SearchLabel() {
+                return null;
+            }
         }
 
         public class patch_SubHeader : SubHeader {
@@ -475,7 +491,7 @@ namespace Celeste {
             }
 
             private int _MouseButtonsHash(int hash) {
-                foreach (patch_MInput.patch_MouseData.MouseButtons btn in ((patch_Binding)Binding).Mouse) {
+                foreach (patch_MInput.patch_MouseData.MouseButtons btn in ((patch_Binding) Binding).Mouse) {
                     hash = hash * 31 + btn.GetHashCode();
                 }
                 return hash;
@@ -510,6 +526,12 @@ namespace Celeste {
 
         }
 
+        public class patch_Button : patch_Item {
+            public override string SearchLabel() {
+                return ((Button) (object) this).Label;
+            }
+        }
+        
     }
 
     public static partial class TextMenuExt {
@@ -563,7 +585,7 @@ namespace MonoMod {
             cursor.Next.OpCode = OpCodes.Ldfld;
             cursor.Next.Operand = f_UnselectedColor;
         }
-    
+
         public static void PatchTextMenuSettingUpdate(ILContext il, CustomAttribute _) {
             MethodReference m_MouseButtonsHash = il.Method.DeclaringType.FindMethod("_MouseButtonsHash");
             FieldReference f_Binding_Mouse = MonoModRule.Modder.FindType("Monocle.Binding").Resolve().FindField("Mouse");

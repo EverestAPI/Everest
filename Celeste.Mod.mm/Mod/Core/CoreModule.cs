@@ -254,8 +254,21 @@ namespace Celeste.Mod.Core {
                 level.Paused = true;
 
                 TextMenu options = OuiModOptions.CreateMenu(true, LevelExt.PauseSnapshot);
+                Action startSearching = OuiModOptions.AddSearchBox(options);
+
+                options.OnUpdate = () => {
+                    if (options.Focused) {
+                        if (Input.QuickRestart.Pressed) {
+                            startSearching();
+                        }
+                    }
+                };
 
                 options.OnESC = options.OnCancel = () => {
+                    if (!options.Focused) {
+                        return;
+                    }
+
                     Audio.Play(SFX.ui_main_button_back);
                     options.CloseAndRun(Everest.SaveSettings(), () => {
                         level.Pause(returnIndex, minimal, false);
@@ -271,6 +284,10 @@ namespace Celeste.Mod.Core {
                 };
 
                 options.OnPause = () => {
+                    if (!options.Focused) {
+                        return;
+                    }
+
                     Audio.Play(SFX.ui_main_button_back);
                     options.CloseAndRun(Everest.SaveSettings(), () => {
                         level.Paused = false;

@@ -148,7 +148,7 @@ namespace Celeste {
                 if (!levelsByName.ContainsKey(level.Name)) {
                     levelsByName.Add(level.Name, level);
                 } else {
-                    Logger.Log(LogLevel.Warn, "MapData", $"Failed to load duplicate room name {level.Name}");
+                    Logger.Log(LogLevel.Warn, "MapData", $"Failed to load duplicate room name {level.Name} in map {((patch_AreaData) Data)?.SID}");
                 }
             }
         }

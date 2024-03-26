@@ -26,6 +26,8 @@
  */
 #endregion
 
+#nullable disable
+
 #region Using Statements
 using System;
 using System.Diagnostics;

@@ -431,7 +431,7 @@ namespace Celeste {
         /// <br/><br/>
         /// Currently does not support recursive submenus
         /// </summary>
-        public class SubMenu : TextMenu.Item {
+        public class SubMenu : patch_Item {
             public string Label;
             MTexture Icon;
 
@@ -751,6 +751,10 @@ namespace Celeste {
                 Container.Focused = true;
             }
 
+            public override string SearchLabel() {
+                return Label;
+            }
+
             #endregion
 
             #region TextMenu.Item
@@ -902,7 +906,7 @@ namespace Celeste {
 		/// <br/><br/>
 		/// Currently does not support recursive submenus
 		/// </summary>
-		public class OptionSubMenu : TextMenu.Item {
+		public class OptionSubMenu : patch_Item {
             public string Label;
             MTexture Icon;
 
@@ -1153,6 +1157,10 @@ namespace Celeste {
                     }
                 }
                 return offset - item.Height() * 0.5f - ItemSpacing;
+            }
+
+            public override string SearchLabel() {
+                return Label;
             }
 
             #endregion
@@ -1593,6 +1601,7 @@ namespace Celeste {
                     Audio.Play(SFX.ui_main_button_toggle_on);
                     Typing = true;
                     Container.Focused = false;
+                    ((patch_TextMenu) Container).RenderAsFocused = true;
 
                     previousEngineCommandsEnabled = Engine.Commands.Enabled;
                     Engine.Commands.Enabled = false;
@@ -1616,6 +1625,7 @@ namespace Celeste {
                     Audio.Play(SFX.ui_main_button_toggle_off);
                     Typing = false;
                     Container.Focused = true;
+                    ((patch_TextMenu) Container).RenderAsFocused = false;
                     TextBoxConsumedInput = false;
                     MInput.Disabled = false;
                     Engine.Commands.Enabled = previousEngineCommandsEnabled;
@@ -1681,22 +1691,41 @@ namespace Celeste {
 
                 TextBoxConsumedInput = false;
             }
+
+            private static int NegativeModulo(int number, int modulo) {
+                return (number % modulo + modulo) % modulo;
+            }
+
+            public static bool WrappingLinearSearch<T>(List<T> items, Func<T, bool> predicate, int startIndex, bool inReverse, out int nextModIndex) {
+                int step = inReverse ? -1 : 1;
+                int targetIndex = NegativeModulo(startIndex - step, items.Count);
+
+                for (int currentIndex = NegativeModulo(startIndex, items.Count); currentIndex != targetIndex; currentIndex = NegativeModulo(currentIndex + step, items.Count)) {
+                    if (predicate(items[currentIndex])) {
+                        nextModIndex = currentIndex;
+                        return true;
+                    }
+                }
+
+                nextModIndex = startIndex;
+                return false;
+            }
         }
 
         public class Modal : patch_Item {
             public Color BoxBorderColor { get; set; } = Color.White;
             public Color BoxBackgroundColor { get; set; } = Color.Black * 0.8f;
             public int BorderThickness { get; set; } = 2;
-            public bool CenterItem { get; set; } = true;
-
-            private readonly float absoluteY;
+            private readonly float? absoluteY;
+            private readonly float? absoluteX;
             private readonly TextMenu.Item item;
 
-            public Modal(float absoluteY, TextMenu.Item item) {
+            public Modal(TextMenu.Item item, float? absoluteX, float? absoluteY) {
                 AboveAll = true;
                 Visible = false;
                 IncludeWidthInMeasurement = false;
                 this.absoluteY = absoluteY;
+                this.absoluteX = absoluteX;
                 this.item = item;
             }
 
@@ -1723,11 +1752,34 @@ namespace Celeste {
             }
 
             public override void Render(Vector2 position, bool highlighted) {
+                Vector2 renderPosition = new(absoluteX ?? position.X, absoluteY ?? position.Y);
                 for (int i = 1; i <= BorderThickness; i++) {
-                    Draw.HollowRect(position.X - i, absoluteY - i, item.Width + (2 * i), item.Height() + (2 * i), BoxBorderColor * Container.Alpha);
+                    Draw.HollowRect(renderPosition.X - i, renderPosition.Y - i, item.Width + (2 * i), item.Height() + (2 * i), BoxBorderColor * Container.Alpha);
                 }
 
-                item.Render(new Vector2(position.X, absoluteY), highlighted);
+                item.Render(renderPosition, highlighted);
+            }
+        }
+
+        public class SearchToolTip : patch_Item {
+            public Vector2 preferredRenderLocation = new(100f, 952f);
+
+            private readonly MTexture searchIcon = GFX.Gui["menu/mapsearch"];
+
+            public SearchToolTip() {
+                AboveAll = true;
+                Selectable = false;
+                IncludeWidthInMeasurement = false;
+            }
+
+            public override bool AlwaysRender => true;
+
+            public override void Render(Vector2 position, bool highlighted) {
+                float spaceNearMenu = (Engine.Width - Container.Width) / 2;
+                float scaleFactor = Math.Min(spaceNearMenu / (preferredRenderLocation.X + searchIcon.Width / 2), 1);
+                Vector2 searchIconLocation = new(preferredRenderLocation.X * scaleFactor, preferredRenderLocation.Y);
+                searchIcon.DrawCentered(searchIconLocation, Color.White, scaleFactor);
+                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White, scaleFactor);
             }
         }
     }

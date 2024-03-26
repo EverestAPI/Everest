@@ -221,7 +221,7 @@ namespace Celeste.Mod.UI {
                 try {
                     lock (Everest._Modules) {
                         foreach (EverestModule mod in Everest._Modules)
-                            writer.WriteLine($" - {mod.Metadata.Name}: {mod.Metadata.VersionString}{mod switch {LuaModule => " [Lua module]", NullModule => "", _ => $" [{mod.GetType().FullName}]"}}");
+                            writer.WriteLine($" - {mod.Metadata.Name}: {mod.Metadata.VersionString}{mod switch {NullModule => "", _ => $" [{mod.GetType().FullName}]"}}");
                     }
                 } catch (Exception ex) {
                     writer.WriteLine($" - error listing mods: {ex.GetType().FullName}: {ex.Message}");
@@ -565,7 +565,16 @@ namespace Celeste.Mod.UI {
                     // Draw the player sprite to the render target
                     Celeste.Instance.GraphicsDevice.SetRenderTarget(playerRenderTarget);
                     Celeste.Instance.GraphicsDevice.Clear(Color.Transparent);
-                    Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, RasterizerState.CullNone, null, Matrix.CreateTranslation(16, 32, 0));
+
+                    SpriteSortMode spriteSortMode = SpriteSortMode.Deferred;
+                    BlendState blendState = BlendState.AlphaBlend;
+                    SamplerState samplerState = SamplerState.PointClamp;
+                    DepthStencilState depthStencilState = DepthStencilState.Default;
+                    RasterizerState rasterizerState = RasterizerState.CullNone;
+                    Effect effect = null;
+                    Matrix matrix = Matrix.CreateTranslation(16, 32, 0);
+                    OnBeforePlayerRender?.Invoke(ref spriteSortMode, ref blendState, ref samplerState, ref depthStencilState, ref rasterizerState, ref effect, ref matrix);
+                    Draw.SpriteBatch.Begin(spriteSortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, matrix);
 
                     try {
                         playerHair.AfterUpdate();
@@ -573,6 +582,7 @@ namespace Celeste.Mod.UI {
                         playerSprite.Render();
                     } finally {
                         Draw.SpriteBatch.End();
+                        OnAfterPlayerRender?.Invoke();
                     }
                 } catch (Exception ex) {
                     Logger.Log(LogLevel.Error, "crit-error-handler", "Error while rendering player sprite:");
@@ -582,6 +592,23 @@ namespace Celeste.Mod.UI {
                 }
             }
         }
+
+        /// <summary>
+        /// This event is invoked before the player sprite is being rendered to
+        /// its render target. Handlers may modify the sprite batch state which
+        /// is used for drawing the sprite. When invoked, there's no active
+        /// sprite batch, but the render target has already been bound and
+        /// cleared.
+        /// </summary>
+        public static event BeforePlayerRenderHandler OnBeforePlayerRender;
+        public delegate void BeforePlayerRenderHandler(ref SpriteSortMode sortMode, ref BlendState blendState, ref SamplerState samplerState, ref DepthStencilState depthStencilState, ref RasterizerState rasterizerState, ref Effect effect, ref Matrix matrix);
+
+        /// <summary>
+        /// This event is invoked after the player sprite has been rendered to
+        /// its render target. When invoked, the sprite batch has already been
+        /// ended.
+        /// </summary>
+        public static event Action OnAfterPlayerRender;
 
         public override void Render() {
             // Draw the background

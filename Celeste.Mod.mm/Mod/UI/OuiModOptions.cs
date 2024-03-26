@@ -1,6 +1,7 @@
 ﻿using Celeste.Mod.Core;
 using FMOD.Studio;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using System;
 using System.Collections;
@@ -26,6 +27,8 @@ namespace Celeste.Mod.UI {
         private float alpha = 0f;
 
         private int savedMenuIndex = -1;
+
+        private Action startSearching;
 
         public OuiModOptions() {
             Instance = this;
@@ -176,6 +179,7 @@ namespace Celeste.Mod.UI {
             }
 
             menu = CreateMenu(false, null);
+            startSearching = AddSearchBox(menu, Overworld);
 
             if (selected >= 0) {
                 menu.Selection = selected;
@@ -183,6 +187,87 @@ namespace Celeste.Mod.UI {
             }
 
             Scene.Add(menu);
+        }
+
+        static public Action AddSearchBox(TextMenu menu, Overworld overworld = null) {
+            TextMenuExt.TextBox textBox = new(overworld) {
+                PlaceholderText = Dialog.Clean("MODOPTIONS_COREMODULE_SEARCHBOX_PLACEHOLDER")
+            };
+
+            TextMenuExt.Modal modal = new(textBox, absoluteX: null, absoluteY: 85);
+            menu.Add(modal);
+            menu.Add(new TextMenuExt.SearchToolTip());
+
+            Action<TextMenuExt.TextBox> searchNextMod(bool inReverse) => (TextMenuExt.TextBox textBox) => {
+                string searchTarget = textBox.Text.ToLower();
+                List<TextMenu.Item> menuItems = ((patch_TextMenu) menu).Items;
+
+                bool searchNextPredicate(TextMenu.Item item) {
+                    string searchLabel = ((patch_TextMenu.patch_Item) item).SearchLabel();
+                    return item.Visible && item.Selectable && !item.Disabled && searchLabel != null && searchLabel.ToLower().Contains(searchTarget);
+                }
+
+
+                if (TextMenuExt.TextBox.WrappingLinearSearch(menuItems, searchNextPredicate, menu.Selection + (inReverse ? -1 : 1), inReverse, out int targetSelectionIndex)) {
+                    if (targetSelectionIndex >= menu.Selection) {
+                        Audio.Play(SFX.ui_main_roll_down);
+                    } else {
+                        Audio.Play(SFX.ui_main_roll_up);
+                    }
+                    menuItems[menu.Selection].OnLeave?.Invoke();
+                    menu.Selection = targetSelectionIndex;
+                    menuItems[targetSelectionIndex].OnEnter?.Invoke();
+                } else {
+                    Audio.Play(SFX.ui_main_button_invalid);
+                }
+            };
+
+            void exitSearch(TextMenuExt.TextBox textBox) {
+                textBox.StopTyping();
+                modal.Visible = false;
+                textBox.ClearText();
+            }
+
+            textBox.OnTextInputCharActions['\t'] = searchNextMod(false);
+            textBox.OnTextInputCharActions['\n'] = (_) => { };
+            textBox.OnTextInputCharActions['\r'] = (textBox) => {
+                if (MInput.Keyboard.CurrentState.IsKeyDown(Keys.LeftShift)
+                    || MInput.Keyboard.CurrentState.IsKeyDown(Keys.RightShift)) {
+                    searchNextMod(true)(textBox);
+                } else {
+                    searchNextMod(false)(textBox);
+                }
+            };
+            textBox.OnTextInputCharActions['\b'] = (textBox) => {
+                if (textBox.DeleteCharacter()) {
+                    Audio.Play(SFX.ui_main_rename_entry_backspace);
+                } else {
+                    exitSearch(textBox);
+                    Input.MenuCancel.ConsumePress();
+                }
+            };
+
+
+            textBox.AfterInputConsumed = () => {
+                if (textBox.Typing) {
+                    if (Input.ESC.Pressed) {
+                        exitSearch(textBox);
+                        Input.ESC.ConsumePress();
+                    } else if (Input.MenuDown.Pressed) {
+                        searchNextMod(false)(textBox);
+                    } else if (Input.MenuUp.Pressed) {
+                        searchNextMod(true)(textBox);
+                    }
+                }
+            };
+
+            return () => {
+                // we want to ensure we don't open the search box while we are in a sub-menu
+                if (menu.Focused) {
+                    modal.Visible = true;
+                    textBox.StartTyping();
+                }
+            };
         }
 
         public override IEnumerator Enter(Oui from) {
@@ -231,6 +316,13 @@ namespace Celeste.Mod.UI {
                 Selected && Input.MenuCancel.Pressed) {
                 Audio.Play(SFX.ui_main_button_back);
                 Overworld.Goto<OuiMainMenu>();
+            }
+
+            if (Selected && Focused) {
+                if (Input.QuickRestart.Pressed) {
+                    startSearching?.Invoke();
+                    return;
+                }
             }
 
             base.Update();
