@@ -10,6 +10,7 @@
 	POSTCARD_TILEXMLERROR=		{big}Oups !{/big}{n}Une erreur est survenue lors de la lecture d'un tileset dans {#ff1144}((path)){#}.{n}Vérifiez le fichier {#44adf7}log.txt{#} pour plus d'informations.
 	POSTCARD_XMLERROR=			{big}Oups !{/big}{n}Il y a une erreur de syntaxe dans {#ff1144}((path)){#}.{n}Vérifiez le fichier {#44adf7}log.txt{#} pour plus d'informations.
 	POSTCARD_BOSSLASTNODEHIT=	{big}Oups !{/big}{n}Le dernier noeud de l'entité {#ff1144}Badeline Boss{#} a été touché, veuillez ajouter un autre noeud en-dehors de la salle de façon à ce que le joueur ne puisse pas l'atteindre.
+	POSTCARD_LEVELNOROOMS=		{big}Oups !{/big}{n}Cette map n'a {#f94a4a}aucune salle{#} !{n}Assurez-vous que cette map comporte {n}{#44adf7}au moins une salle{#}, et que{n}vous avez sauvegardé la map après sa création.
 
 # Main Menu
 	MENU_TITLETOUCH= 		TOUCH

@@ -214,8 +214,9 @@ namespace Celeste.Mod.UI {
                     } else {
                         Audio.Play(SFX.ui_main_roll_up);
                     }
-
+                    menuItems[menu.Selection].OnLeave?.Invoke();
                     menu.Selection = targetSelectionIndex;
+                    menuItems[targetSelectionIndex].OnEnter?.Invoke();
                 } else {
                     Audio.Play(SFX.ui_main_button_invalid);
                 }

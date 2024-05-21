@@ -28,6 +28,7 @@
 	POSTCARD_TILEXMLERROR=		{big}Oops!{/big}{n}There was an error parsing a tileset in {#ff1144}((path)){#}{n}Check your {#44adf7}log.txt{#} for more info.
 	POSTCARD_XMLERROR=			{big}Oops!{/big}{n}{#ff1144}((path)){#} has a syntax error.{n}Check your {#44adf7}log.txt{#} for more info.
 	POSTCARD_BOSSLASTNODEHIT=	{big}Oops!{/big}{n}{#ff1144}Badeline Boss{#} entity was hit on its last node, please add an additional node outside of the current room to ensure the player never hits it.
+	POSTCARD_LEVELNOROOMS=		{big}Oops!{/big}{n}This map has {#f94a4a}no rooms{#}!{n}Please make sure your map has{n}{#44adf7}at least one room{#}, and that{n}you've saved it since its creation.
 
 # Main Menu
 	MENU_TITLETOUCH= 		TOUCH

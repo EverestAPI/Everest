@@ -54,6 +54,18 @@ namespace Celeste {
                 ticksPerSwap = meta.TicksPerSwap;
                 beatIndexMax = meta.BeatsMax;
                 beatIndexOffset = meta.BeatIndexOffset;
+
+                if (meta.ActiveDuringTransitions) {
+                    TransitionListener listener = Get<TransitionListener>();
+
+                    if (listener != null) {
+                        listener.OnOut = _ => {
+                            if (Scene != null) {
+                                Update();
+                            }
+                        };
+                    }
+                }
             }
         }
 

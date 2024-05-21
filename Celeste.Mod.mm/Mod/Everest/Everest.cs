@@ -488,6 +488,15 @@ namespace Celeste.Mod {
             // Request the mod update list as well.
             ModUpdaterHelper.RunAsyncCheckForModUpdates(excludeBlacklist: true);
 
+            // Cleanup mod ALCs
+            EverestModuleAssemblyContext._AllContextsLock.EnterReadLock();
+            try {
+                foreach (EverestModuleAssemblyContext alc in EverestModuleAssemblyContext._AllContexts)
+                    alc.PostBootCleanup();
+            } finally {
+                EverestModuleAssemblyContext._AllContextsLock.ExitReadLock();
+            }
+
             DiscordSDK.LoadRichPresenceIcons();
         }
 
@@ -701,7 +710,8 @@ namespace Celeste.Mod {
                                 } else {
                                     // all dependencies are loaded, all optional dependencies are either loaded or won't load => we're good to go!
                                     Logger.Log(LogLevel.Info, "core", $"Dependencies of mod {entry.Item1} are now satisfied: loading");
-
+                                    EverestSplashHandler.IncreaseLoadedModCount(entry.Item1.Name); // Notify the splash
+                                    
                                     if (Everest.Modules.Any(mod => mod.Metadata.Name == entry.Item1.Name)) {
                                         // a duplicate of the mod was loaded while it was sitting in the delayed list.
                                         Logger.Log(LogLevel.Warn, "core", $"Mod {entry.Item1.Name} already loaded!");
@@ -711,7 +721,6 @@ namespace Celeste.Mod {
                                         Loader.LoadMod(entry.Item1);
                                     }
                                     Loader.Delayed.RemoveAt(i);
-                                    EverestSplashHandler.IncreaseLoadedModCount(entry.Item1.Name);
 
                                     // we now loaded an extra mod, consider all delayed mods again to deal with transitive dependencies.
                                     i = -1;

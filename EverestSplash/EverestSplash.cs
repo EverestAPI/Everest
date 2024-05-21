@@ -5,7 +5,6 @@ using System.IO;
 using System.IO.Pipes;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 
@@ -85,6 +84,7 @@ public static class EverestSplash {
         Task.Run(async () => {
             NamedPipeServerStream server = new(Name);
             await server.WaitForConnectionAsync();
+            await Task.Delay(300); // Wait a bit for the splash to load the font
             Console.WriteLine($"Running for {s} seconds...");
             StreamWriter sw = new(server);
             for (int i = 1; i < progBarSteps + 1; i++) {
@@ -92,6 +92,9 @@ public static class EverestSplash {
                 await sw.FlushAsync();
                 await Task.Delay(s*1000/progBarSteps);
             }
+            await sw.WriteLineAsync($"#finish{progBarSteps};Almost done...");
+            await sw.FlushAsync();
+            await Task.Delay(300);
             await sw.WriteLineAsync("#stop");
             await sw.FlushAsync();
             Console.WriteLine("Close request sent");
@@ -134,11 +137,10 @@ public class EverestSplashWindow {
 
     private readonly NamedPipeClientStream ClientPipe;
     private WindowInfo windowInfo;
-    private readonly FNAFixes fnaFixes = new();
     private readonly string targetRenderer;
     private readonly Assembly currentAssembly;
 
-    private FontLoader renogareFont = null!;
+    private FontLoader? renogareFont;
     private LoadingProgress _loadingProgress = new(0, 0, "");
 
     private LoadingProgress loadingProgress {
@@ -146,16 +148,23 @@ public class EverestSplashWindow {
         set {
             if (renogareFont == null) return; // Too early :/ (ignore data received when the splash was still initializing)
             _loadingProgress = value with { lastMod = value.lastMod == "" ? _loadingProgress.lastMod : value.lastMod };
+            if (_loadingProgress.raw) { // .raw means no extra decorations on the mod name
+                // also skip sanitization since this is not arbitrary data
+                windowInfo.modLoadingProgressCache?.SetText(_loadingProgress.lastMod);
+                return;
+            }
             char[] sanitizedName = _loadingProgress.lastMod.ToCharArray();
             // Sanitize the sent mod name, it could contain forbidden characters
-            // I KNOW I KNOW, this is absolutely slow and painful to your eyes, TWO whole string copies and a loop O(n*3), painful,
+            // I KNOW I KNOW, this is absolutely slow and painful to your eyes, TWO whole string copies, and a loop, O(n*3), painful
             // so feel free to optimize it :D
             for (int i = 0; i < sanitizedName.Length; i++) {
                 if (!renogareFont.IsValidChar(sanitizedName[i]))
                     sanitizedName[i] = '?'; // Fallback char
             }
-
-            windowInfo.modLoadingProgressCache?.SetText("Loading " + new string(sanitizedName) + " [" + _loadingProgress.loadedMods + "/" + _loadingProgress.totalMods + "]");
+            
+            
+            windowInfo.modLoadingProgressCache?.SetText(
+                $"Loading {sanitizedName.AsSpan()} [{_loadingProgress.loadedMods}/{_loadingProgress.totalMods}]");
         }
     }
 
@@ -165,13 +174,15 @@ public class EverestSplashWindow {
         return new EverestSplashWindow(targetRenderer, postFix);
     }
 
-    private EverestSplashWindow(string targetRenderer, string postFix) {
+    private EverestSplashWindow(string targetRendererName, string postFix) {
         instance = this;
-        this.targetRenderer = targetRenderer;
+        targetRenderer = targetRendererName;
         currentAssembly = GetType().Assembly;
+        
         string serverName = EverestSplash.Name + postFix;
         Console.WriteLine("Running splash on " + serverName);
-        ClientPipe = new(".", serverName);
+        
+        ClientPipe = new NamedPipeClientStream(".", serverName);
         ClientPipe.ConnectAsync().ContinueWith(_ => {
             try {
                 StreamReader sr = new(ClientPipe);
@@ -181,12 +192,21 @@ public class EverestSplashWindow {
                     }
 
                     const string progressPfx = "#progress";
-                    if (message.StartsWith(progressPfx)) { // Mod loading progress message received: "progress (float){progress}"
+                    if (message.StartsWith(progressPfx)) { // Mod loading progress message received: "#progress{loadedMods}{totalMods}{modName}"
                         int countEnd = message.IndexOf(";", StringComparison.Ordinal);
                         int totalEnd = message.IndexOf(";", countEnd + 1, StringComparison.Ordinal);
+                        
                         int loadedMods = int.Parse(message[progressPfx.Length..countEnd]);
                         int totalMods = int.Parse(message[(countEnd+1)..totalEnd]);
                         loadingProgress = new LoadingProgress(loadedMods, totalMods, message[(totalEnd+1)..]);
+                    }
+
+                    const string finishPfx = "#finish";
+                    if (message.StartsWith(finishPfx)) { // Mod finish progress message received: "#finish{totalMods}{message}"
+                        int totalEnd = message.IndexOf(";", StringComparison.Ordinal);
+
+                        int totalMods = int.Parse(message[finishPfx.Length..totalEnd]);
+                        loadingProgress = new LoadingProgress(totalMods, totalMods, message[(totalEnd + 1)..], true);
                     }
                 }
             } catch (Exception e) {
@@ -267,16 +287,6 @@ public class EverestSplashWindow {
         FNA3D.FNA3D_Image_Free(appIconPixels);
         
         // Okay, good code continues here
-
-        // FNA fixes
-        // FNA disables the cursor on game creation and when creating the window
-        fnaFixes.Add(
-            new FNAFixes.FNAFix(
-            () => SDL.SDL_ShowCursor(SDL.SDL_QUERY) == SDL.SDL_DISABLE,
-            () => SDL.SDL_ShowCursor(SDL.SDL_ENABLE),
-            () => SDL.SDL_ShowCursor(SDL.SDL_DISABLE)
-            )
-        );
     }
 
     private void LoadTextures() {
@@ -335,15 +345,16 @@ public class EverestSplashWindow {
         float progressWidth = 0;
         float prevProgress = 0;
         AnimTimer(16, () => {
-            if (loadingProgress.totalMods == 0) return;
-            progressWidth = (((float)loadingProgress.loadedMods)/loadingProgress.totalMods) * WindowWidth*0.25f + prevProgress*0.75f;
+            if (loadingProgress.totalMods == 0) { // skip updating since it must have not initialized yet
+                return;
+            }
+            progressWidth = (float)loadingProgress.loadedMods/loadingProgress.totalMods * WindowWidth*0.25f + prevProgress*0.75f;
             prevProgress = progressWidth;
         });
 
         windowInfo.modLoadingProgressCache.SetText("Loading..."); // Default to "Loading..."
 
         while (true) { // while true :trolloshiro: (on a serious note, for our use case its fineee :))
-            fnaFixes.CheckAndFix();
             
             while (SDL.SDL_PollEvent(out SDL.SDL_Event e) != 0) {
                 // An SDL_USEREVENT is sent when the splash receives the quit command
@@ -430,13 +441,11 @@ public class EverestSplashWindow {
     }
 
     private void Cleanup() {
-        fnaFixes.Dispose(); // Do this asap, theres no reason to (theoretically), but it wont hurt
-
         foreach (IDisposable texture in windowInfo.loadedTextures) {
             texture.Dispose();
         }
         
-        renogareFont.Dispose();
+        renogareFont?.Dispose();
 
         if (windowInfo.renderer != IntPtr.Zero)
             SDL.SDL_DestroyRenderer(windowInfo.renderer);
@@ -558,37 +567,8 @@ public class EverestSplashWindow {
         return (byte)(s + (e - s) * p);
     }
 
-    /// <summary>
-    /// Simple class to manage FNA fixes and modifications and easily undo them
-    /// </summary>
-    public class FNAFixes : IDisposable {
-        private readonly List<FNAFix> fixes = new();
+    public record LoadingProgress(int loadedMods, int totalMods, string lastMod, bool raw = false);
 
-        public void Add(FNAFix fnaFix) {
-            fixes.Add(fnaFix);
-        }
-
-        public void CheckAndFix() {
-            foreach (FNAFix fix in fixes) {
-                if (fix.Predicate()) {
-                    fix.HasRan();
-                    fix.Fix();
-                }
-            }
-        }
-
-        public void Dispose() {
-            foreach (FNAFix fix in fixes) {
-                if (fix.HasFixed)
-                    fix.Undo();
-            }
-        }
-        public record FNAFix(Func<bool> Predicate, Action Fix, Action Undo) {
-            public bool HasFixed { get; private set; }
-            public void HasRan() => HasFixed = true;
-        }
-    }
-    public record LoadingProgress(int loadedMods, int totalMods, string lastMod);
 
     /// <summary>
     /// Stripped down version of https://github.com/FNA-XNA/FNA/blob/master/src/Graphics/FNA3D.cs, suited for our needs.

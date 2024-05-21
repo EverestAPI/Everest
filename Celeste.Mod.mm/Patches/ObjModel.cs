@@ -69,7 +69,7 @@ namespace Celeste {
                 using (StreamReader streamReader = new StreamReader(stream)) {
                     string text;
                     while ((text = streamReader.ReadLine()) != null) {
-                        string[] array = text.Split(' ');
+                        string[] array = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                         if (array.Length != 0) {
                             string a = array[0];
                             if (a == "o") {

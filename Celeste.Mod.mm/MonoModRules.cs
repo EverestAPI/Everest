@@ -46,7 +46,7 @@ namespace MonoMod {
 
         public static readonly AssemblyNameReference CelesteAsmRef = new AssemblyNameReference("Celeste", new Version(1, 0, 0, 0));
         public static readonly PatchTarget RulesPatchTarget;
-        public static readonly ModuleDefinition RulesModule;
+        public static ModuleDefinition RulesModule;
 
         static MonoModRules() {
             // Note: It may actually be too late to set this to false.
@@ -88,6 +88,11 @@ namespace MonoMod {
                     InitModRules(MonoModRule.Modder);
                     break;
             }
+
+            // Null out the rules module reference once we are done patching
+            // Note that MonoMod loads a separate copy of the rules type for each mod we patch (:catresort:)
+            // So this doesn't break anything, however it prevents leaking the rules module definition
+            MonoModRule.Modder.PostProcessors += _ => RulesModule = null;
         }
 
         private static void InitCommonRules(MonoModder modder) {

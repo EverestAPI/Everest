@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
+using Celeste.Mod;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Mono.Cecil;
@@ -212,7 +213,20 @@ namespace Celeste {
                 Overworld.RendererList.MoveToFront(Overworld.Snow);
             }
             yield return 0.5f;
-            LevelEnter.Go(new Session(Area, checkpoint), false);
+            Session sess = null;
+            try {
+                sess = new Session(Area, checkpoint);
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Error, "OuiChapterPanel", "Failed to construct session!");
+                Logger.LogDetailed(e, "OuiChapterPanel");
+
+                // rethrow the exception if there's no explicit error message
+                // LevelEnter.Go will show a postcard if there is one
+                // fortunately it doesn't care if session is null :catblob:
+                if (patch_LevelEnter.ErrorMessage == null)
+                    throw;
+            }
+            LevelEnter.Go(sess, false);
         }
 
         [MonoModIgnore] // We don't want to change anything about the method...

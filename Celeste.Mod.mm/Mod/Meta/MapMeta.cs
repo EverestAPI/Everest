@@ -532,6 +532,7 @@ namespace Celeste.Mod.Meta {
         public int Blocks { get; set; } = 2;
         public int BeatsMax { get; set; } = 256;
         public int BeatIndexOffset { get; set; } = 0;
+        public bool ActiveDuringTransitions { get; set; } = false;
         public bool OldBehavior { get; set; } = false;
 
         public void Parse(BinaryPacker.Element meta) {
@@ -542,6 +543,7 @@ namespace Celeste.Mod.Meta {
             meta.AttrIfInt("Blocks", v => Blocks = v);
             meta.AttrIfInt("BeatsMax", v => BeatsMax = v);
             meta.AttrIfInt("BeatIndexOffset", v => BeatIndexOffset = v);
+            meta.AttrIfBool("ActiveDuringTransitions", v => ActiveDuringTransitions = v);
             meta.AttrIfBool("OldBehavior", v => OldBehavior = v);
         }
     }

@@ -135,26 +135,7 @@ namespace Celeste {
         private IEnumerator EnterWithPostcardRoutine(string message, string soundId) {
             yield return 1f;
 
-            if (string.IsNullOrEmpty(soundId))
-                soundId = "csides";
-
-            string prefix;
-            if (soundId.StartsWith("event:/")) {
-                // sound ID is a FMOD event, take it as is.
-                prefix = soundId;
-            } else if (soundId == "variants") {
-                // sound ID is "variants", this is a special case since it is in the new_content bank.
-                prefix = "event:/new_content/ui/postcard_variants";
-            } else {
-                // if a number, use event:/ui/main/postcard_ch{number}
-                // if not, use event:/ui/main/postcard_{text}
-                prefix = "event:/ui/main/postcard_";
-                if (int.TryParse(soundId, out _))
-                    prefix += "ch";
-                prefix += soundId;
-            }
-
-            Add(postcard = new Postcard(message, prefix + "_in", prefix + "_out"));
+            Add(postcard = new patch_Postcard(message, soundId));
             yield return postcard.DisplayRoutine();
 
             IEnumerator inner = orig_Routine();

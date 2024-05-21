@@ -253,7 +253,7 @@ namespace Celeste.Mod {
                 if (!File.Exists(archive)) // Relative path? Let's just make it absolute.
                     archive = Path.Combine(PathMods, archive);
                 if (!File.Exists(archive)) { // It just doesn't exist.
-                    EverestSplashHandler.IncreaseLoadedModCount(null);
+                    EverestSplashHandler.IncreaseLoadedModCount(null); // Increase the splash count anyway, since it was detected as an entry
                     return;
                 }
 
@@ -353,7 +353,7 @@ namespace Celeste.Mod {
                 if (!Directory.Exists(dir)) // Relative path?
                     dir = Path.Combine(PathMods, dir);
                 if (!Directory.Exists(dir)) { // It just doesn't exist.
-                    EverestSplashHandler.IncreaseLoadedModCount(null);
+                    EverestSplashHandler.IncreaseLoadedModCount(null); // Increase the splash count anyway, since it was detected as an entry
                     return;
                 }
 
@@ -465,8 +465,8 @@ namespace Celeste.Mod {
 
                 callback?.Invoke();
 
-                LoadMod(meta);
                 EverestSplashHandler.IncreaseLoadedModCount(meta.Name);
+                LoadMod(meta);
             }
 
             /// <summary>
