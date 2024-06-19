@@ -194,8 +194,8 @@ namespace Celeste {
             MapMeta metaParsedFromFile = null;
             MapMeta metaParsed = null;
 
-            var path = $"Maps/{area.Mode[(int)mode].Path}";
-            if (Everest.Content.TryGet(path, out var asset)) {
+            string path = $"Maps/{area.Mode[(int)mode].Path}";
+            if (Everest.Content.TryGet(path, out ModAsset asset)) {
                 metaParsedFromFile = asset.GetMeta<MapMeta>();
                 if (metaParsedFromFile != null) {
                     if (metaParsedFromFile.Modes == null) {

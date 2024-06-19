@@ -156,25 +156,24 @@ namespace Celeste.Mod.Meta {
             if (BloomStrength != null) { other.BloomStrength = BloomStrength; }
             if (!string.IsNullOrEmpty(Jumpthru)) { other.Jumpthru = Jumpthru; }
             if (CoreMode != null) { other.CoreMode = CoreMode; }
-            if (!string.IsNullOrEmpty(CassetteNoteColor )) { other.CassetteNoteColor = CassetteNoteColor; }
-            if (!string.IsNullOrEmpty(CassetteSong )) { other.CassetteSong = CassetteSong; }
-            if (!string.IsNullOrEmpty(PostcardSoundID )) { other.PostcardSoundID = PostcardSoundID; }
-            if (!string.IsNullOrEmpty(ForegroundTiles )) { other.ForegroundTiles = ForegroundTiles; }
-            if (!string.IsNullOrEmpty(BackgroundTiles )) { other.BackgroundTiles = BackgroundTiles; }
-            if (!string.IsNullOrEmpty(AnimatedTiles )) { other.AnimatedTiles = AnimatedTiles; }
-            if (!string.IsNullOrEmpty(Sprites )) { other.Sprites = Sprites; }
-            if (!string.IsNullOrEmpty(Portraits )) { other.Portraits = Portraits; }
+            if (!string.IsNullOrEmpty(CassetteNoteColor)) { other.CassetteNoteColor = CassetteNoteColor; }
+            if (!string.IsNullOrEmpty(CassetteSong)) { other.CassetteSong = CassetteSong; }
+            if (!string.IsNullOrEmpty(PostcardSoundID)) { other.PostcardSoundID = PostcardSoundID; }
+            if (!string.IsNullOrEmpty(ForegroundTiles)) { other.ForegroundTiles = ForegroundTiles; }
+            if (!string.IsNullOrEmpty(BackgroundTiles)) { other.BackgroundTiles = BackgroundTiles; }
+            if (!string.IsNullOrEmpty(AnimatedTiles)) { other.AnimatedTiles = AnimatedTiles; }
+            if (!string.IsNullOrEmpty(Sprites)) { other.Sprites = Sprites; }
+            if (!string.IsNullOrEmpty(Portraits)) { other.Portraits = Portraits; }
             if (OverrideASideMeta != null) { other.OverrideASideMeta = OverrideASideMeta; }
             if (Modes != null) {
                 if (other.Modes == null) {
                     other.Modes = Modes;
                 } else {
-                    for (var i = 0; i < Modes.Length && i < other.Modes.Length; i++) {
+                    for (int i = 0; i < Modes.Length && i < other.Modes.Length; i++) {
                         if (other.Modes[i] == null) {
                             other.Modes[i] = Modes[i];
                         } else if (Modes[i] != null) {
                             Modes[i].AddTo(other.Modes[i]);
-                        } else {
                         }
                     }
                 }
@@ -202,7 +201,7 @@ namespace Celeste.Mod.Meta {
         public void ApplyTo(patch_AreaData area) {
             // Some of the game's code checks for [1] / [2] explicitly.
             // Let's just provide null modes to fill any gaps.
-            Modes = Modes ?? new MapMetaModeProperties[3];
+            Modes ??= new MapMetaModeProperties[3];
             if (Modes.Length < 3) {
                 MapMetaModeProperties[] larger = new MapMetaModeProperties[3];
                 for (int i = 0; i < Modes.Length; i++)
@@ -416,10 +415,10 @@ namespace Celeste.Mod.Meta {
             }
             if (Checkpoints != null) { other.Checkpoints = Checkpoints; }
             if (IgnoreLevelAudioLayerData != null) { other.IgnoreLevelAudioLayerData = IgnoreLevelAudioLayerData; }
-            if (!string.IsNullOrEmpty(Inventory )) { other.Inventory = Inventory; }
-            if (!string.IsNullOrEmpty(Path )) { other.Path = Path; }
-            if (!string.IsNullOrEmpty(PoemID )) { other.PoemID = PoemID; }
-            if (!string.IsNullOrEmpty(StartLevel )) { other.StartLevel = StartLevel; }
+            if (!string.IsNullOrEmpty(Inventory)) { other.Inventory = Inventory; }
+            if (!string.IsNullOrEmpty(Path)) { other.Path = Path; }
+            if (!string.IsNullOrEmpty(PoemID)) { other.PoemID = PoemID; }
+            if (!string.IsNullOrEmpty(StartLevel)) { other.StartLevel = StartLevel; }
             if (HeartIsEnd != null) { other.HeartIsEnd = HeartIsEnd; }
             if (SeekerSlowdown != null) { other.SeekerSlowdown = SeekerSlowdown; }
             if (TheoInBubble != null) { other.TheoInBubble = TheoInBubble; }
@@ -478,7 +477,7 @@ namespace Celeste.Mod.Meta {
         public Session.CoreModes? CoreMode { get; set; }
         public CheckpointData Convert()
             => new CheckpointData(Level, Name, MapMeta.GetInventory(Inventory), Dreaming ?? false, AudioState?.Convert()) {
-                Flags = new HashSet<string>(Flags ?? new string[0]),
+                Flags = new HashSet<string>(Flags ?? Array.Empty<string>()),
                 CoreMode = CoreMode
             };
 
@@ -505,10 +504,10 @@ namespace Celeste.Mod.Meta {
         }
 
         public void AddTo(MapMetaCheckpointData other) {
-            if (!string.IsNullOrEmpty(Level )) { other.Level = Level; }
-            if (!string.IsNullOrEmpty(Name )) { other.Name = Name; }
+            if (!string.IsNullOrEmpty(Level)) { other.Level = Level; }
+            if (!string.IsNullOrEmpty(Name)) { other.Name = Name; }
             if (Dreaming != null) { other.Dreaming = Dreaming; }
-            if (!string.IsNullOrEmpty(Inventory )) { other.Inventory = Inventory; }
+            if (!string.IsNullOrEmpty(Inventory)) { other.Inventory = Inventory; }
             if (AudioState != null) { other.AudioState = AudioState; }
             if (Flags != null) { other.Flags = Flags; }
             if (CoreMode != null) { other.CoreMode = CoreMode; }
