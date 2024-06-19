@@ -203,9 +203,8 @@ namespace Celeste.Mod.Meta {
             // Let's just provide null modes to fill any gaps.
             Modes ??= new MapMetaModeProperties[3];
             if (Modes.Length < 3) {
-                MapMetaModeProperties[] larger = new MapMetaModeProperties[3];
-                for (int i = 0; i < Modes.Length; i++)
-                    larger[i] = Modes[i];
+                MapMetaModeProperties[] larger = Modes;
+                Array.Resize(ref larger, 3); // can't pass reference to property directly
                 Modes = larger;
             }
 
