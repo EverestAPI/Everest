@@ -186,15 +186,18 @@ namespace Celeste.Mod.Meta {
         }
 
         public static MapMeta Add(MapMeta self, MapMeta other) {
-            if (self == null) {
-                return other;
-            } else if (other == null) {
-                return self;
-            } else {
-                MapMeta result = new MapMeta();
-                other.AddTo(result);
-                self.AddTo(result);
-                return result;
+            switch ((self, other)) {
+                case (null, null):
+                    return new MapMeta();
+                case (null, _):
+                    return other;
+                case (_, null):
+                    return self;
+                default:
+                    MapMeta result = new MapMeta();
+                    other.AddTo(result);
+                    self.AddTo(result);
+                    return result;
             }
         }
 
@@ -424,15 +427,18 @@ namespace Celeste.Mod.Meta {
         }
 
         public static MapMetaModeProperties Add(MapMetaModeProperties self, MapMetaModeProperties other) {
-            if (self == null) {
-                return other;
-            } else if (other == null) {
-                return self;
-            } else {
-                MapMetaModeProperties result = new MapMetaModeProperties();
-                other.AddTo(result);
-                self.AddTo(result);
-                return result;
+            switch ((self, other)) {
+                case (null, null):
+                    return new MapMetaModeProperties();
+                case (null, _):
+                    return other;
+                case (_, null):
+                    return self;
+                default:
+                    MapMetaModeProperties result = new MapMetaModeProperties();
+                    other.AddTo(result);
+                    self.AddTo(result);
+                    return result;
             }
         }
     }

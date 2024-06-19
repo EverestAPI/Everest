@@ -219,7 +219,7 @@ namespace Celeste {
 
             if (mode == AreaMode.Normal) {
                 metaParsed.ApplyTo(area);
-                metaParsed.Modes[(int)mode].ApplyTo(area, mode);
+                metaParsed.Modes[(int)mode]?.ApplyTo(area, mode);
                 Area = area.ToKey();
 
                 // Backup A-Side's Metadata. Only back up useful data.
@@ -235,7 +235,7 @@ namespace Celeste {
             } else {
                 MapMeta combinedMeta = MapMeta.Add(metaParsed, area.Meta);
                 area.Mode[(int)mode].MapMeta = combinedMeta;
-                combinedMeta.Modes[(int)mode].ApplyTo(area, mode);
+                combinedMeta.Modes[(int)mode]?.ApplyTo(area, mode);
             }
         }
 
