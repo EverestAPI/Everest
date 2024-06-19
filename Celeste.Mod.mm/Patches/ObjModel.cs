@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Celeste {
     class patch_ObjModel : ObjModel {
@@ -17,7 +18,7 @@ namespace Celeste {
         private VertexPositionTexture[] verts;
 
         private object _Vertices_QueuedLoadLock;
-        private MaybeAwaitable<VertexBuffer> _Vertices_QueuedLoad;
+        private ValueTask<VertexBuffer> _Vertices_QueuedLoad;
 
         /// <summary>
         /// Create a new ObjModel from a stream
@@ -68,7 +69,7 @@ namespace Celeste {
                 using (StreamReader streamReader = new StreamReader(stream)) {
                     string text;
                     while ((text = streamReader.ReadLine()) != null) {
-                        string[] array = text.Split(' ');
+                        string[] array = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                         if (array.Length != 0) {
                             string a = array[0];
                             if (a == "o") {
@@ -131,9 +132,7 @@ namespace Celeste {
 
                 if (!MainThreadHelper.IsMainThread) {
                     // Otherwise wait for it to get loaded, don't reload twice. (Don't wait locked!)
-                    while (!_Vertices_QueuedLoad.IsValid)
-                        Thread.Yield();
-                    _Vertices_QueuedLoad.GetResult();
+                    _ = _Vertices_QueuedLoad.Result;
                     return true;
                 }
             }
@@ -142,7 +141,7 @@ namespace Celeste {
                 // Let's queue a reload onto the main thread and call it a day.
                 lock (queuedLoadLock = new object()) {
                     _Vertices_QueuedLoadLock = queuedLoadLock;
-                    _Vertices_QueuedLoad = MainThreadHelper.Get(() => {
+                    _Vertices_QueuedLoad = MainThreadHelper.Schedule(() => {
                         lock (queuedLoadLock) {
                             if (_Vertices_QueuedLoadLock == null)
                                 return Vertices;
@@ -169,10 +168,8 @@ namespace Celeste {
 
     public static class ObjModelExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <inheritdoc cref="patch_ObjModel.CreateFromStream(Stream, string)"/>
+        [Obsolete("Use ObjModel.CreateFromStream instead.")]
         public static ObjModel CreateFromStream(Stream stream, string fname) {
             return patch_ObjModel.CreateFromStream(stream, fname);
         }

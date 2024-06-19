@@ -4,6 +4,7 @@ using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -38,24 +39,24 @@ namespace Celeste {
                 Engine.Commands.Log("No save loaded!");
                 return;
             }
-
-            LevelSetStats stats = SaveData.Instance.GetLevelSetStats();
-            Engine.Commands.Log($"** Level Set Stats: {stats.Name} **");
-            Engine.Commands.Log($"Max strawberry count = {stats.MaxStrawberries}");
-            Engine.Commands.Log($"Max golden strawberry count = {stats.MaxGoldenStrawberries}");
-            Engine.Commands.Log($"Max strawberry count including untracked = {stats.MaxStrawberriesIncludingUntracked}");
-            Engine.Commands.Log($"Max cassettes = {stats.MaxCassettes}");
-            Engine.Commands.Log($"Max crystal hearts = {stats.MaxHeartGems}");
-            Engine.Commands.Log($"Max crystal hearts excluding C-sides = {stats.MaxHeartGemsExcludingCSides}");
-            Engine.Commands.Log($"Chapter count = {stats.MaxCompletions}");
+             
+            LevelSetStats stats = ((patch_SaveData) SaveData.Instance).LevelSetStats;
+            Engine.Commands.Log(string.Format("** Level Set Stats: {0} **", stats.Name));
+            Engine.Commands.Log(string.Format("Max strawberry count = {0}", stats.MaxStrawberries));
+            Engine.Commands.Log(string.Format("Max golden strawberry count = {0}", stats.MaxGoldenStrawberries));
+            Engine.Commands.Log(string.Format("Max strawberry count including untracked = {0}", stats.MaxStrawberriesIncludingUntracked));
+            Engine.Commands.Log(string.Format("Max cassettes = {0}", stats.MaxCassettes));
+            Engine.Commands.Log(string.Format("Max crystal hearts = {0}", stats.MaxHeartGems));
+            Engine.Commands.Log(string.Format("Max crystal hearts excluding C-sides = {0}", stats.MaxHeartGemsExcludingCSides));
+            Engine.Commands.Log(string.Format("Chapter count = {0}", stats.MaxCompletions));
             Engine.Commands.Log("====");
-            Engine.Commands.Log($"Owned strawberries = {stats.TotalStrawberries}");
-            Engine.Commands.Log($"Owned golden strawberries = {stats.TotalGoldenStrawberries}");
-            Engine.Commands.Log($"Owned cassettes = {stats.TotalCassettes}");
-            Engine.Commands.Log($"Owned crystal hearts = {stats.TotalHeartGems}");
-            Engine.Commands.Log($"Completed chapters = {stats.TotalCompletions}");
+            Engine.Commands.Log(string.Format("Owned strawberries = {0}", stats.TotalStrawberries));
+            Engine.Commands.Log(string.Format("Owned golden strawberries = {0}", stats.TotalGoldenStrawberries));
+            Engine.Commands.Log(string.Format("Owned cassettes = {0}", stats.TotalCassettes));
+            Engine.Commands.Log(string.Format("Owned crystal hearts = {0}", stats.TotalHeartGems));
+            Engine.Commands.Log(string.Format("Completed chapters = {0}", stats.TotalCompletions));
             Engine.Commands.Log("====");
-            Engine.Commands.Log($"Completion percent = {stats.CompletionPercent}");
+            Engine.Commands.Log(string.Format("Completion percent = {0}", stats.CompletionPercent));
         }
 
         // vanilla load commands: remove the [Command] attributes from them. We want to annotate ours instead.
@@ -132,11 +133,11 @@ namespace Celeste {
                 mapData = areaData?.Mode[(int) mode]?.MapData;
             }
             if (areaData == null) {
-                Engine.Commands.Log($"Map {sid} does not exist!");
+                Engine.Commands.Log(string.Format("Map {0} does not exist!", sid));
             } else if (mapData == null) {
-                Engine.Commands.Log($"Map {sid} has no {mode} mode!");
+                Engine.Commands.Log(string.Format("Map {0} has no {1} mode!", sid, mode));
             } else if (room != null && (mapData.Levels?.All(level => level.Name != room) ?? false)) {
-                Engine.Commands.Log($"Map {sid} / mode {mode} has no room named {room}!");
+                Engine.Commands.Log(string.Format("Map {0} / mode {1} has no room named {2}!", sid, mode, room));
             } else {
                 // go on with the vanilla load/hard/rmx2 function.
                 vanillaLoadFunction(areaData.ID, room);
@@ -173,7 +174,7 @@ namespace Celeste {
         [Command("export_obj", "Converts an .obj model file to .obj.export")]
         private static void CmdExportObj(string objPath, string objExportPath = null) {
             if (!File.Exists(objPath)) {
-                Engine.Commands.Log($"File {objPath} does not exist!");
+                Engine.Commands.Log(string.Format("File {0} does not exist!", objPath));
             } else {
                 if (objExportPath == null) {
                     objExportPath = objPath + ".export";
@@ -243,7 +244,7 @@ namespace Celeste {
         private static void CmdMainMenu() {
             Engine.Scene = new OverworldLoader(Overworld.StartMode.MainMenu);
         }
-        
+
         [Command("returntomap", "return to map")]
         private static void ReturnToMap() {
             if (SaveData.Instance == null) {
@@ -261,12 +262,12 @@ namespace Celeste {
         [MonoModReplace]
         [Command("hearts", "sets the amount of obtained hearts for the specified level set to a given number (default all hearts and current level set)")]
         private static void CmdHearts(int amount = int.MaxValue, string levelSet = null) {
-            patch_SaveData saveData = SaveData.Instance as patch_SaveData;
+            patch_SaveData saveData = patch_SaveData.Instance;
             if (saveData == null)
                 return;
 
             if (string.IsNullOrEmpty(levelSet))
-                levelSet = saveData.GetLevelSet();
+                levelSet = saveData.LevelSet;
 
             int num = 0;
             foreach (patch_AreaStats areaStats in saveData.Areas_Safe.Cast<patch_AreaStats>().Where(stats => stats.LevelSet == levelSet)) {
@@ -283,6 +284,21 @@ namespace Celeste {
                     }
                 }
             }
+        }
+
+        [Command("openlog", "open log.txt file")]
+        private static void CmdOpenLog() {
+            string pathLog = Everest.PathLog;
+            if (File.Exists(pathLog)) {
+                ProcessStartInfo startInfo = new() {
+                    FileName = pathLog,
+                    UseShellExecute = true,
+                };
+
+                Process.Start(startInfo);
+            }
+            else
+                Engine.Commands.Log($"{pathLog} does not exist");
         }
     }
 }

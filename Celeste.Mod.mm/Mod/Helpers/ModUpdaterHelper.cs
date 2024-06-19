@@ -3,22 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.Helpers {
     public class ModUpdaterHelper {
-        private class CompressedWebClient : WebClient {
-            protected override WebRequest GetWebRequest(Uri address) {
-                // In order to compress the response, Accept-Encoding and User-Agent both have to contain "gzip":
-                // https://cloud.google.com/appengine/docs/standard/java/how-requests-are-handled#response_compression
-                HttpWebRequest request = (HttpWebRequest) base.GetWebRequest(address);
-                request.AutomaticDecompression = DecompressionMethods.GZip;
-                request.UserAgent = "Everest/" + Everest.VersionString + "; gzip";
-
-                return request;
-            }
-        }
-
         private class MostRecentUpdatedFirst : IComparer<ModUpdateInfo> {
             public int Compare(ModUpdateInfo x, ModUpdateInfo y) {
                 if (x.LastUpdate != y.LastUpdate) {
@@ -37,24 +26,79 @@ namespace Celeste.Mod.Helpers {
             Dictionary<string, ModUpdateInfo> updateCatalog = null;
 
             try {
-                string modUpdaterDatabaseUrl = getModUpdaterDatabaseUrl();
+                string modUpdaterDatabaseUrl = getModUpdaterDatabaseUrl("modupdater");
 
-                Logger.Log("ModUpdaterHelper", $"Downloading last versions list from {modUpdaterDatabaseUrl}");
+                Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Downloading last versions list from {modUpdaterDatabaseUrl}");
 
-                using (WebClient wc = new CompressedWebClient()) {
-                    string yamlData = wc.DownloadString(modUpdaterDatabaseUrl);
+                using (HttpClient hc = new CompressedHttpClient()) {
+                    string yamlData = hc.GetStringAsync(modUpdaterDatabaseUrl).Result;
                     updateCatalog = YamlHelper.Deserializer.Deserialize<Dictionary<string, ModUpdateInfo>>(yamlData);
                     foreach (string name in updateCatalog.Keys) {
                         updateCatalog[name].Name = name;
                     }
-                    Logger.Log("ModUpdaterHelper", $"Downloaded {updateCatalog.Count} item(s)");
+                    Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Downloaded {updateCatalog.Count} item(s)");
                 }
             } catch (Exception e) {
-                Logger.Log("ModUpdaterHelper", $"Downloading database failed!");
+                Logger.Log(LogLevel.Warn, "ModUpdaterHelper", $"Downloading database failed!");
                 Logger.LogDetailed(e);
             }
 
             return updateCatalog;
+        }
+
+        private class DependencyGraphEntry {
+            public List<ModUpdateInfo> Dependencies { get; set; }
+            public List<ModUpdateInfo> OptionalDependencies { get; set; }
+        }
+
+        /// <summary>
+        /// Downloads the mod dependency graph from the update checker server.
+        /// Returns null if the download fails for any reason.
+        /// </summary>
+        public static Dictionary<string, EverestModuleMetadata> DownloadModDependencyGraph() {
+            try {
+                string modUpdaterDatabaseUrl = getModUpdaterDatabaseUrl("modgraph");
+
+                Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Downloading mod dependency graph from {modUpdaterDatabaseUrl}");
+
+                Dictionary<string, EverestModuleMetadata> dependencyGraph = new Dictionary<string, EverestModuleMetadata>();
+
+                using (HttpClient wc = new CompressedHttpClient()) {
+                    string yamlData = wc.GetStringAsync(modUpdaterDatabaseUrl).Result;
+                    Dictionary<string, DependencyGraphEntry> dependencyGraphUnparsed = YamlHelper.Deserializer.Deserialize<Dictionary<string, DependencyGraphEntry>>(yamlData);
+
+                    foreach (KeyValuePair<string, DependencyGraphEntry> entry in dependencyGraphUnparsed) {
+                        EverestModuleMetadata result = new EverestModuleMetadata { Name = entry.Key };
+
+                        // ArgumentExceptions may happen if any of the dependencies have invalid version numbers.
+
+                        foreach (ModUpdateInfo info in entry.Value.Dependencies) {
+                            try {
+                                result.Dependencies.Add(new EverestModuleMetadata { Name = info.Name, VersionString = info.Version });
+                            } catch (ArgumentException) {
+                                continue;
+                            }
+                        }
+
+                        foreach (ModUpdateInfo info in entry.Value.OptionalDependencies) {
+                            try {
+                                result.OptionalDependencies.Add(new EverestModuleMetadata { Name = info.Name, VersionString = info.Version });
+                            } catch (ArgumentException) {
+                                continue;
+                            }
+                        }
+
+                        dependencyGraph[entry.Key] = result;
+                    }
+
+                    Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Downloaded {dependencyGraph.Count} item(s)");
+                    return dependencyGraph;
+                }
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Warn, "ModUpdaterHelper", $"Downloading dependency graph failed!");
+                Logger.LogDetailed(e);
+                return null;
+            }
         }
 
         /// <summary>
@@ -66,7 +110,7 @@ namespace Celeste.Mod.Helpers {
         public static SortedDictionary<ModUpdateInfo, EverestModuleMetadata> ListAvailableUpdates(Dictionary<string, ModUpdateInfo> updateCatalog, bool excludeBlacklist) {
             SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>(new MostRecentUpdatedFirst());
 
-            Logger.Log("ModUpdaterHelper", "Checking for updates");
+            Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", "Checking for updates");
 
             foreach (EverestModule module in Everest.Modules) {
                 EverestModuleMetadata metadata = module.Metadata;
@@ -74,14 +118,14 @@ namespace Celeste.Mod.Helpers {
                     && (!excludeBlacklist || !Everest.Loader.UpdaterBlacklist.Any(path => Path.Combine(Everest.Loader.PathMods, path) == metadata.PathArchive))) {
 
                     string xxHashStringInstalled = BitConverter.ToString(metadata.Hash).Replace("-", "").ToLowerInvariant();
-                    Logger.Log("ModUpdaterHelper", $"Mod {metadata.Name}: installed hash {xxHashStringInstalled}, latest hash(es) {string.Join(", ", updateCatalog[metadata.Name].xxHash)}");
+                    Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Mod {metadata.Name}: installed hash {xxHashStringInstalled}, latest hash(es) {string.Join(", ", updateCatalog[metadata.Name].xxHash)}");
                     if (!updateCatalog[metadata.Name].xxHash.Contains(xxHashStringInstalled)) {
                         availableUpdatesCatalog[updateCatalog[metadata.Name]] = metadata;
                     }
                 }
             }
 
-            Logger.Log("ModUpdaterHelper", $"{availableUpdatesCatalog.Count} update(s) available");
+            Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"{availableUpdatesCatalog.Count} update(s) available");
             return availableUpdatesCatalog;
         }
 
@@ -93,7 +137,7 @@ namespace Celeste.Mod.Helpers {
         public static void VerifyChecksum(ModUpdateInfo update, string filePath) {
             string actualHash = BitConverter.ToString(Everest.GetChecksum(filePath)).Replace("-", "").ToLowerInvariant();
             string expectedHash = update.xxHash[0];
-            Logger.Log("ModUpdaterHelper", $"Verifying checksum: actual hash is {actualHash}, expected hash is {expectedHash}");
+            Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Verifying checksum: actual hash is {actualHash}, expected hash is {expectedHash}");
             if (expectedHash != actualHash) {
                 throw new IOException($"Checksum error: expected {expectedHash}, got {actualHash}");
             }
@@ -112,16 +156,16 @@ namespace Celeste.Mod.Helpers {
                 if (content.GetType() == typeof(ZipModContent) && (content as ZipModContent).Path == mod.PathArchive) {
                     ZipModContent modZip = content as ZipModContent;
 
-                    Logger.Log("ModUpdaterHelper", $"Closing mod .zip: {modZip.Path}");
+                    Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Closing mod .zip: {modZip.Path}");
                     modZip.Dispose();
                 }
             }
 
             // delete the old zip, and move the new one.
-            Logger.Log("ModUpdaterHelper", $"Deleting mod .zip: {mod.PathArchive}");
+            Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Deleting mod .zip: {mod.PathArchive}");
             File.Delete(mod.PathArchive);
 
-            Logger.Log("ModUpdaterHelper", $"Moving {zipPath} to {mod.PathArchive}");
+            Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Moving {zipPath} to {mod.PathArchive}");
             File.Move(zipPath, mod.PathArchive);
         }
 
@@ -133,22 +177,22 @@ namespace Celeste.Mod.Helpers {
         public static void TryDelete(string path) {
             if (File.Exists(path)) {
                 try {
-                    Logger.Log("ModUpdaterHelper", $"Deleting file {path}");
+                    Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Deleting file {path}");
                     File.Delete(path);
                 } catch (Exception) {
-                    Logger.Log("ModUpdaterHelper", $"Removing {path} failed");
+                    Logger.Log(LogLevel.Warn, "ModUpdaterHelper", $"Removing {path} failed");
                 }
             }
         }
 
         /// <summary>
         /// Retrieves the mod updater database location from everestapi.github.io.
-        /// This should point to a running instance of https://github.com/max4805/EverestUpdateCheckerServer.
+        /// This should point to a running instance of https://github.com/maddie480/EverestUpdateCheckerServer.
         /// </summary>
-        private static string getModUpdaterDatabaseUrl() {
-            using (WebClient wc = new WebClient()) {
-                Logger.Log("ModUpdaterHelper", "Fetching mod updater database URL");
-                return wc.DownloadString("https://everestapi.github.io/modupdater.txt").Trim();
+        private static string getModUpdaterDatabaseUrl(string database) {
+            using (HttpClient hc = new CompressedHttpClient()) {
+                Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", "Fetching mod updater database URL");
+                return hc.GetStringAsync("https://everestapi.github.io/" + database + ".txt").Result.Trim();
             }
         }
 

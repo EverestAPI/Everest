@@ -6,12 +6,12 @@ namespace Celeste.Mod {
 
         public MapDataFixup Context { get; private set; }
         public AreaKey AreaKey => Context.AreaKey;
-        public AreaData AreaData => Context.AreaData;
+        public patch_AreaData AreaData => Context.AreaData;
         public AreaData ParentAreaData => Context.ParentAreaData;
         public ModeProperties Mode => Context.Mode;
         public ModeProperties ParentMode => Context.ParentMode;
-        public MapData MapData => Context.MapData;
-        public MapData ParentMapData => Context.ParentMapData;
+        public patch_MapData MapData => Context.MapData;
+        public patch_MapData ParentMapData => Context.ParentMapData;
         public Dictionary<string, Action<BinaryPacker.Element>> Steps { get; protected set; }
 
         public abstract void Reset();

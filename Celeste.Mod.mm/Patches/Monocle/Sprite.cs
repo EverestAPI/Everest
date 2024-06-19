@@ -1,10 +1,12 @@
 ﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using MonoMod;
+using System;
 using System.Collections.Generic;
 
 namespace Monocle {
     // The only patch_ that needs to be made public to allow accessing .Animation
+    [Tracked]
     public class patch_Sprite : Sprite {
 
         private Dictionary<string, Animation> animations;
@@ -26,6 +28,7 @@ namespace Monocle {
     }
     public static class SpriteExt {
 
+        [Obsolete("Use Sprite.Animations instead.")]
         public static Dictionary<string, patch_Sprite.Animation> GetAnimations(this Sprite self)
             => ((patch_Sprite) self).Animations;
 

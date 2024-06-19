@@ -2,16 +2,14 @@
 using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
 using FMOD.Studio;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading;
 
 namespace Celeste.Mod {
     /// <summary>
@@ -21,9 +19,9 @@ namespace Celeste.Mod {
 
         /// <summary>
         /// Used by Everest itself to store any module metadata.
-        /// 
+        ///
         /// The metadata is usually parsed from meta.yaml in the archive.
-        /// 
+        ///
         /// You can override this property to provide dynamic metadata at runtime.
         /// Doing so isn't advised though unless you absolutely know what you're doing.
         /// Note that this doesn't affect mod loading.
@@ -100,7 +98,7 @@ namespace Celeste.Mod {
             if (SettingsType == null)
                 return;
 
-            _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+            _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Type.EmptyTypes).Invoke(null);
 
             string path = patch_UserIO.GetSaveFilePath("modsettings-" + Metadata.Name);
 
@@ -127,7 +125,7 @@ namespace Celeste.Mod {
             }
 
             if (_Settings == null)
-                _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+                _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Type.EmptyTypes).Invoke(null);
         }
 
         /// <summary>
@@ -182,7 +180,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// Save the mod save data. Saves the save data to {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
         /// </summary>
-        /// 
+        ///
         [Obsolete("Override SerializeSaveData and WriteSaveData instead.")]
         public virtual void SaveSaveData(int index) {
             ForceSaveDataAsync = true;
@@ -268,7 +266,7 @@ namespace Celeste.Mod {
             if (SaveDataType == null)
                 return;
 
-            _SaveData = (EverestModuleSaveData) SaveDataType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+            _SaveData = (EverestModuleSaveData) SaveDataType.GetConstructor(Type.EmptyTypes).Invoke(null);
             _SaveData.Index = index;
 
             if (data == null)
@@ -419,7 +417,7 @@ namespace Celeste.Mod {
             if (SessionType == null)
                 return;
 
-            _Session = (EverestModuleSession) SessionType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+            _Session = (EverestModuleSession) SessionType.GetConstructor(Type.EmptyTypes).Invoke(null);
             _Session.Index = index;
 
             if (data == null)
@@ -549,13 +547,17 @@ namespace Celeste.Mod {
                         binding.Binding.Add(defaults.Button);
                     if (defaults.Key != 0)
                         binding.Binding.Add(defaults.Key);
+                    if (defaults.Buttons != null)
+                        binding.Binding.Add(defaults.Buttons.Where(b => b != 0).ToArray());
+                    if (defaults.Keys != null)
+                        binding.Binding.Add(defaults.Keys.Where(k => k != 0).ToArray());
                 }
 
                 prop.SetValue(settings, binding);
             }
 
             binding.Button = (patch_VirtualButton) new VirtualButton(binding.Binding, Input.Gamepad, 0.08f, 0.2f);
-            ((patch_VirtualButton) (VirtualButton) binding.Button).AutoConsumeBuffer = true;
+            binding.Button.AutoConsumeBuffer = true;
         }
 
         public virtual void OnInputDeregister() {
@@ -634,7 +636,7 @@ namespace Celeste.Mod {
         /// <param name="menu">Menu to add the section to.</param>
         /// <param name="inGame">Whether we're in-game (paused) or in the main menu.</param>
         /// <param name="snapshot">The Level.PauseSnapshot</param>
-        public virtual void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
+        public virtual void CreateModMenuSection(patch_TextMenu menu, bool inGame, EventInstance snapshot) {
             Type type = SettingsType;
             EverestModuleSettings settings = _Settings;
             if (type == null || settings == null)
@@ -797,7 +799,7 @@ namespace Celeste.Mod {
                         headerCreated = true;
                     }
 
-                    creator.GetFastDelegate()(settings, menu, inGame);
+                    creator.CreateDelegate<Action<TextMenu, bool>>(settings)(menu, inGame);
                     continue;
                 }
 
@@ -818,13 +820,23 @@ namespace Celeste.Mod {
                         );
 
                         if (creator != null) {
-                            creator.GetFastDelegate()(propObject, subMenu, inGame);
+                            creator.CreateDelegate<Action<TextMenuExt.SubMenu, bool>>(propObject)(subMenu, inGame);
                             continue;
                         }
 
                         TextMenu.Item subMenuItem = CreateItem(subTypeProp, settingsObject: propObject);
-                        if (subMenuItem != null)
-                            subMenu.Add(subMenuItem);
+                        if (subMenuItem == null)
+                            continue;
+
+                        string subsubheader = subTypeProp.GetCustomAttribute<SettingSubHeaderAttribute>()?.SubHeader;
+                        if (subsubheader != null)
+                            subMenu.Add(new TextMenu.SubHeader(subsubheader.DialogCleanOrNull() ?? subsubheader, false));
+
+                        subMenu.Add(subMenuItem);
+
+                        string subdescription = subTypeProp.GetCustomAttribute<SettingSubTextAttribute>()?.Description;
+                        if (subdescription != null)
+                            subMenuItem.AddDescription(subMenu, menu, subdescription.DialogCleanOrNull() ?? subdescription);
                     }
                     item = subMenu;
                 }
@@ -844,11 +856,11 @@ namespace Celeste.Mod {
                 menu.Add(item);
 
                 if (prop.GetCustomAttribute<SettingNeedsRelaunchAttribute>() != null)
-                    item = item.NeedsRelaunch(menu);
+                    item.NeedsRelaunch(menu);
 
                 string description = prop.GetCustomAttribute<SettingSubTextAttribute>()?.Description;
                 if (description != null)
-                    item = item.AddDescription(menu, description.DialogCleanOrNull() ?? description);
+                    item.AddDescription(menu, description.DialogCleanOrNull() ?? description);
             }
 
             foreach (PropertyInfo prop in type.GetProperties()) {
@@ -880,6 +892,14 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="context">The context to add the processors to.</param>
         public virtual void PrepareMapDataProcessors(MapDataFixup context) {
+        }
+
+        public virtual void LogRegistration() {
+            Logger.Log(LogLevel.Info, "core", $"Registered code module {GetType().FullName} for module {Metadata}.");
+        }
+
+        public virtual void LogUnregistration() {
+            Logger.Log(LogLevel.Info, "core", $"Unregistered code module {GetType().FullName} for module {Metadata}.");
         }
 
     }

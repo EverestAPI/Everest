@@ -12,6 +12,8 @@ using MonoMod.Cil;
 namespace Celeste {
     class patch_OuiFileSelect : OuiFileSelect {
 
+        internal bool startingNewFile;
+
         [PatchOuiFileSelectSubmenuChecks] // we want to manipulate the orig method with MonoModRules
         public extern IEnumerator orig_Enter(Oui from);
         public new IEnumerator Enter(Oui from) {
@@ -131,6 +133,8 @@ namespace MonoMod {
             // The routine is stored in a compiler-generated method.
             method = method.GetEnumeratorMoveNext();
 
+            bool found = false;
+
             ILProcessor il = method.Body.GetILProcessor();
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count - 4; instri++) {
@@ -148,6 +152,9 @@ namespace MonoMod {
                     instrs.Insert(instri++, il.Create(OpCodes.Ldfld, field));
                     instrs.Insert(instri++, il.Create(OpCodes.Isinst, t_ISubmenu));
                     instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, branchTarget));
+
+                    found = true;
+
                 } else if (instrs[instri].OpCode == OpCodes.Ldarg_0
                     && instrs[instri + 1].OpCode == OpCodes.Ldfld
                     && instrs[instri + 2].MatchIsinst("Celeste.OuiAssistMode")
@@ -162,7 +169,14 @@ namespace MonoMod {
                     instrs.Insert(instri++, il.Create(OpCodes.Isinst, t_ISubmenu));
                     instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, branchTarget));
                     instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+
+                    found = true;
                 }
+            }
+
+
+            if (!found) {
+                throw new Exception("Call to isinst OuiAssistMode not found in " + method.FullName + "!");
             }
         }
 

@@ -2,6 +2,7 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 #pragma warning disable CS0169 // The field is never used
 
+using Celeste.Mod.Entities;
 using Celeste.Mod.Meta;
 using FMOD.Studio;
 using Monocle;
@@ -32,7 +33,7 @@ namespace Celeste {
 
         public extern void orig_Awake(Scene scene);
         public override void Awake(Scene scene) {
-            AreaData area = AreaData.Get(scene);
+            patch_AreaData area = patch_AreaData.Get(scene);
             if (area.CassetteSong == "-" || string.IsNullOrWhiteSpace(area.CassetteSong))
                 area.CassetteSong = null;
 
@@ -42,7 +43,7 @@ namespace Celeste {
             ticksPerSwap = 2;
             beatIndexMax = 256;
 
-            MapMetaCassetteModifier meta = area.GetMeta()?.CassetteModifier;
+            MapMetaCassetteModifier meta = area.Meta?.CassetteModifier;
             if (meta != null) {
                 if (meta.OldBehavior) {
                     tempoMult = meta.TempoMult;
@@ -53,6 +54,42 @@ namespace Celeste {
                 ticksPerSwap = meta.TicksPerSwap;
                 beatIndexMax = meta.BeatsMax;
                 beatIndexOffset = meta.BeatIndexOffset;
+
+                if (meta.ActiveDuringTransitions) {
+                    TransitionListener listener = Get<TransitionListener>();
+
+                    if (listener != null) {
+                        listener.OnOut = _ => {
+                            if (Scene != null) {
+                                Update();
+                            }
+                        };
+                    }
+                }
+            }
+        }
+
+        [MonoModLinkTo("Monocle.Entity", "Update")]
+        [MonoModIgnore]
+        public extern void base_Update();
+        [MonoModReplace]
+        public override void Update() {
+            base_Update();
+            if (isLevelMusic) {
+                sfx = Audio.CurrentMusicEventInstance;
+            }
+
+            if (sfx == null && !isLevelMusic) {
+                string cassetteSong = AreaData.Areas[SceneAs<Level>().Session.Area.ID].CassetteSong;
+                sfx = Audio.CreateInstance(cassetteSong);
+                Audio.Play(SFX.game_gen_cassetteblock_switch_2);
+
+                if (leadBeats == 0) {
+                    beatIndex = 0;
+                    sfx?.start();
+                }
+            } else {
+                AdvanceMusic(Engine.DeltaTime * tempoMult);
             }
         }
 
@@ -106,7 +143,7 @@ namespace Celeste {
         [MonoModReplace]
         public new void OnLevelStart() {
             Level level = Scene as Level;
-            MapMetaCassetteModifier meta = AreaData.Get(level.Session).GetMeta()?.CassetteModifier;
+            MapMetaCassetteModifier meta = patch_AreaData.Get(level.Session).Meta?.CassetteModifier;
 
             if (meta != null && meta.OldBehavior) {
                 currentIndex = maxBeat - 1 - ((beatIndex / beatsPerTick) % maxBeat);
@@ -125,8 +162,58 @@ namespace Celeste {
             SilentUpdateBlocks();
         }
 
-        [MonoModIgnore]
-        private extern void SilentUpdateBlocks();
+        [MonoModReplace]
+        private void SilentUpdateBlocks() {
+            foreach (CassetteBlock entity in Scene.Tracker.GetEntities<CassetteBlock>()) {
+                if (entity.ID.Level == SceneAs<Level>().Session.Level) {
+                    entity.SetActivatedSilently(entity.Index == currentIndex);
+                }
+            }
 
+            foreach (CassetteListener listener in Scene.Tracker.GetComponents<CassetteListener>()) {
+                if (listener.ID.ID == EntityID.None.ID || listener.ID.Level == SceneAs<Level>().Session.Level) {
+                    listener.Start(listener.Index == currentIndex);
+                }
+            }
+        }
+
+        [MonoModReplace]
+        public new void SetActiveIndex(int index) {
+            foreach (CassetteBlock entity in Scene.Tracker.GetEntities<CassetteBlock>()) {
+                entity.Activated = entity.Index == index;
+            }
+
+            foreach (CassetteListener listener in Scene.Tracker.GetComponents<CassetteListener>()) {
+                listener.SetActivated(listener.Index == index);
+            }
+        }
+
+        [MonoModReplace]
+        public new void SetWillActivate(int index) {
+            foreach (CassetteBlock entity in Scene.Tracker.GetEntities<CassetteBlock>()) {
+                if (entity.Index == index || entity.Activated) {
+                    entity.WillToggle();
+                }
+            }
+
+            foreach (CassetteListener listener in Scene.Tracker.GetComponents<CassetteListener>()) {
+                if (listener.Index == index || listener.Activated) {
+                    listener.WillToggle();
+                }
+            }
+        }
+
+        [MonoModReplace]
+        public new void StopBlocks() {
+            foreach (CassetteBlock entity in base.Scene.Tracker.GetEntities<CassetteBlock>()) {
+                entity.Finish();
+            }
+            foreach (CassetteListener listener in base.Scene.Tracker.GetComponents<CassetteListener>()) {
+                listener.Finish();
+            }
+            if (!isLevelMusic) {
+                Audio.Stop(sfx);
+            }
+        }
     }
 }

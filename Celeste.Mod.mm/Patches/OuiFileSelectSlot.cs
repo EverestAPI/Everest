@@ -7,17 +7,17 @@ using Celeste.Mod.Core;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using MonoMod.Cil;
-using MonoMod.InlineRT;
-using MonoMod.Utils;
 
 namespace Celeste {
     public class patch_OuiFileSelectSlot : OuiFileSelectSlot {
@@ -28,6 +28,7 @@ namespace Celeste {
         public interface ISubmenu { }
 
         // We're effectively in OuiFileSelectSlot, but still need to "expose" private fields to our mod.
+        public new patch_SaveData SaveData;
         private OuiFileSelect fileSelect;
         private List<Button> buttons;
         private Tween tween;
@@ -84,10 +85,10 @@ namespace Celeste {
         public new void Show() {
             // Temporarily set the current save data to the file slot's save data.
             // This enables filtering the areas by the save data's current levelset.
-            SaveData prev = SaveData.Instance;
-            SaveData.Instance = SaveData;
+            patch_SaveData prev = patch_SaveData.Instance;
+            patch_SaveData.Instance = SaveData;
 
-            LevelSetStats stats = SaveData?.GetLevelSetStats();
+            LevelSetStats stats = SaveData?.LevelSetStats;
 
             if (stats != null) {
                 StrawberriesCounter strawbs = Strawberries;
@@ -147,7 +148,7 @@ namespace Celeste {
                 }
             }
 
-            SaveData.Instance = prev;
+            patch_SaveData.Instance = prev;
 
             orig_Show();
         }
@@ -157,7 +158,7 @@ namespace Celeste {
             orig_CreateButtons();
 
             if (!Exists) {
-                if (AreaData.Areas.Select(area => area.GetLevelSet()).Distinct().Count() > 1) {
+                if (patch_AreaData.Areas.Select(area => area.LevelSet).Distinct().Count() > 1) {
                     if (newGameLevelSetPicker == null) {
                         newGameLevelSetPicker = new OuiFileSelectSlotLevelSetPicker(this);
                     }
@@ -198,8 +199,8 @@ namespace Celeste {
 
             string newGameLevelSet = newGameLevelSetPicker?.NewGameLevelSet;
             if (newGameLevelSet != null && newGameLevelSet != "Celeste") {
-                SaveData.Instance.LastArea =
-                    AreaData.Areas.FirstOrDefault(area => area.GetLevelSet() == newGameLevelSet)?.ToKey() ??
+                patch_SaveData.Instance.LastArea =
+                    patch_AreaData.Areas.FirstOrDefault(area => area.LevelSet == newGameLevelSet)?.ToKey() ??
                     AreaKey.Default;
             }
         }
@@ -231,13 +232,15 @@ namespace Celeste {
 
         [MonoModReplace]
         private IEnumerator EnterFirstAreaRoutine() {
+            ((patch_OuiFileSelect) fileSelect).startingNewFile = true; // Set this flag for autosplitters
+
             // Replace ID 0 with SaveData.Instance.LastArea.ID
 
             Overworld overworld = fileSelect.Overworld;
-            AreaData area = AreaData.Areas[SaveData.Instance.LastArea.ID];
-            if (area.GetLevelSet() != "Celeste") {
+            patch_AreaData area = patch_AreaData.Areas[patch_SaveData.Instance.LastArea.ID];
+            if (area.LevelSet != "Celeste") {
                 // Pretend that we've beaten Prologue.
-                LevelSetStats stats = SaveData.Instance.GetLevelSetStatsFor("Celeste");
+                LevelSetStats stats = patch_SaveData.Instance.GetLevelSetStatsFor("Celeste");
                 stats.UnlockedAreas = 1;
                 stats.AreasIncludingCeleste[0].Modes[0].Completed = true;
             }
@@ -252,12 +255,12 @@ namespace Celeste {
             yield return 0.4f;
 
             area.Wipe(overworld, false, null);
-            overworld.RendererList.UpdateLists();
+            ((patch_RendererList) (object) overworld.RendererList).UpdateLists();
             overworld.RendererList.MoveToFront(overworld.Snow);
 
             yield return 0.5f;
 
-            LevelEnter.Go(new Session(SaveData.Instance.LastArea), false);
+            LevelEnter.Go(new Session(patch_SaveData.Instance.LastArea), false);
         }
 
         public extern void orig_Unselect();

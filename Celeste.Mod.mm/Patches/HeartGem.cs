@@ -40,7 +40,7 @@ namespace Celeste {
             Level level = Scene as Level;
 
             bool heartIsEnd = false;
-            MapMetaModeProperties mapMetaModeProperties = (level != null) ? level.Session.MapData.GetMeta() : null;
+            MapMetaModeProperties mapMetaModeProperties = (level != null) ? ((patch_MapData) level.Session.MapData).Meta : null;
             if (mapMetaModeProperties != null && mapMetaModeProperties.HeartIsEnd != null) {
                 heartIsEnd = mapMetaModeProperties.HeartIsEnd.Value;
             }
@@ -65,7 +65,7 @@ namespace Celeste {
         }
 
         private bool IsCompleteArea(bool value) {
-            MapMetaModeProperties meta = (Scene as Level)?.Session.MapData.GetMeta();
+            MapMetaModeProperties meta = ((patch_MapData) (Scene as Level)?.Session.MapData).Meta;
             if (meta?.HeartIsEnd != null)
                 return meta.HeartIsEnd.Value && !IsFake;
 

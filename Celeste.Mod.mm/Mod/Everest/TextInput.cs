@@ -1,12 +1,7 @@
-﻿using Celeste.Mod.Helpers;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using MonoMod;
+using SDL2;
 using System;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text;
-using static Celeste.Mod.Helpers.Win32;
 
 namespace Celeste.Mod {
     /// <summary>
@@ -17,67 +12,68 @@ namespace Celeste.Mod {
 
         public static bool Initialized { get; private set; }
 
-        private static XNAFormsHook FormsHook;
-
         internal static void Initialize(Game game) {
             if (Initialized)
                 return;
             Initialized = true;
 
-            Type t_TextInputExt = typeof(Keyboard).Assembly.GetType("Microsoft.Xna.Framework.Input.TextInputEXT");
-            EventInfo e_TextInput = t_TextInputExt?.GetEvent("TextInput");
-            if (e_TextInput != null) {
-                // FNA offers Microsoft.Xna.Framework.Input.TextInputEXT,
-                // public static event Action<char> TextInput;
-                e_TextInput.AddEventHandler(null, new Action<char>(ReceiveTextInput).CastDelegate(e_TextInput.EventHandlerType));
+            // Subscribing is useless as long as we don't call `StartTextInput` so its ok for this to be here
+            TextInputEXT.TextInput += ReceiveTextInput;
+            CheckTextStatus(); // Required check to handle pre-init subscriptions
+        }
 
-                // SDL2 offers SDL_GetClipboardText and SDL_SetClipboardText
-                Type t_SDL2 = typeof(Keyboard).Assembly.GetType("SDL2.SDL");
-                _GetClipboardText = t_SDL2.GetMethod("SDL_GetClipboardText").CreateDelegate(typeof(Func<string>)) as Func<string>;
-                Func<string, int> setClipboardText = t_SDL2.GetMethod("SDL_SetClipboardText").CreateDelegate(typeof(Func<string, int>)) as Func<string, int>;
-                _SetClipboardText = value => setClipboardText(value);
+        internal static void Shutdown() {
+            if (!Initialized)
+                return;
 
-            } else {
-                // XNA requires WinForms message hooks.
-                FormsHook = new XNAFormsHook(game.Window.Handle, (ref Message msg) => {
-                    if (msg.Msg != 0x0102)
-                        return;
-                    ReceiveTextInput((char) msg.WParam);
-                });
-
-                // WinForms offers Clipboard.GetText and SetText
-                Type t_Clipboard = Assembly.Load("System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089").GetType("System.Windows.Forms.Clipboard");
-                Func<string> getClipboardText = t_Clipboard.GetMethod("GetText", new Type[] { } ).CreateDelegate(typeof(Func<string>)) as Func<string>;
-                _GetClipboardText = () => STAThreadHelper.Get(getClipboardText).GetResult();
-                Action<string> setClipboardText = t_Clipboard.GetMethod("SetText", new Type[] { typeof(string) }).CreateDelegate(typeof(Action<string>)) as Action<string>;
-                _SetClipboardText = (value) => STAThreadHelper.Get(() => {
-                    try {
-                        setClipboardText(string.IsNullOrEmpty(value) ? "\0" : value);
-                    } catch (ExternalException e) {
-                        Logger.Log(LogLevel.Warn, "TextInputs", "Failed to set the clipboard");
-                        Logger.LogDetailed(e);
-                    }
-                    return value;
-                }).GetResult();
-            }
+            if (TextInputEXT.IsTextInputActive())
+                TextInputEXT.StopTextInput();
+            TextInputEXT.TextInput -= ReceiveTextInput;
         }
 
         internal static void ReceiveTextInput(char c) {
             // Invoke our own event handler.
-            OnInput?.Invoke(c);
+            _OnInput?.Invoke(c);
         }
+
+        private static event Action<char> _OnInput;
 
         /// <summary>
         /// Invoked whenever text input occurs, including some "input action" characters.
+        /// This event is in charge of managing `StartTextInput` and `StopTextInput` calls.
+        /// Consequently its use should be restricted to when text input from the keyboard is needed.
+        /// Note that the aforementioned FNA calls will bring up virtual keyboard (if available, Steam Deck is an
+        /// example), so it's the modder's job to make sure it does appear and disappear correctly.
         /// Take a look at the FNA TextInputExt documentation for more info: https://github.com/FNA-XNA/FNA/wiki/5:-FNA-Extensions#textinputext
         /// </summary>
-        public static event Action<char> OnInput;
+        public static event Action<char> OnInput {
+            add {
+                _OnInput += value;
+                CheckTextStatus();
+            }
+            remove {
+                _OnInput -= value;
+                CheckTextStatus();
+            }
+        }
 
-        private static Func<string> _GetClipboardText;
-        public static string GetClipboardText() => _GetClipboardText?.Invoke();
+        private static void CheckTextStatus() {
+            if (!Initialized) return; // No text updates before this is initialized
+            if (_OnInput != null && _OnInput.GetInvocationList().Length != 0 && !TextInputEXT.IsTextInputActive()) {
+                TextInputEXT.StartTextInput();
+            } else if ((_OnInput == null || _OnInput.GetInvocationList().Length == 0) && TextInputEXT.IsTextInputActive()) {
+                TextInputEXT.StopTextInput();
+            }
 
-        private static Action<string> _SetClipboardText;
-        public static void SetClipboardText(string value) => _SetClipboardText?.Invoke(value);
+            // Warn the modder if there's ever multiple subscriptions, because chances are that they misused the event
+            if (_OnInput?.GetInvocationList().Length > 1) {
+                Logger.Log(LogLevel.Warn, "TextInput", 
+                    "Simultaneous text input subscriptions detected, is this a bug? See TextInput.OnInput for proper usage");
+            }
+        }
+
+        public static string GetClipboardText() => SDL.SDL_GetClipboardText();
+        public static void SetClipboardText(string value) => SDL.SDL_SetClipboardText(value);
 
     }
 }

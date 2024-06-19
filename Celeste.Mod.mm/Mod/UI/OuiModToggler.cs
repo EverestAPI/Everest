@@ -1,5 +1,7 @@
 ﻿using Ionic.Zip;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
+using Monocle;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -19,14 +21,28 @@ namespace Celeste.Mod.UI {
         // list of blacklisted mods when the menu was open
         private HashSet<string> blacklistedModsOriginal;
 
+        // list of favorite mods
+        private HashSet<string> favoriteMods;
+        // list of favorite mods when the menu was open
+        private HashSet<string> favoriteModsOriginal;
+        // maps each dependency to all its dependents 
+        private Dictionary<string, HashSet<string>> favoriteModDependencies;
+
         private bool toggleDependencies = true;
+
+        private bool protectFavorites = true;
 
         private TextMenuExt.SubHeaderExt restartMessage1;
         private TextMenuExt.SubHeaderExt restartMessage2;
 
+        // maps each filename to its Everest modules
         private Dictionary<string, EverestModuleMetadata[]> modYamls;
+        // maps each mod name to its newest Everest module
+        private Dictionary<string, string> modFilename;
+
         private Dictionary<string, TextMenu.OnOff> modToggles;
         private Task modLoadingTask;
+        private Action startSearching;
 
         internal static Dictionary<string, EverestModuleMetadata[]> LoadAllModYamls(Action<float> progressCallback) {
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -89,7 +105,7 @@ namespace Celeste.Mod.UI {
 
             // our list is complete!
             stopwatch.Stop();
-            Logger.Log("OuiModToggler", $"Found {allModYamls.Count} mod(s) with yaml files, took {stopwatch.ElapsedMilliseconds} ms");
+            Logger.Log(LogLevel.Verbose, "OuiModToggler", $"Found {allModYamls.Count} mod(s) with yaml files, took {stopwatch.ElapsedMilliseconds} ms");
             return allModYamls;
         }
 
@@ -169,7 +185,7 @@ namespace Celeste.Mod.UI {
             backToParentMenu = onBackPressed;
         }
 
-        protected override void addOptionsToMenu(TextMenu menu) {
+        protected override void addOptionsToMenu(patch_TextMenu menu) {
             // for now, display a "loading" message.
             TextMenu.Button loading = new TextMenu.Button(Dialog.Clean("MODOPTIONS_MODTOGGLE_LOADING")) { Disabled = true };
             menu.Add(loading);
@@ -185,8 +201,9 @@ namespace Celeste.Mod.UI {
                 });
                 updateTimer.Stop();
 
-                MainThreadHelper.Do(() => {
+                MainThreadHelper.Schedule(() => {
                     modToggles = new Dictionary<string, TextMenu.OnOff>();
+                    modFilename = BuildModFilenameDictionary(modYamls);
 
                     // remove the "loading..." message
                     menu.Remove(loading);
@@ -217,6 +234,11 @@ namespace Celeste.Mod.UI {
                     menu.Add(new TextMenu.Button(Dialog.Clean("MODOPTIONS_MODTOGGLE_DISABLEALL")).Pressed(() => {
                         blacklistedMods.Clear();
                         foreach (KeyValuePair<string, TextMenu.OnOff> toggle in modToggles) {
+                            bool isFavoriteDependency = favoriteMods.Contains(toggle.Key) || favoriteModDependencies.ContainsKey(toggle.Key);
+                            if (protectFavorites && isFavoriteDependency) {
+                                continue;
+                            }
+
                             toggle.Value.Index = 0;
                             blacklistedMods.Add(toggle.Key);
                         }
@@ -231,15 +253,43 @@ namespace Celeste.Mod.UI {
                     toggleDependenciesButton.AddDescription(menu, Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2"));
                     toggleDependenciesButton.AddDescription(menu, Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1"));
 
+                    TextMenu.Item toggleProtectFavoritesButton;
+                    menu.Add(toggleProtectFavoritesButton = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_MODTOGGLE_PROTECTFAVORITES"), protectFavorites)
+                        .Change(value => protectFavorites = value));
+
+                    TextMenuExt.EaseInSubMenuWithInputs favoriteToolTip = new TextMenuExt.EaseInSubMenuWithInputs(
+                        string.Format(Dialog.Get("MODOPTIONS_MODTOGGLE_PROTECTFAVORITES_MESSAGE"), '|'),
+                         '|',
+                         new Monocle.VirtualButton[] { Input.MenuJournal },
+                         false
+                        ) { TextColor = Color.Gray };
+
+                    menu.Add(favoriteToolTip);
+
+                    toggleProtectFavoritesButton.OnEnter += () => {
+                        // make the description appear.
+                        favoriteToolTip.FadeVisible = true;
+                    };
+                    toggleProtectFavoritesButton.OnLeave += () => {
+                        // make the description disappear.
+                        favoriteToolTip.FadeVisible = false;
+                    };
+
+
                     // "cancel" button to leave the screen without saving
                     menu.Add(new TextMenu.Button(Dialog.Clean("MODOPTIONS_MODTOGGLE_CANCEL")).Pressed(() => {
                         blacklistedMods = blacklistedModsOriginal;
+                        favoriteMods = favoriteModsOriginal;
                         onBackPressed(Overworld);
                     }));
+
+                    AddSearchBox(menu);
 
                     // reset the mods list
                     allMods = new List<string>();
                     blacklistedMods = new HashSet<string>();
+                    favoriteMods = new HashSet<string>();
+                    favoriteModDependencies = new Dictionary<string, HashSet<string>>();
 
                     string[] files;
                     bool headerInserted;
@@ -292,18 +342,16 @@ namespace Celeste.Mod.UI {
                     // sort the mods list alphabetically, for output in the blacklist.txt file later.
                     allMods.Sort((a, b) => a.ToLowerInvariant().CompareTo(b.ToLowerInvariant()));
 
-                    // adjust the mods' color if they are required dependencies for other mods
-                    foreach (KeyValuePair<string, TextMenu.OnOff> toggle in modToggles) {
-                        if (modHasDependencies(toggle.Key)) {
-                            ((patch_TextMenu.patch_Option<bool>) (object) toggle.Value).UnselectedColor = Color.Goldenrod;
-                        }
-                    }
+                    // clone the list to be able to check if the list changed when leaving the menu.
+                    blacklistedModsOriginal = new HashSet<string>(blacklistedMods);
+                    favoriteModsOriginal = new HashSet<string>(favoriteMods);
+
+                    // set colors to mods listings
+                    updateHighlightedMods();
 
                     // snap the menu so that it doesn't show a scroll up.
                     menu.Y = menu.ScrollTargetY;
 
-                    // clone the list to be able to check if the list changed when leaving the menu.
-                    blacklistedModsOriginal = new HashSet<string>(blacklistedMods);
 
                     // loading is done!
                     modLoadingTask = null;
@@ -312,33 +360,155 @@ namespace Celeste.Mod.UI {
             modLoadingTask.Start();
         }
 
-        private void addFileToMenu(TextMenu menu, string file) {
-            TextMenu.OnOff option;
+        private void AddSearchBox(TextMenu menu) {
+            TextMenuExt.TextBox textBox = new(Overworld) {
+                PlaceholderText = Dialog.Clean("MODOPTIONS_MODTOGGLE_SEARCHBOX_PLACEHOLDER")
+            };
 
-            bool enabled = !Everest.Loader.Blacklist.Contains(file);
-            menu.Add(option = (TextMenu.OnOff) new TextMenu.OnOff(file.Length > 40 ? file.Substring(0, 40) + "..." : file, enabled)
-                .Change(b => {
-                    if (b) {
-                        removeFromBlacklist(file);
+            TextMenuExt.Modal modal = new(textBox, absoluteX: null, absoluteY: 85);
+            menu.Add(modal);
+            menu.Add(new TextMenuExt.SearchToolTip());
+
+            startSearching = () => {
+                modal.Visible = true;
+                textBox.StartTyping();
+            };
+
+            Action<TextMenuExt.TextBox> searchNextMod(bool inReverse) => (TextMenuExt.TextBox textBox) => {
+                string searchTarget = textBox.Text.ToLower();
+                List<TextMenu.Item> menuItems = ((patch_TextMenu) menu).Items;
+                int currentSelection = menu.Selection;
+
+                bool searchPredicate(TextMenu.Item item) => item is patch_TextMenu.patch_Option<bool> currentOption
+                                                            && modToggles.ContainsKey(currentOption.Label)
+                                                            && currentOption.Label.ToLower().Contains(searchTarget);
+
+                if (TextMenuExt.TextBox.WrappingLinearSearch(menuItems, searchPredicate, menu.Selection + (inReverse ? -1 : 1), inReverse, out int targetSelectionIndex)) {
+                    if (targetSelectionIndex >= menu.Selection) {
+                        Audio.Play(SFX.ui_main_roll_down);
                     } else {
-                        addToBlacklist(file);
+                        Audio.Play(SFX.ui_main_roll_up);
                     }
 
-                    updateHighlightedMods();
-                }));
+                    menu.Selection = targetSelectionIndex;
+                } else {
+                    Audio.Play(SFX.ui_main_button_invalid);
+                }
+            };
+
+            void exitSearch(TextMenuExt.TextBox textBox) {
+                textBox.StopTyping();
+                modal.Visible = false;
+                textBox.ClearText();
+            }
+
+            textBox.OnTextInputCharActions['\t'] = searchNextMod(false);
+            textBox.OnTextInputCharActions['\n'] = (_) => { };
+            textBox.OnTextInputCharActions['\r'] = (textBox) => {
+                if (MInput.Keyboard.CurrentState.IsKeyDown(Keys.LeftShift)
+                    || MInput.Keyboard.CurrentState.IsKeyDown(Keys.RightShift)) {
+                    searchNextMod(true)(textBox);
+                } else {
+                    searchNextMod(false)(textBox);
+                }
+            };
+            textBox.OnTextInputCharActions['\b'] = (textBox) => {
+                if (textBox.DeleteCharacter()) {
+                    Audio.Play(SFX.ui_main_rename_entry_backspace);
+                } else {
+                    exitSearch(textBox);
+                    Input.MenuCancel.ConsumePress();
+                }
+            };
+
+
+            textBox.AfterInputConsumed = () => {
+                if (textBox.Typing) {
+                    if (Input.ESC.Pressed) {
+                        exitSearch(textBox);
+                    } else if (Input.MenuDown.Pressed) {
+                        searchNextMod(false)(textBox);
+                    } else if (Input.MenuUp.Pressed) {
+                        searchNextMod(true)(textBox);
+                    }
+                }
+            };
+        }
+
+        private void addFileToMenu(TextMenu menu, string file) {
+            bool enabled = !Everest.Loader.Blacklist.Contains(file);
+            bool favorite = Everest.Loader.Favorites.Contains(file);
+
+            TextMenu.OnOff option = new(file.Length > 40 ? file.Substring(0, 40) + "..." : file, enabled);
+
+            option.Change(b => {
+                if (b) {
+                    removeFromBlacklist(file);
+                } else {
+                    addToBlacklist(file);
+                }
+
+                updateHighlightedMods();
+            }).AltPressed(() => {
+                if (!favoriteMods.Contains(file)) {
+                    Audio.Play(SFX.ui_main_button_toggle_on);
+                    addToFavorites(file);
+                } else {
+                    Audio.Play(SFX.ui_main_button_toggle_off);
+                    removeFromFavorites(file);
+                }
+
+                option.SelectWiggler.Start();
+
+                updateHighlightedMods();
+            });
+
+            menu.Add(option);
 
             allMods.Add(file);
             if (!enabled) {
                 blacklistedMods.Add(file);
             }
+            if (favorite) {
+                // because we don't store the dependencies of favorite mods we want to call addToFavorites to walk the dependencies graph
+                addToFavorites(file);
+            }
 
             modToggles[file] = option;
+        }
+
+        private Dictionary<string, string> BuildModFilenameDictionary(Dictionary<string, EverestModuleMetadata[]> modYamls) {
+            Dictionary<string, EverestModuleMetadata> everestModulesByModName = new();
+
+            foreach (KeyValuePair<string, EverestModuleMetadata[]> pair in modYamls) {
+                foreach (EverestModuleMetadata currentModule in pair.Value) {
+                    if (everestModulesByModName.TryGetValue(currentModule.Name, out EverestModuleMetadata previousModule)) {
+                        if (previousModule.Version < currentModule.Version) {
+                            everestModulesByModName[currentModule.Name] = currentModule;
+                        }
+                    } else {
+                        everestModulesByModName[currentModule.Name] = currentModule;
+                    }
+                }
+            }
+
+
+            return everestModulesByModName
+                .ToDictionary(dictEntry => dictEntry.Key, dictEntry => Path.GetFileName(dictEntry.Value.PathArchive ?? dictEntry.Value.PathDirectory));
         }
 
         private void updateHighlightedMods() {
             // adjust the mods' color if they are required dependencies for other mods
             foreach (KeyValuePair<string, TextMenu.OnOff> toggle in modToggles) {
-                ((patch_TextMenu.patch_Option<bool>) (object) toggle.Value).UnselectedColor = modHasDependencies(toggle.Key) ? Color.Goldenrod : Color.White;
+                Color unselectedColor = Color.White;
+                if (favoriteMods.Contains(toggle.Key)) {
+                    unselectedColor = Color.DeepPink;
+                } else if (favoriteModDependencies.ContainsKey(toggle.Key)) {
+                    unselectedColor = Color.LightPink;
+                } else if (modHasDependencies(toggle.Key)) {
+                    unselectedColor = Color.Goldenrod;
+                }
+                ((patch_TextMenu.patch_Option<bool>) (object) toggle.Value).UnselectedColor = unselectedColor;
             }
 
             // turn the warning text about restarting/overwriting blacklist.txt orange/red if something was changed (so pressing Back will trigger a restart).
@@ -353,6 +523,14 @@ namespace Celeste.Mod.UI {
 
         public override void Update() {
             canGoBack = (modLoadingTask == null || modLoadingTask.IsCompleted || modLoadingTask.IsCanceled || modLoadingTask.IsFaulted);
+
+            if (Selected && Focused) {
+                if (Input.QuickRestart.Pressed) {
+                    startSearching?.Invoke();
+                    return;
+                }
+            }
+
             base.Update();
         }
 
@@ -363,7 +541,7 @@ namespace Celeste.Mod.UI {
             }
 
             blacklistedMods.Add(file);
-            Logger.Log("OuiModToggler", $"{file} was added to the blacklist");
+            Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{file} was added to the blacklist");
 
             if (toggleDependencies && modYamls.TryGetValue(file, out EverestModuleMetadata[] metadatas)) {
                 // we should blacklist all mods that has this mod as a dependency.
@@ -388,29 +566,78 @@ namespace Celeste.Mod.UI {
             }
 
             blacklistedMods.Remove(file);
-            Logger.Log("OuiModToggler", $"{file} was removed from the blacklist");
+            Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{file} was removed from the blacklist");
 
-            if (toggleDependencies && modYamls.TryGetValue(file, out EverestModuleMetadata[] metadatas)) {
+            if (toggleDependencies && TryGetModDependenciesFileNames(file, out List<string> dependencies)) {
                 // we should remove all of the mod's dependencies from the blacklist.
-                foreach (EverestModuleMetadata metadata in metadatas) {
-                    foreach (string dependency in metadata.Dependencies.Select(dep => dep.Name)) {
-                        // we want to go through all the other mods' info to found the one we want.
-                        KeyValuePair<string, EverestModuleMetadata>? found = null;
-                        foreach (KeyValuePair<string, EverestModuleMetadata[]> candidateMetadatas in modYamls) {
-                            foreach (EverestModuleMetadata candidateMetadata in candidateMetadatas.Value) {
-                                if (candidateMetadata.Name == dependency) {
-                                    // we found it!
-                                    if (found == null || found.Value.Value.Version < candidateMetadata.Version) {
-                                        found = new KeyValuePair<string, EverestModuleMetadata>(candidateMetadatas.Key, candidateMetadata);
-                                    }
-                                }
-                            }
-                        }
-                        if (found.HasValue) {
-                            // we found where the dependency is: activate it.
-                            removeFromBlacklist(found.Value.Key);
-                            modToggles[found.Value.Key].Index = 1;
-                        }
+                foreach (string modFileName in dependencies) {
+                    removeFromBlacklist(modFileName);
+                    modToggles[modFileName].Index = 1;
+                }
+            }
+        }
+
+        private void addToFavorites(string modFileName) {
+            favoriteMods.Add(modFileName);
+            Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was added to favorites");
+
+            if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
+                foreach (string dependenciesFileName in dependenciesFileNames) {
+                    addToFavoritesDependencies(dependenciesFileName, modFileName);
+                }
+            }
+        }
+
+        private void addToFavoritesDependencies(string modFileName, string dependentModFileName) {
+            bool existsInFavoriteDependencies = favoriteModDependencies.TryGetValue(modFileName, out HashSet<string> dependents);
+
+            // If we have a cyclical dependencies we want to stop after the first occurrence of a mod, or if somehow a mod reached itself.
+            if ((existsInFavoriteDependencies && dependents.Contains(dependentModFileName)) || modFileName == dependentModFileName) {
+                return;
+            }
+
+            if (!existsInFavoriteDependencies) {
+                dependents = favoriteModDependencies[modFileName] = new HashSet<string>();
+            }
+
+            // Add dependent mod
+            dependents.Add(dependentModFileName);
+            Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was added as a favorite dependency of {dependentModFileName}");
+
+
+            // we want to walk the dependence graph and add all the sub-dependencies as dependencies of the original dependentModFileName  
+            if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
+                foreach (string dependencyFileName in dependenciesFileNames) {
+                    addToFavoritesDependencies(dependencyFileName, dependentModFileName);
+                }
+            }
+        }
+
+        private void removeFromFavorites(string modFileName) {
+            favoriteMods.Remove(modFileName);
+            Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was removed from favorites");
+
+            if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
+                foreach (string dependencyFileName in dependenciesFileNames) {
+                    removeFromFavoritesDependencies(dependencyFileName, modFileName);
+                }
+            }
+        }
+
+        private void removeFromFavoritesDependencies(string modFileName, string dependentModFileName) {
+            if (favoriteModDependencies.TryGetValue(modFileName, out HashSet<string> dependents) && dependents.Contains(dependentModFileName)) {
+
+                dependents.Remove(dependentModFileName);
+                Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was removed from being a favorite dependency of {dependentModFileName}");
+
+                if (dependents.Count == 0) {
+                    favoriteModDependencies.Remove(modFileName);
+                    Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} is no longer a favorite dependency");
+                }
+
+                if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
+                    foreach (string dependencyFileName in dependenciesFileNames) {
+                        removeFromFavoritesDependencies(dependencyFileName, dependentModFileName);
                     }
                 }
             }
@@ -419,6 +646,18 @@ namespace Celeste.Mod.UI {
         private void onBackPressed(Overworld overworld) {
             // "back" only works if the loading is done.
             if (modLoadingTask == null || modLoadingTask.IsCompleted || modLoadingTask.IsCanceled || modLoadingTask.IsFaulted) {
+                if (!favoriteModsOriginal.SetEquals(favoriteMods)) {
+                    Everest.Loader.Favorites = favoriteMods;
+                    using (StreamWriter writer = File.CreateText(Everest.Loader.PathFavorites)) {
+                        // header
+                        writer.WriteLine("# This is the favorite list. Lines starting with # are ignored.");
+                        writer.WriteLine("");
+
+                        foreach (string mod in favoriteMods) {
+                            writer.WriteLine(mod);
+                        }
+                    }
+                }
                 if (blacklistedModsOriginal.SetEquals(blacklistedMods)) {
                     // nothing changed, go back to Mod Options
                     overworld.Goto<OuiModOptions>();
@@ -442,6 +681,26 @@ namespace Celeste.Mod.UI {
             }
         }
 
+        private bool TryGetModDependenciesFileNames(string modFilename, out List<string> dependenciesFileNames) {
+            if (modYamls.TryGetValue(modFilename, out EverestModuleMetadata[] metadatas)) {
+                dependenciesFileNames = new List<string>();
+
+                foreach (EverestModuleMetadata metadata in metadatas) {
+                    foreach (string dependencyName in metadata.Dependencies.Select((dep) => dep.Name)) {
+                        if (this.modFilename.TryGetValue(dependencyName, out string dependencyFileName)) {
+                            dependenciesFileNames.Add(dependencyFileName);
+                        }
+                    }
+                }
+
+                return true;
+            }
+
+
+            dependenciesFileNames = null;
+            return false;
+        }
+
         private bool modHasDependencies(string modFilename) {
             if (modYamls.TryGetValue(modFilename, out EverestModuleMetadata[] metadatas)) {
                 // this mod has a yaml, check all of the metadata entries (99% of the time there is one only).
@@ -459,6 +718,11 @@ namespace Celeste.Mod.UI {
             return false;
         }
 
+
+        public override void Render() {
+            base.Render();
+        }
+
         public override IEnumerator Leave(Oui next) {
             IEnumerator orig = base.Leave(next);
             while (orig.MoveNext()) {
@@ -472,9 +736,14 @@ namespace Celeste.Mod.UI {
             restartMessage1 = null;
             restartMessage2 = null;
             modYamls = null;
+            modFilename = null;
             modToggles = null;
             modLoadingTask = null;
             toggleDependencies = true;
+            protectFavorites = true;
+            favoriteMods = null;
+            favoriteModsOriginal = null;
+            favoriteModDependencies = null;
         }
     }
 }

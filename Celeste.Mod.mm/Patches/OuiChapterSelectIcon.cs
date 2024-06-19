@@ -1,9 +1,10 @@
 ﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Monocle;
+using System;
 
 namespace Celeste {
-    class patch_OuiChapterSelectIcon : OuiChapterSelectIcon {
+    public class patch_OuiChapterSelectIcon : OuiChapterSelectIcon {
 
         // We're effectively in OuiChapterSelectIcon, but still need to "expose" private fields to our mod.
         private bool hidden;
@@ -20,12 +21,11 @@ namespace Celeste {
     }
     public static class OuiChapterSelectIconExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
+        [Obsolete("Use OuiChapterSelectIcon.IsHidden instead.")]
         public static bool GetIsHidden(this OuiChapterSelectIcon self)
             => ((patch_OuiChapterSelectIcon) self).IsHidden;
 
+        [Obsolete("Use OuiChapterSelectIcon.IsHidden instead.")]
         public static bool GetIsSelected(this OuiChapterSelectIcon self)
             => ((patch_OuiChapterSelectIcon) self).IsSelected;
 

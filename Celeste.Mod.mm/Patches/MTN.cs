@@ -173,7 +173,7 @@ namespace Celeste {
             if (ObjModelCache.TryGetValue(path, out ObjModel cached)) {
                 return cached;
             }
-            ObjModel loaded = ObjModelExt.CreateFromStream(asset.Stream, path);
+            ObjModel loaded = patch_ObjModel.CreateFromStream(asset.Stream, path);
             ObjModelCache[path] = loaded;
             return loaded;
         }

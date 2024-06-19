@@ -1,4 +1,6 @@
-﻿namespace Celeste {
+﻿using System;
+
+namespace Celeste {
     class patch_CheckpointData : CheckpointData {
 
         public AreaKey Area;
@@ -10,11 +12,10 @@
     }
     public static class CheckpointDataExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
+        [Obsolete("Use CheckpointData.Area instead.")]
         public static AreaKey GetArea(this CheckpointData self)
             => ((patch_CheckpointData) self).Area;
+        [Obsolete("Use CheckpointData.Area instead.")]
         public static void SetArea(this CheckpointData self, AreaKey value)
             => ((patch_CheckpointData) self).Area = value;
 

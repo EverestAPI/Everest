@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
@@ -50,6 +51,9 @@ namespace Monocle {
         // redirects command logs to the StringBuilder when not null, only set this from main thread
         internal StringBuilder debugRClog;
 
+        private bool printedInfoMessage;
+
+        [PatchCommandsProcessMethod]
         private extern void orig_ProcessMethod(MethodInfo method);
         private void ProcessMethod(MethodInfo method) {
             try {
@@ -63,16 +67,26 @@ namespace Monocle {
 
         [MonoModReplace] // Don't create orig_ method.
         internal void UpdateClosed() {
+            if (installedListener) { 
+                // This is a really really really messy way to deal with this, but its simple enough to be viable
+                // And apparently `UpdateOpen` doesn't handle closing, so this goes here i guess
+                installedListener = false;
+                TextInput.OnInput -= HandleChar;
+            }
             if (!canOpen) {
                 canOpen = true;
-            // Original code only checks OemTillde and Oem8, leaving QWERTZ users in the dark...
-            } else if (MInput.Keyboard.Pressed(Keys.OemTilde, Keys.Oem8) || CoreModule.Settings.DebugConsole.Pressed) {
+            // Original code only checks OemTilde and Oem8, leaving QWERTZ users in the dark...
+            } else if (CoreModule.Settings.DebugConsole.Pressed || CoreModule.Settings.ToggleDebugConsole.Pressed) {
                 Open = true;
                 currentState = Keyboard.GetState();
                 if (!installedListener) {
-                    // this should realistically be done in the constructor. if we ever patch the ctor move it there!
+                    // This has to be done here, since we'll be unsubscribing to stop the text input
                     installedListener = true;
                     TextInput.OnInput += HandleChar;
+                }
+                if (!printedInfoMessage) {
+                    Log("Use the 'help' command for a list of debug commands. Press Esc or use the 'q' command to close the console.");
+                    printedInfoMessage = true;
                 }
             }
 
@@ -114,10 +128,10 @@ namespace Monocle {
             Level level = Engine.Scene as Level;
 
             if (level != null) {
-                mouseText += $"Area: {level.Session.Level} @ {level.Session.Area}\n";
+                mouseText += string.Format("Area: {0} @ {1}\n", level.Session.Level, level.Session.Area);
             }
 
-            mouseText += $"Cursor @\n screen: {(int) Math.Round(mousePosition.X)}, {(int) Math.Round(mousePosition.Y)}";
+            mouseText += string.Format("Cursor @\n screen: {0}, {1}", (int) Math.Round(mousePosition.X), (int) Math.Round(mousePosition.Y));
 
             if (level != null) {
                 Camera cam = level.Camera;
@@ -126,15 +140,15 @@ namespace Monocle {
                 Vector2 mouseWorldPosition = Calc.Floor(((patch_Level) level).ScreenToWorld(mousePosition / viewScale));
                 // CelesteTAS already displays world coordinates. If it is installed, leave that up to it.
                 if (!celesteTASInstalled.Value) {
-                    mouseText += $"\n world:       {(int) Math.Round(mouseWorldPosition.X)}, {(int) Math.Round(mouseWorldPosition.Y)}";
+                    mouseText += string.Format("\n world:       {0}, {1}", (int) Math.Round(mouseWorldPosition.X), (int) Math.Round(mouseWorldPosition.Y));
                 }
                 mouseWorldPosition -= level.LevelOffset;
-                mouseText += $"\n level:       {(int) Math.Round(mouseWorldPosition.X)}, {(int) Math.Round(mouseWorldPosition.Y)}";
+                mouseText += string.Format("\n level:       {0}, {1}", (int) Math.Round(mouseWorldPosition.X), (int) Math.Round(mouseWorldPosition.Y));
                 // Convert world to world-snap position.
                 mouseSnapPosition = Calc.Floor(mouseWorldPosition / 8f);
-                mouseText += $"\n level, /8:   {(int) Math.Round(mouseSnapPosition.Value.X)}, {(int) Math.Round(mouseSnapPosition.Value.Y)}";
+                mouseText += string.Format("\n level, /8:   {0}, {1}", (int) Math.Round(mouseSnapPosition.Value.X), (int) Math.Round(mouseSnapPosition.Value.Y));
                 mouseSnapPosition = 8f * mouseSnapPosition;
-                mouseText += $"\n level, snap: {(int) Math.Round(mouseSnapPosition.Value.X)}, {(int) Math.Round(mouseSnapPosition.Value.Y)}";
+                mouseText += string.Format("\n level, snap: {0}, {1}", (int) Math.Round(mouseSnapPosition.Value.X), (int) Math.Round(mouseSnapPosition.Value.Y));
                 // Convert world-snap to screen-snap position.
                 mouseSnapPosition += new Vector2(4f, 4f); // Center the cursor on the tile.
                 mouseSnapPosition += level.LevelOffset;
@@ -201,6 +215,11 @@ namespace Monocle {
         [MonoModReplace]  // don't create an orig_ method
         private void HandleKey(Keys key) {
             // this method handles all control characters, which go through the XNA Keys API
+            if (key == Keys.Escape || CoreModule.Settings.ToggleDebugConsole.Keys.Contains(key)) {
+                MInput.Keyboard.CurrentState = currentState;
+                Open = canOpen = false;
+                return;
+            }
             underscore = true;
             underscoreCounter = 0f;
             bool shift = currentState[Keys.LeftShift] == KeyState.Down || currentState[Keys.RightShift] == KeyState.Down;
@@ -244,7 +263,7 @@ namespace Monocle {
                             // SID matching
                             tabPrefix = currentText.Substring(0, 5);
                             string startOfSid = currentText.Substring(5);
-                            tabResults = AreaData.Areas.Select(area => area.GetSID()).Where(sid => sid.StartsWith(startOfSid, StringComparison.InvariantCultureIgnoreCase)).ToArray();
+                            tabResults = patch_AreaData.Areas.Select(area => area.SID).Where(sid => sid.StartsWith(startOfSid, StringComparison.InvariantCultureIgnoreCase)).ToArray();
                         } else {
                             // command matching
                             tabPrefix = "";
@@ -332,7 +351,7 @@ namespace Monocle {
                 case Keys.V:
                     if (ctrl && TextInput.GetClipboardText() is {Length: > 0} clipboard) {
                         clipboard = clipboard.Replace("\n", " ");
-                        currentText = currentText.Substring(0, charIndex) + clipboard + currentText.Substring(charIndex);;
+                        currentText = currentText.Substring(0, charIndex) + clipboard + currentText.Substring(charIndex);
                         charIndex = Math.Min(charIndex + clipboard.Length, currentText.Length);
                     }
                     break;
@@ -356,13 +375,14 @@ namespace Monocle {
         private void HandleChar(char key) {
             // this API seemingly handles repeating keys for us
             if (!Open) {
-                return;
-            }
-            if (key == '~' || key == '`') {
-                Open = canOpen = false;
-                return;
+                return; // this should never execute, but it can if the update is delayed for some reason before this can get unsubscribed
             }
             if (char.IsControl(key)) {
+                return;
+            }
+
+            KeyboardState keyboardState = Keyboard.GetState();
+            if (CoreModule.Settings.ToggleDebugConsole.Keys.Any(k => keyboardState.IsKeyDown(k))) {
                 return;
             }
 
@@ -377,17 +397,17 @@ namespace Monocle {
         }
 
         private bool IsWordBoundary(int idx, bool forward) {
-                // for move forward that means t[i-1] is word and t[i] is nonword
-                // for move backward that means t[i] is word and t[i-1] is nonword
-                if (idx <= 0 || idx >= currentText.Length) {
-                    return true;
-                }
-                char chBack = currentText[idx - 1];
-                char chForward = currentText[idx];
-                bool backWord = IsWord(chBack);
-                bool foreWord = IsWord(chForward);
-                // oof
-                return (forward && backWord && !foreWord) || (!forward && !backWord && foreWord);
+            // for move forward that means t[i-1] is word and t[i] is nonword
+            // for move backward that means t[i] is word and t[i-1] is nonword
+            if (idx <= 0 || idx >= currentText.Length) {
+                return true;
+            }
+            char chBack = currentText[idx - 1];
+            char chForward = currentText[idx];
+            bool backWord = IsWord(chBack);
+            bool foreWord = IsWord(chForward);
+            // oof
+            return (forward && backWord && !foreWord) || (!forward && !backWord && foreWord);
         }
 
         // Fix for https://github.com/EverestAPI/Everest/issues/167
@@ -415,7 +435,7 @@ namespace Monocle {
 
                 if (ContainCantDrawChar(innerException.Message + innerException.StackTrace)) {
                     Engine.Commands.Log("Please check log.txt for full exception log, because it contains characters that can't be displayed.", Color.Yellow);
-                    Logger.Log("Commands", innerException.ToString());
+                    Logger.LogDetailed(innerException, "Commands");
                 }
             }
         }
@@ -519,6 +539,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCommandsUpdateOpen))]
     class PatchCommandsUpdateOpenAttribute : Attribute { }
 
+    /// <summary>
+    /// Patches Commands.ProcessMethod to lowercase command names when building the command list.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCommandsProcessMethod))]
+    class PatchCommandsProcessMethodAttribute : Attribute { }
+
     static partial class MonoModRules {
 
         public static void PatchCommandsUpdateOpen(ILContext il, CustomAttribute attrib) {
@@ -527,9 +553,29 @@ namespace MonoMod {
             TypeDefinition t_Engine = MonoModRule.Modder.FindType("Monocle.Engine").Resolve();
             MethodReference m_get_RawDeltaTime = t_Engine.FindMethod("System.Single get_RawDeltaTime()");
 
+            bool found = false;
+
             while (cursor.TryGotoNext(MoveType.Before, instr => instr.MatchCall("Monocle.Engine", "get_DeltaTime"))) {
                 cursor.Next.Operand = m_get_RawDeltaTime;
+                found = true;
             }
+
+            if (!found) {
+                throw new Exception("No call to Engine.DeltaTime found in " + il.Method.FullName + "!");
+            }
+        }
+
+        public static void PatchCommandsProcessMethod(ILContext il, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(il);
+
+            TypeDefinition t_String = MonoModRule.Modder.FindType("System.String").Resolve();
+            // import string.ToLowerInvariant() as it's not in the Celeste assembly
+            MethodReference m_ToLowerInvariant = MonoModRule.Modder.Module.ImportReference(t_String.FindMethod("System.String ToLowerInvariant()"));
+
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdloc(1), instr => instr.MatchLdfld("Monocle.Command", "Name"));
+
+            // call Command.Name.ToLowerInvariant()
+            cursor.Emit(OpCodes.Callvirt, m_ToLowerInvariant);
         }
 
     }

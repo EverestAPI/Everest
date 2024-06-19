@@ -9,6 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Celeste.Mod {
@@ -161,7 +162,7 @@ namespace Celeste.Mod {
         }
 
         /// <summary>
-        /// Get a Vector2 from any float[] with a length of 2.
+        /// Get a Vector2 from any float[] with a length of 1 or 2.
         /// </summary>
         /// <param name="a">The input array.</param>
         /// <returns>The output Vector2 or null if the length doesn't match.</returns>
@@ -176,7 +177,7 @@ namespace Celeste.Mod {
         }
 
         /// <summary>
-        /// Get a Vector3 from any float[] with a length of 3.
+        /// Get a Vector3 from any float[] with a length of 1 or 3.
         /// </summary>
         /// <param name="a">The input array.</param>
         /// <returns>The output Vector3 or null if the length doesn't match.</returns>
@@ -197,7 +198,7 @@ namespace Celeste.Mod {
         /// <param name="containingMenu">The menu containing the TextMenu.Item option.</param>
         /// <param name="needsRelaunch">This method does nothing if this is set to false.</param>
         /// <returns>The passed option.</returns>
-        public static TextMenu.Item NeedsRelaunch(this TextMenu.Item option, TextMenu containingMenu, bool needsRelaunch = true) {
+        public static TextMenu.Item NeedsRelaunch(this TextMenu.Item option, patch_TextMenu containingMenu, bool needsRelaunch = true) {
             if (!needsRelaunch)
                 return option;
 
@@ -207,7 +208,7 @@ namespace Celeste.Mod {
                 HeightExtra = 0f
             };
 
-            List<TextMenu.Item> items = containingMenu.GetItems();
+            List<TextMenu.Item> items = containingMenu.Items;
             if (items.Contains(option)) {
                 // insert the text after the option that needs relaunch.
                 containingMenu.Insert(items.IndexOf(option) + 1, needsRelaunchText);
@@ -232,14 +233,14 @@ namespace Celeste.Mod {
         /// <param name="containingMenu">The menu containing the TextMenu.Item option.</param>
         /// <param name="description"></param>
         /// <returns>The passed option.</returns>
-        public static TextMenu.Item AddDescription(this TextMenu.Item option, TextMenu containingMenu, string description) {
+        public static TextMenu.Item AddDescription(this TextMenu.Item option, patch_TextMenu containingMenu, string description) {
             // build the description menu entry
             TextMenuExt.EaseInSubHeaderExt descriptionText = new TextMenuExt.EaseInSubHeaderExt(description, false, containingMenu) {
                 TextColor = Color.Gray,
                 HeightExtra = 0f
             };
 
-            List<TextMenu.Item> items = containingMenu.GetItems();
+            List<TextMenu.Item> items = containingMenu.Items;
             if (items.Contains(option)) {
                 // insert the description after the option.
                 containingMenu.Insert(items.IndexOf(option) + 1, descriptionText);
@@ -257,17 +258,41 @@ namespace Celeste.Mod {
             return option;
         }
 
-        // Celeste already ships with this.
-        /*
-        public static string ReadNullTerminatedString(this BinaryReader stream) {
-            string text = "";
-            char c;
-            while ((c = stream.ReadChar()) > '\0') {
-                text += c.ToString();
+
+        /// <summary>
+        /// Add an Enter and Leave handler, displaying a description if selected.
+        /// </summary>
+        /// <param name="option">The input TextMenu.Item option.</param>
+        /// <param name="containingSubMenu">The submenu containing the TextMenu.Item option.</param>
+        /// <param name="parentContainer">The menu that the submenu is or will be part of.</param>
+        /// <param name="description"></param>
+        /// <returns>The passed option.</returns>
+        public static TextMenu.Item AddDescription(this TextMenu.Item option, TextMenuExt.SubMenu containingSubMenu, TextMenu parentContainer, string description) {
+            // build the description menu entry
+            TextMenuExt.EaseInSubHeaderExt descriptionText = new TextMenuExt.EaseInSubHeaderExt(description, false, parentContainer) {
+                TextColor = Color.Gray,
+                HeightExtra = 0f
+            };
+
+            if (containingSubMenu.Items.Contains(option)) {
+                // insert the description into item list after the option.
+                containingSubMenu.Insert(containingSubMenu.Items.IndexOf(option) + 1, descriptionText);
+            } else if (containingSubMenu.ContainsDelayedAddItem(option)) {
+                // insert the description into "delayed add" item list, when necessary
+                containingSubMenu.InsertDelayedAddItem(descriptionText, option);
             }
-            return text;
+
+            option.OnEnter += delegate {
+                // make the description appear.
+                descriptionText.FadeVisible = true;
+            };
+            option.OnLeave += delegate {
+                // make the description disappear.
+                descriptionText.FadeVisible = false;
+            };
+
+            return option;
         }
-        */
 
         /// <summary>
         /// Write the string to the BinaryWriter in a C-friendly format.
@@ -335,17 +360,43 @@ namespace Celeste.Mod {
         public static bool IsUp(this TouchLocationState state)
             => state == TouchLocationState.Released || state == TouchLocationState.Invalid;
 
+        [ThreadStatic]
+        private static ConditionalWeakTable<Type, object> _SafeTypes;
+        public static bool IsSafe(this Type type) {
+            _SafeTypes ??= new ConditionalWeakTable<Type, object>();
+
+            try {
+                if (_SafeTypes.TryGetValue(type, out _))
+                    return true;
+
+                // "Probe" the type
+                _ = type.Name;
+                _ = type.Assembly.FullName;
+                _ = type.Module.FullyQualifiedName;
+
+                // Check declaring and base type
+                if (!type.DeclaringType?.IsSafe() ?? false)
+                    return false;
+                if (!type.BaseType?.IsSafe() ?? false)
+                    return false;
+
+                _SafeTypes.Add(type, new object());
+                return true;
+            } catch {
+                return false;
+            }
+        }
+
         public static Type[] GetTypesSafe(this Assembly asm) {
             try {
-                return asm.GetTypes();
+                return asm.GetTypes().Where(t => t.IsSafe()).ToArray();
             } catch (ReflectionTypeLoadException e) {
-                return e.Types.Where(t => t != null).ToArray();
+                return e.Types.Where(t => t != null && t.IsSafe()).ToArray();
             }
         }
 
         public static BinaryPacker.Element SetAttr(this BinaryPacker.Element el, string name, object value) {
-            if (el.Attributes == null)
-                el.Attributes = new Dictionary<string, object>();
+            el.Attributes ??= new Dictionary<string, object>();
             el.Attributes[name] = value;
             return el;
         }
@@ -353,8 +404,16 @@ namespace Celeste.Mod {
         public static int AttrInt(this BinaryPacker.Element el, string name, int defaultValue = 0) {
             if (el.Attributes == null || !el.Attributes.TryGetValue(name, out object obj))
                 return defaultValue;
-            if (obj is int)
-                return (int) obj;
+            if (obj is int v)
+                return v;
+            return int.Parse(obj.ToString(), CultureInfo.InvariantCulture);
+        }
+
+        public static int? AttrNullableInt(this BinaryPacker.Element el, string name) {
+            if (el.Attributes == null || !el.Attributes.TryGetValue(name, out object obj))
+                return null;
+            if (obj is int v)
+                return v;
             return int.Parse(obj.ToString(), CultureInfo.InvariantCulture);
         }
 

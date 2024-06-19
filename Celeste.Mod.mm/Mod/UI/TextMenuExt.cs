@@ -1,8 +1,11 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Celeste.Mod;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static Celeste.patch_TextMenu;
 
 namespace Celeste {
     public static partial class TextMenuExt {
@@ -99,6 +102,7 @@ namespace Celeste {
 
             public Vector2 Offset { get; set; }
             public float Alpha { get; set; } = 1f;
+            public bool AlwaysCenter { get; set; }
 
             public float HeightExtra { get; set; } = 48f;
 
@@ -116,11 +120,11 @@ namespace Celeste {
                 Color strokeColor = Color.Black * (alpha * alpha * alpha);
 
                 Vector2 textPosition = position + (
-                    Container.InnerContent == TextMenu.InnerContentMode.TwoColumn ?
+                    Container.InnerContent == TextMenu.InnerContentMode.TwoColumn && !AlwaysCenter ?
                     new Vector2(0f, MathHelper.Max(0f, 32f - 48f + HeightExtra)) :
                     new Vector2(Container.Width * 0.5f, MathHelper.Max(0f, 32f - 48f + HeightExtra))
                 );
-                Vector2 justify = new Vector2(Container.InnerContent == TextMenu.InnerContentMode.TwoColumn ? 0f : 0.5f, 0.5f);
+                Vector2 justify = new Vector2(Container.InnerContent == TextMenu.InnerContentMode.TwoColumn && !AlwaysCenter ? 0f : 0.5f, 0.5f);
 
                 DrawIcon(
                     position,
@@ -426,7 +430,7 @@ namespace Celeste {
         /// <br/><br/>
         /// Currently does not support recursive submenus
         /// </summary>
-        public class SubMenu : TextMenu.Item {
+        public class SubMenu : patch_Item {
             public string Label;
             MTexture Icon;
 
@@ -590,6 +594,16 @@ namespace Celeste {
                 }
             }
 
+            public bool ContainsDelayedAddItem(TextMenu.Item item) {
+                return Container == null && delayedAddItems.Contains(item);
+            }
+
+            public SubMenu InsertDelayedAddItem(TextMenu.Item item, TextMenu.Item after) {
+                if (Container == null && delayedAddItems.Contains(after))
+                    delayedAddItems.Insert(delayedAddItems.IndexOf(after) + 1, item);
+                return this;
+            }
+
             /// <summary>
             /// Remove any non-submenu <see cref="TextMenu.Item"/> from the Submenu
             /// </summary>
@@ -734,6 +748,10 @@ namespace Celeste {
                     Audio.Play(SFX.ui_main_button_back);
                 Container.AutoScroll = containerAutoScroll;
                 Container.Focused = true;
+            }
+
+            public override string SearchLabel() {
+                return Label;
             }
 
             #endregion
@@ -887,7 +905,7 @@ namespace Celeste {
 		/// <br/><br/>
 		/// Currently does not support recursive submenus
 		/// </summary>
-		public class OptionSubMenu : TextMenu.Item {
+		public class OptionSubMenu : patch_Item {
             public string Label;
             MTexture Icon;
 
@@ -1140,6 +1158,10 @@ namespace Celeste {
                 return offset - item.Height() * 0.5f - ItemSpacing;
             }
 
+            public override string SearchLabel() {
+                return Label;
+            }
+
             #endregion
 
             #region TextMenu.Item
@@ -1336,6 +1358,438 @@ namespace Celeste {
 
             #endregion
 
+        }
+
+        public class BatchModeContext : IDisposable {
+
+            patch_TextMenu menu;
+
+            public BatchModeContext(patch_TextMenu menu) {
+                menu.BatchMode = true;
+                this.menu = menu;
+            }
+
+            public void Dispose() {
+                menu.BatchMode = false;
+            }
+        }
+
+        public class SubMenuWithInputs : TextMenu.Item, IItemExt {
+            public Color TextColor { get; set; } = Color.Gray;
+            public Color ButtonColor { get; set; } = Color.White;
+            public Color StrokeColor { get; set; } = Color.White;
+            public float Alpha { get; set; } = 1f;
+            public float Scale { get; set; } = 0.6f;
+            public string Icon { get; set; }
+            public float? IconWidth { get; set; }
+            public bool IconOutline { get; set; }
+            public Vector2 Offset { get; set; }
+            private readonly object[] Items;
+
+            public SubMenuWithInputs(string text, char separator, VirtualButton[] buttons) {
+
+                string[] parts = text.Split(separator);
+                Items = new object[parts.Length * 2 - 1];
+
+                for (int index = 0; index < Items.Length; index++) {
+                    if (index % 2 == 0) {
+                        // add text
+                        Items[index] = parts[index / 2];
+                    } else {
+                        // add VirtualButton
+                        Items[index] = buttons[index / 2];
+                    }
+                }
+            }
+
+            public override float Height() {
+                return ActiveFont.LineHeight;
+            }
+
+            public override void Render(Vector2 position, bool highlighted) {
+                Vector2 lineOffset = position;
+                Vector2 justify = new(0f, 0.5f);
+                float strokeAlpha = Alpha * Alpha * Alpha;
+
+
+                foreach (object item in Items) {
+                    if (item is string) {
+                        ActiveFont.DrawOutline(item as string, lineOffset, justify, Vector2.One * Scale, TextColor * Alpha, 2f, Color.Black * strokeAlpha);
+                        lineOffset.X += ActiveFont.Measure(item as string).X * Scale;
+                    } else if (item is VirtualButton) {
+                        VirtualButton virtualButton = item as VirtualButton;
+                        MTexture buttonTexture;
+
+                        if (Input.GuiInputController()) {
+                            buttonTexture = Input.GuiButton(virtualButton, Input.PrefixMode.Attached);
+                        } else if (virtualButton.Binding.Keyboard.Count > 0) {
+                            buttonTexture = Input.GuiKey(virtualButton.Binding.Keyboard[0]);
+                        } else {
+                            buttonTexture = Input.GuiKey(Keys.None);
+                        }
+
+                        buttonTexture.DrawJustified(lineOffset, justify, ButtonColor * strokeAlpha, Scale);
+                        lineOffset.X += buttonTexture.Width * Scale;
+                    }
+                }
+            }
+        }
+
+        // TODO: this was copy pasted from EaseInSubHeaderExt, find a way to abstract away the EaseIn behavior
+        public class EaseInSubMenuWithInputs : SubMenuWithInputs {
+            public bool FadeVisible { get; set; } = true;
+            private float uneasedAlpha;
+
+            public EaseInSubMenuWithInputs(
+                string text,
+                char separator,
+                VirtualButton[] buttons,
+                bool initiallyVisible
+            ) : base(text, separator, buttons) {
+                FadeVisible = initiallyVisible;
+                Alpha = FadeVisible ? 1 : 0;
+                uneasedAlpha = Alpha;
+            }
+
+            public override float Height() {
+                if (Container != null) {
+                    return MathHelper.Lerp(-Container.ItemSpacing, base.Height(), Alpha);
+                } else {
+                    return base.Height();
+                }
+            }
+
+            public override void Update() {
+                base.Update();
+
+                // gradually make the sub-header fade in or out. (~333ms fade)
+                float targetAlpha = FadeVisible ? 1 : 0;
+                if (uneasedAlpha != targetAlpha) {
+                    uneasedAlpha = Calc.Approach(uneasedAlpha, targetAlpha, Engine.RawDeltaTime * 3f);
+
+                    if (FadeVisible)
+                        Alpha = Ease.SineOut(uneasedAlpha);
+                    else
+                        Alpha = Ease.SineIn(uneasedAlpha);
+                }
+
+                Visible = Alpha != 0;
+            }
+        }
+
+        public class TextBox : TextMenu.Item {
+            private static readonly float DEFAULT_TEXT_SCALE = 1.10f;
+
+            public delegate void OnTextChangeHandler(string text);
+            public event OnTextChangeHandler OnTextChange;
+
+            public string PlaceholderText;
+
+            private string _text = "";
+            public string Text {
+                get => _text; protected set {
+                    _text = value;
+                    OnTextChange?.Invoke(Text);
+                }
+            }
+
+            public float Alpha { get; set; } = 1;
+            public Color TextColor { get; set; } = Color.White;
+            public Vector2 TextJustify { get; set; } = new Vector2(0f, 0.5f);
+            public float StrokeSize { get; set; } = 2f;
+            public Color StrokeColor { get; set; } = Color.Black;
+            public Color PlaceHolderTextColor { get; set; } = Color.LightGray * 0.75f;
+            public Color TextBoxColor { get; set; } = Color.DarkSlateGray * 0.8f;
+            public Vector2 TextScale { get; set; } = Vector2.One * DEFAULT_TEXT_SCALE;
+            public Vector2 TextPadding { get; set; } = new Vector2(ActiveFont.Measure(' ').X * DEFAULT_TEXT_SCALE, ActiveFont.LineHeight * DEFAULT_TEXT_SCALE / 6);
+            public float WidthScale { get; set; } = 1;
+            public bool TextBoxConsumedInput { get; private set; } = false;
+
+            public Dictionary<char, Action<TextBox>> OnTextInputCharActions = new() {
+                {'\b', (textBox) => {
+                    if(textBox.DeleteCharacter()) {
+                        Audio.Play(SFX.ui_main_rename_entry_backspace);
+                    }  else {
+                        Audio.Play(SFX.ui_main_button_invalid);
+                    }
+                }},
+            };
+
+            public bool Typing { get; private set; } = false;
+
+            public Action AfterInputConsumed;
+
+            private Overworld overworld;
+            private bool previousMountainAllowUserRotation;
+            private bool previousEngineCommandsEnabled;
+
+            private readonly Queue<char> inputQueue = new();
+
+
+            public TextBox() {
+                Selectable = true;
+            }
+
+            public TextBox(Overworld overworld) {
+                Selectable = true;
+                this.overworld = overworld;
+            }
+
+            public override float LeftWidth() {
+                if (Container != null) {
+                    return Container.Width * WidthScale;
+                }
+                return 0;
+            }
+
+            public override float Height() {
+                return (ActiveFont.LineHeight * TextScale.Y) + (TextPadding.Y * 2);
+            }
+
+            public override void Render(Vector2 position, bool highlighted) {
+                Vector2 textPosition = new(position.X + TextPadding.X, position.Y + (Height() / 2));
+
+                Draw.Rect(position, Width, Height(), TextBoxColor);
+
+                if (Text.Length <= 0 && !string.IsNullOrEmpty(PlaceholderText)) {
+                    Vector2 placeholderSize = ActiveFont.Measure(PlaceholderText) * TextScale;
+                    float overflowScale = Math.Min((Width - TextPadding.X * 4) / placeholderSize.X, 1f);
+
+                    ActiveFont.DrawOutline(
+                        PlaceholderText,
+                        textPosition,
+                        TextJustify,
+                        TextScale * overflowScale,
+                        PlaceHolderTextColor * Alpha,
+                        StrokeSize * overflowScale,
+                        StrokeColor * (Alpha * Alpha * Alpha)
+                    );
+                } else {
+                    ActiveFont.DrawOutline(
+                        Text + (Typing ? "_" : ""),
+                        textPosition,
+                        TextJustify,
+                        TextScale,
+                        TextColor * Alpha,
+                        StrokeSize,
+                        StrokeColor * (Alpha * Alpha * Alpha)
+                    );
+                }
+
+            }
+
+            public override void ConfirmPressed() {
+                StartTyping();
+            }
+
+            public void ClearText() {
+                Text = "";
+            }
+
+            public bool DeleteCharacter() {
+                if (Text.Length > 0) {
+                    Text = Text.Remove(Text.Length - 1);
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            public void StartTyping() {
+                if (!Typing) {
+                    Audio.Play(SFX.ui_main_button_toggle_on);
+                    Typing = true;
+                    Container.Focused = false;
+                    ((patch_TextMenu) Container).RenderAsFocused = true;
+
+                    previousEngineCommandsEnabled = Engine.Commands.Enabled;
+                    Engine.Commands.Enabled = false;
+
+                    if (overworld != null) {
+                        previousMountainAllowUserRotation = overworld.Mountain.AllowUserRotation;
+                        overworld.Mountain.AllowUserRotation = false;
+                    }
+
+                    inputQueue.Clear();
+                    TextInput.OnInput += OnTextInput;
+                }
+            }
+
+            public void StopTyping() {
+                if (Typing) {
+                    TextInput.OnInput -= OnTextInput;
+                    inputQueue.Clear();
+
+
+                    Audio.Play(SFX.ui_main_button_toggle_off);
+                    Typing = false;
+                    Container.Focused = true;
+                    ((patch_TextMenu) Container).RenderAsFocused = false;
+                    TextBoxConsumedInput = false;
+                    MInput.Disabled = false;
+                    Engine.Commands.Enabled = previousEngineCommandsEnabled;
+
+                    if (overworld != null) {
+                        overworld.Mountain.AllowUserRotation = previousMountainAllowUserRotation;
+                    }
+                }
+            }
+
+            private bool HandleNewInputChar(char c) {
+                Vector2 newTextSize = ActiveFont.Measure(Text + c + "_") * TextScale;
+                Vector2 totalTextPadding = TextPadding * 4;
+
+                if (!char.IsControl(c) && ActiveFont.FontSize.Characters.ContainsKey(c) && (newTextSize + totalTextPadding).X < Width) {
+                    Text += c;
+                    Audio.Play(SFX.ui_main_rename_entry_char);
+                    return true;
+                } else {
+                    Audio.Play(SFX.ui_main_button_invalid);
+                    return false;
+                }
+            }
+
+            public void OnTextInput(char c) {
+                if (Typing) {
+                    // This method will be called outside of the normal game Update cycle
+                    // we use this queue to processes inputs in the main Update cycle
+                    inputQueue.Enqueue(c);
+                }
+            }
+
+            public override void Update() {
+                while (inputQueue.Count > 0 && Typing) {
+                    char c = inputQueue.Dequeue();
+                    if (OnTextInputCharActions.TryGetValue(c, out Action<TextBox> action)) {
+                        action(this);
+                        TextBoxConsumedInput = true;
+                    } else {
+                        TextBoxConsumedInput = HandleNewInputChar(c);
+                    }
+                }
+
+                if (Typing) {
+                    if (MInput.Keyboard.Pressed(Keys.Delete)) {
+                        if (Text.Length > 0) {
+                            ClearText();
+                            Audio.Play(SFX.ui_main_rename_entry_backspace);
+                        }
+                        TextBoxConsumedInput = true;
+                    }
+
+
+                    // We need to disable all other inputs if the textBox consumed that an input,
+                    MInput.Disabled = TextBoxConsumedInput;
+                    if (TextBoxConsumedInput) {
+                        // Because we can only control the value of MInput.Disable for the duration of the paused menu Update
+                        // we have to consume all the button presses to emulate disabling MInput for the rest of the Update call
+                        foreach (VirtualInput input in patch_MInput.VirtualInputs) {
+                            if (input is VirtualButton button) {
+                                button.ConsumePress();
+                            }
+                        }
+                    }
+
+
+                    // ensure the player never enters free cam while typing, so to cover the case our Update() gets called we consume the input
+                    // and if we get called afterwards we set ToggleMountainFreeCam to false before the next Render() call to MountainRenderer
+                    ((patch_MountainRenderer) overworld?.Mountain)?.SetFreeCam(false);
+
+                    AfterInputConsumed?.Invoke();
+                }
+
+                TextBoxConsumedInput = false;
+            }
+
+            private static int NegativeModulo(int number, int modulo) {
+                return (number % modulo + modulo) % modulo;
+            }
+
+            public static bool WrappingLinearSearch<T>(List<T> items, Func<T, bool> predicate, int startIndex, bool inReverse, out int nextModIndex) {
+                int step = inReverse ? -1 : 1;
+                int targetIndex = NegativeModulo(startIndex - step, items.Count);
+
+                for (int currentIndex = NegativeModulo(startIndex, items.Count); currentIndex != targetIndex; currentIndex = NegativeModulo(currentIndex + step, items.Count)) {
+                    if (predicate(items[currentIndex])) {
+                        nextModIndex = currentIndex;
+                        return true;
+                    }
+                }
+
+                nextModIndex = startIndex;
+                return false;
+            }
+        }
+
+        public class Modal : patch_Item {
+            public Color BoxBorderColor { get; set; } = Color.White;
+            public Color BoxBackgroundColor { get; set; } = Color.Black * 0.8f;
+            public readonly TextMenu.Item Item;
+            public int BorderThickness { get; set; } = 2;
+            private readonly float? absoluteY;
+            private readonly float? absoluteX;
+
+            public Modal(TextMenu.Item item, float? absoluteX, float? absoluteY) {
+                AboveAll = true;
+                Visible = false;
+                IncludeWidthInMeasurement = false;
+                this.absoluteY = absoluteY;
+                this.absoluteX = absoluteX;
+                Item = item;
+            }
+
+            public override void Added() {
+                base.Added();
+                Item.Container = Container;
+                Item.Added();
+            }
+
+            public override void Update() {
+                base.Update();
+                Item.OnUpdate?.Invoke();
+                Item.Update();
+            }
+
+            public override bool AlwaysRender => true;
+
+            public override float Height() {
+                if (Container != null) {
+                    return Container.ItemSpacing * -1;
+                } else {
+                    return 0;
+                }
+            }
+
+            public override void Render(Vector2 position, bool highlighted) {
+                Vector2 renderPosition = new(absoluteX ?? position.X, absoluteY ?? position.Y);
+                for (int i = 1; i <= BorderThickness; i++) {
+                    Draw.HollowRect(renderPosition.X - i, renderPosition.Y - i, Item.Width + (2 * i), Item.Height() + (2 * i), BoxBorderColor * Container.Alpha);
+                }
+
+                Item.Render(renderPosition, highlighted);
+            }
+        }
+
+        public class SearchToolTip : patch_Item {
+            public Vector2 preferredRenderLocation = new(100f, 952f);
+
+            private readonly MTexture searchIcon = GFX.Gui["menu/mapsearch"];
+
+            public SearchToolTip() {
+                AboveAll = true;
+                Selectable = false;
+                IncludeWidthInMeasurement = false;
+            }
+
+            public override bool AlwaysRender => true;
+
+            public override void Render(Vector2 position, bool highlighted) {
+                float spaceNearMenu = (Engine.Width - Container.Width) / 2;
+                float scaleFactor = Math.Min(spaceNearMenu / (preferredRenderLocation.X + searchIcon.Width / 2), 1);
+                Vector2 searchIconLocation = new(preferredRenderLocation.X * scaleFactor, preferredRenderLocation.Y);
+                searchIcon.DrawCentered(searchIconLocation, Color.White, scaleFactor);
+                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White, scaleFactor);
+            }
         }
     }
 }

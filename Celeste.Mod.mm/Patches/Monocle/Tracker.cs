@@ -34,16 +34,40 @@ namespace Monocle {
     }
 
     class patch_Tracker : Tracker {
-        [MonoModIgnore]
-        public static extern List<Type> GetSubclasses(Type type);
+        // A temporary cache to store the results of FakeAssembly.GetFakeEntryAssemblies
+        // Set to null outside of Initialize.
+        private static Type[] _temporaryAllTypes;
+
+        private static Type[] GetAllTypesUncached() => FakeAssembly.GetFakeEntryAssembly().GetTypesSafe();
+        
+        [MonoModReplace]
+        private static List<Type> GetSubclasses(Type type) {
+            bool shouldNullOutCache = _temporaryAllTypes is null;
+            _temporaryAllTypes ??= GetAllTypesUncached();
+            
+            List<Type> subclasses = new();
+            foreach (Type otherType in _temporaryAllTypes)
+            {
+                if (type != otherType && type.IsAssignableFrom(otherType))
+                    subclasses.Add(otherType);
+            }
+
+            // This method got called outside of Initialize, so we can't rely on it clearing out the cache.
+            // Let's do that now instead.
+            if (shouldNullOutCache)
+                _temporaryAllTypes = null;
+            
+            return subclasses;
+        }
 
         public static extern void orig_Initialize();
         public new static void Initialize() {
+            _temporaryAllTypes = GetAllTypesUncached();
+            
             orig_Initialize();
 
             // search for entities with [TrackedAs]
-            Type[] types = FakeAssembly.GetFakeEntryAssembly().GetTypesSafe();
-            foreach (Type type in types) {
+            foreach (Type type in _temporaryAllTypes) {
                 object[] customAttributes = type.GetCustomAttributes(typeof(TrackedAsAttribute), inherit: false);
                 foreach (object customAttribute in customAttributes) {
                     TrackedAsAttribute trackedAs = customAttribute as TrackedAsAttribute;
@@ -95,6 +119,9 @@ namespace Monocle {
                     }
                 }
             }
+
+            // don't hold references to all the types anymore
+            _temporaryAllTypes = null;
         }
     }
 }

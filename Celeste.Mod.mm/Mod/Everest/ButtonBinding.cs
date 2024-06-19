@@ -18,17 +18,17 @@ namespace Celeste.Mod {
 
         public List<Buttons> Buttons {
             get => Binding.Controller;
-            set => Binding.Controller = value;
+            set => Binding.Controller = value ?? new List<Buttons>();
         }
 
         public List<Keys> Keys {
             get => Binding.Keyboard;
-            set => Binding.Keyboard = value;
+            set => Binding.Keyboard = value ?? new List<Keys>();
         }
 
         public List<patch_MInput.patch_MouseData.MouseButtons> MouseButtons {
             get => ((patch_Binding) Binding).Mouse;
-            set => ((patch_Binding) Binding).Mouse = value;
+            set => ((patch_Binding) Binding).Mouse = value ?? new List<patch_MInput.patch_MouseData.MouseButtons>();
         }
 
         private Binding _Binding;
@@ -136,6 +136,16 @@ namespace Celeste.Mod {
         public Keys Key;
 
         /// <summary>
+        /// The default Buttons binding.
+        /// </summary>
+        public Buttons[] Buttons;
+
+        /// <summary>
+        /// The default Keys binding.
+        /// </summary>
+        public Keys[] Keys;
+
+        /// <summary>
         /// Whether the default Button should always be bound.
         /// </summary>
         [Obsolete("This is no longer respected by the new input system.")]
@@ -155,6 +165,16 @@ namespace Celeste.Mod {
         public DefaultButtonBindingAttribute(Buttons button, Keys key) {
             Button = button;
             Key = key;
+        }
+
+        /// <summary>
+        /// Sets the default <see cref="Buttons"/> and <see cref="Keys"/> of a <see cref="ButtonBinding"/> setting.
+        /// </summary>
+        /// <param name="buttons">The default Buttons binding.</param>
+        /// <param name="keys">The default Keys binding.</param>
+        public DefaultButtonBindingAttribute(Buttons[] buttons, Keys[] keys) {
+            Buttons = buttons;
+            Keys = keys;
         }
 
     }

@@ -112,7 +112,8 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Enter(Oui from) {
-            TextInput.OnInput += OnKeyboardInput;
+            if (UseKeyboardInput) 
+                TextInput.OnInput += OnTextInput;
 
             Overworld.ShowInputUI = false;
 
@@ -184,7 +185,8 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Leave(Oui next) {
-            TextInput.OnInput -= OnKeyboardInput;
+            // Non existent unhooks aren't dangerous, and can get us out of weird situations
+            TextInput.OnInput -= OnTextInput;
 
             Overworld.ShowInputUI = true;
             Focused = false;
@@ -206,14 +208,6 @@ namespace Celeste.Mod.UI {
                 var settings = Core.CoreModule.Instance._Settings as Core.CoreModuleSettings;
                 return settings?.UseKeyboardForTextInput ?? false;
             }
-        }
-
-        public void OnKeyboardInput(char c) {
-            if (!UseKeyboardInput) {
-                return;
-            }
-
-            OnTextInput(c);
         }
 
         public void OnTextInput(char c) {

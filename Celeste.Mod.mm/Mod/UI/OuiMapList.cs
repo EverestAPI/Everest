@@ -12,9 +12,9 @@ namespace Celeste.Mod.UI {
         private MountainCamera cameraStart;
         private MountainCamera cameraEnd;
 
-        public List<OuiChapterSelectIcon> OuiIcons;
+        public List<patch_OuiChapterSelectIcon> OuiIcons;
 
-        private TextMenu menu;
+        private patch_TextMenu menu;
 
         private const float onScreenX = 960f;
         private const float offScreenX = 2880f;
@@ -28,9 +28,9 @@ namespace Celeste.Mod.UI {
 
         private List<string> sets = new List<string>();
 
-        private TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
-            menu = new TextMenu();
-            ((patch_TextMenu) menu).CompactWidthMode = true;
+        private patch_TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
+            menu = new patch_TextMenu();
+            menu.CompactWidthMode = true;
             items.Clear();
 
             menu.Add(new TextMenu.Header(Dialog.Clean("maplist_title")));
@@ -38,8 +38,8 @@ namespace Celeste.Mod.UI {
             menu.Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("maplist_filters")));
 
             sets.Clear();
-            foreach (AreaData area in AreaData.Areas) {
-                string levelSet = area.GetLevelSet();
+            foreach (patch_AreaData area in AreaData.Areas) {
+                string levelSet = area.LevelSet;
                 if (string.IsNullOrEmpty(levelSet))
                     continue;
                 if (levelSet == "Celeste")
@@ -56,7 +56,10 @@ namespace Celeste.Mod.UI {
                     return Dialog.Clean("maplist_type_everything");
                 if (value == 2)
                     return Dialog.Clean("maplist_type_allmods");
-                return DialogExt.CleanLevelSet(sets[value - 3]);
+                if (Dialog.Has("maplist_type_" + sets[value - 3]))
+                    return Dialog.Clean("maplist_type_" + sets[value - 3]);
+                return patch_Dialog.CleanLevelSet(sets[value - 3]);
+
             }, 0, 2 + sets.Count, type).Change(value => {
                 type = value;
                 ReloadItems();
@@ -102,15 +105,15 @@ namespace Celeste.Mod.UI {
             SaveData save = SaveData.Instance;
             List<AreaStats> areaStatsAll = save.Areas;
             for (int i = 0; i < AreaData.Areas.Count; i++) {
-                AreaData area = AreaData.Get(i);
+                patch_AreaData area = patch_AreaData.Get(i);
                 if (area == null || !area.HasMode((AreaMode) side))
                     continue;
 
                 // TODO: Make subchapters hidden by default in the map list, even in debug mode.
-                if (!save.DebugMode && !string.IsNullOrEmpty(area.GetMeta()?.Parent))
+                if (!save.DebugMode && !string.IsNullOrEmpty(area.Meta?.Parent))
                     continue;
 
-                string levelSet = area.GetLevelSet();
+                string levelSet = area.LevelSet;
 
                 if (type != 1 && ((filterSet == null && levelSet == "Celeste") || (filterSet != null && filterSet != levelSet)))
                     continue;
@@ -120,11 +123,11 @@ namespace Celeste.Mod.UI {
 
                 if (lastLevelSet != levelSet) {
                     lastLevelSet = levelSet;
-                    levelSetStats = SaveData.Instance.GetLevelSetStatsFor(levelSet);
+                    levelSetStats = patch_SaveData.Instance.GetLevelSetStatsFor(levelSet);
                     levelSetAreaOffset = levelSetStats.AreaOffset;
                     levelSetUnlockedAreas = levelSetStats.UnlockedAreas;
                     levelSetUnlockedModes = levelSetStats.UnlockedModes;
-                    string setname = DialogExt.CleanLevelSet(levelSet);
+                    string setname = patch_Dialog.CleanLevelSet(levelSet);
                     TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(setname);
                     levelSetHeader.Alpha = 0f;
                     menu.Add(levelSetHeader);
@@ -271,7 +274,7 @@ namespace Celeste.Mod.UI {
             base.Render();
         }
 
-        protected void Inspect(AreaData area, AreaMode mode = AreaMode.Normal) {
+        protected void Inspect(patch_AreaData area, AreaMode mode = AreaMode.Normal) {
             Focused = false;
             Audio.Play(SFX.ui_world_icon_select);
             SaveData.Instance.LastArea = area.ToKey(mode);
@@ -281,19 +284,19 @@ namespace Celeste.Mod.UI {
             Overworld.Goto<OuiChapterPanel>();
         }
 
-        private void Start(AreaData area, AreaMode mode = AreaMode.Normal, string checkpoint = null) {
+        private void Start(patch_AreaData area, AreaMode mode = AreaMode.Normal, string checkpoint = null) {
             Focused = false;
             Audio.Play(SFX.ui_world_chapter_checkpoint_start);
             Add(new Coroutine(StartRoutine(area, mode, checkpoint)));
         }
 
-        private IEnumerator StartRoutine(AreaData area, AreaMode mode = AreaMode.Normal, string checkpoint = null) {
+        private IEnumerator StartRoutine(patch_AreaData area, AreaMode mode = AreaMode.Normal, string checkpoint = null) {
             Overworld.Maddy.Hide(false);
             area.Wipe(Overworld, false, null);
             Audio.SetMusic(null, true, true);
             Audio.SetAmbience(null, true);
             if ((area.ID == 0 || area.ID == 9) && checkpoint == null && mode == AreaMode.Normal) {
-                Overworld.RendererList.UpdateLists();
+                ((patch_RendererList) (object) Overworld.RendererList).UpdateLists();
                 Overworld.RendererList.MoveToFront(Overworld.Snow);
             }
             yield return 0.5f;

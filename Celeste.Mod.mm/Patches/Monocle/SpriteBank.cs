@@ -2,6 +2,7 @@
 
 using Celeste.Mod;
 using MonoMod;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -120,7 +121,7 @@ namespace Monocle {
                         pendingDeletion.Add(modNode);
                     } else {
                         // mod XML different from vanilla, keep it.
-                        Logger.Log("SpriteBank", $"Sprite \"{modNode.Name}\" will be overridden with {path}.");
+                        Logger.Log(LogLevel.Verbose, "SpriteBank", $"Sprite \"{modNode.Name}\" will be overridden with {path}.");
 
                         // if it copies another sprite, keep its name so that we do not delete it.
                         string copy = modNode.Attributes["copy"]?.Value;
@@ -130,14 +131,14 @@ namespace Monocle {
                     }
                 } else {
                     // sprite doesn't exist in vanilla.
-                    Logger.Log("SpriteBank", $"Sprite \"{modNode.Name}\" will be added from {path}.");
+                    Logger.Log(LogLevel.Verbose, "SpriteBank", $"Sprite \"{modNode.Name}\" will be added from {path}.");
                 }
             }
 
             // delete all sprites marked for deletion, except ones that are copied by sprites we want to keep (because this would break the XML).
             foreach (XmlNode toDelete in pendingDeletion.ToArray()) {
                 if (doNotDelete.Contains(toDelete.Name)) {
-                    Logger.Log("SpriteBank", $"Sprite \"{toDelete.Name}\" will be overridden with {path}, because it is copied by another sprite.");
+                    Logger.Log(LogLevel.Verbose, "SpriteBank", $"Sprite \"{toDelete.Name}\" will be overridden with {path}, because it is copied by another sprite.");
                 } else {
                     modSprites.RemoveChild(toDelete);
                 }
@@ -197,12 +198,10 @@ namespace Monocle {
     }
     public static class SpriteBankExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <summary>
         /// Get the path to the file from which the SpriteBank was loaded.
         /// </summary>
+        [Obsolete("Use SpriteBank.XMLPath instead.")]
         public static string GetXMLPath(this SpriteBank self)
             => ((patch_SpriteBank) self).XMLPath;
 

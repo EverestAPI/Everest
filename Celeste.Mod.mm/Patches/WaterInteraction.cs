@@ -7,17 +7,38 @@ namespace Celeste {
     class patch_WaterInteraction : WaterInteraction {
 
         /// <summary>
-        /// The water collision used for this component's Entity.
+        /// Check whether the component is interacting with a given water-type entity.
+        /// </summary>
+        /// <param name="water">The entity to check the interaction with.</param>
+        /// <returns>Whether the component is interacting with the water.</returns>
+        public bool Check(Entity water) {
+            Collider normalCollider = Entity.Collider;
+            if (_collider != null) {
+                Entity.Collider = _collider;
+            }
+            bool result = water.CollideCheck(Entity);
+            Entity.Collider = normalCollider;
+            return result;
+        }
+
+        public Vector2 AbsoluteCenter => Entity.Position + (_collider ?? Entity.Collider).Center;
+
+        private Collider _collider;
+
+        /// <summary>
+        /// The absolute rectangular bounds around the water collision used for this component's Entity.
         /// </summary>
         public Rectangle Bounds {
             get {
-                if (_bounds != null) {
-                    return new Rectangle((int) Entity.X + _bounds.X, (int) Entity.Y + _bounds.Y, _bounds.Width, _bounds.Height);
-                } else
-                    return new Rectangle((int) Entity.Center.X - 4, (int) Entity.Center.Y, 8, 16);
+                Collider normalCollider = Entity.Collider;
+                if (_collider != null) {
+                    Entity.Collider = _collider; // linking collider to entity makes the position absolute
+                }
+                Rectangle result = Entity.Collider.Bounds;
+                Entity.Collider = normalCollider;
+                return result;
             }
         }
-        private Rectangle _bounds;
 
 
         /// <summary>
@@ -36,8 +57,13 @@ namespace Celeste {
 
         [MonoModConstructor]
         public void ctor(Rectangle bounds, Func<bool> isDashing) {
+            ctor(new Hitbox(bounds.Width, bounds.Height, bounds.X, bounds.Y), isDashing);
+        }
+
+        [MonoModConstructor]
+        public void ctor(Collider collider, Func<bool> isDashing) {
             ctor(isDashing);
-            _bounds = bounds;
+            _collider = collider;
         }
 
     }

@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Input;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
@@ -159,10 +160,18 @@ namespace Celeste.Mod.Core {
         [SettingIgnore] // TODO: Show as advanced setting.
         public bool? ThreadedGL { get; set; } = null;
 
+        [YamlMember(Alias = "FastTextureLoading")]
+        [SettingIgnore]
+        public bool? _FastTextureLoading { get; set; } = null;
+
+        [YamlIgnore]
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
-        public bool? FastTextureLoading { get; set; } = null;
+        public bool? FastTextureLoading {
+            get => Everest.Content.DumpOnLoad || Everest.Content._DumpAll ? false : _FastTextureLoading;
+            set => _FastTextureLoading = value;
+        }
 
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
@@ -229,6 +238,14 @@ namespace Celeste.Mod.Core {
             }
         }
 
+        public Everest.CompatMode CompatibilityMode { get; set; } = Everest.CompatMode.None; // TODO Better default logic
+
+        [SettingNeedsRelaunch]
+        [SettingName("MODOPTIONS_COREMODULE_D3D11EXCLUSIVEFULLSCREEN")]
+        [SettingSubText("MODOPTIONS_COREMODULE_D3D11EXCLUSIVEFULLSCREEN_DESC")]
+        [SettingInGame(false)]
+        public bool D3D11UseExclusiveFullscreen { get; set; }
+
         [SettingInGame(false)]
         public bool UseKeyboardForTextInput { get; set; } = true;
 
@@ -249,29 +266,20 @@ namespace Celeste.Mod.Core {
             }
         }
 
-        private bool _DiscordRichPresence = true;
-        public bool DiscordRichPresence {
-            get => _DiscordRichPresence;
-            set {
-                _DiscordRichPresence = value;
-                if (value) {
-                    Everest.Discord.Initialize();
-                } else {
-                    Everest.Discord.Disable();
-                }
-            }
-        }
+        public bool DiscordRichPresence { get; set; } = true;
 
         [SettingIgnore]
-        public string DiscordLib { get; set; } = "";
+        public bool DiscordShowIcon { get; set; } = true;
         [SettingIgnore]
-        public string DiscordID { get; set; } = "";
+        public bool DiscordShowMap { get; set; } = true;
         [SettingIgnore]
-        public string DiscordTextInMenu { get; set; } = "📋 Menu";
+        public bool DiscordShowSide { get; set; } = true;
         [SettingIgnore]
-        public string DiscordTextInGame { get; set; } = "🗻 ((area)) 📼 ((side))";
+        public bool DiscordShowRoom { get; set; } = false;
         [SettingIgnore]
-        public string DiscordSubtextInGame { get; set; } = "((deaths)) x 💀 | ((strawberries)) x 🍓";
+        public bool DiscordShowBerries { get; set; } = true;
+        [SettingIgnore]
+        public bool DiscordShowDeaths { get; set; } = true;
 
         [SettingIgnore]
         public int DebugRCPort { get; set; } = 32270;
@@ -294,42 +302,65 @@ namespace Celeste.Mod.Core {
         }
 
         [SettingIgnore]
+        public bool UseInGameCrashHandler { get; set; } = true;
+
+        [SettingIgnore]
+        public bool CrashHandlerAlwaysTeabag { get; set; } = false; // The world is a cruel place, so we can't turn this on by default... ._.
+
+        [SettingIgnore]
         public string CurrentVersion { get; set; }
 
-        [SettingIgnore]
-        public string CurrentBranch { get; set; }
+        private string _CurrentBranch;
 
         [SettingIgnore]
-        public Dictionary<string, LogLevel> LogLevels { get; set; } = new Dictionary<string, LogLevel>();
+        public string CurrentBranch {
+            get => _CurrentBranch;
+            set => _CurrentBranch = value is "dev" or "beta" or "stable" ? "updater_src_" + value : value; // branch names were changed at some point
+        }
 
+        private Dictionary<string, LogLevel> _LogLevels = new Dictionary<string, LogLevel>();
+
+        [SettingIgnore]
+        public Dictionary<string, LogLevel> LogLevels {
+            get => _LogLevels;
+            set => _LogLevels = value ?? new Dictionary<string, LogLevel>();
+        }
+
+        [SettingSubHeader("MODOPTIONS_COREMODULE_MENUNAV_SUBHEADER")]
         [SettingInGame(false)]
         public ButtonBinding MenuPageUp { get; set; }
 
         [SettingInGame(false)]
         public ButtonBinding MenuPageDown { get; set; }
 
+        [SettingSubHeader("MODOPTIONS_COREMODULE_DEBUGMODE_SUBHEADER")]
+        [SettingInGame(false)]
+        [DefaultButtonBinding(0, Keys.OemTilde)]
+        public ButtonBinding ToggleDebugConsole { get; set; }
+
         [SettingInGame(false)]
         [DefaultButtonBinding(0, Keys.OemPeriod)]
         public ButtonBinding DebugConsole { get; set; }
-        
+
         [SettingInGame(false)]
         [DefaultButtonBinding(0, Keys.F6)]
         public ButtonBinding DebugMap { get; set; }
 
+        [SettingSubHeader("MODOPTIONS_COREMODULE_MOUNTAINCAM_SUBHEADER")]
         [SettingInGame(false)]
-        [DefaultButtonBinding(0, Keys.W)]
+        [DefaultButtonBinding(Buttons.RightThumbstickUp, Keys.W)]
         public ButtonBinding CameraForward { get; set; }
 
         [SettingInGame(false)]
-        [DefaultButtonBinding(0, Keys.S)]
+        [DefaultButtonBinding(Buttons.RightThumbstickDown, Keys.S)]
         public ButtonBinding CameraBackward { get; set; }
 
         [SettingInGame(false)]
-        [DefaultButtonBinding(0, Keys.D)]
+        [DefaultButtonBinding(Buttons.RightThumbstickRight, Keys.D)]
         public ButtonBinding CameraRight { get; set; }
 
         [SettingInGame(false)]
-        [DefaultButtonBinding(0, Keys.A)]
+        [DefaultButtonBinding(Buttons.RightThumbstickLeft, Keys.A)]
         public ButtonBinding CameraLeft { get; set; }
 
         [SettingInGame(false)]
@@ -370,7 +401,7 @@ namespace Celeste.Mod.Core {
             List<string> inputGuiPrefixes = new List<string> {
                 "" // Auto
             };
-            foreach (KeyValuePair<string, MTexture> kvp in GFX.Gui.GetTextures()) {
+            foreach (KeyValuePair<string, MTexture> kvp in ((patch_Atlas) GFX.Gui).Textures) {
                 string path = kvp.Key;
                 if (!path.StartsWith("controls/"))
                     continue;
@@ -415,6 +446,146 @@ namespace Celeste.Mod.Core {
                     })
                 );
             }
+        }
+
+        public void CreateCompatibilityModeEntry(TextMenu menu, bool inGame) {
+            if (inGame)
+                return;
+
+            TextMenu.Slider compatSlider = new TextMenu.Slider(Dialog.Clean("modoptions_coremodule_compatmode"),
+                i => Dialog.Clean($"modoptions_coremodule_compatmode_{Enum.GetName((Everest.CompatMode) i)}"),
+                0, Enum.GetValues<Everest.CompatMode>().Length-1, (int) CompatibilityMode
+            );
+            compatSlider.OnValueChange += val => CompatibilityMode = (Everest.CompatMode) val;
+            menu.Add(compatSlider);
+            compatSlider.NeedsRelaunch((patch_TextMenu) menu);
+
+            // We need to build our own description text as it is not static
+            TextMenuExt.EaseInSubHeaderExt descrTextA = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean($"modoptions_coremodule_compatmode_{Enum.GetName(CompatibilityMode)}_descr_a"), false, menu) {
+                TextColor = Color.Gray,
+                HeightExtra = 0f
+            };
+            TextMenuExt.EaseInSubHeaderExt descrTextB = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean($"modoptions_coremodule_compatmode_{Enum.GetName(CompatibilityMode)}_descr_b"), false, menu) {
+                TextColor = Color.DarkOrange,
+                HeightExtra = 0f
+            };
+            ((patch_TextMenu) menu).Insert(((patch_TextMenu) menu).Items.IndexOf(compatSlider) + 1, descrTextA);
+            ((patch_TextMenu) menu).Insert(((patch_TextMenu) menu).Items.IndexOf(compatSlider) + 2, descrTextB);
+
+            compatSlider.OnEnter += () => descrTextA.FadeVisible = descrTextB.FadeVisible = true;
+            compatSlider.OnLeave += () => descrTextA.FadeVisible = descrTextB.FadeVisible = false;
+            compatSlider.OnValueChange += val => {
+                descrTextA.Title = Dialog.Clean($"modoptions_coremodule_compatmode_{Enum.GetName((Everest.CompatMode) val)}_descr_a");
+                descrTextB.Title = Dialog.Clean($"modoptions_coremodule_compatmode_{Enum.GetName((Everest.CompatMode) val)}_descr_b");
+                menu.RecalculateSize();
+            };
+
+            // Show a warning if it is incompatible with the vanilla framework
+            TextMenuExt.EaseInSubHeaderExt warningText = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean($"modoptions_coremodule_compatmode_incompatible"), false, menu) {
+                TextColor = Color.OrangeRed,
+                HeightExtra = 0f
+            };
+            ((patch_TextMenu) menu).Insert(((patch_TextMenu) menu).Items.IndexOf(descrTextB) + 1, warningText);
+
+            static bool IsCompatible(Everest.CompatMode mode) =>
+                (Everest.Flags.VanillaIsFNA && mode == Everest.CompatMode.LegacyXNA) ||
+                (Everest.Flags.VanillaIsXNA && mode == Everest.CompatMode.LegacyFNA)
+            ;
+
+            compatSlider.OnEnter += () => warningText.FadeVisible = IsCompatible(CompatibilityMode);
+            compatSlider.OnLeave += () => warningText.FadeVisible = false;
+            compatSlider.OnValueChange += val => warningText.FadeVisible = IsCompatible((Everest.CompatMode) val);
+        }
+
+        public void CreateDiscordRichPresenceEntry(TextMenu menu, bool inGame) {
+            Session session = (Engine.Scene as Level)?.Session;
+
+            TextMenu.Option<bool> showSide = new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordshowside"), DiscordShowSide)
+                .Change(value => {
+                    DiscordShowSide = value;
+                    Everest.DiscordSDK.Instance?.UpdatePresence(session);
+                });
+
+            TextMenu.Option<bool> showRoom = new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordshowroom"), DiscordShowRoom)
+                .Change(value => {
+                    DiscordShowRoom = value;
+                    Everest.DiscordSDK.Instance?.UpdatePresence(session);
+                });
+
+            TextMenu.Item showMap = new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordshowmap"), DiscordShowMap)
+                .Change(value => {
+                    DiscordShowMap = value;
+                    Everest.DiscordSDK.Instance?.UpdatePresence(session);
+
+                    showSide.Disabled = !DiscordShowMap;
+                    showRoom.Disabled = !DiscordShowMap;
+
+                    if (!DiscordShowMap) {
+                        showSide.Index = 0;
+                        showRoom.Index = 0;
+                        DiscordShowSide = false;
+                        DiscordShowRoom = false;
+                    }
+                });
+
+            TextMenu.Item showIcon = new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordshowicon"), DiscordShowIcon)
+                .Change(value => {
+                    DiscordShowIcon = value;
+                    Everest.DiscordSDK.Instance?.UpdatePresence(session);
+                });
+
+            TextMenu.Item showDeaths = new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordshowdeaths"), DiscordShowDeaths)
+                .Change(value => {
+                    DiscordShowDeaths = value;
+                    Everest.DiscordSDK.Instance?.UpdatePresence(session);
+                });
+
+            TextMenu.Item showBerries = new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordshowberries"), DiscordShowBerries)
+                .Change(value => {
+                    DiscordShowBerries = value;
+                    Everest.DiscordSDK.Instance?.UpdatePresence(session);
+                });
+
+            TextMenuExt.SubMenu submenu = new TextMenuExt.SubMenu(Dialog.Clean("modoptions_coremodule_discordrichpresenceoptions"), false)
+                .Add(showIcon)
+                .Add(showMap)
+                .Add(showSide)
+                .Add(showRoom)
+                .Add(showDeaths)
+                .Add(showBerries);
+
+            TextMenuExt.EaseInSubHeaderExt failureWarning = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean("modoptions_coremodule_discordfailed"), false, menu) {
+                TextColor = Color.Goldenrod,
+                HeightExtra = 0f
+            };
+
+            TextMenu.Item masterSwitch = new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordrichpresence"), DiscordRichPresence)
+                .Change(value => {
+                    DiscordRichPresence = value;
+                    if (DiscordRichPresence) {
+                        Everest.DiscordSDK.CreateInstance()?.UpdatePresence(session);
+                    } else {
+                        Everest.DiscordSDK.Instance?.Dispose();
+                    }
+                    submenu.Disabled = !value;
+                    failureWarning.FadeVisible = DiscordRichPresence && Everest.DiscordSDK.Instance == null;
+                });
+
+            masterSwitch.OnEnter += delegate {
+                failureWarning.FadeVisible = DiscordRichPresence && Everest.DiscordSDK.Instance == null;
+            };
+            masterSwitch.OnLeave += delegate {
+                failureWarning.FadeVisible = false;
+            };
+
+            menu.Add(masterSwitch);
+            menu.Add(failureWarning);
+
+            submenu.Disabled = !DiscordRichPresence;
+            showSide.Disabled = !DiscordShowMap;
+            showRoom.Disabled = !DiscordShowMap;
+
+            menu.Add(submenu);
         }
 
         public enum VanillaTristate {

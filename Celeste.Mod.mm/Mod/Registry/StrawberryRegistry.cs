@@ -22,6 +22,8 @@ namespace Celeste.Mod {
         private static ReadOnlyCollection<RegisteredBerry> _getTrackableBerries;
         private static ReadOnlyCollection<Type> _getBerryTypes;
         private static ReadOnlyCollection<string> _getBerryNames;
+        private static HashSet<string> _trackedBerryNames;
+        private static HashSet<string> _berryNamesHashSet;
 
         // Return caches or create new ones
         public static ReadOnlyCollection<RegisteredBerry> GetRegisteredBerries() {
@@ -47,7 +49,7 @@ namespace Celeste.Mod {
         }
         public static ReadOnlyCollection<string> GetBerryNames() {
             if (_getBerryNames == null) {
-                List<string> berryNames = new List<string>();
+                List<string> berryNames = new List<string>(registeredBerries.Count);
                 foreach (RegisteredBerry berry in registeredBerries) {
                     berryNames.Add(berry.entityName);
                 }
@@ -65,6 +67,8 @@ namespace Celeste.Mod {
             _getTrackableBerries = null;
             _getBerryTypes = null;
             _getBerryNames = null;
+            _trackedBerryNames = null;
+            _berryNamesHashSet = null;
         }
 
         // Register the strawberry or similar collectible with the Strawberry Registry, allowing it to be auto-collected at level end and be trackable.
@@ -78,12 +82,12 @@ namespace Celeste.Mod {
         }
 
         public static bool TrackableContains(string name) {
-            ReadOnlyCollection<RegisteredBerry> berries = GetTrackableBerries();
-            foreach (RegisteredBerry berry in berries) {
-                if (berry.entityName == name)
-                    return true;
-            }
-            return false;
+            // create a HashSet for efficiently checking this, as this function gets called a lot.
+            var berries = _trackedBerryNames ??= GetTrackableBerries()
+                .Select(b => b.entityName)
+                .ToHashSet();
+
+            return berries.Contains(name);
         }
 
         public static bool TrackableContains(BinaryPacker.Element target) {
@@ -91,6 +95,16 @@ namespace Celeste.Mod {
                 return false;
 
             return TrackableContains(target.Name);
+        }
+
+        /// <summary>
+        /// Checks whether the given name represents a registered berry.
+        /// </summary>
+        public static bool IsRegisteredBerry(string name) {
+            // create a HashSet for efficiently checking this, as this function gets called a lot.
+            _berryNamesHashSet ??= GetBerryNames().ToHashSet();
+
+            return _berryNamesHashSet.Contains(name);
         }
 
         // Is it the first normally collectable strawberry in the train?

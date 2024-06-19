@@ -58,10 +58,8 @@ namespace Monocle {
     }
     public static class CoroutineExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <inheritdoc cref="patch_Coroutine.Jump"/>
+        [Obsolete("Use Coroutine.Jump instead.")]
         public static void Jump(this Coroutine self)
             => ((patch_Coroutine) self).Jump();
 

@@ -7,22 +7,27 @@ using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
-using MonoMod.Utils;
 using System;
 using System.IO;
 using System.Linq;
-using System.Management;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using System.Text.RegularExpressions;
+using System.Text;
+using System.Reflection;
+using System.Runtime.Versioning;
+using System.ComponentModel;
 
 namespace Celeste {
     class patch_Celeste : Celeste {
 
         // We're effectively in Celeste, but still need to "expose" private fields to our mod.
         private bool firstLoad;
+
+        
 
         [PatchCelesteMain]
         public static extern void orig_Main(string[] args);
@@ -40,12 +45,6 @@ namespace Celeste {
             // we cannot use Everest.Flags.IsFNA at this point because flags aren't initialized yet.
             File.WriteAllText($"BuildIs{(typeof(Game).Assembly.FullName.Contains("FNA") ? "FNA" : "XNA")}.txt", "");
 
-            // macOS is FUN.
-            if (PlatformHelper.Is(MonoMod.Utils.Platform.MacOS)) {
-                // https://github.com/mono/mono/blob/79b6e3f256a59ede74596ce82547f320bf1e9a99/mono/metadata/filewatcher.c#L66
-                Environment.SetEnvironmentVariable("MONO_DARWIN_USE_KQUEUE_FSW", "1");
-            }
-
             if (File.Exists("everest-launch.txt")) {
                 args =
                     File.ReadAllLines("everest-launch.txt")
@@ -59,6 +58,7 @@ namespace Celeste {
                     writer.WriteLine("# Add any Everest launch flags here.");
                     writer.WriteLine("# Lines starting with # are ignored.");
                     writer.WriteLine("# All options here are disabled by default.");
+                    writer.WriteLine("# Full list: https://github.com/EverestAPI/Resources/wiki/Command-Line-Arguments");
                     writer.WriteLine();
                     writer.WriteLine("# Windows only: open a separate log console window.");
                     writer.WriteLine("#--console");
@@ -66,6 +66,8 @@ namespace Celeste {
                     writer.WriteLine("# FNA only: force OpenGL (might be necessary to bypass a load crash on some PCs).");
                     writer.WriteLine("#--graphics OpenGL");
                     writer.WriteLine();
+                    writer.WriteLine("# Change default log level (verbose will print all logs).");
+                    writer.WriteLine("#--loglevel verbose");
 
                     if (File.Exists("launch.txt")) {
                         using (StreamReader reader = File.OpenText("launch.txt")) {
@@ -115,8 +117,13 @@ namespace Celeste {
                 }
             }
 
-            if (args.Contains("--console") && PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
+            if (args.Contains("--console") && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                 AllocConsole();
+
+                // Invalidate console streams
+                typeof(Console).GetField("s_in", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
+                typeof(Console).GetField("s_out", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
+                typeof(Console).GetField("s_error", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
             }
 
             if (args.Contains("--nolog")) {
@@ -124,7 +131,10 @@ namespace Celeste {
                 return;
             }
 
-            if (File.Exists("log.txt")) {
+            string logfile = Environment.GetEnvironmentVariable("EVEREST_LOG_FILENAME") ?? "log.txt";
+
+            // Only applying log rotation on default name, feel free to improve LogRotationHelper to deal with custom log file names...
+            if (logfile == "log.txt" && File.Exists("log.txt")) {
                 if (new FileInfo("log.txt").Length > 0) {
                     // move the old log.txt to the LogHistory folder.
                     // note that the cleanup will only be done when the core module is loaded: the settings aren't even loaded right now,
@@ -138,33 +148,57 @@ namespace Celeste {
                     // just delete it.
                     File.Delete("log.txt");
                 }
-            }
+            } else {
+                // check if log filename is allowed
+                Regex regexBadCharacter = new Regex("[" + Regex.Escape(new string(Path.GetInvalidFileNameChars())) + "]");
+                Match match = regexBadCharacter.Match(logfile);
 
-            using (Stream fileStream = new FileStream("log.txt", FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
-            using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
-            using (LogWriter logWriter = new LogWriter {
-                STDOUT = Console.Out,
-                File = fileWriter
-            }) {
-                try {
-                    Console.SetOut(logWriter);
+                if (match.Success) {
+                    StringBuilder errorText = new StringBuilder($"Custom log filename set in EVEREST_LOG_FILENAME=\"{logfile}\" contains invalid character(s): ", 100);
 
-                    MainInner(args);
-                } finally {
-                    if (logWriter.STDOUT != null) {
-                        Console.SetOut(logWriter.STDOUT);
-                        logWriter.STDOUT = null;
+                    while (match.Success) {
+                        foreach (Capture c in match.Groups[0].Captures)
+                            errorText.Append(c);
+
+                        match = match.NextMatch();
+                        if (match.Success)
+                            errorText.Append(" ");
                     }
+
+                    throw new ArgumentException(errorText.ToString());
                 }
+
+                if (!logfile.EndsWith(".txt"))
+                    logfile += ".txt";
             }
+
+            Everest.PathLog = logfile;
+
+            using (Stream fileStream = new FileStream(logfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
+            using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
+            using (LogWriter logWriter = new LogWriter(Console.Out, Console.Error, fileWriter))
+                MainInner(args);
 
         }
 
         private static void MainInner(string[] args) {
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
 
+            // Get the splash up and running asap
+            if (!args.Contains("--disable-splash") && File.Exists(Path.Combine(".", "EverestSplash", "EverestSplash.dll"))) {
+                string targetRenderer = "";
+                for (int i = 0; i < args.Length; i++) { // The splash will use the same renderer as fna
+                    if (args[i] == "--graphics" && args.Length > i + 1) {
+                        targetRenderer = args[i + 1];
+                    }
+                }
+
+                EverestSplashHandler.RunSplash(targetRenderer);
+            }
+
             try {
                 Everest.ParseArgs(args);
+                ParseFNAArgs(args);
                 orig_Main(args);
             } catch (Exception e) {
                 CriticalFailureHandler(e);
@@ -175,6 +209,31 @@ namespace Celeste {
 
             Everest.Shutdown();
         }
+
+        private static void ParseFNAArgs(string[] args) {
+            // FNA's main function already does this, but it doesn't work on Linux because the runtime doesn't call setenv :catassault:
+
+            static void SetEnvVar(string name, string value) {
+                Environment.SetEnvironmentVariable(name, value);
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    if (setenv(name, value, 1) != 0)
+                        throw new Win32Exception();
+            }
+
+            SetEnvVar("FNA_AUDIO_DISABLE_SOUND", "1");
+            for (int i = 0; i < args.Length; i++) {
+                if (args[i] == "--graphics" && i < args.Length - 1) {
+                    SetEnvVar("FNA3D_FORCE_DRIVER", args[i + 1]);
+                    i++;
+                }
+                // No --disable-lateswaptear as that is now explicitly opt-in
+            }
+        }
+
+        [SupportedOSPlatform("linux")]
+        [DllImport("libc", CallingConvention=CallingConvention.Cdecl, SetLastError=true)]
+        private extern static int setenv(string name, string val, int overwrite);
 
         private static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs e) {
             if (e.IsTerminating) {
@@ -190,8 +249,14 @@ namespace Celeste {
         public static void CriticalFailureHandler(Exception e) {
             Everest.LogDetours();
 
-            (e ?? new Exception("Unknown exception")).LogDetailed("CRITICAL");
+            e ??= new Exception("Unknown exception");
 
+            e.LogDetailed("CRITICAL");
+
+            // here (ever) rests a tribute to everest in your everest
+            // 2020/02/24 - 2024/03/12
+
+            /*
             ErrorLog.Write(
 @"Yo, I heard you like Everest so I put Everest in your Everest so you can Ever Rest while you Ever Rest.
 
@@ -200,7 +265,9 @@ In other words: Celeste has encountered a catastrophic failure.
 IF YOU WANT TO HELP US FIX THIS:
 Please join the Celeste Discord server and drag and drop your log.txt into #modding_help.
 https://discord.gg/6qjaePQ");
+            */
 
+            ErrorLog.Write(e);
             ErrorLog.Open();
             if (!_CriticalFailureIsUnhandledException)
                 Environment.Exit(-1);
@@ -222,6 +289,9 @@ https://discord.gg/6qjaePQ");
             } else {
                 orig_ctor_Celeste();
             }
+
+            Logger.Log(LogLevel.Info, "boot", $"Active compatibility mode: {Everest.CompatibilityMode}");
+
             try {
                 Everest.Boot();
             } catch (Exception e) {
@@ -255,7 +325,7 @@ https://discord.gg/6qjaePQ");
              * Loading in a new thread with texture -> GPU ops on the main thread helps barely.
              * Spawning a new thread just to wait for it to end doesn't make much sense,
              * BUT delaying the slow texture load ops to happen lazy-async gets the game window to appear sooner.
-             * 
+             *
              * Note that on XNA, this dies both with and without threaded GL due to OOM exceptions.
              * -ade
              */
@@ -284,6 +354,12 @@ https://discord.gg/6qjaePQ");
             patch_VirtualTexture.StopFastTextureLoading();
 
             Everest._ContentLoaded = true;
+        }
+
+        protected override void BeginRun() {
+            base.BeginRun();
+            // This is as close as we can get to the showwindow call
+            EverestSplashHandler.StopSplash();
         }
 
         protected override void OnExiting(object sender, EventArgs args) {

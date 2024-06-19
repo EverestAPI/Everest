@@ -28,6 +28,12 @@ namespace Celeste.Mod {
         public string PathDirectory { get; set; }
 
         /// <summary>
+        /// The mod's assembly context. Can be null if this is the metadata of a mod which isn't loaded. Set at runtime.
+        /// </summary>
+        [YamlIgnore]
+        public EverestModuleAssemblyContext AssemblyContext { get; internal set; }
+
+        /// <summary>
         /// The name of the mod.
         /// </summary>
         public string Name { get; set; }
@@ -68,17 +74,22 @@ namespace Celeste.Mod {
         /// </summary>
         public List<EverestModuleMetadata> OptionalDependencies { get; set; } = new List<EverestModuleMetadata>();
 
+        private byte[] _Hash;
+
         /// <summary>
         /// The runtime mod hash. Might not be determined by all mod content.
         /// </summary>
-        public byte[] Hash { get; set; }
+        public byte[] Hash => _Hash ??= Everest.GetChecksum(this);
 
         /// <summary>
         /// Whether this module supports experimental live code reloading or not.
         /// </summary>
         public bool SupportsCodeReload { get; set; } = true;
 
-        internal FileSystemWatcher DevWatcher;
+        /// <summary>
+        /// Whether this module is .NET Core only or not.
+        /// </summary>
+        public bool IsNetCoreOnlyMod { get; set; } = false;
 
         public override string ToString() {
             return Name + " " + Version;
@@ -88,7 +99,7 @@ namespace Celeste.Mod {
         /// Perform a few basic post-parsing operations. For example, make the DLL path absolute if the mod is in a directory.
         /// </summary>
         public void PostParse() {
-            if (!string.IsNullOrEmpty(DLL) && !string.IsNullOrEmpty(PathDirectory) && !File.Exists(DLL))
+            if (!string.IsNullOrEmpty(DLL) && !string.IsNullOrEmpty(PathDirectory))
                 DLL = Path.Combine(PathDirectory, DLL.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar));
 
             // Add dependency to API 1.0 if missing.
@@ -96,15 +107,34 @@ namespace Celeste.Mod {
             foreach (EverestModuleMetadata dep in Dependencies) {
                 if (dep.Name == "API")
                     dep.Name = CoreModule.Instance.Metadata.Name;
-                if (dep.Name == CoreModule.Instance.Metadata.Name) {
+                if (dep.Name == CoreModule.Instance.Metadata.Name || dep.Name == CoreModule.NETCoreMetaName) {
+                    if (dep.Name == CoreModule.NETCoreMetaName)
+                        IsNetCoreOnlyMod = true;
+
                     dependsOnAPI = true;
                     break;
                 }
+
             }
             if (!dependsOnAPI) {
                 // Logger.Log(LogLevel.Warn, "loader", $"No dependency to API found in {this}! Adding dependency to {CoreModule.Instance.Metadata}");
                 Dependencies.Insert(0, CoreModule.Instance.Metadata);
             }
+        }
+
+        /// <summary>
+        /// Performs the mod registration tasks that should be performed for every mod once, not for every instance of EverestModule or every DLL.
+        /// Called after the EverestModules have been registered.
+        /// </summary>
+        internal void RegisterMod() {
+            Everest.InvalidateInstallationHash();
+
+            // Audio banks are cached, and as such use the module's hash. We can only ingest those now.
+            if (patch_Audio.AudioInitialized) {
+                patch_Audio.IngestNewBanks();
+            }
+            
+            Everest.CheckDependenciesOfDelayedMods();
         }
 
     }

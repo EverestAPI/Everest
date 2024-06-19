@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Celeste {
     class patch_MountainModel : MountainModel {
@@ -71,7 +72,7 @@ namespace Celeste {
         private VertexPositionColorTexture[] billboardInfo;
 
         private object _Billboard_QueuedLoadLock;
-        private MaybeAwaitable<VertexBuffer> _Billboard_QueuedLoad;
+        private ValueTask<VertexBuffer> _Billboard_QueuedLoad;
 
         public extern void orig_ctor();
         [MonoModConstructor]
@@ -407,7 +408,7 @@ namespace Celeste {
                 IndexBuffer billboardIndicesOld = billboardIndices;
                 billboardVertices = null;
                 billboardIndices = null;
-                MainThreadHelper.Do(() => {
+                MainThreadHelper.Schedule(() => {
                     if (billboardVerticesOld != null && !billboardVerticesOld.IsDisposed)
                         billboardVerticesOld.Dispose();
                     if (billboardIndicesOld != null && !billboardIndicesOld.IsDisposed)
@@ -445,9 +446,7 @@ namespace Celeste {
 
                 if (!MainThreadHelper.IsMainThread) {
                     // Otherwise wait for it to get loaded, don't reload twice. (Don't wait locked!)
-                    while (!_Billboard_QueuedLoad.IsValid)
-                        Thread.Yield();
-                    _Billboard_QueuedLoad.GetResult();
+                    _ = _Billboard_QueuedLoad.Result;
                     return;
                 }
             }
@@ -456,7 +455,7 @@ namespace Celeste {
                 // Let's queue a reload onto the main thread and call it a day.
                 lock (queuedLoadLock = new object()) {
                     _Billboard_QueuedLoadLock = queuedLoadLock;
-                    _Billboard_QueuedLoad = MainThreadHelper.Get(() => {
+                    _Billboard_QueuedLoad = MainThreadHelper.Schedule(() => {
                         lock (queuedLoadLock) {
                             if (_Billboard_QueuedLoadLock == null)
                                 return billboardVertices;

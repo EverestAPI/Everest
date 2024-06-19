@@ -1595,7 +1595,7 @@ How these should be structured is poorly documented, so if having nested members
           By default, this simply sets the render target to null, clears the screen, and renders the current Scene.
         </summary>
       </member>
-      <member name="M:Monocle.Engine.OnSceneTransition">
+      <member name="M:Monocle.Engine.OnSceneTransition(Monocle.Scene,Monocle.Scene)">
         <summary>
           Called after a Scene ends, before the next Scene begins.
         </summary>
@@ -1607,32 +1607,32 @@ How these should be structured is poorly documented, so if having nested members
       </member>
      </members>
     <members name="Entity">
-      <member name="M:Monocle.Entity.SceneBegin">
+      <member name="M:Monocle.Entity.SceneBegin(Monocle.Scene)">
         <summary>
           Called when the containing Scene Begins.
         </summary>
       </member>
-      <member name="M:Monocle.Entity.SceneEnd">
+      <member name="M:Monocle.Entity.SceneEnd(Monocle.Scene)">
         <summary>
           Called when the containing Scene Ends.
         </summary>
       </member>
-      <member name="M:Monocle.Entity.Awake">
+      <member name="M:Monocle.Entity.Awake(Monocle.Scene)">
         <summary>
           Called before the frame starts, after Entities are added and removed, on the frame that the Entity was added.<br/>
           Useful if you added two Entities in the same frame, and need them to detect each other before they start Updating.
         </summary>
         <param name="scene"></param>
       </member>
-      <member name="M:Monocle.Entity.Added">
+      <member name="M:Monocle.Entity.Added(Monocle.Scene)">
         <summary>
           Called when this Entity is added to a Scene, which only occurs immediately before each Update.<br/>
           Keep in mind, other Entities to be added this frame may be added after this Entity.<br/>
-          See <see cref="M:Monocle.Entity.Awake"/> for after all Entities are added, but still before the frame Updates.
+          See <see cref="M:Monocle.Entity.Awake(Monocle.Scene)"/> for after all Entities are added, but still before the frame Updates.
         </summary>
         <param name="scene"></param>
       </member>
-      <member name="M:Monocle.Entity.Removed">
+      <member name="M:Monocle.Entity.Removed(Monocle.Scene)">
         <summary>
           Called when the Entity is removed from a Scene.
         </summary>
@@ -1648,7 +1648,7 @@ How these should be structured is poorly documented, so if having nested members
           Draw the Entity here. Not called if the Entity is not Visible.
         </summary>
       </member>
-      <member name="M:Monocle.Entity.DebugRender">
+      <member name="M:Monocle.Entity.DebugRender(Monocle.Camera)">
         <summary>
           Draw any debug visuals here. Only called if the console is open, but still called even if the Entity is not Visible.
         </summary>
@@ -1696,7 +1696,7 @@ How these should be structured is poorly documented, so if having nested members
       </member>
     </members>
     <members name="Scene">
-      <member name="M:Monocle.Scene.OnInterval(System.Float32)">
+      <member name="M:Monocle.Scene.OnInterval(System.Single)">
         <summary>
           Returns whether the Scene timer has passed the given time interval since the last frame. <br/>
           Ex: given 2.0f, this will return true once every 2 seconds.
@@ -1704,7 +1704,7 @@ How these should be structured is poorly documented, so if having nested members
         <param name="interval">The time interval to check for</param>
         <returns></returns>
       </member>
-      <member name="M:Monocle.Scene.OnInterval(System.Float32,System.Float32)">
+      <member name="M:Monocle.Scene.OnInterval(System.Single,System.Single)">
         <summary>
           Returns whether the Scene timer has passed the given time interval since the last frame.
           Ex: given 2.0f, this will return true once every 2 seconds
@@ -1719,7 +1719,7 @@ How these should be structured is poorly documented, so if having nested members
         <typeparam name="T">Pooled Entity type to create</typeparam>
         <returns></returns>
       </member>
-      <member name="M:Monocle.Scene.Item(Monocle.BitTag)">
+      <member name="P:Monocle.Scene.Item(Monocle.BitTag)">
         <summary>
           Quick access to entire tag lists of Entities. Result will never be null.
         </summary>

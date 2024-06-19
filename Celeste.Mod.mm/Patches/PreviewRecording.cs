@@ -10,13 +10,13 @@ namespace Celeste {
         public Session CurrentSession;
 
         [MonoModIgnore] // We don't want to change anything about the method...
-        [ProxyFileCalls] // ... except for proxying all System.IO.File.* calls to Celeste.Mod.FileProxy.*
         [MonoModConstructor]
         public patch_PreviewRecording(string filename)
             : base(filename) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        [ProxyFileCalls] // ... except for proxying all System.IO.File.* calls to Celeste.Mod.FileProxy.*
         public extern void orig_ctor(string filename);
         
         [MonoModConstructor]

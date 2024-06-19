@@ -19,7 +19,7 @@ namespace Celeste.Mod {
             ?.GetMethod("ReadImageStream")
             ?.CreateDelegate<d_FNA3D_ReadImageStream>();
 
-        private delegate IntPtr d_FNA3D_Image_Free(IntPtr mem);
+        private delegate void d_FNA3D_Image_Free(IntPtr mem);
         private static d_FNA3D_Image_Free FNA3D_Image_Free =
             typeof(Game).Assembly
             .GetType("Microsoft.Xna.Framework.Graphics.FNA3D")
@@ -222,6 +222,9 @@ namespace Celeste.Mod {
         [MonoModPatch("_SetTextureDataPtr")]
         [MonoModReplace]
         private static unsafe void _SetTextureDataPtrXNA(Texture2D tex, IntPtr ptr) {
+            if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                throw new PlatformNotSupportedException();
+
             byte[] copy = new byte[tex.Width * tex.Height * 4];
             Marshal.Copy(ptr, copy, 0, copy.Length);
             tex.SetData(copy);
@@ -231,6 +234,9 @@ namespace Celeste.Mod {
         [MonoModPatch("_LoadTextureLazyPremultiplyFull")]
         [MonoModReplace]
         private static unsafe Texture2D _LoadTextureLazyPremultiplyFullXNA(GraphicsDevice gd, Stream stream) {
+            if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                throw new PlatformNotSupportedException();
+
             _LoadTextureLazyPremultiply(gd, stream, out int w, out int h, out byte[] data, out _, true);
             Texture2D tex = new Texture2D(gd, w, h, false, SurfaceFormat.Color);
             tex.SetData(data);
@@ -241,6 +247,9 @@ namespace Celeste.Mod {
         [MonoModPatch("_LoadTextureRaw")]
         [MonoModReplace]
         private static unsafe void _LoadTextureRawXNA(GraphicsDevice gd, Stream stream, out int w, out int h, out byte[] data, out IntPtr dataPtr, bool gc) {
+            if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                throw new PlatformNotSupportedException();
+
             using (SD.Bitmap bmp = new SD.Bitmap(stream)) {
                 w = bmp.Width;
                 h = bmp.Height;
@@ -264,7 +273,7 @@ namespace Celeste.Mod {
                         data = new byte[length];
                         dataPtr = IntPtr.Zero;
                     } else {
-                        data = new byte[0];
+                        data = Array.Empty<byte>();
                         dataPtr = Marshal.AllocHGlobal(length);
                     }
 
@@ -288,6 +297,9 @@ namespace Celeste.Mod {
         [MonoModPatch("_LoadTextureLazyPremultiply")]
         [MonoModReplace]
         private static unsafe void _LoadTextureLazyPremultiplyXNA(GraphicsDevice gd, Stream stream, out int w, out int h, out byte[] data, out IntPtr dataPtr, bool gc) {
+            if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                throw new PlatformNotSupportedException();
+
             using (SD.Bitmap bmp = new SD.Bitmap(stream)) {
                 w = bmp.Width;
                 h = bmp.Height;
@@ -311,7 +323,7 @@ namespace Celeste.Mod {
                         data = new byte[length];
                         dataPtr = IntPtr.Zero;
                     } else {
-                        data = new byte[0];
+                        data = Array.Empty<byte>();
                         dataPtr = Marshal.AllocHGlobal(length);
                     }
 
@@ -356,6 +368,9 @@ namespace Celeste.Mod {
         [MonoModPatch("_UnloadTextureRaw")]
         [MonoModReplace]
         private static unsafe void _UnloadTextureRawXNA(IntPtr dataPtr) {
+            if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                throw new PlatformNotSupportedException();
+
             Marshal.FreeHGlobal(dataPtr);
         }
 
@@ -385,7 +400,7 @@ namespace Celeste.Mod {
                 Texture2D.TextureDataFromStreamEXT(stream, out w, out h, out data);
                 dataPtr = IntPtr.Zero;
             } else {
-                data = new byte[0];
+                data = Array.Empty<byte>();
                 dataPtr = FNA3D_ReadImageStream(stream, out w, out h, out _);
             }
         }
@@ -401,7 +416,7 @@ namespace Celeste.Mod {
                 dataPtr = IntPtr.Zero;
                 length = data.Length;
             } else {
-                data = new byte[0];
+                data = Array.Empty<byte>();
                 dataPtr = FNA3D_ReadImageStream(stream, out w, out h, out length);
             }
 
@@ -410,12 +425,13 @@ namespace Celeste.Mod {
                 for (int i = length - 1 - 3; i > -1; i -= 4) {
                     byte a = raw[i + 3];
 
-                    if (a == 0 || a == 255)
+                    if (a is 0 or 255)
                         continue;
 
-                    raw[i + 0] = (byte) (raw[i + 0] * a / 255D);
-                    raw[i + 1] = (byte) (raw[i + 1] * a / 255D);
-                    raw[i + 2] = (byte) (raw[i + 2] * a / 255D);
+                    double by = a / 255D;
+                    raw[i + 0] = (byte) (raw[i + 0] * by);
+                    raw[i + 1] = (byte) (raw[i + 1] * by);
+                    raw[i + 2] = (byte) (raw[i + 2] * by);
                     // raw[i + 3] = a;
                 }
             }

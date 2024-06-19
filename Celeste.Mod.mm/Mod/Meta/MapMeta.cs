@@ -199,7 +199,7 @@ namespace Celeste.Mod.Meta {
             }
         }
 
-        public void ApplyTo(AreaData area) {
+        public void ApplyTo(patch_AreaData area) {
             // Some of the game's code checks for [1] / [2] explicitly.
             // Let's just provide null modes to fill any gaps.
             Modes = Modes ?? new MapMetaModeProperties[3];
@@ -267,7 +267,7 @@ namespace Celeste.Mod.Meta {
             area.MountainCursor = Mountain?.Cursor?.ToVector3() ?? area.MountainCursor;
             area.MountainState = Mountain?.State ?? area.MountainState;
 
-            area.SetMeta(this);
+            area.Meta = this;
         }
 
         public void ApplyToForOverride(AreaData area) {
@@ -293,10 +293,10 @@ namespace Celeste.Mod.Meta {
                 area.CoreMode = CoreMode.Value;
         }
 
-        public static ModeProperties[] Convert(MapMetaModeProperties[] meta) {
+        public static patch_ModeProperties[] Convert(MapMetaModeProperties[] meta) {
             if (meta == null || meta.Length == 0)
                 return null;
-            ModeProperties[] data = new ModeProperties[meta.Length];
+            patch_ModeProperties[] data = new patch_ModeProperties[meta.Length];
             for (int i = 0; i < meta.Length; i++)
                 data[i] = meta[i]?.Convert();
             return data;
@@ -355,8 +355,8 @@ namespace Celeste.Mod.Meta {
         public bool? SeekerSlowdown { get; set; }
         public bool? TheoInBubble { get; set; }
 
-        public ModeProperties Convert()
-            => new ModeProperties() {
+        public patch_ModeProperties Convert()
+            => new patch_ModeProperties() {
                 AudioState = AudioState?.Convert() ?? new AudioState(SFX.music_city, SFX.env_amb_01_main),
                 Checkpoints = MapMeta.Convert(Checkpoints), // Can be null.
                 IgnoreLevelAudioLayerData = IgnoreLevelAudioLayerData ?? false,
@@ -390,9 +390,9 @@ namespace Celeste.Mod.Meta {
             }
         }
 
-        public void ApplyTo(AreaData area, AreaMode mode) {
-            area.GetMeta().Modes[(int) mode] = this;
-            ModeProperties props = area.Mode[(int) mode];
+        public void ApplyTo(patch_AreaData area, AreaMode mode) {
+            area.Meta.Modes[(int) mode] = this;
+            patch_ModeProperties props = area.Mode[(int) mode];
             if (props != null) {
                 props.AudioState = AudioState?.Convert() ?? props.AudioState;
                 props.Checkpoints = MapMeta.Convert(Checkpoints) ?? props.Checkpoints;
@@ -580,7 +580,10 @@ namespace Celeste.Mod.Meta {
 
     public class MapMetaTextVignette {
         public string Dialog { get; set; }
-        [YamlIgnore] public Vector2 SnowDirection => SnowDirectionArray.ToVector2() ?? Vector2.UnitY; //Snowing downwards by default
+        public string Audio { get; set; } = SFX.music_prologue_intro_vignette; // for backwards compatibility reasons, default to prologue audio if not specified
+        public float InitialDelay { get; set; } = 3;
+        public float FinalDelay { get; set; }
+        [YamlIgnore] public Vector2 SnowDirection => SnowDirectionArray.ToVector2() ?? -Vector2.UnitX; //Snowing to the left by default
         [YamlMember(Alias = "SnowDirection")] public float[] SnowDirectionArray { get; set; }
     }
 
@@ -599,6 +602,7 @@ namespace Celeste.Mod.Meta {
         public int Blocks { get; set; } = 2;
         public int BeatsMax { get; set; } = 256;
         public int BeatIndexOffset { get; set; } = 0;
+        public bool ActiveDuringTransitions { get; set; } = false;
         public bool OldBehavior { get; set; } = false;
 
         public void Parse(BinaryPacker.Element meta) {
@@ -609,6 +613,7 @@ namespace Celeste.Mod.Meta {
             meta.AttrIfInt("Blocks", v => Blocks = v);
             meta.AttrIfInt("BeatsMax", v => BeatsMax = v);
             meta.AttrIfInt("BeatIndexOffset", v => BeatIndexOffset = v);
+            meta.AttrIfBool("ActiveDuringTransitions", v => ActiveDuringTransitions = v);
             meta.AttrIfBool("OldBehavior", v => OldBehavior = v);
         }
     }

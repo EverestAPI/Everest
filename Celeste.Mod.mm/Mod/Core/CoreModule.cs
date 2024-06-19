@@ -7,12 +7,14 @@ using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
+using MonoMod.Utils;
 using NLua;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Celeste.Mod.Core {
     /// <summary>
@@ -20,6 +22,7 @@ namespace Celeste.Mod.Core {
     /// </summary>
     public class CoreModule : EverestModule {
 
+        public const string NETCoreMetaName = "EverestCore";
         public static CoreModule Instance;
 
         public override Type SettingsType => typeof(CoreModuleSettings);
@@ -33,6 +36,8 @@ namespace Celeste.Mod.Core {
         public static CoreModuleSession Session => (CoreModuleSession) Instance._Session;
 
         private static ILHook nluaAssemblyGetTypesHook;
+        private static Hook nluaObjectTranslatorFindType;
+        private static Hook legacyXNAGameTickHook;
 
         public CoreModule() {
             Instance = this;
@@ -48,8 +53,9 @@ namespace Celeste.Mod.Core {
             base.LoadSettings();
 
             // The field can be set to true by default without the setter being called by YamlDotNet.
-            if (Settings.DiscordRichPresence)
-                Everest.Discord.Initialize();
+            if (Settings.DiscordRichPresence) {
+                Everest.DiscordSDK.CreateInstance();
+            }
 
             // If we're running in an environment that prefers this flag, forcibly enable them.
             Settings.LazyLoading |= Everest.Flags.PreferLazyLoading;
@@ -66,6 +72,10 @@ namespace Celeste.Mod.Core {
             Everest.Events.MainMenu.OnCreateButtons += CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons += CreatePauseMenuButtons;
             nluaAssemblyGetTypesHook = new ILHook(typeof(Lua).Assembly.GetType("NLua.Extensions.TypeExtensions").GetMethod("GetExtensionMethods"), patchNLuaAssemblyGetTypes);
+            nluaObjectTranslatorFindType = new Hook(typeof(ObjectTranslator).GetMethod("FindType", BindingFlags.NonPublic | BindingFlags.Instance), hookNLuaObjectTranslatorFindType);
+
+            if (Everest.CompatibilityMode == Everest.CompatMode.LegacyXNA)
+                legacyXNAGameTickHook = new Hook(typeof(Game).GetMethod("Tick"), hookLegacyXNAGameTick);
 
             foreach (KeyValuePair<string, LogLevel> logLevel in Settings.LogLevels) {
                 Logger.SetLogLevelFromSettings(logLevel.Key, logLevel.Value);
@@ -77,7 +87,7 @@ namespace Celeste.Mod.Core {
                 files.Sort(new LogRotationHelper.OldestFirst());
                 int historyToDelete = files.Count - historyToKeep;
                 foreach (string file in files.Take(historyToDelete)) {
-                    Logger.Log("core", $"log.txt history: keeping {historyToKeep} file(s) of history, deleting {file}");
+                    Logger.Log(LogLevel.Verbose, "core", $"log.txt history: keeping {historyToKeep} file(s) of history, deleting {file}");
                     File.Delete(file);
                 }
             }
@@ -101,10 +111,10 @@ namespace Celeste.Mod.Core {
                 if (!(Engine.Scene is Level level))
                     return;
 
-                AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGMAP"), () => {
+                AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGMAP"), _ => {
                     AreaData.Areas[level.Session.Area.ID].Mode[(int) level.Session.Area.Mode].MapData.Reload();
-                });
-                AssetReloadHelper.ReloadLevel();
+                    return Task.CompletedTask;
+                }).ContinueWith(_ => AssetReloadHelper.ReloadLevel());
             };
         }
 
@@ -120,7 +130,7 @@ namespace Celeste.Mod.Core {
             // Check if the current input GUI override is still valid. If so, apply it.
             if (!string.IsNullOrEmpty(Settings.InputGui)) {
                 string inputGuiPath = $"controls/{Settings.InputGui}/";
-                if (GFX.Gui.GetTextures().Any(kvp => kvp.Key.StartsWith(inputGuiPath))) {
+                if (((patch_Atlas) GFX.Gui).Textures.Any(kvp => kvp.Key.StartsWith(inputGuiPath))) {
                     Input.OverrideInputPrefix = Settings.InputGui;
                 } else {
                     Settings.InputGui = "";
@@ -140,10 +150,43 @@ namespace Celeste.Mod.Core {
             ILCursor cursor = new ILCursor(il);
 
             while (cursor.TryGotoNext(instr => instr.MatchCallvirt<Assembly>("GetTypes"))) {
-                Logger.Log("core", $"Redirecting Assembly.GetTypes => Extensions.GetTypesSafe in {il.Method.FullName}, index {cursor.Index}");
+                Logger.Log(LogLevel.Verbose, "core", $"Redirecting Assembly.GetTypes => Extensions.GetTypesSafe in {il.Method.FullName}, index {cursor.Index}");
                 cursor.Next.OpCode = OpCodes.Call;
-                cursor.Next.Operand = typeof(Extensions).GetMethod("GetTypesSafe");
+                cursor.Next.Operand = cursor.Module.ImportReference(typeof(Extensions).GetMethod("GetTypesSafe"));
             }
+        }
+
+        private Type hookNLuaObjectTranslatorFindType(Func<ObjectTranslator, string, Type> orig, ObjectTranslator translator, string typeName) {
+            if (orig(translator, typeName) is Type origType)
+                return origType;
+
+            // Try to find the type in mod assemblies
+            EverestModuleAssemblyContext._AllContextsLock.EnterReadLock();
+            try {
+                if (EverestModuleAssemblyContext._AllContexts
+                    .SelectMany(alc => alc?.Assemblies ?? Enumerable.Empty<Assembly>())
+                    .Select(asm => asm.GetType(typeName))
+                    .FirstOrDefault(type => type != null) is Type type
+                )
+                    return type;
+            } finally {
+                EverestModuleAssemblyContext._AllContextsLock.ExitReadLock();
+            }
+
+            return null;
+        }
+
+        private static readonly FastReflectionHelper.FastInvoker fGame_accumulatedElapsedTime = typeof(Game).GetField("accumulatedElapsedTime", BindingFlags.NonPublic | BindingFlags.Instance).GetFastInvoker();
+        private static readonly object[] fGame_accumulatedElapsedTime_ArgsCache = new object[1];
+        private void hookLegacyXNAGameTick(Action<Game> orig, Game game) {
+            orig(game);
+
+            // Add an additional bias value into the elapsed time accumulator to simulate XNA's snapping logic
+            // This is not completely accurate (lag frames and machine dependent offsets), but it's good enough for what we need
+            TimeSpan accumulatedElapsedTime = (TimeSpan) fGame_accumulatedElapsedTime(game, Array.Empty<object>());
+            accumulatedElapsedTime += TimeSpan.FromTicks(game.TargetElapsedTime.Ticks >> 6);
+            fGame_accumulatedElapsedTime_ArgsCache[0] = accumulatedElapsedTime;
+            fGame_accumulatedElapsedTime(game, fGame_accumulatedElapsedTime_ArgsCache);
         }
 
         public override void Unload() {
@@ -152,6 +195,10 @@ namespace Celeste.Mod.Core {
             Everest.Events.Level.OnCreatePauseMenuButtons -= CreatePauseMenuButtons;
             nluaAssemblyGetTypesHook?.Dispose();
             nluaAssemblyGetTypesHook = null;
+            nluaObjectTranslatorFindType?.Dispose();
+            nluaObjectTranslatorFindType = null;
+            legacyXNAGameTickHook?.Dispose();
+            legacyXNAGameTickHook = null;
         }
 
         public void CreateMainMenuButtons(OuiMainMenu menu, List<MenuButton> buttons) {
@@ -159,10 +206,10 @@ namespace Celeste.Mod.Core {
 
             // Find the options button and place our button below it.
             index = buttons.FindIndex(_ => {
-                MainMenuSmallButton other = (_ as MainMenuSmallButton);
+                patch_MainMenuSmallButton other = (_ as patch_MainMenuSmallButton);
                 if (other == null)
                     return false;
-                return other.GetLabelName() == "menu_options" && other.GetIconName() == "menu/options";
+                return other.LabelName == "menu_options" && other.IconName == "menu/options";
             });
             if (index != -1)
                 index++;
@@ -177,11 +224,11 @@ namespace Celeste.Mod.Core {
             }));
         }
 
-        public void CreatePauseMenuButtons(Level level, TextMenu menu, bool minimal) {
+        public void CreatePauseMenuButtons(Level level, patch_TextMenu menu, bool minimal) {
             if (!Settings.ShowModOptionsInGame)
                 return;
 
-            List<TextMenu.Item> items = menu.GetItems();
+            List<TextMenu.Item> items = menu.Items;
             int index;
 
             // Find the options button and place our button below it.
@@ -207,15 +254,28 @@ namespace Celeste.Mod.Core {
                 level.Paused = true;
 
                 TextMenu options = OuiModOptions.CreateMenu(true, LevelExt.PauseSnapshot);
+                Action startSearching = OuiModOptions.AddSearchBox(options);
+
+                options.OnUpdate = () => {
+                    if (options.Focused) {
+                        if (Input.QuickRestart.Pressed) {
+                            startSearching();
+                        }
+                    }
+                };
 
                 options.OnESC = options.OnCancel = () => {
+                    if (!options.Focused) {
+                        return;
+                    }
+
                     Audio.Play(SFX.ui_main_button_back);
                     options.CloseAndRun(Everest.SaveSettings(), () => {
                         level.Pause(returnIndex, minimal, false);
 
                         // adjust the Mod Options menu position, in case it moved (pause menu entries added/removed after changing mod options).
-                        TextMenu textMenu = level.Entities.GetToAdd().FirstOrDefault((Entity e) => e is TextMenu) as TextMenu;
-                        TextMenu.Button modOptionsButton = textMenu?.GetItems().OfType<TextMenu.Button>()
+                        patch_TextMenu textMenu = ((patch_EntityList) (object) level.Entities).ToAdd.FirstOrDefault((Entity e) => e is TextMenu) as patch_TextMenu;
+                        TextMenu.Button modOptionsButton = textMenu?.Items.OfType<TextMenu.Button>()
                             .FirstOrDefault(button => button.Label == Dialog.Clean("menu_pause_modoptions"));
                         if (modOptionsButton != null) {
                             textMenu.Selection = textMenu.IndexOf(modOptionsButton);
@@ -224,6 +284,10 @@ namespace Celeste.Mod.Core {
                 };
 
                 options.OnPause = () => {
+                    if (!options.Focused) {
+                        return;
+                    }
+
                     Audio.Play(SFX.ui_main_button_back);
                     options.CloseAndRun(Everest.SaveSettings(), () => {
                         level.Paused = false;
@@ -235,19 +299,14 @@ namespace Celeste.Mod.Core {
             }));
         }
 
-        public override void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
+        public override void CreateModMenuSection(patch_TextMenu menu, bool inGame, EventInstance snapshot) {
             // Optional - reload mod settings when entering the mod options.
             // LoadSettings();
 
             base.CreateModMenuSection(menu, inGame, snapshot);
 
             if (!inGame) {
-                List<TextMenu.Item> items = menu.GetItems();
-
-                // change the "key config" labels
-
-                (items[items.Count - 2] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 2] as TextMenu.Button).Label;
-                (items[items.Count - 1] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 1] as TextMenu.Button).Label;
+                List<TextMenu.Item> items = menu.Items;
 
                 // insert extra options before the "key config" options
                 menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_oobe")).Pressed(() => {
@@ -261,6 +320,12 @@ namespace Celeste.Mod.Core {
                 menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_versionlist")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiVersionList>();
                 }));
+
+                TextMenu.Item setupLegacyRefBtn = new TextMenu.Button(Dialog.Clean("modoptions_coremodule_legacyref")).Pressed(() => {
+                    Everest.Updater.UpdateLegacyRef(OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>());
+                });
+                menu.Insert(items.Count - 2, setupLegacyRefBtn);
+                setupLegacyRefBtn.AddDescription(menu, Dialog.Clean("modoptions_coremodule_legacyref_descr"));
 
                 menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_modupdates")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiModUpdateList>();

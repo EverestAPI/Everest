@@ -1,5 +1,6 @@
 ﻿using FMOD.Studio;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using System;
 using System.Collections;
@@ -12,7 +13,7 @@ namespace Celeste.Mod.UI {
         private MountainCamera cameraStart;
         private MountainCamera cameraEnd;
 
-        public List<OuiChapterSelectIcon> OuiIcons;
+        public List<patch_OuiChapterSelectIcon> OuiIcons;
 
         private SearchMenu menu;
 
@@ -29,7 +30,21 @@ namespace Celeste.Mod.UI {
 
         public bool FromChapterSelect = false;
 
-        public bool Searching;
+        private bool searching;
+
+        public bool Searching {
+            get => searching;
+            set {
+                if (value != searching) { // Prevent multiple subscriptions
+                    if (value) { 
+                        TextInput.OnInput += OnTextInput;
+                    } else {
+                        TextInput.OnInput -= OnTextInput;
+                    }
+                }
+                searching = value;
+            }
+        }
 
         private string search = "";
         private string searchPrev = "";
@@ -57,8 +72,8 @@ namespace Celeste.Mod.UI {
                 }
             }
 
-            public TextMenu leftMenu;
-            public TextMenu rightMenu;
+            public patch_TextMenu leftMenu;
+            public patch_TextMenu rightMenu;
             private float leftOffset;
             private float rightOffset;
 
@@ -85,7 +100,7 @@ namespace Celeste.Mod.UI {
                 }
             }
 
-            public SearchMenu(TextMenu leftMenu, TextMenu rightMenu) {
+            public SearchMenu(patch_TextMenu leftMenu, patch_TextMenu rightMenu) {
                 Position = Vector2.Zero;
                 this.leftMenu = leftMenu;
                 this.rightMenu = rightMenu;
@@ -119,7 +134,6 @@ namespace Celeste.Mod.UI {
 
         private void clearSearch() {
             search = "";
-            searchPrev = "";
         }
 
         private void cleanExit() {
@@ -133,10 +147,6 @@ namespace Celeste.Mod.UI {
         }
 
         public void OnTextInput(char c) {
-
-            if (!Searching)
-                return;
-
             if (c == (char) 13) {
                 // Enter
                 Scene.OnEndOfFrame += () => {
@@ -152,7 +162,7 @@ namespace Celeste.Mod.UI {
                             }
                         }
 
-                        int index = menu.rightMenu.GetItems().FindIndex(item => item is TextMenuExt.ButtonExt button && button.Selectable && items.Contains(button));
+                        int index = menu.rightMenu.Items.FindIndex(item => item is TextMenuExt.ButtonExt button && button.Selectable && items.Contains(button));
                         if (index > 0) {
                             menu.rightMenu.Selection = index;
                             Audio.Play(SFX.ui_main_button_select);
@@ -175,18 +185,6 @@ namespace Celeste.Mod.UI {
                         goto ValidButton;
                     }
                     return;
-                }
-
-            } else if (c == (char) 127) {
-                // Delete - clear.
-                if (search.Length > 0) {
-                    clearSearch();
-                    Audio.Play(SFX.ui_main_rename_entry_backspace);
-                    goto ValidButton;
-                } else {
-                    Audio.Play(SFX.ui_main_button_invalid);
-                    cleanExit();
-                    goto ValidButton;
                 }
 
             } else if (c == ' ') {
@@ -224,7 +222,7 @@ namespace Celeste.Mod.UI {
         }
 
         private SearchMenu CreateMenu(bool inGame, EventInstance snapshot) {
-            menu = new SearchMenu(new TextMenu(), new TextMenu());
+            menu = new SearchMenu(new patch_TextMenu(), new patch_TextMenu());
             items.Clear();
 
             menu.leftMenu.Add(searchTitle = new TextMenu.Header(Dialog.Clean("maplist_search")));
@@ -268,15 +266,15 @@ namespace Celeste.Mod.UI {
             SaveData save = SaveData.Instance;
             List<AreaStats> areaStatsAll = save.Areas;
             for (int i = 0; i < AreaData.Areas.Count; i++) {
-                AreaData area = AreaData.Get(i);
+                patch_AreaData area = patch_AreaData.Get(i);
                 if (area == null || !area.HasMode(AreaMode.Normal))
                     continue;
 
                 // TODO: Make subchapters hidden by default in the map list, even in debug mode.
-                if (!save.DebugMode && !string.IsNullOrEmpty(area.GetMeta()?.Parent))
+                if (!save.DebugMode && !string.IsNullOrEmpty(area.Meta?.Parent))
                     continue;
 
-                string levelSet = area.GetLevelSet();
+                string levelSet = area.LevelSet;
 
                 string id = area.Name;
                 name = id.DialogCleanOrNull() ?? id.SpacedPascalCase();
@@ -288,7 +286,7 @@ namespace Celeste.Mod.UI {
                     id,
                     name,
                     levelSet,
-                    DialogExt.CleanLevelSet(levelSet)
+                    patch_Dialog.CleanLevelSet(levelSet)
                 }.Select(text => text.ToLower()).ToList();
 
                 List<string> unmatchedHunks = searchHunks.ToList();
@@ -329,11 +327,11 @@ namespace Celeste.Mod.UI {
 
                     if (matchCount > 1) {
                         lastLevelSet = levelSet;
-                        levelSetStats = SaveData.Instance.GetLevelSetStatsFor(levelSet);
+                        levelSetStats = patch_SaveData.Instance.GetLevelSetStatsFor(levelSet);
                         levelSetAreaOffset = levelSetStats.AreaOffset;
                         levelSetUnlockedAreas = levelSetStats.UnlockedAreas;
                         levelSetUnlockedModes = levelSetStats.UnlockedModes;
-                        string setname = DialogExt.CleanLevelSet(levelSet);
+                        string setname = patch_Dialog.CleanLevelSet(levelSet);
                         TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(setname);
                         levelSetHeader.Alpha = 0f;
                         menu.rightMenu.Insert(1, levelSetHeader);
@@ -343,11 +341,11 @@ namespace Celeste.Mod.UI {
 
                     if (lastLevelSet != levelSet) {
                         lastLevelSet = levelSet;
-                        levelSetStats = SaveData.Instance.GetLevelSetStatsFor(levelSet);
+                        levelSetStats = patch_SaveData.Instance.GetLevelSetStatsFor(levelSet);
                         levelSetAreaOffset = levelSetStats.AreaOffset;
                         levelSetUnlockedAreas = levelSetStats.UnlockedAreas;
                         levelSetUnlockedModes = levelSetStats.UnlockedModes;
-                        string setname = DialogExt.CleanLevelSet(levelSet);
+                        string setname = patch_Dialog.CleanLevelSet(levelSet);
                         TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(setname);
                         levelSetHeader.Alpha = 0f;
                         menu.rightMenu.Add(levelSetHeader);
@@ -432,8 +430,6 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Enter(Oui from) {
-            TextInput.OnInput += OnTextInput;
-
             searchBarColor = Color.DarkSlateGray;
             searchBarColor.A = 80;
 
@@ -464,8 +460,6 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Leave(Oui next) {
-            TextInput.OnInput -= OnTextInput;
-
             FromChapterSelect = false;
 
             MInput.Disabled = false;
@@ -511,6 +505,17 @@ namespace Celeste.Mod.UI {
 
         public override void Update() {
             if (Searching) {
+                if (MInput.Keyboard.Pressed(Keys.Delete)) {
+                    if (search.Length > 0) {
+                        clearSearch();
+                        Audio.Play(SFX.ui_main_rename_entry_backspace);
+                    } else {
+                        Audio.Play(SFX.ui_main_button_back);
+                        cleanExit();
+                    }
+                    searchConsumedButton = true;
+                    MInput.UpdateNull();
+                }
                 MInput.Disabled = searchConsumedButton;
             }
             searchConsumedButton = false;
@@ -556,7 +561,7 @@ namespace Celeste.Mod.UI {
 
             // Don't allow pressing any buttons while searching
             if (menu != null)
-                foreach (TextMenu.Item item in menu.rightMenu.GetItems())
+                foreach (TextMenu.Item item in menu.rightMenu.Items)
                     item.Disabled = Searching;
         }
 
@@ -577,11 +582,11 @@ namespace Celeste.Mod.UI {
         }
 
         public override void SceneEnd(Scene scene) {
-            TextInput.OnInput -= OnTextInput;
+            Searching = false; // Stop text input
             MInput.Disabled = false;
         }
 
-        protected void Inspect(AreaData area, AreaMode mode = AreaMode.Normal) {
+        protected void Inspect(patch_AreaData area, AreaMode mode = AreaMode.Normal) {
             Focused = false;
             Audio.Play(SFX.ui_world_icon_select);
             SaveData.Instance.LastArea = area.ToKey(mode);
@@ -591,19 +596,19 @@ namespace Celeste.Mod.UI {
             Overworld.Goto<OuiChapterPanel>();
         }
 
-        private void Start(AreaData area, AreaMode mode = AreaMode.Normal, string checkpoint = null) {
+        private void Start(patch_AreaData area, AreaMode mode = AreaMode.Normal, string checkpoint = null) {
             Focused = false;
             Audio.Play(SFX.ui_world_chapter_checkpoint_start);
             Add(new Coroutine(StartRoutine(area, mode, checkpoint)));
         }
 
-        private IEnumerator StartRoutine(AreaData area, AreaMode mode = AreaMode.Normal, string checkpoint = null) {
+        private IEnumerator StartRoutine(patch_AreaData area, AreaMode mode = AreaMode.Normal, string checkpoint = null) {
             Overworld.Maddy.Hide(false);
             area.Wipe(Overworld, false, null);
             Audio.SetMusic(null, true, true);
             Audio.SetAmbience(null, true);
             if ((area.ID == 0 || area.ID == 9) && checkpoint == null && mode == AreaMode.Normal) {
-                Overworld.RendererList.UpdateLists();
+                ((patch_RendererList) (object) Overworld.RendererList).UpdateLists();
                 Overworld.RendererList.MoveToFront(Overworld.Snow);
             }
             yield return 0.5f;

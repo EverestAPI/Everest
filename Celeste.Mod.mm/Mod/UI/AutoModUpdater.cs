@@ -44,7 +44,7 @@ namespace Celeste.Mod.UI {
             // add on-screen elements like GameLoader/OverworldLoader
             Add(new HudRenderer());
             Add(snow);
-            RendererList.UpdateLists();
+            ((patch_RendererList) (object) RendererList).UpdateLists();
 
             // register the routine
             Entity entity = new Entity();
@@ -111,7 +111,7 @@ namespace Celeste.Mod.UI {
                     // download it...
                     modUpdatingMessage = $"{progressString} {Dialog.Clean("AUTOUPDATECHECKER_DOWNLOADING")}";
 
-                    Logger.Log("AutoModUpdater", $"Downloading {update.URL} to {zipPath}");
+                    Logger.Log(LogLevel.Verbose, "AutoModUpdater", $"Downloading {update.URL} to {zipPath}");
                     Func<int, long, int, bool> progressCallback = (position, length, speed) => {
                         if (skipUpdate) {
                             return false;
@@ -129,7 +129,7 @@ namespace Celeste.Mod.UI {
 
                     try {
                         Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, progressCallback);
-                    } catch (WebException e) {
+                    } catch (Exception e) when (e is WebException or TimeoutException) {
                         Logger.Log(LogLevel.Warn, "AutoModUpdater", $"Download failed, trying mirror {update.MirrorURL}");
                         Logger.LogDetailed(e);
                         Everest.Updater.DownloadFileWithProgress(update.MirrorURL, zipPath, progressCallback);
@@ -139,7 +139,7 @@ namespace Celeste.Mod.UI {
                     showCancel = false;
 
                     if (skipUpdate) {
-                        Logger.Log("AutoModUpdater", "Update was skipped");
+                        Logger.Log(LogLevel.Verbose, "AutoModUpdater", "Update was skipped");
 
                         // try to delete mod-update.zip if it still exists.
                         ModUpdaterHelper.TryDelete(zipPath);
@@ -165,7 +165,7 @@ namespace Celeste.Mod.UI {
 
                 } catch (Exception e) {
                     // update failed
-                    Logger.Log("AutoModUpdater", $"Updating {update.Name} failed");
+                    Logger.Log(LogLevel.Warn, "AutoModUpdater", $"Updating {update.Name} failed");
                     Logger.LogDetailed(e);
                     failuresOccured = true;
 

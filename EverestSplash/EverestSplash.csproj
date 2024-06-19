@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net7.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <UseAppHost>false</UseAppHost> <!-- EverestSplash will create its own AppHosts -->
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <EmbeddedResource Include="..\lib-stripped\Celeste-icon.png">
+            <LogicalName>%(EmbeddedResource.Identity)</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="SplashContent\**\*">
+            <LogicalName>%(EmbeddedResource.Identity)</LogicalName>
+        </EmbeddedResource>
+        <!-- Only include this for standalone mode, MiniInstaller includes this same file -->
+        <Content Include="..\lib-ext\piton-runtime.yaml" TargetPath="piton-runtime.yaml" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+    </ItemGroup>
+
+    <!-- Resolve AppHosts -->
+    <PropertyGroup>
+        <AppHost_win-x86>..\lib-ext\piton\piton-gui-win_x86.exe</AppHost_win-x86>
+        <AppHost_win-x64>..\lib-ext\piton\piton-gui-win_x64.exe</AppHost_win-x64>
+        <AppHost_linux-x64>..\lib-ext\piton\piton-linux_x64</AppHost_linux-x64>
+        <AppHost_osx-x64>..\lib-ext\piton\piton-gui-macos_x64</AppHost_osx-x64>
+    </PropertyGroup>
+
+    <!-- Bind AppHosts for EverestBootSplash, just a trick to "compile" for all platforms in one publish -->
+    <Target Name="IncludeAppHosts" BeforeTargets="AssignTargetPaths">
+        <PropertyGroup>
+            <AppHostIntermediatePath_win-x86>$(IntermediateOutputPath)\EverestSplash-win.exe</AppHostIntermediatePath_win-x86>
+            <AppHostIntermediatePath_win-x64>$(IntermediateOutputPath)\EverestSplash-win64.exe</AppHostIntermediatePath_win-x64>
+            <AppHostIntermediatePath_linux-x64>$(IntermediateOutputPath)\EverestSplash-linux</AppHostIntermediatePath_linux-x64>
+            <AppHostIntermediatePath_osx-x64>$(IntermediateOutputPath)\EverestSplash-osx</AppHostIntermediatePath_osx-x64>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <Content Include="$(AppHostIntermediatePath_win-x86)" TargetPath="EverestSplash-win.exe" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+            <Content Include="$(AppHostIntermediatePath_win-x64)" TargetPath="EverestSplash-win64.exe" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+            <Content Include="$(AppHostIntermediatePath_linux-x64)" TargetPath="EverestSplash-linux" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+            <Content Include="$(AppHostIntermediatePath_osx-x64)" TargetPath="EverestSplash-osx" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BindAppHosts" AfterTargets="CoreCompile" DependsOnTargets="IncludeAppHosts">
+        <Message Importance="High" Text="Binding EverestSplash AppHosts..." />
+
+        <CreateAppHost AppHostSourcePath="$(AppHost_win-x86)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x86)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')"  WindowsGraphicalUserInterface="true" />
+        <CreateAppHost AppHostSourcePath="$(AppHost_win-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')"  WindowsGraphicalUserInterface="true" />
+        <CreateAppHost AppHostSourcePath="$(AppHost_linux-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_linux-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
+        <CreateAppHost AppHostSourcePath="$(AppHost_osx-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_osx-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
+    </Target>
+
+</Project>

@@ -1,7 +1,9 @@
-﻿using NLua;
+﻿using KeraLua;
+using NLua;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -45,11 +47,13 @@ namespace Celeste.Mod {
                 public readonly CachedType Parent;
                 public readonly string FullName;
                 public readonly Type Type;
-                public LuaTable Members;
-                public LuaTable Cache;
+
 
                 public readonly Dictionary<string, CachedType> NestedTypeMap = new Dictionary<string, CachedType>();
                 public CachedType[] NestedTypes => NestedTypeMap.Values.ToArray();
+
+                private LuaTable nilMemberTable;
+                private Dictionary<string, LuaTable> membersCache;
 
                 private CachedType(Type type) {
                     Name = type.Name;
@@ -80,6 +84,64 @@ namespace Celeste.Mod {
                         AllTypes[ctype.FullName] = ctype;
                     }
                 }
+
+                public LuaTable GetMembers(string key) {
+                    if (membersCache == null) {
+                        // Populate cache with PUBLIC members (the old code used all members but only public ones are actually accesible through NLua)
+                        membersCache = new Dictionary<string, LuaTable>();
+                        foreach (MemberInfo info in Type.GetMembers(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)) {
+                            Type mtype = (info as PropertyInfo)?.PropertyType ?? (info as FieldInfo)?.FieldType;
+
+                            // Cache regular name
+                            string name = info.Name;
+                            if (!membersCache.TryGetValue(name, out LuaTable entry)) {
+                                entry = NewTable();
+                                entry[1] = NewTable();
+                                entry[2] = mtype;
+                                membersCache.Add(name, entry);
+                            }
+                            InsertIntoTable((LuaTable) entry[1], info);
+
+                            // Cache Lua-ified name
+                            string luaName = string.Empty;
+                            for (int i = 0; i < name.Length; i++) {
+                                if (char.IsLower(name[i]))
+                                    break;
+                                luaName += char.ToLower(name[i]);
+                            }
+                            luaName += name.Substring(luaName.Length);
+
+                            if (name != luaName) {
+                                if (!membersCache.TryGetValue(luaName, out LuaTable luaEntry)) {
+                                    luaEntry = NewTable();
+                                    luaEntry[1] = NewTable();
+                                    luaEntry[2] = mtype;
+                                    membersCache.Add(luaName, luaEntry);
+                                }
+                                InsertIntoTable((LuaTable) luaEntry[1], info);
+                            }
+                        }
+                    }
+
+                    // Lookup in cache
+                    if (membersCache.TryGetValue(key, out LuaTable memberTable))
+                        return memberTable;
+
+                    if (nilMemberTable == null) {
+                        nilMemberTable = NewTable();
+                        nilMemberTable[1] = nilMemberTable[2] = null;
+                    }
+
+                    return nilMemberTable;
+                }
+
+                private static LuaTable NewTable() {
+                    Context.State.NewTable();
+                    return new LuaTable(Context.State.Ref(LuaRegistry.Index), Context);
+                }
+
+                // This could be otpimized but eh
+                private static void InsertIntoTable(LuaTable table, object val) => table[table.Keys.Count + 1] = val;
             }
 
         }

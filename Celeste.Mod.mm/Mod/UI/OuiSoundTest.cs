@@ -36,7 +36,7 @@ namespace Celeste.Mod.UI {
         private Color selectColorA = Calc.HexToColor("84FF54");
         private Color selectColorB = Calc.HexToColor("FCFF59");
 
-        private TextMenu musicParamMenu;
+        private patch_TextMenu musicParamMenu;
         private float musicParamMenuEase = 0f;
         private Dictionary<string, float> musicParams = new Dictionary<string, float>();
 
@@ -58,7 +58,7 @@ namespace Celeste.Mod.UI {
 
             Visible = true;
 
-            musicParamMenu = new TextMenu();
+            musicParamMenu = new patch_TextMenu();
             musicParamMenu.Focused = false;
             musicParamMenu.MinWidth = 500f;
 
@@ -133,7 +133,7 @@ namespace Celeste.Mod.UI {
                 musicParamMenu.Update();
             }
 
-            if (Focused && musicParamMenu != null && Input.MenuJournal.Pressed && musicParamMenu.GetItems().Count != 0) {
+            if (Focused && musicParamMenu != null && Input.MenuJournal.Pressed && musicParamMenu.Items.Count != 0) {
                 musicParamMenu.Selection = musicParamMenu.FirstPossibleSelection;
                 musicParamMenu.Focused = !musicParamMenu.Focused;
             }
@@ -272,7 +272,7 @@ namespace Celeste.Mod.UI {
                         continue;
                     }
 
-                    if (musicParamMenu.GetItems().Count == 0) {
+                    if (musicParamMenu.Items.Count == 0) {
                         musicParamMenu.Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("SOUNDTEST_AUDIOPARAMS")));
                     }
 
@@ -336,7 +336,7 @@ namespace Celeste.Mod.UI {
             pos = posInput + new Vector2(0f, spacingY * -0.8f + wigglerBankPath.Value * 2f);
             ActiveFont.DrawOutline(selectedBankPath ?? "", pos, new Vector2(0f, 0.5f), Vector2.One * 0.75f, Color.LightSlateGray * ease, 2f, Color.Black * ease * ease * ease);
 
-            if (musicParamMenu.GetItems().Count > 0) {
+            if (musicParamMenu.Items.Count > 0) {
                 // Press...
                 pos = posInput + new Vector2(0f, spacingY * 2f + wigglerBankPath.Value * 2f);
                 ActiveFont.DrawOutline(Dialog.Clean("SOUNDTEST_AUDIOPARAMS_OPEN_1"), pos, new Vector2(0f, 0.5f), Vector2.One * 0.75f, Color.White * ease, 2f, Color.Black * ease * ease * ease);

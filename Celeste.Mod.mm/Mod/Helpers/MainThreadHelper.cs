@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
-using MonoMod.Utils;
 using System;
-using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -11,23 +10,67 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public class MainThreadHelper : GameComponent {
 
-        public static MainThreadHelper Instance;
+        public static readonly TaskCreationOptions ForceQueue = TaskCreationOptions.LongRunning;
 
-        private static readonly Queue<Action> Queue = new Queue<Action>();
-        private static readonly HashSet<object> Enqueued = new HashSet<object>();
-        private static readonly Dictionary<object, object> EnqueuedWaiting = new Dictionary<object, object>();
-        private static int EnqueuedNew = 0;
-        private static readonly ManualResetEventSlim EnqueuedNextFrame = new ManualResetEventSlim(true);
+        private class MainThreadTaskScheduler : TaskScheduler {
+
+            public bool TaskIsForceQueued;
+
+            private readonly ConcurrentQueue<Task> _TasksQueue = new ConcurrentQueue<Task>();
+            private readonly Stopwatch _Stopwatch = new Stopwatch();
+
+            public override int MaximumConcurrencyLevel => 1;
+
+            protected override IEnumerable<Task> GetScheduledTasks() => _TasksQueue;
+            protected override void QueueTask(Task task) => _TasksQueue.Enqueue(task);
+
+            protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued) {
+                // We must be on the main thread
+                // We don't have to worry about dequeuing as there only is a single thread executing tasks
+                if (!IsMainThread)
+                    return false;
+
+                // Check that we are not currently enqueuing a force queued task
+                if (TaskIsForceQueued)
+                    return false;
+
+                return TryExecuteTask(task);
+            }
+
+            public void ExecuteTasksFor(int timeSlice) {
+                if (_TasksQueue.Count <= 0)
+                    return;
+
+                // Execute tasks during our allocated time slice
+                _Stopwatch.Reset();
+                while (_Stopwatch.ElapsedMilliseconds < timeSlice) {
+                    if (!_TasksQueue.TryDequeue(out Task task))
+                        break;
+                    TryExecuteTask(task);
+                }
+            }
+
+        }
+
+        public static MainThreadHelper Instance;
 
         public static Thread MainThread { get; private set; }
         public static bool UpdatedOnce { get; private set; }
 
-        public static int Boost;
-
-        private Stopwatch Stopwatch = new Stopwatch();
-
         public static bool IsMainThread => MainThread == Thread.CurrentThread;
 
+        public static int Boost;
+        private static int TaskTimeSlice => Boost != 0 ? Boost : 10;
+
+        private static MainThreadTaskScheduler TaskScheduler;
+        private static TaskFactory TaskFactory;
+
+        private static ConcurrentDictionary<object, Task> KeyedTasks = new ConcurrentDictionary<object, Task>();
+
+        static MainThreadHelper() {
+            TaskScheduler = new MainThreadTaskScheduler();
+            TaskFactory = new TaskFactory(CancellationToken.None, TaskCreationOptions.None, TaskContinuationOptions.None, TaskScheduler);
+        }
 
         public MainThreadHelper(Game game)
             : base(game) {
@@ -37,122 +80,142 @@ namespace Celeste.Mod {
             MainThread = Thread.CurrentThread;
         }
 
-        private static void PreventQueueOverload() {
-            if (!IsMainThread && Interlocked.Increment(ref EnqueuedNew) > 10) {
-                EnqueuedNextFrame.Wait(Boost > 0 ? Boost * 2 : 20);
+        public static ValueTask Schedule(Action act, bool forceQueue = false) {
+            if (forceQueue && IsMainThread) {
+                try {
+                    TaskScheduler.TaskIsForceQueued = true;
+                    return Schedule(act);
+                } finally {
+                    TaskScheduler.TaskIsForceQueued = false;
+                }
             }
+
+            if (IsMainThread) {
+                act();
+                return ValueTask.CompletedTask;
+            } else
+                return new ValueTask(TaskFactory.StartNew(act));
         }
 
-        public static void Do(Action a) {
+        public static ValueTask<T> Schedule<T>(Func<T> act, bool forceQueue = false) {
+            if (forceQueue && IsMainThread) {
+                try {
+                    TaskScheduler.TaskIsForceQueued = true;
+                    return Schedule(act);
+                } finally {
+                    TaskScheduler.TaskIsForceQueued = false;
+                }
+            }
+
+            if (IsMainThread)
+                return new ValueTask<T>(act());
+            else
+                return new ValueTask<T>(TaskFactory.StartNew(act));
+        }
+
+        public static Task Schedule(Func<Task> act, bool forceQueue = false) {
+            if (forceQueue && IsMainThread) {
+                try {
+                    TaskScheduler.TaskIsForceQueued = true;
+                    return Schedule(act);
+                } finally {
+                    TaskScheduler.TaskIsForceQueued = false;
+                }
+            }
+
+            if (IsMainThread)
+                return act();
+            else
+                return TaskFactory.StartNew(act).Unwrap();
+        }
+
+        public static Task<T> Schedule<T>(Func<Task<T>> act, bool forceQueue = false) {
+            if (forceQueue && IsMainThread) {
+                try {
+                    TaskScheduler.TaskIsForceQueued = true;
+                    return Schedule(act);
+                } finally {
+                    TaskScheduler.TaskIsForceQueued = false;
+                }
+            }
+
+            if (IsMainThread)
+                return act();
+            else
+                return TaskFactory.StartNew(act).Unwrap();
+        }
+
+        public static readonly YieldFrameAwaitable YieldFrame;
+
+        public struct YieldFrameAwaitable {
+
+            public YieldFrameAwaiter GetAwaiter() => default;
+
+            public struct YieldFrameAwaiter : INotifyCompletion {
+
+                public bool IsCompleted => false;
+                public void GetResult() {}
+                public void OnCompleted(Action continuation) => Schedule(continuation, forceQueue: true);
+
+            }
+
+        }
+
+        [Obsolete("Use Schedule instead")] public static void Do(Action a) => Schedule(a);
+        [Obsolete("Use Schedule instead")] public static MaybeAwaitable<T> Get<T>(Func<T> f) => new MaybeAwaitable<T>(Schedule(f));
+        [Obsolete("Use Schedule instead")] public static MaybeAwaitable<T> GetForceQueue<T>(Func<T> f) => new MaybeAwaitable<T>(Schedule(f, forceQueue: true));
+
+        [Obsolete("Use Schedule instead")]
+        public static void Do(object key, Action act) {
             if (IsMainThread) {
-                a();
+                act();
                 return;
             }
 
-            PreventQueueOverload();
-
-            lock (Queue) {
-                Queue.Enqueue(a);
-            }
-        }
-
-        public static void Do(object key, Action a) {
-            if (IsMainThread) {
-                a();
+            if (KeyedTasks.TryGetValue(key, out Task task) && !task.IsCompleted)
                 return;
-            }
 
-            PreventQueueOverload();
-
-            lock (Queue) {
-                if (!Enqueued.Add(key))
+            lock (KeyedTasks) {
+                if (KeyedTasks.TryGetValue(key, out task) && task.IsCompleted)
                     return;
 
-                Queue.Enqueue(() => {
-                    a?.Invoke();
-                    lock (Queue) {
-                        Enqueued.Remove(key);
-                    }
-                });
+                KeyedTasks[key] = Schedule(act).AsTask();
             }
         }
 
-        public static MaybeAwaitable<T> Get<T>(Func<T> f) {
-            if (IsMainThread) {
-                return new MaybeAwaitable<T>(f());
+        [Obsolete("Use Schedule instead")]
+        public static MaybeAwaitable<T> Get<T>(object key, Func<T> act) {
+            if (IsMainThread)
+                return new MaybeAwaitable<T>(act());
+
+            if (!KeyedTasks.TryGetValue(key, out Task task) || task.IsCompleted) {
+                lock (KeyedTasks) {
+                    if (!KeyedTasks.TryGetValue(key, out task) || task.IsCompleted)
+                        KeyedTasks[key] = task = Schedule(act).AsTask();
+                }
             }
 
-            return GetForceQueue(f);
+            return new MaybeAwaitable<T>(((Task<T>) task).GetAwaiter());
         }
 
-        public static MaybeAwaitable<T> GetForceQueue<T>(Func<T> f) {
-            PreventQueueOverload();
+        [Obsolete("Use Schedule instead")]
+        public static MaybeAwaitable<T> GetForceQueue<T>(object key, Func<T> act) {
+            if (IsMainThread)
+                return new MaybeAwaitable<T>(act());
 
-            lock (Queue) {
-                MaybeAwaitable<T> awaitable = new MaybeAwaitable<T>(() => true);
-                Queue.Enqueue(() => awaitable.SetResult(f != null ? f.Invoke() : default));
-                return awaitable;
-            }
-        }
-
-        public static MaybeAwaitable<T> Get<T>(object key, Func<T> f) {
-            if (IsMainThread) {
-                // TODO: What should we do if it's already enqueued?
-                return new MaybeAwaitable<T>(f());
+            if (!KeyedTasks.TryGetValue(key, out Task task) || task.IsCompleted) {
+                lock (KeyedTasks) {
+                    if (!KeyedTasks.TryGetValue(key, out task) || task.IsCompleted)
+                        KeyedTasks[key] = task = Schedule(act, forceQueue: true).AsTask();
+                }
             }
 
-            return GetForceQueue(key, f);
-        }
-
-        public static MaybeAwaitable<T> GetForceQueue<T>(object key, Func<T> f) {
-            PreventQueueOverload();
-
-            lock (Queue) {
-                if (!Enqueued.Add(key))
-                    return (MaybeAwaitable<T>) EnqueuedWaiting[key];
-
-                T result = default;
-                Task<T> proxy = new Task<T>(() => result);
-                MaybeAwaitable<T> awaitable = new MaybeAwaitable<T>(proxy.GetAwaiter(), () => true);
-                EnqueuedWaiting[key] = awaitable;
-
-                Queue.Enqueue(() => {
-                    result = f != null ? f.Invoke() : default;
-                    proxy.Start();
-                    lock (Queue) {
-                        EnqueuedWaiting.Remove(key);
-                        Enqueued.Remove(key);
-                    }
-                });
-
-                return awaitable;
-            }
+            return new MaybeAwaitable<T>(((Task<T>) task).GetAwaiter());
         }
 
         public override void Update(GameTime gameTime) {
             UpdatedOnce = true;
-
-            if (Queue.Count > 0) {
-                // run as many tasks as possible in 10 milliseconds (a frame is ~16ms).
-                Interlocked.Exchange(ref EnqueuedNew, 0);
-                EnqueuedNextFrame.Reset();
-                int i = 0;
-                Stopwatch.Restart();
-                while (Boost <= i || Stopwatch.ElapsedMilliseconds < (Boost != 0 ? Boost : 10)) {
-                    i--;
-                    Action action = null;
-                    lock (Queue) {
-                        if (Queue.Count > 0) {
-                            action = Queue.Dequeue();
-                        }
-                    }
-                    if (action == null)
-                        break;
-                    action.Invoke();
-                }
-                Stopwatch.Stop();
-                EnqueuedNextFrame.Set();
-            }
+            TaskScheduler.ExecuteTasksFor(TaskTimeSlice);
 
             if (gameTime == null)
                 return;
@@ -160,53 +223,24 @@ namespace Celeste.Mod {
             base.Update(gameTime);
         }
 
-        protected override void Dispose(bool disposing) {
-            base.Dispose(disposing);
-
-            EnqueuedNextFrame.Set();
-            EnqueuedNextFrame.Dispose();
-        }
-
     }
 
+    [Obsolete("This is an obsolete reinvention of a TaskCompletionSource<T>")]
     public struct MaybeAwaitable<T> {
 
         private MaybeAwaiter _Awaiter;
         public readonly bool IsValid;
 
-        public MaybeAwaitable(T result) {
-            _Awaiter = new MaybeAwaiter();
-            _Awaiter._IsImmediate = true;
-            _Awaiter._Result = result;
-            _Awaiter._CanGetResult = null;
-            IsValid = true;
-        }
+        public MaybeAwaitable(T result) => _Awaiter = new MaybeAwaiter(result);
+        public MaybeAwaitable(TaskAwaiter<T> task) => _Awaiter = new MaybeAwaiter(task);
+        public MaybeAwaitable(Func<bool> canGetResult) => _Awaiter._CanGetResult = canGetResult;
+        public MaybeAwaitable(TaskAwaiter<T> task, Func<bool> canGetResult) => _Awaiter = new MaybeAwaiter(task) { _CanGetResult = canGetResult };
 
-        public MaybeAwaitable(TaskAwaiter<T> task) {
-            _Awaiter = new MaybeAwaiter();
-            _Awaiter._IsImmediate = false;
-            _Awaiter._Result = default;
-            _Awaiter._Task = task;
-            _Awaiter._CanGetResult = null;
-            IsValid = true;
-        }
-
-        public MaybeAwaitable(Func<bool> canGetResult) {
-            _Awaiter = new MaybeAwaiter();
-            _Awaiter._IsImmediate = false;
-            _Awaiter._Result = default;
-            _Awaiter._MRE = new ManualResetEventSlim(false);
-            _Awaiter._CanGetResult = canGetResult;
-            IsValid = true;
-        }
-
-        public MaybeAwaitable(TaskAwaiter<T> task, Func<bool> canGetResult) {
-            _Awaiter = new MaybeAwaiter();
-            _Awaiter._IsImmediate = false;
-            _Awaiter._Result = default;
-            _Awaiter._Task = task;
-            _Awaiter._CanGetResult = canGetResult;
-            IsValid = true;
+        internal MaybeAwaitable(ValueTask<T> task) {
+            if (task.IsCompletedSuccessfully)
+                _Awaiter = new MaybeAwaiter(task.Result);
+            else
+                _Awaiter = new MaybeAwaiter(task.AsTask().GetAwaiter());
         }
 
         public MaybeAwaiter GetAwaiter() => _Awaiter;
@@ -215,63 +249,53 @@ namespace Celeste.Mod {
 
         public struct MaybeAwaiter : ICriticalNotifyCompletion {
 
-            internal bool _IsImmediate;
-            internal T _Result;
-            internal TaskAwaiter<T> _Task;
-            internal ManualResetEventSlim _MRE;
-            internal Func<bool> _CanGetResult;
+            private bool _IsImmediate, _IsWrapper;
+            private T _ImmediateVal;
+            private TaskAwaiter<T>? _TaskAwaiter;
+            private TaskCompletionSource<T> _CompletionSource;
+            internal Func<bool> _CanGetResult; // Backwards compat only
 
-            public bool IsCompleted => _IsImmediate || (_MRE?.IsSet ?? _Task.IsCompleted);
+            private TaskAwaiter<T> TaskAwaiter => _TaskAwaiter ??= CompletionSource.Task.GetAwaiter();
+            private TaskCompletionSource<T> CompletionSource => _CompletionSource ??= new TaskCompletionSource<T>();
+
+            public bool IsCompleted => _IsImmediate || TaskAwaiter.IsCompleted;
+
+            internal MaybeAwaiter(T result) {
+                _IsImmediate = true;
+                _ImmediateVal = result;
+            }
+
+            internal MaybeAwaiter(TaskAwaiter<T> task) {
+                _IsWrapper = true;
+                _TaskAwaiter = task;
+            }
 
             public T GetResult() {
-                if (_IsImmediate)
-                    return _Result;
-
-                if (!(_CanGetResult?.Invoke() ?? true))
-                    throw new Exception("Cannot obtain the result - potential deadlock!");
-
-                ManualResetEventSlim mre = _MRE;
-                if (mre != null) {
-                    try {
-                        mre.Wait();
-                        mre.Dispose();
-                    } catch (Exception) {
-                        try {
-                            mre.Dispose();
-                        } catch (Exception) {
-                        }
-                    }
-                    _IsImmediate = true;
-                    _MRE = null;
-                    return _Result;
-                }
-
-                return _Task.GetResult();
+                if (!_CanGetResult?.Invoke() ?? false)
+                    throw new InvalidOperationException("Can't currently get the result of the MaybeAwaiter");
+                return _IsImmediate ? _ImmediateVal : TaskAwaiter.GetResult();
             }
 
             public void SetResult(T result) {
-                if (_MRE == null)
-                    throw new InvalidOperationException("Cannot set a result on a MaybeAwaiter that doesn't expect one!");
-                _Result = result;
-                _IsImmediate = true;
-                _MRE.Set();
+                if (_IsImmediate || _IsWrapper)
+                    throw new InvalidOperationException("Can't set the result of a MaybeAwaiter which doesn't expect one");
+                CompletionSource.SetResult(result);
             }
 
             public void OnCompleted(Action continuation) {
-                if (_IsImmediate) {
+                if (_IsImmediate)
                     continuation();
-                    return;
-                }
-                _Task.OnCompleted(continuation);
+                else
+                    TaskAwaiter.OnCompleted(continuation);
             }
 
             public void UnsafeOnCompleted(Action continuation) {
-                if (_IsImmediate) {
+                if (_IsImmediate)
                     continuation();
-                    return;
-                }
-                _Task.UnsafeOnCompleted(continuation);
+                else
+                    TaskAwaiter.UnsafeOnCompleted(continuation);
             }
+
         }
 
     }

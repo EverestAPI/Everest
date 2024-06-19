@@ -3,6 +3,7 @@
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -94,30 +95,32 @@ namespace Celeste {
     }
     public static class PlayerHairExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <inheritdoc cref="patch_PlayerHair.GetHairTexture(int)"/>
+        [Obsolete("Use PlayerHair.GetHairTexture instead.")]
         public static MTexture GetHairTexture(this PlayerHair self, int index)
             => ((patch_PlayerHair) self).GetHairTexture(index);
 
         /// <inheritdoc cref="patch_PlayerHair.GetHairScale(int)"/>
+        [Obsolete("Use PlayerHair.PublicGetHairScale instead.")]
         public static Vector2 GetHairScale(this PlayerHair self, int index)
             => ((patch_PlayerHair) self).PublicGetHairScale(index);
 
         /// <inheritdoc cref="patch_PlayerHair.GetHairColor(int)"/>
+        [Obsolete("Use PlayerHair.GetHairColor instead.")]
         public static Color GetHairColor(this PlayerHair self, int index)
             => ((patch_PlayerHair) self).GetHairColor(index);
 
         /// <summary>
         /// Get the PlayerSprite which the PlayerHair belongs to.
         /// </summary>
+        [Obsolete("Use PlayerHair.Sprite instead.")]
         public static PlayerSprite GetSprite(this PlayerHair self)
             => ((patch_PlayerHair) self).Sprite;
 
         /// <summary>
         /// Get the current wave, updated by Engine.DeltaTime * 4f each Update.
         /// </summary>
+        [Obsolete("Use PlayerHair.Wave instead.")]
         public static float GetWave(this PlayerHair self)
             => ((patch_PlayerHair) self).Wave;
 
