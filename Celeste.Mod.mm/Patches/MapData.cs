@@ -194,29 +194,27 @@ namespace Celeste {
             MapMeta metaParsedFromFile = null;
             MapMeta metaParsed = null;
 
+            // load metadata from .meta.yaml file
             string path = $"Maps/{area.Mode[(int)mode].Path}";
             if (Everest.Content.TryGet(path, out ModAsset asset)) {
                 metaParsedFromFile = asset.GetMeta<MapMeta>();
                 if (metaParsedFromFile != null) {
-                    if (metaParsedFromFile.Modes == null) {
-                        metaParsedFromFile.Modes = new MapMetaModeProperties[3];
-                    }
-                    if (metaParsedFromFile.Modes.Length < 3) {
-                        metaParsedFromFile.Modes = metaParsedFromFile.Modes.Concat(new MapMetaModeProperties[3 - metaParsedFromFile.Modes.Length]).ToArray();
-                    }
                     metaParsedFromFile.Modes[(int)mode] = MapMetaModeProperties.Add(metaParsedFromFile.Mode, metaParsedFromFile.Modes[(int)mode]);
                     metaParsedFromFile.Mode = null;
                 }
             }
 
+            // load metadata from .bin file
             if (meta != null) {
                 metaParsed = new MapMeta(meta);
                 metaParsed.Modes[(int)mode] = MapMetaModeProperties.Add(metaParsed.Mode, metaParsed.Modes[(int)mode]);
                 metaParsed.Mode = null;
             }
 
+            // merge metadata, with .meta.yaml taking priority
             metaParsed = MapMeta.Add(metaParsedFromFile, metaParsed);
 
+            // apply metadata to AreaData
             if (mode == AreaMode.Normal) {
                 metaParsed.ApplyTo(area);
                 metaParsed.Modes[(int)mode]?.ApplyTo(area, mode);

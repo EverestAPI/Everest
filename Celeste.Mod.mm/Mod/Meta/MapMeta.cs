@@ -63,7 +63,16 @@ namespace Celeste.Mod.Meta {
 
         public bool? OverrideASideMeta { get; set; }
 
-        public MapMetaModeProperties[] Modes { get; set; }
+        private MapMetaModeProperties[] _modes = new MapMetaModeProperties[3];
+        public MapMetaModeProperties[] Modes {
+            get => _modes;
+            set {
+                _modes = value;
+                // Some of the game's code checks for [1] / [2] explicitly.
+                // Let's just provide null modes to fill any gaps.
+                Array.Resize(ref _modes, 3);
+            }
+        }
         public MapMetaModeProperties Mode { get; set; } // This property will be null outside of loading
 
         public MapMetaMountain Mountain { get; set; }
@@ -122,8 +131,7 @@ namespace Celeste.Mod.Meta {
             child = meta.Children?.FirstOrDefault(el => el.Name == "cassettemodifier");
             if (child != null)
                 CassetteModifier = new MapMetaCassetteModifier(child);
-
-            Modes = new MapMetaModeProperties[3];
+            
             child = meta.Children?.FirstOrDefault(el => el.Name == "modes");
             if (child != null && child.Children != null) {
                 for (int i = 0; i < child.Children.Count; i++) {
@@ -202,15 +210,6 @@ namespace Celeste.Mod.Meta {
         }
 
         public void ApplyTo(patch_AreaData area) {
-            // Some of the game's code checks for [1] / [2] explicitly.
-            // Let's just provide null modes to fill any gaps.
-            Modes ??= new MapMetaModeProperties[3];
-            if (Modes.Length < 3) {
-                MapMetaModeProperties[] larger = Modes;
-                Array.Resize(ref larger, 3); // can't pass reference to property directly
-                Modes = larger;
-            }
-
             if (!string.IsNullOrEmpty(Icon) && GFX.Gui.Has(Icon))
                 area.Icon = Icon;
 
