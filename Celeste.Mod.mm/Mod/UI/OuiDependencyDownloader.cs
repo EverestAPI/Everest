@@ -203,7 +203,7 @@ namespace Celeste.Mod.UI {
                             LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST"), modFilename));
 
                             // remove the mod from the loaded blacklist
-                            Everest.Loader._Blacklist.RemoveAll(item => item == modFilename);
+                            Everest.Loader._Blacklist.RemoveWhere(item => item == modFilename);
 
                             // hot load the mod
                             if (modFilename.EndsWith(".zip")) {

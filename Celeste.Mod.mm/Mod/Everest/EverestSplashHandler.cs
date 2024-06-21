@@ -103,6 +103,10 @@ namespace Celeste.Mod {
             totalMods = modCount;
         }
 
+        public static void IncreaseTotalModCount(int amount) {
+            totalMods += amount;
+        }
+
         public static void IncreaseLoadedModCount(string latestLoadedMod) {
             loadedMods++;
             SendMessageToSplash("#progress" + loadedMods + ";" + totalMods + ";" + latestLoadedMod);

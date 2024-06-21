@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod.Utils;
 using System;
+using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -32,11 +33,11 @@ namespace Celeste.Mod {
             /// The path to the Everest /Mods/blacklist.txt file.
             /// </summary>
             public static string PathBlacklist { get; internal set; }
-            internal static List<string> _Blacklist = new List<string>();
+            internal static HashSet<string> _Blacklist = new HashSet<string>();
             /// <summary>
             /// The currently loaded mod blacklist.
             /// </summary>
-            public static ReadOnlyCollection<string> Blacklist => _Blacklist?.AsReadOnly();
+            public static IReadOnlyCollection<string> Blacklist => _Blacklist.ToImmutableHashSet();
 
             /// <summary>
             /// The path to the Everest /Mods/favorites.txt file.
@@ -117,7 +118,7 @@ namespace Celeste.Mod {
 
                 PathBlacklist = Path.Combine(PathMods, "blacklist.txt");
                 if (File.Exists(PathBlacklist)) {
-                    _Blacklist = File.ReadAllLines(PathBlacklist).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
+                    _Blacklist = File.ReadAllLines(PathBlacklist).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToHashSet<string>();
                 } else {
                     using (StreamWriter writer = File.CreateText(PathBlacklist)) {
                         writer.WriteLine("# This is the blacklist. Lines starting with # are ignored.");
@@ -322,6 +323,11 @@ namespace Celeste.Mod {
                 };
 
                 if (multimetas != null) {
+                    // When estimating the total mod count for the splash it is assumed that there will be exactly one
+                    // ModuleMetadata per filesystem entry, which is a valid assumption most of the time, but very few
+                    // mods do have multiple ModuleMetadatas in its everest.yaml, that's why we increase the total count
+                    // late here when we realize that one may contain multiple
+                    EverestSplashHandler.IncreaseTotalModCount(multimetas.Length-1);
                     foreach (EverestModuleMetadata multimeta in multimetas) {
                         multimeta.Multimeta = multimetas;
                         if (contentMetaParent == null)
@@ -404,6 +410,11 @@ namespace Celeste.Mod {
                 };
 
                 if (multimetas != null) {
+                    // When estimating the total mod count for the splash it is assumed that there will be exactly one
+                    // ModuleMetadata per filesystem entry, which is a valid assumption most of the time, but very few
+                    // mods do have multiple ModuleMetadatas in its everest.yaml, that's why we increase the total count
+                    // late here when we realize that one may contain multiple
+                    EverestSplashHandler.IncreaseTotalModCount(multimetas.Length-1);
                     foreach (EverestModuleMetadata multimeta in multimetas) {
                         multimeta.Multimeta = multimetas;
                         if (contentMetaParent == null)

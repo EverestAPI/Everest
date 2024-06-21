@@ -315,8 +315,7 @@ namespace Celeste.Mod.Core {
         }
 
         public override void End() {
-            if (Mode.Checkpoints == null)
-                Mode.Checkpoints = CheckpointsAuto.ToArray();
+            Mode.Checkpoints = CheckpointsAuto.ToArray();
 
             if (Mode != ParentMode) {
                 if (ParentMode.Checkpoints == null)
