@@ -12,6 +12,9 @@ variables:
   buildConfiguration: 'Release'
   VANILLA_CACHE: $(Pipeline.Workspace)/vanilla
 
+pr:
+- '*'
+
 name: '$(Build.BuildId)+$(Build.BuildIdOffset)'
 
 steps:
