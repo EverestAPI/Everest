@@ -88,21 +88,13 @@ namespace Celeste.Mod {
         /// <param name="result">The asset in its deserialized (object) form.</param>
         /// <returns>True if deserializing the asset succeeded, false otherwise.</returns>
         public bool TryDeserialize<T>(out T result) {
-            if (Type == typeof(AssetTypeYaml)) {
-                try {
-                    using (StreamReader reader = new StreamReader(Stream))
-                        result = YamlHelper.Deserializer.Deserialize<T>(reader);
-                } catch {
-                    result = default;
-                    return false;
-                }
+            try {
+                result = Deserialize<T>();
                 return true;
+            } catch {
+                result = default;
+                return false;
             }
-
-            // TODO: Deserialize AssetTypeXml
-
-            result = default;
-            return false;
         }
 
         /// <summary>
@@ -111,8 +103,14 @@ namespace Celeste.Mod {
         /// <typeparam name="T">The target type.</typeparam>
         /// <returns>The asset in its deserialized (object) form or default(T).</returns>
         public T Deserialize<T>() {
-            TryDeserialize(out T result);
-            return result;
+            if (Type == typeof(AssetTypeYaml)) {
+                using StreamReader reader = new StreamReader(Stream);
+                return YamlHelper.Deserializer.Deserialize<T>(reader);
+            }
+
+            // TODO: Deserialize AssetTypeXml
+
+            return default;
         }
 
         /// <summary>
