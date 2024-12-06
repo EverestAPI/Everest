@@ -40,13 +40,24 @@ namespace Monocle {
 
         private static Type[] GetAllTypesUncached() => FakeAssembly.GetFakeEntryAssembly().GetTypesSafe();
 
-        private bool Unrefreshed;
-        
+        //can it overflow?
+        public static int TrackedTypeVersion;
+
+        private int currentVersion;
+
+        public extern void orig_ctor();
+
+        [MonoModConstructor]
+        public void ctor() {
+            orig_ctor();
+            currentVersion = TrackedTypeVersion;
+        }
+
         [MonoModReplace]
         private static List<Type> GetSubclasses(Type type) {
             bool shouldNullOutCache = _temporaryAllTypes is null;
             _temporaryAllTypes ??= GetAllTypesUncached();
-            
+
             List<Type> subclasses = new();
             foreach (Type otherType in _temporaryAllTypes) {
                 if (type != otherType && type.IsAssignableFrom(otherType))
@@ -57,14 +68,14 @@ namespace Monocle {
             // Let's do that now instead.
             if (shouldNullOutCache)
                 _temporaryAllTypes = null;
-            
+
             return subclasses;
         }
 
         public static extern void orig_Initialize();
         public new static void Initialize() {
             _temporaryAllTypes = GetAllTypesUncached();
-            
+
             orig_Initialize();
 
             // search for entities with [TrackedAs]
@@ -75,8 +86,6 @@ namespace Monocle {
                     AddTypeToTracker(type, trackedAs.TrackedAsType, trackedAs.Inherited);
                 }
             }
-            (Engine.Scene.Tracker as patch_Tracker).Unrefreshed = false;
-
             // don't hold references to all the types anymore
             _temporaryAllTypes = null;
         }
@@ -86,13 +95,13 @@ namespace Monocle {
         }
 
         public static void AddTypeToTracker(Type type, Type trackedAs = null, params Type[] subtypes) {
-            (Engine.Scene.Tracker as patch_Tracker).Unrefreshed = true;
             Type trackedAsType = trackedAs != null && trackedAs.IsAssignableFrom(type) ? trackedAs : type;
             bool? trackedEntity = typeof(Entity).IsAssignableFrom(type) ? true : typeof(Component).IsAssignableFrom(type) ? false : null;
             if (trackedEntity == null) {
                 // this is neither an entity nor a component. Help!
                 throw new Exception("Type '" + type.Name + "' cannot be Tracked" + (trackedAsType != type ? "As" : "") + " because it does not derive from Entity or Component");
             }
+            bool updated = false;
             // copy the registered types for the target type
             ((bool) trackedEntity ? StoredEntityTypes : StoredComponentTypes).Add(type);
             Dictionary<Type, List<Type>> tracked = (bool) trackedEntity ? TrackedEntityTypes : TrackedComponentTypes;
@@ -101,8 +110,13 @@ namespace Monocle {
                     value = new List<Type>();
                     tracked.Add(type, value);
                 }
+                int cnt = value.Count;
                 value.AddRange(tracked.TryGetValue(trackedAsType, out List<Type> list) ? list : new List<Type>());
-                tracked[type] = value.Distinct().ToList();
+                var result = value.Distinct().ToList();
+                tracked[type] = result;
+                if (cnt != result.Count) {
+                    updated = true;
+                }
             }
             // do the same for subclasses
             foreach (Type subtype in subtypes) {
@@ -111,9 +125,17 @@ namespace Monocle {
                         value = new List<Type>();
                         tracked.Add(subtype, value);
                     }
+                    int cnt = value.Count;
                     value.AddRange(tracked.TryGetValue(trackedAsType, out List<Type> list) ? list : new List<Type>());
-                    tracked[subtype] = value.Distinct().ToList();
+                    var result = value.Distinct().ToList();
+                    tracked[subtype] = result;
+                    if (cnt != result.Count) {
+                        updated = true;
+                    }
                 }
+            }
+            if (updated) {
+                TrackedTypeVersion++;
             }
         }
 
@@ -125,10 +147,10 @@ namespace Monocle {
         /// Due to only the active Scene's Tracker's refreshed state is changed, <paramref name="force"/> must be true if a different scene becomes active.
         /// </summary>
         public void Refresh(bool force = false) {
-            if (!Unrefreshed && !force) {
+            if (currentVersion == TrackedTypeVersion && !force) {
                 return;
             }
-            Unrefreshed = false;
+            currentVersion = TrackedTypeVersion;
             foreach (Type entityType in StoredEntityTypes) {
                 if (!Entities.ContainsKey(entityType)) {
                     Entities.Add(entityType, new List<Entity>());
