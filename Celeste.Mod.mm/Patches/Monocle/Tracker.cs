@@ -40,14 +40,8 @@ namespace Monocle {
 
         private static Type[] GetAllTypesUncached() => FakeAssembly.GetFakeEntryAssembly().GetTypesSafe();
 
-        /// <summary>
-        /// Represents the amount of Types added by external callers to the Tracked Types
-        /// </summary>
-        public static int TrackedTypeVersion;
+        private static int TrackedTypeVersion;
 
-        /// <summary>
-        /// Represents the amount of Types currently added to the tracker from Types added externally
-        /// </summary>
         private int currentVersion;
 
         public extern void orig_ctor();
