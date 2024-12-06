@@ -112,11 +112,8 @@ namespace Monocle {
                 }
                 int cnt = value.Count;
                 value.AddRange(tracked.TryGetValue(trackedAsType, out List<Type> list) ? list : new List<Type>());
-                var result = value.Distinct().ToList();
-                tracked[type] = result;
-                if (cnt != result.Count) {
-                    updated = true;
-                }
+                List<Type> result = tracked[type] = value.Distinct().ToList();
+                updated = cnt != result.Count;
             }
             // do the same for subclasses
             foreach (Type subtype in subtypes) {
@@ -127,11 +124,8 @@ namespace Monocle {
                     }
                     int cnt = value.Count;
                     value.AddRange(tracked.TryGetValue(trackedAsType, out List<Type> list) ? list : new List<Type>());
-                    var result = value.Distinct().ToList();
-                    tracked[subtype] = result;
-                    if (cnt != result.Count) {
-                        updated = true;
-                    }
+                    List<Type> result = tracked[subtype] = value.Distinct().ToList();
+                    updated = cnt != result.Count;
                 }
             }
             if (updated) {
@@ -147,7 +141,7 @@ namespace Monocle {
         /// Due to only the active Scene's Tracker's refreshed state is changed, <paramref name="force"/> must be true if a different scene becomes active.
         /// </summary>
         public void Refresh(bool force = false) {
-            if (currentVersion == TrackedTypeVersion && !force) {
+            if (currentVersion >= TrackedTypeVersion && !force) {
                 return;
             }
             currentVersion = TrackedTypeVersion;
