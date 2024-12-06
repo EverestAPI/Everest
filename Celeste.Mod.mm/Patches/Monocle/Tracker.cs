@@ -40,9 +40,14 @@ namespace Monocle {
 
         private static Type[] GetAllTypesUncached() => FakeAssembly.GetFakeEntryAssembly().GetTypesSafe();
 
-        //can it overflow?
+        /// <summary>
+        /// Represents the amount of Types added by external callers to the Tracked Types
+        /// </summary>
         public static int TrackedTypeVersion;
 
+        /// <summary>
+        /// Represents the amount of Types currently added to the tracker from Types added externally
+        /// </summary>
         private int currentVersion;
 
         public extern void orig_ctor();
@@ -79,6 +84,7 @@ namespace Monocle {
             orig_Initialize();
 
             // search for entities with [TrackedAs]
+            int oldVersion = TrackedTypeVersion;
             foreach (Type type in _temporaryAllTypes) {
                 object[] customAttributes = type.GetCustomAttributes(typeof(TrackedAsAttribute), inherit: false);
                 foreach (object customAttribute in customAttributes) {
@@ -86,6 +92,7 @@ namespace Monocle {
                     AddTypeToTracker(type, trackedAs.TrackedAsType, trackedAs.Inherited);
                 }
             }
+            TrackedTypeVersion = oldVersion;
             // don't hold references to all the types anymore
             _temporaryAllTypes = null;
         }
