@@ -135,45 +135,46 @@ namespace Monocle {
         }
 
         /// <summary>
-        /// Ensures the current scene's tracker contains all entities of all tracked Types.
-        /// Must be called if a type is added to the tracker manually and if the active scene changes.
+        /// Ensures the <paramref name="scene"/>'s tracker contains all entities of all tracked Types from the <paramref name="scene"/>.
+        /// Must be called if a type is added to the tracker manually and if the <paramref name="scene"/>'s Tracker isn't refreshed.
         /// If called back to back without a type added to the Tracker, it won't go through again, for performance.
         /// <paramref name="force"/> will make ensure the Refresh happens, even if run back to back.
-        /// Due to only the active Scene's Tracker's refreshed state is changed, <paramref name="force"/> must be true if a different scene becomes active.
+        /// Only the <paramref name="scene"/>'s Tracker's refreshed state is changed.
         /// </summary>
-        public void Refresh(bool force = false) {
-            if (currentVersion >= TrackedTypeVersion && !force) {
+        public static void Refresh(Scene scene = null, bool force = false) {
+            scene ??= Engine.Scene;
+            if ((scene.Tracker as patch_Tracker).currentVersion >= TrackedTypeVersion && !force) {
                 return;
             }
-            currentVersion = TrackedTypeVersion;
+            (scene.Tracker as patch_Tracker).currentVersion = TrackedTypeVersion;
             foreach (Type entityType in StoredEntityTypes) {
-                if (!Entities.ContainsKey(entityType)) {
-                    Entities.Add(entityType, new List<Entity>());
+                if (!scene.Tracker.Entities.ContainsKey(entityType)) {
+                    scene.Tracker.Entities.Add(entityType, new List<Entity>());
                 }
             }
             foreach (Type componentType in StoredComponentTypes) {
-                if (!Components.ContainsKey(componentType)) {
-                    Components.Add(componentType, new List<Component>());
+                if (!scene.Tracker.Components.ContainsKey(componentType)) {
+                    scene.Tracker.Components.Add(componentType, new List<Component>());
                 }
             }
-            foreach (Entity entity in Engine.Scene.Entities) {
+            foreach (Entity entity in scene.Entities) {
                 foreach (Component component in entity.Components) {
                     Type componentType = component.GetType();
                     if (!TrackedComponentTypes.TryGetValue(componentType, out List<Type> componentTypes)
-                        || Components[componentType].Contains(component)) {
+                        || scene.Tracker.Components[componentType].Contains(component)) {
                         continue;
                     }
                     foreach (Type trackedType in componentTypes) {
-                        Components[trackedType].Add(component);
+                        scene.Tracker.Components[trackedType].Add(component);
                     }
                 }
                 Type entityType = entity.GetType();
                 if (!TrackedEntityTypes.TryGetValue(entityType, out List<Type> entityTypes)
-                    || Entities[entityType].Contains(entity)) {
+                    || scene.Tracker.Entities[entityType].Contains(entity)) {
                     continue;
                 }
                 foreach (Type trackedType in entityTypes) {
-                    Entities[trackedType].Add(entity);
+                    scene.Tracker.Entities[trackedType].Add(entity);
                 }
             }
         }
