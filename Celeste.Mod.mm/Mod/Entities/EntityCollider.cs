@@ -29,7 +29,7 @@ namespace Celeste.Mod.Entities {
                 if (!Scene.Tracker.IsEntityTracked<T>()) {
                     patch_Tracker.AddTypeToTracker(typeof(T));
                 }
-                (Scene.Tracker as patch_Tracker).Refresh();
+                patch_Tracker.Refresh();
             }
         }
 
@@ -41,7 +41,7 @@ namespace Celeste.Mod.Entities {
         }
 
         public override void EntityAwake() {
-            (Scene.Tracker as patch_Tracker).Refresh();
+            patch_Tracker.Refresh();
         }
 
         public override void Update() {
