@@ -135,14 +135,14 @@ namespace Monocle {
         }
 
         /// <summary>
-        /// Ensures the <paramref name="scene"/>'s tracker contains all entities of all tracked Types from the <paramref name="scene"/>.
-        /// Must be called if a type is added to the tracker manually and if the <paramref name="scene"/>'s Tracker isn't refreshed.
+        /// Ensures the <paramref name="toUpdate"/>'s tracker contains all entities of all tracked Types from the <paramref name="toUpdate"/>.
+        /// Must be called if a type is added to the tracker manually and if the <paramref name="toUpdate"/>'s Tracker isn't refreshed.
         /// If called back to back without a type added to the Tracker, it won't go through again, for performance.
         /// <paramref name="force"/> will make ensure the Refresh happens, even if run back to back.
-        /// Only the <paramref name="scene"/>'s Tracker's refreshed state is changed.
+        /// Only the <paramref name="toUpdate"/>'s Tracker's refreshed state is changed.
         /// </summary>
-        public static void Refresh(Scene scene = null, bool force = false) {
-            scene ??= Engine.Scene;
+        public static void Refresh(Scene toUpdate = null, bool force = false) {
+            Scene scene = toUpdate ?? Engine.Scene;
             if ((scene.Tracker as patch_Tracker).currentVersion >= TrackedTypeVersion && !force) {
                 return;
             }
