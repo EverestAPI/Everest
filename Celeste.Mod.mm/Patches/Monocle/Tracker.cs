@@ -140,6 +140,7 @@ namespace Monocle {
         /// If called back to back without a type added to the Tracker, it won't go through again, for performance.
         /// <paramref name="force"/> will make ensure the Refresh happens, even if run back to back.
         /// Only the <paramref name="toUpdate"/>'s Tracker's refreshed state is changed.
+        /// If <paramref name="toUpdate"/> is null, it will default to Engine.Scene.
         /// </summary>
         public static void Refresh(Scene toUpdate = null, bool force = false) {
             Scene scene = toUpdate ?? Engine.Scene;
