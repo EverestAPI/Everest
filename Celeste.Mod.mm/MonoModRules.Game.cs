@@ -295,6 +295,7 @@ namespace MonoMod {
 
         private static void PatchPlaySurfaceIndex(ILCursor cursor, string name) {
             MethodDefinition m_SurfaceIndex_GetPathFromIndex = cursor.Module.GetType("Celeste.SurfaceIndex").FindMethod("System.String GetPathFromIndex(System.Int32)");
+            MethodDefinition m_SurfaceIndex_GetSoundParamFromIndex = cursor.Module.GetType("Celeste.SurfaceIndex").FindMethod("System.Int32 GetSoundParamFromIndex(System.Int32)");
             MethodReference m_String_Concat = MonoModRule.Modder.Module.ImportReference(
                 MonoModRule.Modder.FindType("System.String").Resolve()
                     .FindMethod("System.String Concat(System.String,System.String)")
@@ -313,12 +314,13 @@ namespace MonoMod {
             /*  Change:
                     Play("event:/char/madeline{$name}", "surface_index", platformByPriority.GetStepSoundIndex(this));
                 to:
-                    Play(SurfaceIndex.GetPathFromIndex(platformByPriority.GetStepSoundIndex(this)) + $name, "surface_index", platformByPriority.GetStepSoundIndex(this));
+                    Play(SurfaceIndex.GetPathFromIndex(platformByPriority.GetStepSoundIndex(this)) + $name, "surface_index",
+                        SurfaceIndex.GetSoundParamFromIndex(platformByPriority.GetStepSoundIndex(this)));
                 OR Change (for walls):
                     Play("event:/char/madeline/{$name}", "surface_index", platformByPriority.GetWallSoundIndex(this, (int)Facing));
                 to:
                     Play(SurfaceIndex.GetPathFromIndex(platformByPriority.GetWallSoundIndex(this, (int)Facing)) + $name, "surface_index",
-                        platformByPriority.GetWallSoundIndex(this, (int)Facing));
+                        SurfaceIndex.GetSoundParamFromIndex(platformByPriority.GetWallSoundIndex(this, (int)Facing)));
             */
 
             cursor.Emit(OpCodes.Ldloc, loc_Platform);
@@ -337,6 +339,10 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Call, m_String_Concat);
             // Remove hardcoded event string
             cursor.Remove();
+
+            // Then jump to after the referenced GetSoundIndex callvirt.
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt(m_Platform_GetSoundIndex));
+            cursor.Emit(OpCodes.Call, m_SurfaceIndex_GetSoundParamFromIndex);
         }
 
         public static void PatchMinMaxBlendFunction(ILContext il, CustomAttribute attrib) {
