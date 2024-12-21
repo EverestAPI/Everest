@@ -4,8 +4,13 @@
 using Celeste.Mod;
 using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.Xml;
@@ -15,9 +20,80 @@ namespace Celeste {
 
         private Dictionary<char, patch_TerrainType> lookup;
 
+        private Dictionary<string, int> dustParticlesLookup;
+
         public patch_Autotiler(string filename)
             : base(filename) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+        }
+
+        [MonoModIgnore]
+        [MonoModConstructor]
+        [PatchAutotilerCtor]
+        public extern void ctor(string filename);
+
+        private void ReadDustParticlesData(string filename) {
+            Dictionary<string, ParticleType> particleTypes = new Dictionary<string, ParticleType>(StringComparer.OrdinalIgnoreCase) {
+                { "Dust", ParticleTypes.Dust },
+                { "SparkyDust", ParticleTypes.SparkyDust }
+            };
+
+            foreach (XmlElement item in Calc.LoadContentXML(filename).GetElementsByTagName("DustParticles")) {
+                foreach (object child in item.ChildNodes) {
+                    if (child is XmlElement xml) {
+                        string name = xml.Name;
+                        if (particleTypes.ContainsKey(name)) {
+                            if (name.Equals("Dust", StringComparison.OrdinalIgnoreCase) || name.Equals("SparkyDust", StringComparison.OrdinalIgnoreCase)) {
+                                throw new Exception($"The dust particle name '{name}' is reserved for a preset particle type!");
+                            }
+                            throw new Exception($"Duplicate dust particle name: '{name}'!");
+                        }
+
+                        ParticleType particleType;
+                        float wallSlideOffsetX;
+                        if (xml.HasAttr("copy")) {
+                            string copy = xml.Attr("copy");
+                            if (!particleTypes.TryGetValue(copy, out ParticleType copyType)) {
+                                throw new Exception($"Copied dust particle type '{copy}' must be either 'Dust', 'SparkyDust', or defined before the dust particle types that copy it!");
+                            }
+                            particleType = new ParticleType(copyType);
+                            wallSlideOffsetX = (copyType == ParticleTypes.Dust) ? 5 : 2;
+                        } else {
+                            particleType = new ParticleType(ParticleTypes.Dust);
+                            wallSlideOffsetX = 5;
+                        }
+
+                        if (xml.HasAttr("sourceChooser")) {
+                            particleType.SourceChooser = new Chooser<MTexture>(GFX.Game.GetAtlasSubtextures(xml.Attr("sourceChooser")).ToArray());
+                        }
+                        if (xml.HasAttr("color")) {
+                            particleType.Color = xml.AttrHexColor("color");
+                        }
+                        if (xml.HasAttr("color2")) {
+                            particleType.Color2 = xml.AttrHexColor("color2");
+                        }
+                        if (xml.HasAttr("colorMode")) {
+                            if (Enum.TryParse(xml.Attr("colorMode"), ignoreCase: true, out ParticleType.ColorModes colorMode)) {
+                                particleType.ColorMode = colorMode;
+                            } else {
+                                throw new Exception("Color mode must be either 'Static', 'Choose', 'Blink', or 'Fade'!");
+                            }
+                        }
+                        
+                        if (dustParticlesLookup.TryGetValue(name, out int index)) {
+                            patch_SurfaceIndex.IndexToDustParticles[index] = particleType;
+
+                            if (xml.HasAttr("wallSlideOffsetX")) {
+                                patch_SurfaceIndex.DustParticlesToWallSlideOffsetX[particleType] = xml.AttrFloat("wallSlideOffsetX");
+                            } else {
+                                patch_SurfaceIndex.DustParticlesToWallSlideOffsetX[particleType] = wallSlideOffsetX;
+                            }
+                        }
+
+                        particleTypes.Add(name, particleType);
+                    }
+                }
+            }
         }
 
         public extern Generated orig_GenerateOverlay(char id, int x, int y, int tilesX, int tilesY, VirtualMap<char> mapData);
@@ -88,6 +164,9 @@ namespace Celeste {
                 }
                 if (xml.HasAttr("soundParam")) {
                     patch_SurfaceIndex.IndexToSoundParam[xml.AttrInt("sound")] = xml.AttrInt("soundParam");
+                }
+                if (xml.HasAttr("dustParticles")) {
+                    dustParticlesLookup[xml.Attr("dustParticles")] = xml.AttrInt("sound");
                 }
             } else if (!SurfaceIndex.TileToIndex.ContainsKey(xml.AttrChar("id"))) {
                 SurfaceIndex.TileToIndex[xml.AttrChar("id")] = 0; // fall back to no sound
@@ -465,5 +544,49 @@ namespace Celeste {
 
         }
 
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patches the constructor to read XML data for custom dust particles.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAutotilerCtor))]
+    class PatchAutotilerCtorAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchAutotilerCtor(ILContext il, CustomAttribute attrib) {
+            TypeDefinition t_Autotiler = il.Module.GetType("Celeste.Autotiler");
+            FieldDefinition f_dustParticlesLookup = t_Autotiler.FindField("dustParticlesLookup");
+            MethodReference m_Dictionary_ctor = MonoModRule.Modder.Module.ImportReference(f_dustParticlesLookup.FieldType.Resolve().FindMethod("System.Void .ctor()"));
+            m_Dictionary_ctor.DeclaringType = f_dustParticlesLookup.FieldType;
+
+            MethodDefinition m_ReadDustParticlesData = t_Autotiler.FindMethod("ReadDustParticlesData");
+
+            ILCursor cursor = new ILCursor(il);
+
+            // Initialise our new dictionary for use.
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Newobj, m_Dictionary_ctor);
+            cursor.Emit(OpCodes.Stfld, f_dustParticlesLookup);
+
+            // Then, insert our method at the end.
+            cursor.Index = -1;
+            cursor.MoveAfterLabels();
+            // cursor.Emit(OpCodes.Ldarg_0);
+            /*
+             Apparently, instructions emitted here would end up inside the finally block, even though we're already after the endfinally.
+             That would in turn make these instructions unreachable.
+             We'll have to work around it by changing the next instruction instead of emitting a new one here.
+             */
+            OpCode nextOpcode = cursor.Next.OpCode;
+            cursor.Next.OpCode = OpCodes.Ldarg_0;
+            cursor.Index++;
+            // Alright, now we can emit new instructions.
+            cursor.Emit(OpCodes.Ldarg_1);
+            cursor.Emit(OpCodes.Callvirt, m_ReadDustParticlesData);
+            cursor.Emit(nextOpcode);
+        }
     }
 }

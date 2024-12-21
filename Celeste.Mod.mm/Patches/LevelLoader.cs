@@ -89,6 +89,10 @@ namespace Celeste {
             // Clear any sound parameter overrides
             patch_SurfaceIndex.IndexToSoundParam.Clear();
 
+            // Clear any custom dust particle types
+            patch_SurfaceIndex.IndexToDustParticles.Clear();
+            patch_SurfaceIndex.DustParticlesToWallSlideOffsetX.Clear();
+
             string path = "";
 
             try {

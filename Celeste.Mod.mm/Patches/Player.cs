@@ -329,6 +329,18 @@ namespace Celeste {
         [MonoModIgnore]
         [PatchPlayerApproachMaxMove]
         private extern int NormalUpdate();
+
+        [MonoModIgnore]
+        [PatchPlayerDustParticleFromSurfaceIndex]
+        private extern ParticleType DustParticleFromSurfaceIndex(int index);
+
+        [MonoModIgnore]
+        [PatchPlayerCreateWallSlideParticles]
+        public new extern void CreateWallSlideParticles(int dir);
+
+        private static bool _TryGetWallSlideOffsetX(ParticleType particleType, out float value) {
+            return patch_SurfaceIndex.DustParticlesToWallSlideOffsetX.TryGetValue(particleType, out value);
+        }
     }
 
     public static class PlayerExt {
@@ -403,6 +415,18 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerApproachMaxMove))]
     class PatchPlayerApproachMaxMoveAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches the method to get the custom dust particle type for the index, if there is.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerDustParticleFromSurfaceIndex))]
+    class PatchPlayerDustParticleFromSurfaceIndexAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches the method to get the X-offset position for the custom dust particle type, if there is.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerCreateWallSlideParticles))]
+    class PatchPlayerCreateWallSlideParticlesAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -608,6 +632,61 @@ namespace MonoMod {
                         throw new Exception($"Unexpected instruction in DeltaTime multiplier calculation: {instr}");
                 }
             }
+        }
+
+
+        public static void PatchPlayerDustParticleFromSurfaceIndex(MethodDefinition method, CustomAttribute attrib) {
+            // First, set NoInlining.
+            method.NoInlining = true;
+
+            // Then begin patching.
+            new ILContext(method).Invoke(il => {
+                MethodDefinition m_SurfaceIndex_GetDustParticleTypeFromIndex = il.Module.GetType("Celeste.SurfaceIndex").FindMethod("Monocle.ParticleType GetDustParticleTypeFromIndex(System.Int32)");
+
+                ILCursor cursor = new ILCursor(il);
+
+                /*
+                 Inject the following at the start:
+                     ParticleType dustParticleTypeFromIndex = SurfaceIndex.GetDustParticleTypeFromIndex(index);
+	                 if (dustParticleTypeFromIndex != null) {
+		                 return dustParticleTypeFromIndex;
+	                 }
+                 */
+                ILLabel branchIfNullLabel = cursor.DefineLabel();
+
+                cursor.Emit(OpCodes.Ldarg_1);
+                cursor.Emit(OpCodes.Call, m_SurfaceIndex_GetDustParticleTypeFromIndex);
+                cursor.Emit(OpCodes.Dup);
+                cursor.Emit(OpCodes.Brfalse_S, branchIfNullLabel);
+                cursor.Emit(OpCodes.Ret);
+                cursor.MarkLabel(branchIfNullLabel);
+                cursor.Emit(OpCodes.Pop);
+            });
+        }
+
+        public static void PatchPlayerCreateWallSlideParticles(ILContext il, CustomAttribute attrib) {
+            MethodDefinition m_TryGetWallSlideOffsetX = il.Method.DeclaringType.FindMethod("_TryGetWallSlideOffsetX");
+            
+            ILCursor cursor = new ILCursor(il);
+
+            /*
+             Replace:
+                 float num = ((particleType == ParticleTypes.Dust) ? 5f : 2f);
+             with:
+                 if (!_TryGetWallSlideOffsetX(particleType, out float num)) {
+				     num = ((particleType == ParticleTypes.Dust) ? 5f : 2f);
+			     }
+             */
+            ILLabel branchIfValueLabel = cursor.DefineLabel();
+
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdloc2());
+            cursor.Emit(OpCodes.Ldloc_2);
+            cursor.Emit(OpCodes.Ldloca, 3);
+            cursor.Emit(OpCodes.Call, m_TryGetWallSlideOffsetX);
+            cursor.Emit(OpCodes.Brtrue_S, branchIfValueLabel);
+
+            cursor.GotoNext(MoveType.After, instr => instr.MatchStloc3());
+            cursor.MarkLabel(branchIfValueLabel);
         }
     }
 }
