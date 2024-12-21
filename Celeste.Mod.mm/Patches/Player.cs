@@ -338,7 +338,7 @@ namespace Celeste {
         [PatchPlayerCreateWallSlideParticles]
         public new extern void CreateWallSlideParticles(int dir);
 
-        private static bool _TryGetWallSlideOffsetX(ParticleType particleType, out float value) {
+        public static bool _TryGetWallSlideOffsetX(ParticleType particleType, out float value) {
             return patch_SurfaceIndex.DustParticlesToWallSlideOffsetX.TryGetValue(particleType, out value);
         }
     }

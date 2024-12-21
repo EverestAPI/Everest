@@ -57,7 +57,9 @@ namespace Celeste {
                                 throw new Exception($"Copied dust particle type '{copy}' must be either 'Dust', 'SparkyDust', or defined before the dust particle types that copy it!");
                             }
                             particleType = new ParticleType(copyType);
-                            wallSlideOffsetX = (copyType == ParticleTypes.Dust) ? 5 : 2;
+                            if (!patch_Player._TryGetWallSlideOffsetX(copyType, out wallSlideOffsetX)) {
+                                wallSlideOffsetX = (copyType == ParticleTypes.Dust) ? 5 : 2;
+                            }
                         } else {
                             particleType = new ParticleType(ParticleTypes.Dust);
                             wallSlideOffsetX = 5;
