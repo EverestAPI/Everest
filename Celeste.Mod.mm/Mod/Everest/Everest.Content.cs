@@ -469,10 +469,10 @@ namespace Celeste.Mod {
 
         protected override void Dispose(bool disposing) {
             base.Dispose(disposing);
-            Zip.Dispose();
             foreach (ZipPoolEntry pooled in Pool) {
                 Interlocked.Exchange(ref pooled.Value, null)?.Dispose();
             }
+            Zip.Dispose();
         }
     }
 
