@@ -777,11 +777,11 @@ namespace Celeste {
             }
 
             public override float LeftWidth() {
-                return ActiveFont.Measure(Label).X;
+                return LeftColumnWidth;
             }
 
             public override float RightWidth() {
-                return Icon.Width;
+                return RightColumnWidth;
             }
 
             public override float Height() {
