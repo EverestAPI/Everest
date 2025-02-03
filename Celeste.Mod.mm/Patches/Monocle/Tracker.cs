@@ -134,6 +134,20 @@ namespace Monocle {
             }
         }
 
+        private static bool AddSpecificType(Type type, Type trackedAsType, Dictionary<Type, List<Type>> tracked) {
+            if (type.IsAbstract) {
+                return false;
+            }
+            if (!tracked.TryGetValue(type, out List<Type> value)) {
+                value = new List<Type>();
+                tracked.Add(type, value);
+            }
+            int cnt = value.Count;
+            value.AddRange(tracked.TryGetValue(trackedAsType, out List<Type> list) ? list : new List<Type>());
+            List<Type> result = tracked[type] = value.Distinct().ToList();
+            return cnt != result.Count;
+        }
+
         /// <summary>
         /// Ensures the <paramref name="scene"/>'s tracker contains all entities of all tracked Types from the <paramref name="scene"/>.
         /// Must be called if a type is added to the tracker manually and if the <paramref name="scene"/>'s Tracker isn't refreshed.
