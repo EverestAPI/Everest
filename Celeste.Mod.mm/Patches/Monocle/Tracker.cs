@@ -80,9 +80,7 @@ namespace Monocle {
             // search for entities with [TrackedAs]
             int oldVersion = TrackedTypeVersion;
             foreach (Type type in _temporaryAllTypes) {
-                object[] customAttributes = type.GetCustomAttributes(typeof(TrackedAsAttribute), inherit: false);
-                foreach (object customAttribute in customAttributes) {
-                    TrackedAsAttribute trackedAs = customAttribute as TrackedAsAttribute;
+                foreach (TrackedAsAttribute trackedAs in type.GetCustomAttributes(typeof(TrackedAsAttribute), inherit: false).Cast<TrackedAsAttribute>()) {
                     AddTypeToTracker(type, trackedAs.TrackedAsType, trackedAs.Inherited);
                 }
             }
