@@ -106,7 +106,7 @@ namespace Monocle {
             Dictionary<Type, List<Type>> tracked = trackedEntity ? TrackedEntityTypes : TrackedComponentTypes;
             if (AddSpecificType(type, trackedAsType, tracked)) {
                 updated = true;
-                }
+            }
             // do the same for subclasses
             foreach (Type subtype in subtypes) {
                 if (trackedAsType.IsAssignableFrom(subtype) && AddSpecificType(subtype, trackedAsType, tracked)) {
