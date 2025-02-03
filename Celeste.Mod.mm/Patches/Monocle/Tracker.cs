@@ -97,8 +97,8 @@ namespace Monocle {
 
         public static void AddTypeToTracker(Type type, Type trackedAs = null, params Type[] subtypes) {
             Type trackedAsType = trackedAs != null && trackedAs.IsAssignableFrom(type) ? trackedAs : type;
-            bool? trackedEntity = typeof(Entity).IsAssignableFrom(type) ? true : typeof(Component).IsAssignableFrom(type) ? false : null;
-            if (trackedEntity == null) {
+            bool? canTrack = typeof(Entity).IsAssignableFrom(type) ? true : typeof(Component).IsAssignableFrom(type) ? false : null;
+            if (canTrack is not bool trackedEntity) {
                 // this is neither an entity nor a component. Help!
                 throw new Exception("Type '" + type.Name + "' cannot be Tracked" + (trackedAsType != type ? "As" : "") + " because it does not derive from Entity or Component");
             }
