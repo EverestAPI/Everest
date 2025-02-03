@@ -135,47 +135,47 @@ namespace Monocle {
         }
 
         /// <summary>
-        /// Ensures the <paramref name="toUpdate"/>'s tracker contains all entities of all tracked Types from the <paramref name="toUpdate"/>.
-        /// Must be called if a type is added to the tracker manually and if the <paramref name="toUpdate"/>'s Tracker isn't refreshed.
+        /// Ensures the <paramref name="scene"/>'s tracker contains all entities of all tracked Types from the <paramref name="scene"/>.
+        /// Must be called if a type is added to the tracker manually and if the <paramref name="scene"/>'s Tracker isn't refreshed.
         /// If called back to back without a type added to the Tracker, it won't go through again, for performance.
         /// <paramref name="force"/> will make ensure the Refresh happens, even if run back to back.
-        /// Only the <paramref name="toUpdate"/>'s Tracker's refreshed state is changed.
-        /// If <paramref name="toUpdate"/> is null, it will default to Engine.Scene.
+        /// Only the <paramref name="scene"/>'s Tracker's refreshed state is changed.
+        /// If <paramref name="scene"/> is null, it will default to Engine.Scene.
         /// </summary>
-        public static void Refresh(Scene toUpdate = null, bool force = false) {
-            Scene scene = toUpdate ?? Engine.Scene;
-            if ((scene.Tracker as patch_Tracker).currentVersion >= TrackedTypeVersion && !force) {
+        public static void Refresh(Scene scene = null, bool force = false) {
+            Scene sceneUpdate = scene ?? Engine.Scene;
+            if ((sceneUpdate.Tracker as patch_Tracker).currentVersion >= TrackedTypeVersion && !force) {
                 return;
             }
-            (scene.Tracker as patch_Tracker).currentVersion = TrackedTypeVersion;
+            (sceneUpdate.Tracker as patch_Tracker).currentVersion = TrackedTypeVersion;
             foreach (Type entityType in StoredEntityTypes) {
-                if (!scene.Tracker.Entities.ContainsKey(entityType)) {
-                    scene.Tracker.Entities.Add(entityType, new List<Entity>());
+                if (!sceneUpdate.Tracker.Entities.ContainsKey(entityType)) {
+                    sceneUpdate.Tracker.Entities.Add(entityType, new List<Entity>());
                 }
             }
             foreach (Type componentType in StoredComponentTypes) {
-                if (!scene.Tracker.Components.ContainsKey(componentType)) {
-                    scene.Tracker.Components.Add(componentType, new List<Component>());
+                if (!sceneUpdate.Tracker.Components.ContainsKey(componentType)) {
+                    sceneUpdate.Tracker.Components.Add(componentType, new List<Component>());
                 }
             }
-            foreach (Entity entity in scene.Entities) {
+            foreach (Entity entity in sceneUpdate.Entities) {
                 foreach (Component component in entity.Components) {
                     Type componentType = component.GetType();
                     if (!TrackedComponentTypes.TryGetValue(componentType, out List<Type> componentTypes)
-                        || scene.Tracker.Components[componentType].Contains(component)) {
+                        || sceneUpdate.Tracker.Components[componentType].Contains(component)) {
                         continue;
                     }
                     foreach (Type trackedType in componentTypes) {
-                        scene.Tracker.Components[trackedType].Add(component);
+                        sceneUpdate.Tracker.Components[trackedType].Add(component);
                     }
                 }
                 Type entityType = entity.GetType();
                 if (!TrackedEntityTypes.TryGetValue(entityType, out List<Type> entityTypes)
-                    || scene.Tracker.Entities[entityType].Contains(entity)) {
+                    || sceneUpdate.Tracker.Entities[entityType].Contains(entity)) {
                     continue;
                 }
                 foreach (Type trackedType in entityTypes) {
-                    scene.Tracker.Entities[trackedType].Add(entity);
+                    sceneUpdate.Tracker.Entities[trackedType].Add(entity);
                 }
             }
         }
