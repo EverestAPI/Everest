@@ -104,29 +104,15 @@ namespace Monocle {
             }
             bool updated = false;
             // copy the registered types for the target type
-            ((bool) trackedEntity ? StoredEntityTypes : StoredComponentTypes).Add(type);
-            Dictionary<Type, List<Type>> tracked = (bool) trackedEntity ? TrackedEntityTypes : TrackedComponentTypes;
-            if (!type.IsAbstract) {
-                if (!tracked.TryGetValue(type, out List<Type> value)) {
-                    value = new List<Type>();
-                    tracked.Add(type, value);
+            (trackedEntity ? StoredEntityTypes : StoredComponentTypes).Add(type);
+            Dictionary<Type, List<Type>> tracked = trackedEntity ? TrackedEntityTypes : TrackedComponentTypes;
+            if (AddSpecificType(type, trackedAsType, tracked)) {
+                updated = true;
                 }
-                int cnt = value.Count;
-                value.AddRange(tracked.TryGetValue(trackedAsType, out List<Type> list) ? list : new List<Type>());
-                List<Type> result = tracked[type] = value.Distinct().ToList();
-                updated = cnt != result.Count;
-            }
             // do the same for subclasses
             foreach (Type subtype in subtypes) {
-                if (trackedAsType.IsAssignableFrom(subtype) && !subtype.IsAbstract) {
-                    if (!tracked.TryGetValue(subtype, out List<Type> value)) {
-                        value = new List<Type>();
-                        tracked.Add(subtype, value);
-                    }
-                    int cnt = value.Count;
-                    value.AddRange(tracked.TryGetValue(trackedAsType, out List<Type> list) ? list : new List<Type>());
-                    List<Type> result = tracked[subtype] = value.Distinct().ToList();
-                    updated = cnt != result.Count;
+                if (trackedAsType.IsAssignableFrom(subtype) && AddSpecificType(subtype, trackedAsType, tracked)) {
+                    updated = true;
                 }
             }
             if (updated) {
