@@ -89,10 +89,26 @@ namespace Monocle {
             _temporaryAllTypes = null;
         }
 
+        /// <summary>
+        /// Dynamically add a new type to the active scene's tracker. The <paramref name="type"/> can also be TrackedAs if <paramref name="trackedAs"/> is provided.
+        /// If <paramref name="inheritAll"/> is true, all subtypes of <paramref name="type"/> will be tracked under it.
+        /// Call <seealso cref="AddSpecificType(Type, Type, Dictionary{Type, List{Type}})"/> to add the scene's entities to the tracker after adding the type.
+        /// </summary>
+        /// <param name="type">The type to add to the Tracker</param>
+        /// <param name="trackedAs">If the type should be TrackedAs</param>
+        /// <param name="inheritAll">If all subtypes of <paramref name="type"/> should also be tracked under it</param>
         public static void AddTypeToTracker(Type type, Type trackedAs = null, bool inheritAll = false) {
             AddTypeToTracker(type, trackedAs, inheritAll ? GetSubclasses(type).ToArray() : Array.Empty<Type>());
         }
 
+        /// <summary>
+        /// Dynamically add a new type to the active scene's tracker. The <paramref name="type"/> can also be TrackedAs if <paramref name="trackedAs"/> is provided.
+        /// Any <paramref name="subtypes"/> passed will also be tracked under <paramref name="type"/>.
+        /// Call <seealso cref="AddSpecificType(Type, Type, Dictionary{Type, List{Type}})"/> to add the scene's entities to the tracker after adding the type.
+        /// </summary>
+        /// <param name="type">The type to add to the Tracker</param>
+        /// <param name="trackedAs">If the type should be TrackedAs</param>
+        /// <param name="subtypes">Any subtypes that should be tracked under <paramref name="type"/></param>
         public static void AddTypeToTracker(Type type, Type trackedAs = null, params Type[] subtypes) {
             Type trackedAsType = trackedAs != null && trackedAs.IsAssignableFrom(type) ? trackedAs : type;
             bool? canTrack = typeof(Entity).IsAssignableFrom(type) ? true : typeof(Component).IsAssignableFrom(type) ? false : null;
