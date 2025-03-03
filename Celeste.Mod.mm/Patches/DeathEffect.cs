@@ -78,10 +78,11 @@ namespace MonoMod {
 
             MethodReference m_Color_get_A = MonoModRule.Modder.Module.ImportReference(t_Color.Resolve().FindProperty("A").GetMethod);
             MethodReference m_Color_op_Multiply = MonoModRule.Modder.Module.ImportReference(t_Color.Resolve().FindMethod("op_Multiply"));
+            MethodReference m_Color_op_Inequality = MonoModRule.Modder.Module.ImportReference(t_Color.Resolve().FindMethod("op_Inequality"));
 
             ILCursor cursor = new ILCursor(context);
 
-            // Color outline = Color.Black * (this.Color.A / 255f);
+            // Color color2 = Color.Black * (color.A / 255f);
             cursor.EmitCall(m_Color_get_Black);
             cursor.EmitLdarga(1);
             cursor.EmitCall(m_Color_get_A);
@@ -91,14 +92,23 @@ namespace MonoMod {
             cursor.EmitCall(m_Color_op_Multiply);
             cursor.EmitStloc(v_outline);
 
-            // Color.White => Color.White * (this.Color.A / 255f);
-            cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Microsoft.Xna.Framework.Color", "get_White"));
+            // if (color3 != color) { color3 =* (color.A / 255); }
+            cursor.GotoNext(MoveType.After, instr => instr.Match(OpCodes.Stloc_0));
+            ILLabel IfWhite = cursor.DefineLabel();
+            cursor.Emit(OpCodes.Ldloc_0);
+            cursor.Emit(OpCodes.Ldarg_1);
+            cursor.EmitCall(m_Color_op_Inequality);
+            cursor.Emit(OpCodes.Brfalse, IfWhite);
+
+            cursor.Emit(OpCodes.Ldloc_0);
             cursor.EmitLdarga(1);
             cursor.EmitCall(m_Color_get_A);
             cursor.EmitConvR4();
             cursor.EmitLdcR4(255f);
             cursor.EmitDiv();
             cursor.EmitCall(m_Color_op_Multiply);
+            cursor.Emit(OpCodes.Stloc_0);
+            cursor.MarkLabel(IfWhite);
 
             // GFX.Game["characters/player/hair00"] => (_texture ?? GFX.Game["characters/player/hair00"]);
             ILLabel Ifnull = cursor.DefineLabel();
