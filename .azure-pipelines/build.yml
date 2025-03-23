@@ -10,19 +10,24 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
+  runtimeVersion: 'net7.0' # Must match TargetFramework in the csprojs
   VANILLA_CACHE: $(Pipeline.Workspace)/vanilla
 
 name: '$(Build.BuildId)+$(Build.BuildIdOffset)'
 
 steps:
-# Pre-build steps.
-- task: NuGetToolInstaller@1
+  # Pre-build steps.
 
-- task: NuGetCommand@2
+- task: UseDotNet@2
+  displayName: 'Set up .NET'
+  inputs: # packageType defaults to sdk
+    version: 9.0.102 # net9.0 required by MonoMod
+
+- task: DotNetCoreCLI@2
   displayName: 'Restore NuGet packages'
-  retryCountOnTaskFailure: 2
   inputs:
-    restoreSolution: '$(solution)'
+    command: 'restore'
+    projects: '$(solution)'
 
 - task: PowerShell@2
   displayName: 'Run .azure-pipelines/prebuild.ps1'
@@ -37,14 +42,14 @@ steps:
     publishWebProjects: false
     zipAfterPublish: false
     projects: '*/*.csproj'
-    arguments: '--configuration $(buildConfiguration) "/p:Configuration=$(buildConfiguration)"'
+    arguments: '--configuration $(buildConfiguration) "/p:Configuration=$(buildConfiguration)" --no-restore'
 
 # Create and "publish" main artifact.
 - task: CopyFiles@2
   displayName: 'Pack main artifact: NETCoreifier'
   continueOnError: true
   inputs:
-    sourceFolder: '$(Build.SourcesDirectory)/NETCoreifier/bin/Release/net7.0/publish'
+    sourceFolder: '$(Build.SourcesDirectory)/NETCoreifier/bin/Release/$(runtimeVersion)/publish'
     contents: '**'
     targetFolder: '$(Build.ArtifactStagingDirectory)/main/'
     cleanTargetFolder: true
@@ -54,7 +59,7 @@ steps:
   displayName: 'Pack main artifact: Celeste.Mod.mm'
   continueOnError: true
   inputs:
-    sourceFolder: '$(Build.SourcesDirectory)/Celeste.Mod.mm/bin/Release/net7.0/publish'
+    sourceFolder: '$(Build.SourcesDirectory)/Celeste.Mod.mm/bin/Release/$(runtimeVersion)/publish'
     contents: '**'
     targetFolder: '$(Build.ArtifactStagingDirectory)/main/'
     cleanTargetFolder: false
@@ -64,7 +69,7 @@ steps:
   displayName: 'Pack main artifact: MiniInstaller'
   continueOnError: true
   inputs:
-    sourceFolder: '$(Build.SourcesDirectory)/MiniInstaller/bin/Release/net7.0/publish'
+    sourceFolder: '$(Build.SourcesDirectory)/MiniInstaller/bin/Release/$(runtimeVersion)/publish'
     contents: '**'
     targetFolder: '$(Build.ArtifactStagingDirectory)/main/'
     cleanTargetFolder: false

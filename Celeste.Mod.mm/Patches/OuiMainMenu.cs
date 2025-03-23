@@ -28,6 +28,8 @@ namespace Celeste {
             }
         }
 
+        private bool needsRebuild = false;
+
         public extern void orig_CreateButtons();
         public new void CreateButtons() {
             orig_CreateButtons();
@@ -37,7 +39,22 @@ namespace Celeste {
             UpdateLayout();
         }
 
-        public void RebuildMainAndTitle() {
+        public void NeedsRebuild() {
+            needsRebuild = true;
+        }
+
+        public extern void orig_Update();
+        public new void Update() {
+            // rebuild only on update to prevent multiple rebuilds per frame
+            if (needsRebuild) {
+                RebuildMainAndTitle();
+                needsRebuild = false;
+            }
+
+            orig_Update();
+        }
+
+        private void RebuildMainAndTitle() {
             Overworld oui = Overworld;
             oui.UIs.Remove(oui.GetUI<OuiTitleScreen>());
             Oui title = new OuiTitleScreen() {
@@ -55,6 +72,8 @@ namespace Celeste {
                 break;
             }
 
+            // this cannot be called more than once per frame, otherwise the
+            // scene keeps orphaned menu buttons which messes with selection
             CreateButtons();
 
             if (selected is MainMenuClimb) {

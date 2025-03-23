@@ -422,7 +422,7 @@ namespace Celeste.Mod.UI {
         }
 
         private void downloadDependency(ModUpdateInfo mod, EverestModuleMetadata installedVersion) {
-            string downloadDestination = Path.Combine(Everest.PathGame, $"dependency-download.zip");
+            string downloadDestination = Path.Combine(Everest.PathTmp, $"dependency-download.zip");
             try {
                 // 1. Download
                 Func<int, long, int, bool> progressCallback = (position, length, speed) => {
@@ -523,7 +523,7 @@ namespace Celeste.Mod.UI {
         public void Exit() {
             task = null;
             Lines.Clear();
-            MainThreadHelper.Schedule(() => ((patch_OuiMainMenu) Overworld.GetUI<OuiMainMenu>())?.RebuildMainAndTitle());
+            MainThreadHelper.Schedule(() => ((patch_OuiMainMenu) Overworld.GetUI<OuiMainMenu>())?.NeedsRebuild());
             Audio.Play(SFX.ui_main_button_back);
             Overworld.Goto<OuiModOptions>();
         }

@@ -85,6 +85,11 @@ namespace Celeste.Mod {
         public static string PathGame { get; internal set; }
 
         /// <summary>
+        /// The path to the directory holding temporary files.
+        /// </summary>
+        public static string PathTmp { get; internal set; }
+
+        /// <summary>
         /// The path to the Celeste /Saves directory.
         /// </summary>
         public static string PathSettings => patch_UserIO.GetSaveFilePath();
@@ -325,6 +330,7 @@ namespace Celeste.Mod {
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
 
             PathGame = Path.GetDirectoryName(typeof(Celeste).Assembly.Location);
+            PathTmp = Environment.GetEnvironmentVariable("EVEREST_TMPDIR") ?? PathGame;
 
             // .NET hates it when strong-named dependencies get updated.
             AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {

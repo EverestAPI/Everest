@@ -286,7 +286,7 @@ namespace Celeste.Mod.UI {
             ongoingUpdateCancelled = false;
 
             // we will download the mod to Celeste_Directory/[update.GetHashCode()].zip at first.
-            string zipPath = Path.Combine(Everest.PathGame, $"modupdate-{update.GetHashCode()}.zip");
+            string zipPath = Path.Combine(Everest.PathTmp, $"modupdate-{update.GetHashCode()}.zip");
 
             try {
                 // download it...

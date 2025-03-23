@@ -8,7 +8,7 @@ namespace Celeste.Mod.Helpers {
 
         // I'm overcomplicating this. -ade
 
-        private static readonly string Dummy = Path.Combine(Everest.PathGame, "FileProxyStreamDummy.txt");
+        private static readonly string Dummy = Path.Combine(Everest.PathTmp, "FileProxyStreamDummy.txt");
 
         public readonly Stream Inner;
 
@@ -59,6 +59,10 @@ namespace Celeste.Mod.Helpers {
 
         public override int Read(byte[] buffer, int offset, int count) {
             return Inner.Read(buffer, offset, count);
+        }
+
+        public override int Read(Span<byte> buffer) {
+            return Inner.Read(buffer);
         }
 
         public override long Seek(long offset, SeekOrigin origin) {

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using _Decal = Celeste.Decal;
 using _EventTrigger = Celeste.EventTrigger;
+using _LevelLoader = Celeste.LevelLoader;
 using _Level = Celeste.Level;
 using _Session = Celeste.Session;
 using _OuiJournal = Celeste.OuiJournal;
@@ -96,8 +97,10 @@ namespace Celeste.Mod {
             public static class LevelLoader {
                 public delegate void LoadingThreadHandler(_Level level);
                 /// <summary>
-                /// Called at the end of the map loading thread.
+                /// Called at the end of the map loading thread, <see cref="_LevelLoader.LoadingThread()"/>.<br/>
+                /// This event is invoked <b>only once</b>, when entering a map from the chapter select screen or from Save and Quit.
                 /// </summary>
+                /// <seealso cref="Level.OnLoadLevel"/>
                 public static event LoadingThreadHandler OnLoadingThread;
                 internal static void LoadingThread(_Level level)
                     => OnLoadingThread?.Invoke(level);
@@ -161,6 +164,11 @@ namespace Celeste.Mod {
                     => OnLoadBackdrop?.InvokeWhileNull<Backdrop>(map, child, above);
 
                 public delegate void LoadLevelHandler(_Level level, _Player.IntroTypes playerIntro, bool isFromLoader);
+                /// <summary>
+                /// Called after <see cref="_Level.LoadLevel"/>.<br/>
+                /// This event is invoked <b>every time</b> a room is entered - transition, respawn, teleport, etc.
+                /// </summary>
+                /// <seealso cref="LevelLoader.OnLoadingThread"/>
                 public static event LoadLevelHandler OnLoadLevel;
                 internal static void LoadLevel(_Level level, _Player.IntroTypes playerIntro, bool isFromLoader)
                     => OnLoadLevel?.Invoke(level, playerIntro, isFromLoader);
@@ -289,10 +297,24 @@ namespace Celeste.Mod {
             public static class AssetReload {
                 public delegate void ReloadHandler(bool silent);
                 public static event ReloadHandler OnBeforeReload, OnAfterReload;
-                internal static void BeforeReload(bool silent)
-                    => OnBeforeReload?.Invoke(silent);
-                internal static void AfterReload(bool silent)
-                    => OnAfterReload?.Invoke(silent);
+
+                public static event ReloadHandler OnBeforeNextReload, OnAfterNextReload;
+
+                internal static void BeforeReload(bool silent) {
+                    OnBeforeReload?.Invoke(silent);
+                    
+                    var beforeNextReload = OnBeforeNextReload;
+                    OnBeforeNextReload = null;
+                    beforeNextReload?.Invoke(silent);
+                }
+
+                internal static void AfterReload(bool silent) {
+                    OnAfterReload?.Invoke(silent);
+                    
+                    var afterNextReload = OnAfterNextReload;
+                    OnAfterNextReload = null;
+                    afterNextReload?.Invoke(silent);
+                }
 
                 public delegate void ReloadLevelHandler(global::Celeste.Level level);
                 public static ReloadLevelHandler OnReloadLevel;
