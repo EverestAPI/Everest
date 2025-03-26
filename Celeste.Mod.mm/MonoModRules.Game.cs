@@ -61,6 +61,7 @@ namespace MonoMod {
     static partial class MonoModRules {
 
         public static Version MinimumGameVersion = new Version(1, 4, 0, 0);
+        public static Version CurrentGameVersion;
         public static bool IsRelinkingXNAInstall { get; private set; }
 
         static List<MethodDefinition> LevelExitRoutines = new List<MethodDefinition>();
@@ -77,6 +78,7 @@ namespace MonoMod {
             Version gameVer = DetermineGameVersion(modder);
             if (gameVer < MinimumGameVersion)
                 throw new Exception($"Unsupported version of Celeste: {gameVer}");
+            CurrentGameVersion = gameVer;
 
             // Determine if this is a Steam build
             bool isSteamworks = modder.Module.AssemblyReferences.Any(a => a.Name.Contains("Steamworks"));

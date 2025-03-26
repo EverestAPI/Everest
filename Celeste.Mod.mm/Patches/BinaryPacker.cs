@@ -32,8 +32,8 @@ namespace Celeste {
 
                 object obj = type switch {
                     0 => reader.ReadBoolean(),
-                    1 => Convert.ToInt32(reader.ReadByte()),
-                    2 => Convert.ToInt32(reader.ReadInt16()),
+                    1 => Convert.ToInt32(reader.ReadByte(), CultureInfo.InvariantCulture),
+                    2 => Convert.ToInt32(reader.ReadInt16(), CultureInfo.InvariantCulture),
                     3 => reader.ReadInt32(),
                     4 => reader.ReadSingle(),
                     5 => stringLookup[reader.ReadInt16()],

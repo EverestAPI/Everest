@@ -80,6 +80,8 @@ namespace MonoMod {
         }
 
         public static void PatchLavaRectRender(ILContext context, CustomAttribute attrib) {
+            // This was fixed in 1.4.1.0
+            if (CurrentGameVersion >= new Version(1, 4, 1, 0)) return;
             ILCursor cursor = new ILCursor(context);
 
             MethodReference m_Vector2_op_Addition = null;
