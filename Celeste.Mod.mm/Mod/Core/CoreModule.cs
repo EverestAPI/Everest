@@ -70,6 +70,7 @@ namespace Celeste.Mod.Core {
         public override void Load() {
             Everest.Events.Celeste.OnExiting += FileProxyStream.DeleteDummy;
             Everest.Events.MainMenu.OnCreateButtons += CreateMainMenuButtons;
+            Everest.Events.FileSelectSlot.OnCreateButtons += CreateFileSelectSlotButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons += CreatePauseMenuButtons;
             nluaAssemblyGetTypesHook = new ILHook(typeof(Lua).Assembly.GetType("NLua.Extensions.TypeExtensions").GetMethod("GetExtensionMethods"), patchNLuaAssemblyGetTypes);
             nluaObjectTranslatorFindType = new Hook(typeof(ObjectTranslator).GetMethod("FindType", BindingFlags.NonPublic | BindingFlags.Instance), hookNLuaObjectTranslatorFindType);
@@ -192,6 +193,7 @@ namespace Celeste.Mod.Core {
         public override void Unload() {
             Everest.Events.Celeste.OnExiting -= FileProxyStream.DeleteDummy;
             Everest.Events.MainMenu.OnCreateButtons -= CreateMainMenuButtons;
+            Everest.Events.FileSelectSlot.OnCreateButtons -= CreateFileSelectSlotButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons -= CreatePauseMenuButtons;
             nluaAssemblyGetTypesHook?.Dispose();
             nluaAssemblyGetTypesHook = null;
@@ -222,6 +224,26 @@ namespace Celeste.Mod.Core {
                 Audio.Play(SFX.ui_main_whoosh_large_in);
                 menu.Overworld.Goto<OuiModOptions>();
             }));
+        }
+
+        private void CreateFileSelectSlotButtons(List<patch_OuiFileSelectSlot.Button> buttons, OuiFileSelectSlot slot, EverestModuleSaveData modSaveData, bool fileExists) {
+            if (!fileExists || slot.Corrupted) return;
+
+            CoreModuleSaveData coreModuleSaveData = modSaveData as CoreModuleSaveData;
+
+            patch_OuiFileSelectSlot.Button existingFileButton = new patch_OuiFileSelectSlot.Button {
+                Label = Dialog.Clean("MENU_SAVEFILE_LOCKED") + " : " + (coreModuleSaveData.IsLocked ? "ON" : "OFF"),
+                Scale = 0.7f
+            };
+            // `Action` references `existingFileButton` so the declarations can't be merged together
+            existingFileButton.Action = () => {
+                coreModuleSaveData.IsLocked = !coreModuleSaveData.IsLocked;
+                Audio.Play("event:/ui/main/button_toggle_" + (coreModuleSaveData.IsLocked ? "on" : "off"));
+                existingFileButton.Label = Dialog.Clean("MENU_SAVEFILE_LOCKED") + " : " + (coreModuleSaveData.IsLocked ? "ON" : "OFF");
+                WriteSaveData(slot.FileSlot, SerializeSaveData(slot.FileSlot));
+            };
+
+            buttons.Insert(buttons.Count - 2, existingFileButton); // Keep "Rename" and "Delete" buttons at the bottom
         }
 
         public void CreatePauseMenuButtons(Level level, patch_TextMenu menu, bool minimal) {

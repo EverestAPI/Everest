@@ -3,5 +3,6 @@
 
         public int WhateverCount { get; set; } = 1337;
 
+        public bool IsLocked { get; set; } = false;
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework.Input;
 using Monocle;
 using System;
 using Celeste.Mod.UI;
+using Celeste.Mod.Core;
 
 namespace Celeste.Mod.Helpers {
     internal static class Commands {
@@ -48,6 +49,11 @@ namespace Celeste.Mod.Helpers {
             else {
                 OuiModOptions.Instance.Overworld.Goto<OuiSoundTest>();
             }
+        }
+
+        [Command("lock", "toggle lock mode for the current savefile")]
+        public static void ToggleLock() {
+            CoreModule.SaveData.IsLocked = !CoreModule.SaveData.IsLocked;
         }
     }
 

@@ -3,6 +3,7 @@
 #pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -179,36 +180,40 @@ namespace Celeste {
             _keys = keys;
 
             if (Focused && !disableInput && display) {
-                if (Input.Pause.Pressed || Input.ESC.Pressed) {
-                    Overworld.Maddy.Hide(true);
-                    Audio.Play(SFX.ui_main_button_select);
-                    Audio.Play(SFX.ui_main_whoosh_large_in);
-                    OuiMapList list = Overworld.Goto<OuiMapList>();
-                    list.OuiIcons = icons;
-                    return;
-                } else if (Input.QuickRestart.Pressed) {
-                    Overworld.Maddy.Hide(true);
-                    Audio.Play(SFX.ui_main_button_select);
-                    Audio.Play(SFX.ui_main_whoosh_large_in);
-                    OuiMapSearch list = Overworld.Goto<OuiMapSearch>();
-                    list.OuiIcons = icons;
-                    return;
+                if (!CoreModule.SaveData.IsLocked) {
+                    if (Input.Pause.Pressed || Input.ESC.Pressed) {
+                        Overworld.Maddy.Hide(true);
+                        Audio.Play(SFX.ui_main_button_select);
+                        Audio.Play(SFX.ui_main_whoosh_large_in);
+                        OuiMapList list = Overworld.Goto<OuiMapList>();
+                        list.OuiIcons = icons;
+                        return;
+                    } else if (Input.QuickRestart.Pressed) {
+                        Overworld.Maddy.Hide(true);
+                        Audio.Play(SFX.ui_main_button_select);
+                        Audio.Play(SFX.ui_main_whoosh_large_in);
+                        OuiMapSearch list = Overworld.Goto<OuiMapSearch>();
+                        list.OuiIcons = icons;
+                        return;
+                    }
                 }
             }
 
             // note: Engine.DeltaTime is removed from inputDelay before being compared to zero in the orig method.
             if (Focused && display && !disableInput && inputDelay <= Engine.DeltaTime) {
-                if (Input.MenuUp.Pressed) {
-                    Audio.Play(SFX.ui_world_chapter_pane_contract);
-                    Audio.Play(SFX.ui_world_icon_roll_left);
-                    Overworld.Goto<OuiHelper_ChapterSelect_LevelSet>().Direction = -1;
-                    return;
-                }
-                if (Input.MenuDown.Pressed) {
-                    Audio.Play(SFX.ui_world_chapter_pane_expand);
-                    Audio.Play(SFX.ui_world_icon_roll_right);
-                    Overworld.Goto<OuiHelper_ChapterSelect_LevelSet>().Direction = +1;
-                    return;
+                if (!CoreModule.SaveData.IsLocked) {
+                    if (Input.MenuUp.Pressed) {
+                        Audio.Play(SFX.ui_world_chapter_pane_contract);
+                        Audio.Play(SFX.ui_world_icon_roll_left);
+                        Overworld.Goto<OuiHelper_ChapterSelect_LevelSet>().Direction = -1;
+                        return;
+                    }
+                    if (Input.MenuDown.Pressed) {
+                        Audio.Play(SFX.ui_world_chapter_pane_expand);
+                        Audio.Play(SFX.ui_world_icon_roll_right);
+                        Overworld.Goto<OuiHelper_ChapterSelect_LevelSet>().Direction = +1;
+                        return;
+                    }
                 }
 
                 // We don't want to copy the entire Update method, but still prevent the option from going out of bounds.
@@ -257,8 +262,14 @@ namespace Celeste {
 
         public extern void orig_Render();
         public override void Render() {
-
             orig_Render();
+            if (CoreModule.SaveData.IsLocked && levelsetEase > 0f) {
+                Vector2 pos = new Vector2(1920f - 64f * Ease.CubeOut(maplistEase), 1080f - 128f);
+                string line = patch_Dialog.CleanLevelSet(currentLevelSet);
+                ActiveFont.DrawOutline(line, pos, new Vector2(1f, 0.5f), Vector2.One * 0.7f, Color.White * Ease.CubeOut(maplistEase), 2f, Color.Black * Ease.CubeOut(maplistEase));
+                return;
+            }
+
             if (maplistEase > 0f) {
                 Vector2 pos = new Vector2(128f * Ease.CubeOut(maplistEase), 1080f - 128f);
                 if (journalEnabled)
@@ -287,6 +298,5 @@ namespace Celeste {
                 Input.GuiDirection(new Vector2(0f, +1f)).DrawCentered(pos + new Vector2(-lineSize.X * 0.5f, +lineSize.Y * 0.5f + 16f), Color.White * Ease.CubeOut(maplistEase), 0.5f);
             }
         }
-
     }
 }

@@ -222,7 +222,7 @@ namespace Celeste {
             orig_Update();
 
             if (newGameLevelSetPicker != null && selected && fileSelect.Selected && fileSelect.Focused &&
-                !StartingGame && tween == null && inputDelay <= 0f && !StartingGame && !deleting) {
+                !StartingGame && tween == null && inputDelay <= 0f && !deleting) {
 
                 // currently highlighted option is the level set picker, call its Update() method to handle Left and Right presses.
                 newGameLevelSetPicker.Update(buttons[buttonIndex] == newGameLevelSetPicker);
