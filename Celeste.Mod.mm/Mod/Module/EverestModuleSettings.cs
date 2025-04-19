@@ -34,6 +34,17 @@ namespace Celeste.Mod {
     }
 
     /// <summary>
+    /// Whether the option should be disabled in-game or in the main menu.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property)]
+    public class SettingInGameDisableAttribute : Attribute {
+        public bool InGame;
+        public SettingInGameDisableAttribute(bool inGame) {
+            InGame = inGame;
+        }
+    }
+
+    /// <summary>
     /// The integer option range.
     /// If largeRange is set to true, a slider optimized for large integer ranges (going through values at an increasing speed) will be used.
     /// </summary>

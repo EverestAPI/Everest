@@ -90,6 +90,24 @@ namespace Celeste {
             Everest.Events.Player.RegisterStates(this);
         }
 
+        public extern void orig_ResetSprite(PlayerSpriteMode mode);
+        public new void ResetSprite(PlayerSpriteMode mode) {
+            // The original method reassigns the Sprite, but its Action callbacks don't carry over.
+            // This causes an issue where, after the player has changed modes,
+            // their animations no longer make sound effects until they respawn.
+            // Reassign the Sprite Actions with the same callbacks to fix this.
+
+            Action<string> onFrameChange = Sprite.OnFrameChange;
+            Action<string> onLastFrame = Sprite.OnLastFrame;
+            Action<string, string> onChange = Sprite.OnChange;
+
+            orig_ResetSprite(mode);
+
+            Sprite.OnFrameChange = onFrameChange;
+            Sprite.OnLastFrame = onLastFrame;
+            Sprite.OnChange = onChange;
+        }
+
         public extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
             if (OverrideIntroType != null) {

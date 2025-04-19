@@ -85,6 +85,11 @@ namespace Celeste.Mod {
         public static string PathGame { get; internal set; }
 
         /// <summary>
+        /// The path to the directory holding temporary files.
+        /// </summary>
+        public static string PathTmp { get; internal set; }
+
+        /// <summary>
         /// The path to the Celeste /Saves directory.
         /// </summary>
         public static string PathSettings => patch_UserIO.GetSaveFilePath();
@@ -325,6 +330,7 @@ namespace Celeste.Mod {
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
 
             PathGame = Path.GetDirectoryName(typeof(Celeste).Assembly.Location);
+            PathTmp = Environment.GetEnvironmentVariable("EVEREST_TMPDIR") ?? PathGame;
 
             // .NET hates it when strong-named dependencies get updated.
             AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
@@ -425,10 +431,8 @@ namespace Celeste.Mod {
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();
 
-            if (!Flags.IsHeadless) {
-                // Initialize the content helper.
-                Content.Initialize();
-            }
+            // Initialize the content helper.
+            Content.Initialize();
 
             MainThreadHelper.Instance = new MainThreadHelper(Celeste.Instance);
             STAThreadHelper.Instance = new STAThreadHelper(Celeste.Instance);
@@ -457,10 +461,8 @@ namespace Celeste.Mod {
 
             Loader.LoadAuto();
 
-            if (!Flags.IsHeadless) {
-                // Load stray .bins afterwards.
-                Content.Crawl(new MapBinsInModsModContent(Path.Combine(PathEverest, "Mods")));
-            }
+            // Load stray .bins afterwards.
+            Content.Crawl(new MapBinsInModsModContent(Path.Combine(PathEverest, "Mods")));
 
             // Also let all mods parse the arguments.
             Queue<string> args = new Queue<string>(Args);

@@ -20,11 +20,30 @@ namespace Celeste {
         private object _Vertices_QueuedLoadLock;
         private ValueTask<VertexBuffer> _Vertices_QueuedLoad;
 
+        [MonoModIfFlag("Headless")]
+        [MonoModReplace]
+        public new static ObjModel Create(string filename) {
+            return new ObjModel();
+        }
+
+        [MonoModIfFlag("Headless")]
+        [MonoModReplace]
+        public new void Draw(Effect effect) { }
+
+        [MonoModIfFlag("Headless")]
+        [MonoModReplace]
+        [PatchInterface]
+        public new void Dispose() { }
+
         /// <summary>
         /// Create a new ObjModel from a stream
         /// The filename is mainly just to check if it's a .export
         /// </summary>
         public static ObjModel CreateFromStream(Stream stream, string fname) {
+            if (Everest.Flags.IsHeadless) {
+                return new ObjModel();
+            }
+
             ObjModel objModel = new ObjModel();
             List<VertexPositionTexture> list = new List<VertexPositionTexture>();
             List<Vector3> list2 = new List<Vector3>();
@@ -113,6 +132,10 @@ namespace Celeste {
 
         private extern bool orig_ResetVertexBuffer();
         private bool ResetVertexBuffer() {
+            if (Everest.Flags.IsHeadless) {
+                return true;
+            }
+
             // Checking for IsDisposed on other threads should be fine...
             if (Vertices != null && !Vertices.IsDisposed && !Vertices.GraphicsDevice.IsDisposed)
                 return false;

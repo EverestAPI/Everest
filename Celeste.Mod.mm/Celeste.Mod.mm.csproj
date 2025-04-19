@@ -33,19 +33,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mono.Cecil" Version="0.11.4" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
     <ProjectReference Include="..\external\MonoMod\src\MonoMod.Patcher\MonoMod.Patcher.csproj" />
     <ProjectReference Include="..\external\MonoMod\src\MonoMod.Utils\MonoMod.Utils.csproj" />
     <ProjectReference Include="..\external\MonoMod\src\MonoMod.RuntimeDetour\MonoMod.RuntimeDetour.csproj" />
     <ProjectReference Include="..\external\MonoMod\src\MonoMod.RuntimeDetour.HookGen\MonoMod.RuntimeDetour.HookGen.csproj" />
-    <PackageReference Include="DotNetZip" Version="1.16.0" />
     <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-    <PackageReference Include="YamlDotNet" Version="8.1.2" />
-    <PackageReference Include="Jdenticon-net" Version="2.2.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="YamlDotNet" Version="16.1.3" />
+    <PackageReference Include="Jdenticon-net" Version="3.1.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <ProjectReference Include="..\external\NLua\build\net6.0\NLua.net6.0.csproj" />
     <PackageReference Include="MAB.DotIgnore" Version="3.0.2" />
+
+    <!-- Dependency not used by Everest itself, but kept for mod compatibility reasons -->
+    <PackageReference Include="DotNetZip" Version="1.16.0" />
   </ItemGroup>
 
   <!--
@@ -63,11 +65,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\lib-ext\**\*" Link="everest-lib\%(RecursiveDir)%(Filename)%(Extension)">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Remove="..\lib-ext\.gitignore" />
-    <Content Remove="..\lib-ext\FNA3D.patch" />
+    <Content Include="..\lib-ext\**\*" Link="everest-lib\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Remove="..\lib-ext\.git" />
+    <Content Remove="..\lib-ext\README.md" />
   </ItemGroup>
 
   <ItemGroup>
@@ -83,13 +83,14 @@
     <ProjectReference Include="..\DiscordGameSDK\DiscordGameSDK.csproj" />
     <ProjectReference Include="..\NETCoreifier\NETCoreifier.csproj" />
     <ProjectReference Include="..\EverestSplash\EverestSplash.csproj" /> <!-- Forces correct build dependency order -->
+    <!-- Ideally EverestSplash would not be copied to the build directory, but that cannot be easily disabled -->
   </ItemGroup>
   
   <Target Name="CopyEverestSplashFiles" AfterTargets="Publish">
     <ItemGroup> <!-- For some reason to use wildcards you have to use a property -->
-      <SplashBinaries Include="$(OutputPath)\publish\EverestSplash*;$(OutputPath)\publish\piton-runtime.yaml" />
+      <SplashBinaries Include="$(PublishDir)\EverestSplash*;$(PublishDir)\piton-runtime.yaml" />
     </ItemGroup>
-    <Move SourceFiles="@(SplashBinaries)" DestinationFolder="$(OutputPath)\publish\EverestSplash\" />
+    <Move SourceFiles="@(SplashBinaries)" DestinationFolder="$(PublishDir)\EverestSplash\" />
   </Target>
 
 </Project>

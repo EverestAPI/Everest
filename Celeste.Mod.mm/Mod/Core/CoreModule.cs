@@ -53,7 +53,7 @@ namespace Celeste.Mod.Core {
             base.LoadSettings();
 
             // The field can be set to true by default without the setter being called by YamlDotNet.
-            if (Settings.DiscordRichPresence) {
+            if (Settings.DiscordRichPresence && !Everest.Flags.IsHeadless) {
                 Everest.DiscordSDK.CreateInstance();
             }
 

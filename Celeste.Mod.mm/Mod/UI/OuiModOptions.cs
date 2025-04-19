@@ -117,8 +117,13 @@ namespace Celeste.Mod.UI {
                 }
             }
 
-            // reorder Mod Options according to the modoptionsorder.txt file.
             List<EverestModule> modules = new List<EverestModule>(Everest._Modules);
+            // sort by Mod names and move everest to the beginning
+            EverestModule everest = modules[0];
+            modules.Remove(CoreModule.Instance);
+            modules = modules.OrderBy(module => module.Metadata.Name).ToList();
+            modules.Insert(0, CoreModule.Instance);
+            // reorder Mod Options according to the modoptionsorder.txt file.
             if (Everest.Loader._ModOptionsOrder != null && Everest.Loader._ModOptionsOrder.Count > 0) {
                 foreach (string modName in Everest.Loader._ModOptionsOrder) {
                     if (modName.Equals("Everest", StringComparison.InvariantCultureIgnoreCase)) {

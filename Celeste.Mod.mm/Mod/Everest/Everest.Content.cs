@@ -1,14 +1,13 @@
 using Celeste.Mod.Helpers;
 using Celeste.Mod.Meta;
-using Ionic.Zip;
 using MAB.DotIgnore;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -368,15 +367,6 @@ namespace Celeste.Mod {
     }
 
     public class ZipModContent : ModContent {
-        private static readonly FieldInfo f_ZipEntry__container =
-            typeof(ZipEntry).GetField("_container", BindingFlags.NonPublic | BindingFlags.Instance);
-        private static readonly FieldInfo f_ZipEntry__CompressionMethod_FromZipFile =
-            typeof(ZipEntry).GetField("_CompressionMethod_FromZipFile", BindingFlags.NonPublic | BindingFlags.Instance);
-        private static readonly FieldInfo f_ZipEntry__CompressedFileDataSize =
-            typeof(ZipEntry).GetField("_CompressedFileDataSize", BindingFlags.NonPublic | BindingFlags.Instance);
-        private static readonly FieldInfo f_ZipEntry__archiveStream =
-            typeof(ZipEntry).GetField("_archiveStream", BindingFlags.NonPublic | BindingFlags.Instance);
-
         public override string DefaultName => System.IO.Path.GetFileName(Path);
 
         /// <summary>
@@ -384,94 +374,35 @@ namespace Celeste.Mod {
         /// </summary>
         public readonly string Path;
 
-        /// <summary>
-        /// The loaded archive containing the mod content.
-        /// </summary>
-        public readonly ZipFile Zip;
-
-        private readonly ZipModSecret Secret;
-        private object _container;
-
-        public class ZipModSecret {
-            private ZipModContent Content;
-            internal ZipModSecret(ZipModContent content) {
-                Content = content;
-            }
-            public ZipEntry OpenParaEntry(ZipEntry real) => Content.OpenParaEntry(real);
-            public void CloseParaEntry(ZipEntry fake) => Content.CloseParaEntry(fake);
-        }
-
-        private class ZipPoolEntry {
-            public Stream Value;
-        }
-
-        private ConcurrentBag<ZipPoolEntry> Pool = new ConcurrentBag<ZipPoolEntry>();
+        private readonly ZipArchive zip;
 
         public ZipModContent(string path) {
             Path = path;
-            Zip = OpenZip();
-            Secret = new ZipModSecret(this);
-        }
-
-        public ZipFile OpenZip() => new ZipFile(Path);
-
-        private ZipEntry OpenParaEntry(ZipEntry real) {
-            Stream stream;
-
-            Retake:
-            if (Pool.TryTake(out ZipPoolEntry pooled)) {
-                stream = Interlocked.Exchange(ref pooled.Value, null);
-                if (stream == null)
-                    goto Retake;
-                stream.Seek(0, SeekOrigin.Begin);
-            } else {
-                // Same as DotNetZip itself. Luckily we're not dealing with segmented (multi-part) zips.
-                stream = File.Open(Path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Write);
-            }
-
-            // TODO: ILHook CloneForNewZipFile to adapt it to our needs and to simplify the following code.
-            // Nothing else should be using it anyway (and if anything does, copy method with DynamicMethodDefinition).
-
-            // Thanks, DotNetZip, for being unwilling to clone uncompressed entries in compressed zips?!
-            // ZipEntry has got a special CompressionMethod setter while ZipFile doesn't.
-            // Let's hope that its value isn't used anywhere else...
-            ZipEntry fake;
-            lock (Zip) {
-                Zip.CompressionMethod = real.CompressionMethod;
-                fake = real.CloneForNewZipFile(Zip);
-            }
-            // Can't re-set the compression methods as this might be conflicting with other ongoing clonings.
-            f_ZipEntry__container.SetValue(fake, _container ??= f_ZipEntry__container.GetValue(real));
-            f_ZipEntry__CompressionMethod_FromZipFile.SetValue(fake, (short) real.CompressionMethod);
-            f_ZipEntry__CompressedFileDataSize.SetValue(fake, f_ZipEntry__CompressedFileDataSize.GetValue(real));
-            f_ZipEntry__archiveStream.SetValue(fake, stream);
-            return fake;
-        }
-
-        private void CloseParaEntry(ZipEntry fake) {
-            // Allow reopens - even by other threads - within a certain timeframe.
-            Stream stream = (Stream) f_ZipEntry__archiveStream.GetValue(fake);
-            ZipPoolEntry pooled = new ZipPoolEntry() {
-                Value = stream
-            };
-            Pool.Add(pooled);
-            QueuedTaskHelper.Do(stream, 1.5, () => Interlocked.Exchange(ref pooled.Value, null)?.Dispose());
+            zip = ZipFile.OpenRead(path);
         }
 
         protected override void Crawl() {
-            foreach (ZipEntry entry in Zip.Entries) {
-                string entryName = entry.FileName.Replace('\\', '/');
-                if (entryName.EndsWith("/"))
-                    continue;
-                Add(entryName, new ZipModAsset(this, Secret, entry));
+            lock (zip) {
+                foreach (ZipArchiveEntry entry in zip.Entries) {
+                    string entryName = entry.FullName.Replace('\\', '/');
+                    if (entryName.EndsWith("/")) continue;
+                    Add(entryName, new ZipModAsset(this, entry.FullName));
+                }
+            }
+        }
+
+        public Stream Open(string path) {
+            lock (zip) {
+                ZipArchiveEntry entry = zip.GetEntry(path);
+                if (entry == null) throw new KeyNotFoundException($"File {path} not found in archive {Path}");
+                return new SynchronizedZipEntryStream(entry);
             }
         }
 
         protected override void Dispose(bool disposing) {
-            base.Dispose(disposing);
-            Zip.Dispose();
-            foreach (ZipPoolEntry pooled in Pool) {
-                Interlocked.Exchange(ref pooled.Value, null)?.Dispose();
+            lock (zip) {
+                base.Dispose(disposing);
+                zip.Dispose();
             }
         }
     }
@@ -715,6 +646,7 @@ namespace Celeste.Mod {
             /// Subscribe to this event to register your own custom types.
             /// </summary>
             public static event TypeGuesser OnGuessType;
+
             /// <summary>
             /// Guess the file type and format based on its path.
             /// </summary>
@@ -725,108 +657,322 @@ namespace Celeste.Mod {
             public static string GuessType(string file, out Type type, out string format) {
                 type = typeof(object);
                 format = Path.GetExtension(file) ?? "";
-                if (format.Length >= 1)
-                    format = format.Substring(1);
 
-                // Assign game asset types
-                if (format == "dll") {
+                if (format.Length < 1)
+                    return file;
+
+                format = format[1..];
+
+                ReadOnlySpan<char> fileSpan = file.AsSpan();
+                int fileSeparator = fileSpan.LastIndexOf('/') + 1;
+
+                // folder with / at the end
+                ReadOnlySpan<char> directorySpan = fileSpan[..fileSeparator]; // don't use Path.GetDirectoryName as it replaces '/' with '\' :catplush:
+                // file
+                ReadOnlySpan<char> fileNameSpan = fileSpan[fileSeparator..];
+                // file without extension
+                ReadOnlySpan<char> fileNameOnlySpan = Path.GetFileNameWithoutExtension(fileNameSpan);
+
+                bool warningAlreadySent = false;
+
+                if (MatchExtension(fileSpan, fileNameSpan, "dll", ref warningAlreadySent)) {
                     type = typeof(AssetTypeAssembly);
+                    return fileSpan.ToString();
+                }
 
-                } else if (format == "png") {
+                if (MatchExtension(fileSpan, fileNameSpan, "png", ref warningAlreadySent)) {
                     type = typeof(Texture2D);
-                    file = file.Substring(0, file.Length - 4);
+                    return fileSpan[..^4].ToString();
+                }
 
-                } else if (format == "obj") {
+                if (MatchExtension(fileSpan, fileNameSpan, "obj", ref warningAlreadySent, isTextBased: true)) {
                     type = typeof(ObjModel);
-                    file = file.Substring(0, file.Length - 4);
+                    return fileSpan[..^4].ToString();
+                }
 
-                } else if (file.EndsWith(".obj.export")) {
+                if (MatchMultipartExtension(fileSpan, fileNameSpan, "obj.export", ref warningAlreadySent)) {
                     type = typeof(AssetTypeObjModelExport);
-                    file = file.Substring(0, file.Length - 7);
+                    return fileSpan[..^7].ToString();
+                }
 
-                } else if (file == "metadata.yaml" || file == "multimetadata.yaml" || file == "everest.yaml" || file == "everest.yml") {
+                if (MatchExtension(fileSpan, fileNameSpan, "yaml", ref warningAlreadySent, isTextBased: true)
+                    && directorySpan.IsEmpty
+                    && SpanEqualsAny(fileNameOnlySpan, "metadata", "multimetadata", "everest")) {
                     type = typeof(AssetTypeMetadataYaml);
-                    file = file.Substring(0, file.Length - format.Length - 1);
                     format = "yml";
+                    return fileSpan[..^5].ToString();
+                }
 
-                } else if (file == "DecalRegistry.xml") {
-                    type = typeof(AssetTypeDecalRegistry);
-                    file = file.Substring(0, file.Length - 4);
+                if (MatchExtension(fileSpan, fileNameSpan, "yml", ref warningAlreadySent, isTextBased: true)
+                    && directorySpan.IsEmpty
+                    && SpanEquals(fileNameOnlySpan, "everest")) {
+                    type = typeof(AssetTypeMetadataYaml);
+                    return fileSpan[..^4].ToString();
+                }
 
-                } else if (file == "Graphics/Sprites.xml" || file == "Graphics/SpritesGui.xml" || file == "Graphics/Portraits.xml") {
-                    type = typeof(AssetTypeSpriteBank);
-                    file = file.Substring(0, file.Length - 4);
-
-                } else if (file.StartsWith("Dialog/")) {
-                    if (format == "txt") {
-                        type = typeof(AssetTypeDialog);
-                        file = file.Substring(0, file.Length - 4);
-                    } else if (file.EndsWith(".txt.export")) {
-                        type = typeof(AssetTypeDialogExport);
-                        file = file.Substring(0, file.Length - 7);
-                    } else if (format == "fnt") {
-                        type = typeof(AssetTypeFont);
-                        file = file.Substring(0, file.Length - 4);
+                if (MatchExtension(fileSpan, fileNameSpan, "xml", ref warningAlreadySent, isTextBased: true)) {
+                    if (directorySpan.IsEmpty && SpanEquals(fileNameOnlySpan, "DecalRegistry")) {
+                        type = typeof(AssetTypeDecalRegistry);
+                        return fileSpan[..^4].ToString();
                     }
-
-                } else if (file.StartsWith("Maps/") && format == "bin") {
-                    type = typeof(AssetTypeMap);
-                    file = file.Substring(0, file.Length - 4);
-
-                } else if (file.StartsWith("Tutorials/") && format == "bin") {
-                    type = typeof(AssetTypeTutorial);
-                    file = file.Substring(0, file.Length - 4);
-
-                } else if (file.StartsWith("Audio/")) {
-                    if (format == "bank") {
-                        type = typeof(AssetTypeBank);
-                        file = file.Substring(0, file.Length - 5);
-                    } else if (file.EndsWith(".guids.txt")) {
-                        type = typeof(AssetTypeGUIDs);
-                        file = file.Substring(0, file.Length - 4);
-                    } else if (file.EndsWith(".GUIDs.txt")) { // Default FMOD casing
-                        type = typeof(AssetTypeGUIDs);
-                        file = file.Substring(0, file.Length - 4 - 6);
-                        file += ".guids";
+                    if (SpanEquals(directorySpan, "Graphics/") && SpanEqualsAny(fileNameOnlySpan, "Sprites", "SpritesGui", "Portraits")) {
+                        type = typeof(AssetTypeSpriteBank);
+                        return fileSpan[..^4].ToString();
                     }
+                }
 
-                } else if (file == ".everestignore") {
+                if (directorySpan.IsEmpty && fileNameOnlySpan.IsEmpty && MatchExtension(fileSpan, fileNameSpan, "everestignore", ref warningAlreadySent, isTextBased: true)) {
                     type = typeof(AssetTypeEverestIgnore);
-                    file = "";
+                    return "";
+                }
 
-                } else if (OnGuessType != null) {
-                    // Parse custom types from mods
-                    Delegate[] ds = OnGuessType.GetInvocationList();
-                    for (int i = 0; i < ds.Length; i++) {
-                        string fileMod = ((TypeGuesser) ds[i])(file, out Type typeMod, out string formatMod);
+                if (directorySpan.StartsWith("Dialog/")) {
+                    if (MatchExtension(fileSpan, fileNameSpan, "txt", ref warningAlreadySent, isTextBased: true)) {
+                        type = typeof(AssetTypeDialog);
+                        return fileSpan[..^4].ToString();
+                    }
+                    if (MatchMultipartExtension(fileSpan, fileNameSpan, "txt.export", ref warningAlreadySent)) {
+                        type = typeof(AssetTypeDialogExport);
+                        return fileSpan[..^7].ToString();
+                    }
+                    if (MatchExtension(fileSpan, fileNameSpan, "fnt", ref warningAlreadySent, isTextBased: true)) {
+                        type = typeof(AssetTypeFont);
+                        return fileSpan[..^4].ToString();
+                    }
+                }
+
+                if (MatchExtension(fileSpan, fileNameSpan, "bin", ref warningAlreadySent)) {
+                    if (directorySpan.StartsWith("Maps/")) {
+                        type = typeof(AssetTypeMap);
+                        return fileSpan[..^4].ToString();
+                    }
+                    if (directorySpan.StartsWith("Tutorials/")) {
+                        type = typeof(AssetTypeTutorial);
+                        return fileSpan[..^4].ToString();
+                    }
+                }
+
+                if (directorySpan.StartsWith("Audio/")) {
+                    if (MatchExtension(fileSpan, fileNameSpan, "bank", ref warningAlreadySent)) {
+                        type = typeof(AssetTypeBank);
+                        return fileSpan[..^5].ToString();
+                    }
+                    if (MatchMultipartExtension(fileSpan, fileNameSpan, "guids.txt", ref warningAlreadySent, isTextBased: true)) {
+                        type = typeof(AssetTypeGUIDs);
+                        return fileSpan[..^4].ToString();
+                    }
+                    if (MatchMultipartExtension(fileSpan, fileNameSpan, "GUIDs.txt", ref warningAlreadySent, isTextBased: true)) {
+                        // default fmod casing
+                        type = typeof(AssetTypeGUIDs);
+
+                        Span<char> newFileSpan = fileSpan[..^4].ToArray();
+
+                        for (int i = 1; i <= 5; i++)
+                            newFileSpan[^i] = char.ToLower(newFileSpan[^i]);
+
+                        return newFileSpan.ToString();
+                    }
+                }
+
+                if (OnGuessType != null) {
+                    // parse custom types from mods
+                    foreach (Delegate typeGuesser in OnGuessType.GetInvocationList()) {
+                        string fileMod = ((TypeGuesser) typeGuesser)(file, out Type typeMod, out string formatMod);
+
                         if (fileMod == null || typeMod == null || formatMod == null)
                             continue;
+
                         file = fileMod;
                         type = typeMod;
                         format = formatMod;
-                        break;
+
+                        return file;
                     }
                 }
 
-                // Assign supported generic types if we haven't found a more specific one
-                if (type == typeof(object)) {
-                    if (format == "lua") {
-                        type = typeof(AssetTypeLua);
-                        file = file.Substring(0, file.Length - 4);
-                    } else if (format == "txt") {
-                        type = typeof(AssetTypeText);
-                        file = file.Substring(0, file.Length - 4);
-                    } else if (format == "xml") {
-                        type = typeof(AssetTypeXml);
-                        file = file.Substring(0, file.Length - 4);
-                    } else if (format == "yml" || format == "yaml") {
-                        type = typeof(AssetTypeYaml);
-                        file = file.Substring(0, file.Length - format.Length - 1);
-                        format = "yml";
+                // assign supported generic types if we haven't found a more specific one
+                if (MatchExtension(fileSpan, fileNameSpan, "lua", ref warningAlreadySent, isTextBased: true)) {
+                    type = typeof(AssetTypeLua);
+                    return fileSpan[..^4].ToString();
+                }
+                if (MatchExtension(fileSpan, fileNameSpan, "txt", ref warningAlreadySent, isTextBased: true)) {
+                    type = typeof(AssetTypeText);
+                    return fileSpan[..^4].ToString();
+                }
+                if (MatchExtension(fileSpan, fileNameSpan, "xml", ref warningAlreadySent, isTextBased: true)) {
+                    type = typeof(AssetTypeXml);
+                    return fileSpan[..^4].ToString();
+                }
+                if (MatchExtension(fileSpan, fileNameSpan, "yml", ref warningAlreadySent, isTextBased: true)) {
+                    type = typeof(AssetTypeYaml);
+                    return fileSpan[..^4].ToString();
+                }
+                if (MatchExtension(fileSpan, fileNameSpan, "yaml", ref warningAlreadySent, isTextBased: true)) {
+                    type = typeof(AssetTypeYaml);
+                    format = "yml";
+                    return fileSpan[..^5].ToString();
+                }
+
+                return fileSpan.ToString();
+            }
+
+            private static bool SpanEqualsAny(ReadOnlySpan<char> left, params string[] right) {
+                foreach (string expected in right)
+                    if (left.Equals(expected, StringComparison.Ordinal))
+                        return true;
+                return false;
+            }
+
+            private static bool SpanEquals(ReadOnlySpan<char> left, string right)
+                => left.Equals(right, StringComparison.Ordinal);
+
+            /// <summary>
+            ///   Match a file extension, and log a warning if the file extension is duplicated.<br/>
+            ///   If the file is text-based, log a warning if the file has an extra <c>.txt</c> extension.
+            /// </summary>
+            /// <param name="filePath">
+            ///   The path of the file. Used when logging the warning.
+            /// </param>
+            /// <param name="fileName">
+            ///   The file name to check, with the extensions.
+            /// </param>
+            /// <param name="expectedExtension">
+            ///   The extension to check for, without the leading dot.
+            /// </param>
+            /// <param name="warningAlreadySent">
+            ///   Whether a warning has already been sent about the file name extension(s).
+            /// </param>
+            /// <param name="isTextBased">
+            ///   Whether the file is text-based, and to check for an extra <c>.txt</c> extension.
+            /// </param>
+            private static bool MatchExtension(
+                ReadOnlySpan<char> filePath,
+                ReadOnlySpan<char> fileName,
+                ReadOnlySpan<char> expectedExtension,
+                ref bool warningAlreadySent,
+                bool isTextBased = false) {
+                ReadOnlySpan<char> extension = Path.GetExtension(fileName);
+
+                if (extension.IsEmpty)
+                    return false;
+
+                // remove the leading dot
+                extension = extension[1..];
+
+                if (extension.Equals(expectedExtension, StringComparison.Ordinal)) {
+                    // this is silly, but it works
+                    extension = Path.GetExtension(Path.GetFileNameWithoutExtension(fileName));
+
+                    if (!warningAlreadySent && !extension.IsEmpty && extension[1..].Equals(expectedExtension, StringComparison.Ordinal)) {
+                        Logger.Warn("Content", $"\"{filePath}\" has a doubled extension! It may not be handled correctly.");
+                        warningAlreadySent = true;
+                    }
+
+                    return true;
+                }
+
+                if (warningAlreadySent)
+                    // we don't care anymore if a warning has already been logged
+                    return false;
+
+                if (isTextBased && extension.Equals("txt", StringComparison.Ordinal)) {
+                    extension = Path.GetExtension(Path.GetFileNameWithoutExtension(fileName));
+
+                    if (!extension.IsEmpty && extension[1..].Equals(expectedExtension, StringComparison.Ordinal)) {
+                        Logger.Warn("Content", $"\"{filePath}\" has an extra \".txt\" extension! It may not be handled correctly.");
+                        warningAlreadySent = true;
                     }
                 }
 
-                return file;
+                return false;
+            }
+
+            /// <summary>
+            ///   Match a multipart file extension, and log a warning if the last part of the file extension is duplicated.<br/>
+            ///   If the file is text-based, log a warning if the file has an extra <c>.txt</c> extension.
+            /// </summary>
+            /// <param name="filePath">
+            ///   The path of the file. Used when logging the warning.
+            /// </param>
+            /// <param name="fileName">
+            ///   The file name to check, with the extensions.
+            /// </param>
+            /// <param name="expectedExtension">
+            ///   The multipart extension to check for, without the leading dot.
+            /// </param>
+            /// <param name="warningAlreadySent">
+            ///   Whether a warning has already been sent about the file name extension(s).
+            /// </param>
+            /// <param name="isTextBased">
+            ///   Whether the file is text-based, and to check for an extra <c>.txt</c> extension.
+            /// </param>
+            private static bool MatchMultipartExtension(
+                ReadOnlySpan<char> filePath,
+                ReadOnlySpan<char> fileName,
+                ReadOnlySpan<char> expectedExtension,
+                ref bool warningAlreadySent,
+                bool isTextBased = false) {
+                // use the simpler function if this is just a singlepart extension
+                if (expectedExtension.IndexOf('.') == -1)
+                    return MatchExtension(filePath, fileName, expectedExtension, ref warningAlreadySent, isTextBased);
+
+                // find all indices of '.'
+                List<int> expectedExtensionDotIndices = new List<int>();
+                for (int i = expectedExtension.Length - 1; i >= 0; i--)
+                    if (expectedExtension[i] == '.')
+                        expectedExtensionDotIndices.Add(i);
+
+                List<int> fileNameDotIndices = new List<int>();
+                for (int i = Path.GetFileName(fileName).Length - 1; i >= 0; i--)
+                    if (fileName[i] == '.')
+                        fileNameDotIndices.Add(i);
+
+                if (fileNameDotIndices.Count - expectedExtensionDotIndices.Count < 1)
+                    // the file name doesn't have enough extension parts to match
+                    // fileName must have at least one more dot than expectedExtension
+                    return false;
+
+                // find the dot which would be where the extension should be
+                int expectedExtensionIndex = fileNameDotIndices[expectedExtensionDotIndices.Count];
+
+                // (+1 to remove the leading dot)
+                if (fileName[(expectedExtensionIndex + 1)..].Equals(expectedExtension, StringComparison.Ordinal))
+                    // extensions match perfectly
+                    return true;
+
+                if (warningAlreadySent)
+                    // we don't care anymore if a warning has already been logged
+                    return false;
+
+                // move past the extra extension and try to match
+                if ((fileNameDotIndices.Count - 1) - expectedExtensionDotIndices.Count < 1)
+                    // there's no more extension parts to check for
+                    return false;
+
+                expectedExtensionIndex = fileNameDotIndices[expectedExtensionDotIndices.Count + 1];
+                int actualExtensionIndex = fileNameDotIndices[0];
+
+                // the intended extension
+                ReadOnlySpan<char> intendedExtension = fileName[(expectedExtensionIndex + 1)..actualExtensionIndex];
+                // the actual extension (so a .txt or a duplicate extension)
+                ReadOnlySpan<char> actualExtension = fileName[(actualExtensionIndex + 1)..];
+                // (+1 to remove the leading dot)
+
+                if (intendedExtension.Equals(expectedExtension, StringComparison.Ordinal)) {
+                    // there's an extra extension at the end - check whether it's a duplicated extension or
+                    // an extra .txt extension if it's a text-based file - but only if we haven't warned about this one yet
+
+                    ReadOnlySpan<char> lastIntendedExtensionPart = expectedExtension[expectedExtensionDotIndices[0]..];
+                    if (actualExtension.Equals(lastIntendedExtensionPart, StringComparison.Ordinal)) {
+                        Logger.Warn("Content", $"\"{filePath}\" has a doubled extension! It may not be handled correctly.");
+                        warningAlreadySent = true;
+                    } else if (actualExtension.Equals("txt", StringComparison.Ordinal)) {
+                        Logger.Warn("Content", $"\"{filePath}\" has an extra \".txt\" extension! It may not be handled correctly.");
+                        warningAlreadySent = true;
+                    }
+                }
+
+                return false;
             }
 
             private static void RecrawlMod(ModContent mod) {
@@ -839,6 +985,7 @@ namespace Celeste.Mod {
             /// Invoked when content is being updated, allowing you to handle it.
             /// </summary>
             public static event Action<ModAsset, ModAsset> OnUpdate;
+
             public static void Update(ModAsset prev, ModAsset next) {
                 if (prev != null) {
                     foreach (object target in prev.Targets) {
@@ -979,6 +1126,7 @@ namespace Celeste.Mod {
             /// Invoked when content is being processed (most likely on load), allowing you to manipulate it.
             /// </summary>
             public static event Action<object, string> OnProcessLoad;
+
             /// <summary>
             /// Process an asset and register it for further reprocessing in the future.
             /// Apply any mod-related changes to the asset based on the existing mod asset meta map.
@@ -1014,6 +1162,7 @@ namespace Celeste.Mod {
             /// Invoked when content is being processed (most likely on load or runtime update), allowing you to manipulate it.
             /// </summary>
             public static event Action<object, ModAsset, bool> OnProcessUpdate;
+
             public static void ProcessUpdate(object asset, ModAsset mapping, bool load) {
                 if (asset == null || mapping == null)
                     return;

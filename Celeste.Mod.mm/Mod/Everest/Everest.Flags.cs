@@ -30,9 +30,9 @@ namespace Celeste.Mod {
             public static bool VanillaIsFNA { get; private set;}
 
             /// <summary>
-            /// Is Everest running headlessly?
+            /// Is Everest running without a window?
             /// </summary>
-            public static bool IsHeadless { get; private set; }
+            public static bool IsHeadless { get; internal set; }
 
             /// <summary>
             /// Is the game running using Mono - always false on .NET Core Everest.
@@ -75,7 +75,6 @@ namespace Celeste.Mod {
                     VanillaIsXNA = !VanillaIsFNA;
                 }
 
-                IsHeadless = Environment.GetEnvironmentVariable("EVEREST_HEADLESS") == "1";
                 AvoidRenderTargets = Environment.GetEnvironmentVariable("EVEREST_NO_RT") == "1";
                 PreferLazyLoading = false;
 

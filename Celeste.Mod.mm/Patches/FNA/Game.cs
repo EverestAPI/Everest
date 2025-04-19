@@ -5,11 +5,14 @@ using SDL2;
 using System;
 
 namespace Microsoft.Xna.Framework {
-    
+
     [GameDependencyPatch("FNA")]
-    public class patch_Game {
+    public partial class patch_Game {
         public GameWindow Window { get; private set; }
+
+        [PatchGameBeforeLoop]
         private extern void orig_BeforeLoop();
+
         private void BeforeLoop() {
             orig_BeforeLoop();
 
@@ -20,7 +23,7 @@ namespace Microsoft.Xna.Framework {
             // SDL_HINT_FORCE_RAISEWINDOW is required solely for Windows, ignored on other systems
             SDL.SDL_SetHint("SDL_HINT_FORCE_RAISEWINDOW", "true");
             SDL.SDL_RaiseWindow(Window.Handle);
-        } 
+        }
 
     }
 }

@@ -178,6 +178,7 @@ namespace Celeste {
         }
 
 #pragma warning disable CS0626 // extern method with no attribute
+        [PatchTextMenuUpdate]
         public extern void orig_Update();
 #pragma warning restore CS0626 // extern method with no attribute
 
@@ -569,6 +570,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTextMenuSettingUpdate))]
     class PatchTextMenuSettingUpdateAttribute : Attribute { }
 
+    /// <summary>
+    /// Patches TextMenu.Update to check advanced photosensitivity settings
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTextMenuUpdate))]
+    class PatchTextMenuUpdateAttribute : Attribute { }
+
     static partial class MonoModRules {
 
         public static void PatchTextMenuOptionColor(ILContext context, CustomAttribute attrib) {
@@ -585,6 +592,31 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Next!.OpCode = OpCodes.Ldfld;
             cursor.Next!.Operand = f_UnselectedColor;
+        }
+
+        public static void PatchTextMenuUpdate(ILContext context, CustomAttribute attrib) {
+            TypeDefinition t_CoreModule = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModule");
+            TypeDefinition t_CoreModuleSettings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModuleSettings");
+
+            // Get the getters manually because properties scare me
+            MethodDefinition m_CoreModule_get_Settings = t_CoreModule.FindMethod("get_Settings");
+            MethodDefinition m_get_AllowTextHighlight = t_CoreModuleSettings.FindMethod("get_AllowTextHighlight");
+
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(MoveType.Before, instr => instr.MatchLdsfld("Celeste.Settings", "Instance"));
+            
+            // Put the settings module on the stack
+            cursor.Next.OpCode = OpCodes.Call;
+            cursor.Next.Operand = m_CoreModule_get_Settings;
+
+            // Get the AllowTextHighlight value 
+            cursor.Index++;
+            cursor.Next.OpCode = OpCodes.Callvirt;
+            cursor.Next.Operand = m_get_AllowTextHighlight;
+
+            // Break if true, instead of false
+            cursor.Index++;
+            cursor.Next.OpCode = OpCodes.Brtrue;
         }
 
         public static void PatchTextMenuSettingUpdate(ILContext il, CustomAttribute _) {

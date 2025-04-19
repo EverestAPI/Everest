@@ -75,7 +75,7 @@ namespace Celeste {
 
         public extern bool orig_IsStart(Overworld overworld, Overworld.StartMode start);
         public override bool IsStart(Overworld overworld, Overworld.StartMode start) {
-            if (CoreModule.Settings.CurrentVersion == null && !overworld.IsCurrent<OuiOOBE>())
+            if (CoreModule.Settings.CurrentVersion == null && !overworld.IsCurrent<OuiOOBE>() && !Everest.Flags.IsHeadless)
                 start = Overworld.StartMode.MainMenu;
             return orig_IsStart(overworld, start);
         }

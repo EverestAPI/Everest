@@ -1,5 +1,4 @@
-﻿using Ionic.Zip;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using System;
@@ -7,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -111,9 +111,9 @@ namespace Celeste.Mod.UI {
 
         private static EverestModuleMetadata[] loadZip(string archive) {
             try {
-                using (ZipFile zip = new ZipFile(archive)) {
-                    foreach (ZipEntry entry in zip.Entries) {
-                        if (entry.FileName == "metadata.yaml") {
+                using (ZipArchive zip = ZipFile.OpenRead(archive)) {
+                    foreach (ZipArchiveEntry entry in zip.Entries) {
+                        if (entry.FullName == "metadata.yaml") {
                             using (MemoryStream stream = entry.ExtractStream())
                             using (StreamReader reader = new StreamReader(stream)) {
                                 EverestModuleMetadata meta = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata>(reader);
@@ -123,9 +123,9 @@ namespace Celeste.Mod.UI {
                             }
                         }
 
-                        if (entry.FileName == "multimetadata.yaml" ||
-                            entry.FileName == "everest.yaml" ||
-                            entry.FileName == "everest.yml") {
+                        if (entry.FullName == "multimetadata.yaml" ||
+                            entry.FullName == "everest.yaml" ||
+                            entry.FullName == "everest.yml") {
                             using (MemoryStream stream = entry.ExtractStream())
                             using (StreamReader reader = new StreamReader(stream)) {
                                 if (!reader.EndOfStream) {

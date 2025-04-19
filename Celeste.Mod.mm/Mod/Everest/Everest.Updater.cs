@@ -1,18 +1,15 @@
 ﻿using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
-using Ionic.Zip;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -148,17 +145,14 @@ namespace Celeste.Mod {
                     Name = "updater_src_stable",
                     Description = "updater_src_release_github",
                     MinimumBuild = 3960,
-
                     UpdatePriority = UpdatePriority.High,
-
                     Index = GetEverestUpdaterDatabaseURL,
                     ParseData = UpdateListParser("stable")
                 },
                 new Source {
                     Name = "updater_src_beta",
-                    Description = "updater_src_release_github",
+                    Description = "updater_src_buildbot_azure",
                     MinimumBuild = 3960,
-
                     Index = GetEverestUpdaterDatabaseURL,
                     ParseData = UpdateListParser("beta")
                 },
@@ -166,7 +160,6 @@ namespace Celeste.Mod {
                     Name = "updater_src_dev",
                     Description = "updater_src_buildbot_azure",
                     MinimumBuild = 3960,
-
                     Index = GetEverestUpdaterDatabaseURL,
                     ParseData = UpdateListParser("dev")
                 },
@@ -373,17 +366,18 @@ namespace Celeste.Mod {
 
                         static void CopyInstallDir(string srcDir, string dstDir) {
                             Directory.CreateDirectory(dstDir);
-                            foreach(string srcPath in Directory.EnumerateFiles(srcDir)) {
+                            foreach (string srcPath in Directory.EnumerateFiles(srcDir)) {
                                 string dstPath = Path.Combine(dstDir, Path.GetRelativePath(srcDir, srcPath));
 
                                 //Don't copy Content or Saves
                                 string entryName = Path.GetFileName(srcPath);
-                                if(entryName == "Content" || entryName == "Saves") continue;
+                                if (entryName == "Content" || entryName == "Saves") continue;
 
-                                if(File.Exists(srcPath)) File.Copy(srcPath, dstPath);
-                                if(Directory.Exists(srcPath)) CopyInstallDir(srcPath, dstPath);
+                                if (File.Exists(srcPath)) File.Copy(srcPath, dstPath);
+                                if (Directory.Exists(srcPath)) CopyInstallDir(srcPath, dstPath);
                             }
                         }
+
                         CopyInstallDir(Path.Combine(PathGame, "orig"), legacyRefInstall);
                     }
 
@@ -391,7 +385,7 @@ namespace Celeste.Mod {
                     Source stableSrc = Sources.First(src => src.Name.Contains("stable"));
                     stableSrc = await stableSrc.Request();
 
-                    if(!string.IsNullOrEmpty(stableSrc.ErrorDialog)) {
+                    if (!string.IsNullOrEmpty(stableSrc.ErrorDialog)) {
                         progress.LogLine(stableSrc.ErrorDialog.DialogClean());
                         progress.LogLine($"\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT1")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT2")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT3")}");
                         progress.Progress = 0;
@@ -401,7 +395,7 @@ namespace Celeste.Mod {
                     }
 
                     Entry latestNonCoreStable = stableSrc.Entries.FirstOrDefault(entr => !entr.IsNativeBuild ?? false);
-                    if(latestNonCoreStable == null) {
+                    if (latestNonCoreStable == null) {
                         progress.LogLine(Dialog.Clean("EVERESTUPDATER_NOTAVAILABLE"));
                         progress.LogLine($"\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT1")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT2")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT3")}");
                         progress.Progress = 0;
@@ -440,9 +434,12 @@ namespace Celeste.Mod {
                     }
 
                     // We have to create BuildIsXYZ.txt manually, as this "install" will never actually be run
-                    File.Delete(Path.Combine(legacyRefInstall, "BuildIsFNA.txt"));
-                    File.Delete(Path.Combine(legacyRefInstall, "BuildIsXNA.txt"));
-                    File.WriteAllText(Path.Combine(legacyRefInstall, Flags.VanillaIsFNA ? "BuildIsFNA.txt" : "BuildIsXNA.txt"), string.Empty);
+                    string correctFile = Path.Combine(legacyRefInstall, Flags.VanillaIsFNA ? "BuildIsFNA.txt" : "BuildIsXNA.txt");
+                    string wrongFile = Path.Combine(legacyRefInstall, Flags.VanillaIsFNA ? "BuildIsXNA.txt" : "BuildIsFNA.txt");
+                    if (File.Exists(wrongFile))
+                        File.Delete(wrongFile);
+                    if (!File.Exists(correctFile))
+                        File.WriteAllText(correctFile, string.Empty);
                 }), 0);
             }
 
@@ -488,18 +485,18 @@ namespace Celeste.Mod {
                         Directory.Delete(extractedPath, true);
 
                     // Don't use zip.ExtractAll because we want to keep track of the progress.
-                    using (ZipFile zip = new ZipFile(zipPath)) {
+                    using (ZipArchive zip = ZipFile.OpenRead(zipPath)) {
                         progress.LogLine($"{zip.Entries.Count} {Dialog.Clean("EVERESTUPDATER_ZIPENTRIES")}");
                         progress.Progress = 0;
                         progress.ProgressMax = zip.Entries.Count;
 
-                        foreach (ZipEntry entry in zip.Entries) {
-                            if (entry.FileName.Replace('\\', '/').EndsWith("/")) {
+                        foreach (ZipArchiveEntry entry in zip.Entries) {
+                            if (entry.FullName.Replace('\\', '/').EndsWith("/")) {
                                 progress.Progress++;
                                 continue;
                             }
 
-                            string entryName = entry.FileName;
+                            string entryName = entry.FullName;
                             if (entryName.StartsWith("main/"))
                                 entryName = entryName.Substring(5);
 
@@ -512,9 +509,10 @@ namespace Celeste.Mod {
                                 Directory.CreateDirectory(fullDir);
                             if (File.Exists(fullPath))
                                 File.Delete(fullPath);
-                            progress.LogLine($"{entry.FileName} -> {fullPath}");
-                            using (Stream stream = File.OpenWrite(fullPath))
-                                entry.Extract(stream);
+                            progress.LogLine($"{entry.FullName} -> {fullPath}");
+                            using (Stream input = entry.Open())
+                            using (Stream output = File.OpenWrite(fullPath))
+                                input.CopyTo(output);
                             progress.Progress++;
                         }
                     }
@@ -530,7 +528,7 @@ namespace Celeste.Mod {
                 progress.Progress = 1;
                 progress.ProgressMax = 1;
 
-                if(isUpdate) {
+                if (isUpdate) {
                     string action = Dialog.Clean("EVERESTUPDATER_RESTARTING");
                     progress.LogLine(action);
                     for (int i = 3; i > 0; --i) {

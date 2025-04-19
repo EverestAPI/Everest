@@ -8,13 +8,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using MonoMod.Cil;
-using MonoMod.Utils;
+using System.Globalization;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace Celeste {
-    class patch_Language : Language {
+    partial class patch_Language : Language {
 
         internal static Language LoadingLanguage;
         internal static bool LoadOrigLanguage;
@@ -24,9 +23,165 @@ namespace Celeste {
         internal Dictionary<string, int> ReadCount;
         internal string CurrentlyReadingFrom;
 
-        [MonoModIgnore]
-        [PatchLoadLanguage]
-        public static extern new Language FromTxt(string path);
+        [GeneratedRegex(@"^(?:\{[^}]*\}\s*)*$")]
+        private static partial Regex WholeLineIsCommandsRegex();
+
+        [GeneratedRegex(@"\{(.*?)\}", RegexOptions.RightToLeft)]
+        private static partial Regex CommandRegex();
+        
+        [GeneratedRegex(@"\[(?<content>[^\[\\]*(?:\\.[^\]\\]*)*)\]", RegexOptions.IgnoreCase)]
+        private static partial Regex PortraitRegex();
+        
+        [GeneratedRegex(@"^\w+\=.*")]
+        private static partial Regex VariableRegex();
+        
+        [GeneratedRegex(@"\{\+\s*(.*?)\}")]
+        private static partial Regex InsertRegex();
+
+        /// <summary>
+        /// Splits text like 'key=value' into two spans.
+        /// If the separator is not found, 'left' contains the entire string and 'right' is empty.
+        /// </summary>
+        private static bool SplitPair(ReadOnlySpan<char> from, char separator, out ReadOnlySpan<char> left, out ReadOnlySpan<char> right) {
+            int idx = from.IndexOf(separator);
+            if (idx == -1) {
+                left = from;
+                right = Span<char>.Empty;
+                return false;
+            }
+            
+            left = from[..idx];
+            right = from[(idx + 1)..].Trim();
+            return true;
+        }
+        
+        [MonoModReplace] // Rewrite the method to optimise it and fix issues with multiple equals signs being in the same line.
+        public new static Language FromTxt(string path) {
+            Language language = null;
+            string nextKey = "";
+            StringBuilder nextEntryBuilder = new();
+            string prevLine = "";
+            ReadOnlySpan<char> lastAddedNonEmptyLine = "";
+            
+            foreach (string lineUntrimmed in _GetLanguageText(path, Encoding.UTF8)) {
+                var line = lineUntrimmed.Trim();
+                if (line.Length <= 0 || line[0] == '#') {
+                    continue;
+                }
+
+                if (line.IndexOf('[') >= 0) {
+                    line = PortraitRegex().Replace(line, "{portrait ${content}}");
+                }
+
+                line = line.Replace("\\#", "#", StringComparison.Ordinal);
+                if (line.Length <= 0) {
+                    continue;
+                }
+
+                // See if this line starts a new dialog key
+                if (VariableRegex().IsMatch(line)) {
+                    if (!string.IsNullOrEmpty(nextKey)) {
+                        // end the previous dialog key
+                        _SetItem(language.Dialog, nextKey, nextEntryBuilder.ToString(), language);
+                    }
+
+                    SplitPair(line, '=', out var cmd, out var argument);
+                    
+                    if (cmd.Equals("language", StringComparison.OrdinalIgnoreCase)) {
+                        language = _NewLanguage();
+                        language.FontFace = null;
+                        language.FilePath = Path.GetFileName(path);
+
+                        if (SplitPair(argument, ',', out var id, out var label)) {
+                            language.Id = id.ToString();
+                            language.Label = label.ToString();
+                        } else {
+                            language.Id = argument.ToString();
+                        }
+                    } else if (cmd.Equals("icon", StringComparison.OrdinalIgnoreCase)) {
+                        string argStr = argument.ToString();
+                        VirtualTexture texture = VirtualContent.CreateTexture(Path.Combine("Dialog", argStr));
+                        language.IconPath = argStr;
+                        language.Icon = new MTexture(texture);
+                    } else if (cmd.Equals("order", StringComparison.OrdinalIgnoreCase)) {
+                        language.Order = int.Parse(argument);
+                    } else if (cmd.Equals("font", StringComparison.OrdinalIgnoreCase)) {
+                        if (SplitPair(argument, ',', out var face, out var faceSize)) {
+                            language.FontFace = face.ToString();
+                            language.FontFaceSize = float.Parse(faceSize, CultureInfo.InvariantCulture);
+                        }
+                    } else if (cmd.Equals("SPLIT_REGEX", StringComparison.OrdinalIgnoreCase)) {
+                        language.SplitRegex = argument.ToString();
+                    } else if (cmd.Equals("commas", StringComparison.OrdinalIgnoreCase)) {
+                        language.CommaCharacters = argument.ToString();
+                    } else if (cmd.Equals("periods", StringComparison.OrdinalIgnoreCase)) {
+                        language.PeriodCharacters = argument.ToString();
+                    } else {
+                        // This is just a normal dialog.
+                        // By this point, we've already added the previous entry to the Dialog dictionary.
+                        nextKey = cmd.ToString();
+                        nextEntryBuilder.Clear();
+                        nextEntryBuilder.Append(argument);
+                        lastAddedNonEmptyLine = argument;
+                    }
+                } else {
+                    // Continue the previously started dialog
+                    
+                    if (nextEntryBuilder.Length > 0) {
+                        // Auto-add linebreaks if the previous line wasn't entirely commands and had no line break commands.
+                        if (!lastAddedNonEmptyLine.EndsWith("{break}", StringComparison.Ordinal)
+                            && !lastAddedNonEmptyLine.EndsWith("{n}", StringComparison.Ordinal)
+                            && !WholeLineIsCommandsRegex().IsMatch(prevLine)
+                        ) {
+                            nextEntryBuilder.Append("{break}");
+                            lastAddedNonEmptyLine = "{break}";
+                        }
+                    }
+
+                    nextEntryBuilder.Append(line);
+                    lastAddedNonEmptyLine = line.Length > 0 ? line : lastAddedNonEmptyLine;
+                }
+
+                prevLine = line;
+            }
+
+            // Make sure to add the final key in the lang file
+            if (!string.IsNullOrEmpty(nextKey)) {
+                _SetItem(language.Dialog, nextKey, nextEntryBuilder.ToString(), language);
+            }
+
+            var keys = language.Dialog.Keys;
+
+            // Handle {+DIALOG_ID} constructs, recursively
+            foreach (string key in keys) {
+                string dialog = GetDialogWithResolvedInserts(language, language.Dialog[key]);
+                _SetItem(language.Dialog, key, dialog, language);
+                
+                static string GetDialogWithResolvedInserts(Language language, string dialog) {
+                    return InsertRegex().Replace(dialog, match => {
+                        string keyToReplaceWith = match.Groups[1].Value;
+
+                        return GetDialogWithResolvedInserts(language, language.Dialog.GetValueOrDefault(keyToReplaceWith, "[XXX]"));
+                    });
+                }
+            }
+
+            language.Lines = 0;
+            language.Words = 0;
+            
+            // Create cleaned entries
+            foreach (string key in keys) {
+                string dialog = language.Dialog[key];
+
+                if (dialog.Contains('{')) {
+                    dialog = CommandRegex().Replace(dialog, match => match.ValueSpan is "{n}" or "{break}" ? "\n" : "");
+                }
+                
+                language.Cleaned[key] = dialog;
+            }
+
+            return language;
+        }
 
         public static extern Language orig_FromExport(string path);
         public static new Language FromExport(string path) {
@@ -79,15 +234,14 @@ namespace Celeste {
                     yield return text;
             }
 
-            path = path.Substring(Everest.Content.PathContentOrig.Length + 1);
+            path = path[(Everest.Content.PathContentOrig.Length + 1)..];
             path = path.Replace('\\', '/');
-            path = path.Substring(0, path.Length - 4);
-            string dummy = string.Format("LANGUAGE={0}", path.Substring(7).ToLowerInvariant());
+            path = path[..^".txt".Length];
 
             if (!ready) {
                 ready = true;
                 // Feed a dummy language line. All empty languages are removed afterwards.
-                yield return dummy;
+                yield return $"LANGUAGE={path["Dialog/".Length..].ToLowerInvariant()}";
             }
 
             if (!LoadModLanguage)
@@ -95,13 +249,13 @@ namespace Celeste {
 
             foreach (ModContent content in Everest.Content.Mods) {
                 foreach (ModAsset asset in content.Map
-                    .Where(entry => entry.Value.Type == typeof(AssetTypeDialog) && entry.Key.Equals(path, StringComparison.InvariantCultureIgnoreCase))
+                    .Where(entry => entry.Value.Type == typeof(AssetTypeDialog) && entry.Key.Equals(path, StringComparison.OrdinalIgnoreCase))
                     .Select(entry => entry.Value)) {
 
                     lang.CurrentlyReadingFrom = asset.Source?.Name ?? "???";
                     using (StreamReader reader = new StreamReader(asset.Stream, encoding))
                         while (reader.Peek() != -1)
-                            yield return reader.ReadLine().Trim('\r', '\n').Trim();
+                            yield return reader.ReadLine().Trim();
 
                     // Feed a new key to be sure that the last key in the file is cut off.
                     // That will prevent mod B from corrupting the last key of mod A if its language txt is bad.
@@ -112,7 +266,7 @@ namespace Celeste {
         }
 
         private static Language _NewLanguage() {
-            return LoadingLanguage ?? (LoadingLanguage = new Language());
+            return LoadingLanguage ??= new Language();
         }
 
         private static void _SetItem(Dictionary<string, string> dict, string key, string value, Language _lang) {
@@ -124,13 +278,12 @@ namespace Celeste {
                 // Skip conflict checking when the dictionary is from an unknown source.
 
             } else {
-                if (!lang.ReadCount.TryGetValue(key, out int count))
+                ref int count = ref CollectionsMarshal.GetValueRefOrAddDefault(lang.ReadCount, key, out bool existed);
+                if (!existed)
                     count = lang.Dialog.ContainsKey(key) ? 1 : 0;
                 count++;
-                lang.ReadCount[key] = count;
 
-                if (!lang.LineSources.TryGetValue(key, out string sourcePrev))
-                    sourcePrev = "?!?!?!";
+                string sourcePrev = lang.LineSources.GetValueOrDefault(key, "?!?!?!");
                 lang.LineSources[key] = lang.CurrentlyReadingFrom;
 
                 if (count >= 2)
@@ -139,47 +292,6 @@ namespace Celeste {
 
 
             dict[key] = value;
-        }
-
-    }
-}
-
-namespace MonoMod {
-    /// <summary>
-    /// Patch the Language.LoadTxt method instead of reimplementing it in Everest.
-    /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLoadLanguage))]
-    class PatchLoadLanguageAttribute : Attribute { }
-
-    static partial class MonoModRules {
-
-        public static void PatchLoadLanguage(ILContext context, CustomAttribute attrib) {
-            MethodDefinition m_GetLanguageText = context.Method.DeclaringType.FindMethod("System.Collections.Generic.IEnumerable`1<System.String> _GetLanguageText(System.String,System.Text.Encoding)");
-            MethodDefinition m_NewLanguage = context.Method.DeclaringType.FindMethod("Celeste.Language _NewLanguage()");
-            MethodDefinition m_SetItem = context.Method.DeclaringType.FindMethod("System.Void _SetItem(System.Collections.Generic.Dictionary`2<System.String,System.String>,System.String,System.String,Celeste.Language)");
-
-            ILCursor cursor = new ILCursor(context);
-            cursor.GotoNext(instr => instr.MatchCall("System.IO.File", "ReadLines"));
-            cursor.Next.Operand = m_GetLanguageText;
-
-            cursor.GotoNext(instr => instr.MatchNewobj("Celeste.Language"));
-            cursor.Next.OpCode = OpCodes.Call;
-            cursor.Next.Operand = m_NewLanguage;
-
-            // Start again from the top
-            cursor.Goto(cursor.Instrs[0]);
-            int matches = 0;
-            while (cursor.TryGotoNext(instr => instr.MatchCallvirt("System.Collections.Generic.Dictionary`2<System.String,System.String>", "set_Item"))) {
-                matches++;
-                // Push the language object. Should always be stored in the first local var.
-                cursor.Emit(OpCodes.Ldloc_0);
-                // Replace the method call.
-                cursor.Next.OpCode = OpCodes.Call;
-                cursor.Next.Operand = m_SetItem;
-            }
-            if (matches != 3) {
-                throw new Exception("Incorrect number of matches for language.Dialog.set_Item");
-            }
         }
 
     }

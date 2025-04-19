@@ -48,6 +48,12 @@ namespace Celeste {
 
         [MonoModReplace]
         public static void Init() {
+            if (Everest.Flags.IsHeadless) {
+                // Stub out audio system
+                system = new FMOD.Studio.System(IntPtr.Zero);
+                return;
+            }
+
             bool fmodLiveUpdate = Settings.Instance.LaunchWithFMODLiveUpdate;
             Settings.Instance.LaunchWithFMODLiveUpdate |= CoreModule.Settings.LaunchWithFMODLiveUpdateInEverest;
         
@@ -111,6 +117,10 @@ namespace Celeste {
         }
 
         public static void IngestNewBanks() {
+            if (Everest.Flags.IsHeadless) {
+                return;
+            }
+
             lock (Everest.Content.Map) {
                 foreach (ModAsset asset in Everest.Content.Map.Values.Where(asset => asset.Type == typeof(AssetTypeBank))) {
                     if (!ingestedModBankPaths.Contains(asset.PathVirtual)) {
@@ -122,6 +132,10 @@ namespace Celeste {
 
         [MonoModReplace]
         public static void Unload() {
+            if (Everest.Flags.IsHeadless) {
+                return;
+            }
+
             if (system == null)
                 return;
 
@@ -137,6 +151,10 @@ namespace Celeste {
         /// Loads an FMOD Bank from the given asset.
         /// </summary>
         public static Bank IngestBank(ModAsset asset) {
+            if (Everest.Flags.IsHeadless) {
+                return new Bank(IntPtr.Zero);
+            }
+
             Logger.Verbose("Audio.IngestBank", asset.PathVirtual);
             ingestedModBankPaths.Add(asset.PathVirtual);
 
@@ -188,6 +206,10 @@ namespace Celeste {
         /// Loads an FMOD GUID table from the given asset.
         /// </summary>
         public static void IngestGUIDs(ModAsset asset) {
+            if (Everest.Flags.IsHeadless) {
+                return;
+            }
+
             Logger.Verbose("Audio.IngestGUIDs", asset.PathVirtual);
             using (Stream stream = asset.Stream)
             using (StreamReader reader = new StreamReader(asset.Stream)) {
@@ -222,7 +244,7 @@ namespace Celeste {
 
         public static extern void orig_ReleaseUnusedDescriptions();
         public static void ReleaseUnusedDescriptions() {
-            if (!CoreModule.Settings.UnloadUnusedAudio)
+            if (Everest.Flags.IsHeadless || !CoreModule.Settings.UnloadUnusedAudio)
                 return;
             orig_ReleaseUnusedDescriptions();
         }
@@ -230,7 +252,7 @@ namespace Celeste {
 
         [MonoModReplace]
         public static string GetEventName(EventInstance instance) {
-            if (instance == null)
+            if (Everest.Flags.IsHeadless || instance == null)
                 return "";
 
             instance.getDescription(out EventDescription desc);
@@ -241,7 +263,7 @@ namespace Celeste {
         }
 
         public static string GetEventName(EventDescription desc) {
-            if (desc == null)
+            if (Everest.Flags.IsHeadless || desc == null)
                 return "";
 
             desc.getID(out Guid id);
@@ -256,7 +278,7 @@ namespace Celeste {
         }
 
         public static string GetBankName(Bank bank) {
-            if (bank == null)
+            if (Everest.Flags.IsHeadless || bank == null)
                 return "";
 
             bank.getID(out Guid id);
@@ -270,6 +292,10 @@ namespace Celeste {
 
         [MonoModReplace]
         public static EventDescription GetEventDescription(string path) {
+            if (Everest.Flags.IsHeadless) {
+                return new EventDescription(IntPtr.Zero);
+            }
+
             EventDescription desc = null;
             if (path == null || Audio.cachedEventDescriptions.TryGetValue(path, out desc))
                 return desc;
@@ -311,6 +337,10 @@ namespace Celeste {
 
             [MonoModReplace]
             public static Bank Load(string name, bool loadStrings) {
+                if (Everest.Flags.IsHeadless) {
+                    return new Bank(IntPtr.Zero);
+                }
+
                 if (Banks == null)
                     Banks = new Dictionary<string, Bank>();
 
