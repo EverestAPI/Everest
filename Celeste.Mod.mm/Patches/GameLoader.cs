@@ -114,7 +114,6 @@ namespace Celeste {
             timer.Stop();
 
             timer = Stopwatch.StartNew();
-            // TODO: Disable FTL in headless
             MainThreadHelper.Boost = 50;
             patch_VirtualTexture.WaitFinishFastTextureLoading();
             MainThreadHelper.Schedule(() => MainThreadHelper.Boost = 0).AsTask().Wait();
