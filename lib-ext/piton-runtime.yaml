@@ -1,24 +1,24 @@
-# Latest LTS as of July 8th 2024
+# Latest LTS as of April 19th 2025
 windows-x86:
-  version: 8.0.6
-  download: https://download.visualstudio.microsoft.com/download/pr/53f7cef2-50bf-419d-bf36-69f2989729b6/31261cddb6f9517e76cc4ee71d67be8b/dotnet-runtime-8.0.6-win-x86.zip
-  download-sha512: 4801ea1f67811ee368d78e03447cf972ba71e4d02818d5ed019ce99a241498eb4d242ceb520744141d6c3047bacb80c64be5b0f9a64f339087bce76e83a0b444
+  version: 8.0.15
+  download: https://builds.dotnet.microsoft.com/dotnet/Runtime/8.0.15/dotnet-runtime-8.0.15-win-x86.zip
+  download-sha512: b9980345c84443381b92d8d3c56a90244ec90e6f7edfbf09dd665b29a807705592606997e7e85bb7f6357f49feb5aa41506ec1426a4208352a326736bda6c441
   download-format: zip
 
 windows-x86_64:
-  version: 8.0.6
-  download: https://download.visualstudio.microsoft.com/download/pr/3c5bbae6-d848-46b0-bb65-c4f7a7ad4b2a/afba8a75f7e7f4f304362de0f1d4b3ea/dotnet-runtime-8.0.6-win-x64.zip
-  download-sha512: 2c0407df76878fe518105e132e5435f7f3ac42415fecf099e1a056ef4c068ed9d4e3bcfb5fe49b6c138cfe8b77db609bc6af28be5f11b5beca9eea7c1092ee51
+  version: 8.0.15
+  download: https://builds.dotnet.microsoft.com/dotnet/Runtime/8.0.15/dotnet-runtime-8.0.15-win-x64.zip
+  download-sha512: 1d486895ecc1c99586a8dd221a1a21c507ce42eaf4262345f93f0a2cae7e23733360b742f2d5b803c56a1199cb00ca20a5ee5c911d63118e1930e07068a7cccb
   download-format: zip
 
 linux-x86_64:
-  version: 8.0.6
-  download: https://download.visualstudio.microsoft.com/download/pr/021c3de8-14d5-493f-92dc-2c8f8be76961/6ee3407acebf74631bfc01f14301afa6/dotnet-runtime-8.0.6-linux-x64.tar.gz
-  download-sha512: c0c5e93d4e68e2075c4c63336dc74246efb704ac9663411351efdefc4cc7da5a7750f44b8a23aebe959bb4308575bead443a41b2524ae03b29ac41929d27e0e0
+  version: 8.0.15
+  download: https://builds.dotnet.microsoft.com/dotnet/Runtime/8.0.15/dotnet-runtime-8.0.15-linux-x64.tar.gz
+  download-sha512: 833a848541ba6f71c8792168914856e16de6f71cf0a481c5990f3622b0e3f83123e6024bcabf6b955a7c92e8e904181d40d3bd612595a0d8c47a421267a91ca6
   download-format: targz
 
 macos-x86_64:
-  version: 8.0.6
-  download: https://download.visualstudio.microsoft.com/download/pr/20271d05-67e0-4356-87a9-0ce5102b5007/b7c91c6470e1c2ffbb493a35dd6883c0/dotnet-runtime-8.0.6-osx-x64.tar.gz
-  download-sha512: 44c0ad9fc613975fa0c12b12b91ff8cd8ba0be5e8ed59510e7a5ab22e55267a468b321ce34515daf070ffc8d557c09d7ea3ed3c3407887f706553b5d378e3232
+  version: 8.0.15
+  download: https://builds.dotnet.microsoft.com/dotnet/Runtime/8.0.15/dotnet-runtime-8.0.15-osx-x64.tar.gz
+  download-sha512: e488b4dca3cb08a144b50d4428e4185b7a8cf7486886acfee8fc00c1145bd82d7bc7e66acea76a575869f16578babc6708fe1045839deca6ca848188ca59a51c
   download-format: targz
