@@ -1,7 +1,9 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Monocle;
+using MonoMod;
 using System;
 
 namespace Celeste {
@@ -9,6 +11,21 @@ namespace Celeste {
 
         private bool selected;
         private Tween tween;
+
+        public new Color SelectionColor {
+            [MonoModReplace]
+            get 
+            {
+                if (selected) {
+                    if (CoreModule.Settings.AllowTextHighlight && !base.Scene.BetweenInterval(0.1f)) {
+                        return TextMenu.HighlightColorB;
+                    }
+                    return TextMenu.HighlightColorA;
+                }
+                return Color.White;
+            } 
+        }
+
         public bool _Selected {
             get => selected;
             set => selected = value;

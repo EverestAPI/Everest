@@ -2,7 +2,6 @@
 using Celeste.Mod.Core;
 using Celeste.Mod.Entities;
 using Celeste.Mod.Helpers;
-using Ionic.Zip;
 using MAB.DotIgnore;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -13,6 +12,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 
@@ -237,7 +237,7 @@ namespace Celeste.Mod {
                         LoadDir(e.FullPath);
                     else if (e.FullPath.EndsWith(".zip"))
                         LoadZip(e.FullPath);
-                    ((patch_OuiMainMenu) (AssetReloadHelper.ReturnToScene as Overworld)?.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
+                    ((patch_OuiMainMenu) (AssetReloadHelper.ReturnToScene as Overworld)?.GetUI<OuiMainMenu>())?.NeedsRebuild();
                 })));
             }
 
@@ -266,14 +266,14 @@ namespace Celeste.Mod {
 
                 bool metaParsed = false;
 
-                using (ZipFile zip = new ZipFile(archive)) {
-                    foreach (ZipEntry entry in zip.Entries) {
-                        if (entry.FileName is "everest.yaml" or "everest.yml") {
+                using (ZipArchive zip = ZipFile.OpenRead(archive)) {
+                    foreach (ZipArchiveEntry entry in zip.Entries) {
+                        if (entry.FullName is "everest.yaml" or "everest.yml") {
                             if (metaParsed) {
-                                Logger.Warn("loader", $"{archive} has both everest.yaml and everest.yml. Ignoring {entry.FileName}.");
+                                Logger.Warn("loader", $"{archive} has both everest.yaml and everest.yml. Ignoring {entry.FullName}.");
                                 continue;
                             }
-                            using (MemoryStream stream = entry.ExtractStream())
+                            using (Stream stream = entry.Open())
                             using (StreamReader reader = new StreamReader(stream)) {
                                 try {
                                     if (!reader.EndOfStream) {
@@ -284,16 +284,17 @@ namespace Celeste.Mod {
                                         }
                                     }
                                 } catch (Exception e) {
-                                    Logger.Warn("loader", $"Failed parsing {entry.FileName} in {archive}: {e}");
+                                    Logger.Warn("loader", $"Failed parsing {entry.FullName} in {archive}: {e}");
                                     FilesWithMetadataLoadFailures.Add(archive);
                                 }
                             }
                             metaParsed = true;
                             continue;
                         }
-                        if (entry.FileName == ".everestignore") {
+                        
+                        if (entry.FullName == ".everestignore") {
                             List<string> lines = new List<string>();
-                            using (MemoryStream stream = entry.ExtractStream())
+                            using (Stream stream = entry.Open())
                             using (StreamReader reader = new StreamReader(stream)) {
                                 while (!reader.EndOfStream) {
                                     lines.Add(reader.ReadLine());
@@ -503,6 +504,7 @@ namespace Celeste.Mod {
                 if (!string.IsNullOrEmpty(meta.DLL)) {
                     if (meta.AssemblyContext.LoadAssemblyFromModPath(meta.DLL) is not Assembly asm) {
                         // Don't register a module - this will cause dependencies to not load
+                        Logger.Error("loader", $"Could not load DLL {meta.DLL} for mod {meta.Name}");
                         ModsWithAssemblyLoadFailures.Add(meta);
                         return false;
                     }
@@ -776,11 +778,7 @@ namespace Celeste.Mod {
                     // we already are in the overworld. Register new Ouis real quick!
                     if (Engine.Instance != null && Engine.Scene is Overworld overworld && typeof(Oui).IsAssignableFrom(type) && !type.IsAbstract) {
                         Logger.Verbose("core", $"Instantiating UI from {meta}: {type.FullName}");
-
-                        Oui oui = (Oui) Activator.CreateInstance(type);
-                        oui.Visible = false;
-                        overworld.Add(oui);
-                        overworld.UIs.Add(oui);
+                        ((patch_Overworld) overworld).RegisterOui(type);
                     }
                 }
                 // We should run the map data processors again if new berry types are registered, so that CoreMapDataProcessor assigns them checkpoint IDs and orders.

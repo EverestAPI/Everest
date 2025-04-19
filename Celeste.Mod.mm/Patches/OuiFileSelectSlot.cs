@@ -153,6 +153,17 @@ namespace Celeste {
             orig_Show();
         }
 
+        [MonoModReplace]
+        public new Color SelectionColor(bool selected) {
+            if (selected) {
+                if (CoreModule.Settings.AllowTextHighlight && !base.Scene.BetweenInterval(0.1f)) {
+                    return TextMenu.HighlightColorB;
+                }
+                return TextMenu.HighlightColorA;
+            }
+            return Color.White;
+        }
+
         public extern void orig_CreateButtons();
         public new void CreateButtons() {
             orig_CreateButtons();
@@ -205,6 +216,7 @@ namespace Celeste {
             }
         }
 
+        [PatchOuiFileSelectSlotUpdate]
         public extern void orig_Update();
         public override void Update() {
             orig_Update();
@@ -324,6 +336,12 @@ namespace Celeste {
 
 namespace MonoMod {
     /// <summary>
+    /// Patches the method to make its manually-implemented screen flashing respect advanced photosensitivity settings.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiFileSelectSlotUpdate))]
+    class PatchOuiFileSelectSlotUpdateAttribute : Attribute { }
+
+    /// <summary>
     /// IL-patch the Render method for file select slots instead of reimplementing it,
     /// to un-hardcode stamps.
     /// </summary>
@@ -337,6 +355,20 @@ namespace MonoMod {
     class PatchOuiFileSelectSlotOnContinueSelectedAttribute : Attribute { }
 
     static partial class MonoModRules {
+
+        public static void PatchOuiFileSelectSlotUpdate(ILContext context, CustomAttribute attrib) {
+            TypeDefinition t_CoreModule = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModule");
+            TypeDefinition t_CoreModuleSettings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModuleSettings");
+            MethodDefinition m_CoreModule_get_Settings = t_CoreModule.FindMethod("get_Settings");
+            MethodDefinition m_get_AllowScreenFlash = t_CoreModuleSettings.FindMethod("get_AllowScreenFlash");
+
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(MoveType.Before, instr => instr.MatchLdsfld("Celeste.Settings", "Instance"));
+            cursor.RemoveRange(2);
+            cursor.EmitCall(m_CoreModule_get_Settings);
+            cursor.EmitCallvirt(m_get_AllowScreenFlash);
+            cursor.Next.OpCode = OpCodes.Brfalse;
+        }
 
         public static void PatchFileSelectSlotRender(ILContext context, CustomAttribute attrib) {
             TypeDefinition declaringType = context.Method.DeclaringType;

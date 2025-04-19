@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using System;
+using Celeste.Mod.UI;
 
 namespace Celeste.Mod.Helpers {
     internal static class Commands {
@@ -36,6 +37,28 @@ namespace Celeste.Mod.Helpers {
         [Command("modoptions", "toggles Everest's 'Show Mod Options in Game' setting")]
         public static void ToggleShowModOptions() {
             Core.CoreModule.Settings.ShowModOptionsInGame = !Core.CoreModule.Settings.ShowModOptionsInGame;
+        }
+
+        [Command("soundtest", "opens Everest's 'Sound Test'")]
+        public static void OpenSoundTest() {
+            if (Engine.Scene.GetType() != typeof(Overworld)) {
+                // we need to load an Overworld before going to an Oui
+                Engine.Scene = new OverworldLoaderToSoundTest();
+            }
+            else {
+                OuiModOptions.Instance.Overworld.Goto<OuiSoundTest>();
+            }
+        }
+    }
+
+
+    internal class OverworldLoaderToSoundTest : OverworldLoader {
+        public OverworldLoaderToSoundTest() : base(Overworld.StartMode.Titlescreen, null) { }
+
+        public override void End() {
+            // OverworldLoader sets the scene to the Overworld after it's done loading
+            base.End();
+            OuiModOptions.Instance.Overworld.Goto<OuiSoundTest>();
         }
     }
 }

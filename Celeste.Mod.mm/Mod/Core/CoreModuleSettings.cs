@@ -4,6 +4,7 @@ using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using YamlDotNet.Serialization;
@@ -79,7 +80,7 @@ namespace Celeste.Mod.Core {
                         Engine.Commands.Enabled = false;
                 }
 
-                ((patch_OuiMainMenu) (Engine.Scene as Overworld)?.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
+                ((patch_OuiMainMenu) (Engine.Scene as Overworld)?.GetUI<OuiMainMenu>())?.NeedsRebuild();
             }
         }
 
@@ -236,7 +237,7 @@ namespace Celeste.Mod.Core {
                 _MainMenuMode = value;
                 if (value != originalValue) {
                     // the main menu mode was changed; rebuild the main menu
-                    ((patch_OuiMainMenu) (Engine.Scene as Overworld)?.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
+                    ((patch_OuiMainMenu) (Engine.Scene as Overworld)?.GetUI<OuiMainMenu>())?.NeedsRebuild();
                 }
             }
         }
@@ -265,7 +266,7 @@ namespace Celeste.Mod.Core {
                 _WarnOnEverestYamlErrors = value;
 
                 // rebuild the main menu to make sure we show/hide the yaml error notice.
-                ((patch_OuiMainMenu) (Engine.Scene as Overworld)?.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
+                ((patch_OuiMainMenu) (Engine.Scene as Overworld)?.GetUI<OuiMainMenu>())?.NeedsRebuild();
             }
         }
 
@@ -307,6 +308,76 @@ namespace Celeste.Mod.Core {
 
         [SettingIgnore]
         public int DebugRCPort { get; set; } = 32270;
+
+        public bool PhotosensitiveMode {
+            get => Settings.Instance.DisableFlashes;
+            set => Settings.Instance.DisableFlashes = value;
+        }
+        
+        [SettingIgnore]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        // This option is exclusively used internally; do not use it in mods. Use AllowDistort instead.
+        // It needs to be public for YamlDotNet to not have an aneurysm, but it really shouldn't be.
+        public bool PhotosensitivityDistortOverride { get; set; } = false;
+
+        /// <summary>
+        /// Whether a distortion effect should be rendered, respecting Everest's photosensitivity setting overrides.
+        /// </summary>
+        [SettingIgnore]
+        [YamlIgnore]
+        public bool AllowDistort => !Settings.Instance.DisableFlashes || PhotosensitivityDistortOverride; 
+
+        [SettingIgnore]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        // This option is exclusively used internally; do not use it in mods. Use AllowGlitch instead.
+        // It needs to be public for YamlDotNet to not have an aneurysm, but it really shouldn't be.
+        public bool PhotosensitivityGlitchOverride { get; set; } = false;
+
+        /// <summary>
+        /// Whether a glitch effect should be rendered, respecting Everest's photosensitivity setting overrides.
+        /// </summary>
+        [SettingIgnore]
+        [YamlIgnore]
+        public bool AllowGlitch => !Settings.Instance.DisableFlashes || PhotosensitivityGlitchOverride;
+
+        [SettingIgnore]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        // This option is exclusively used internally; do not use it in mods. Use AllowLightning instead.
+        // It needs to be public for YamlDotNet to not have an aneurysm, but it really shouldn't be.
+        public bool PhotosensitivityLightningOverride { get; set; } = false;
+
+        /// <summary>
+        /// Whether lightning should have internal flashes, respecting Everest's photosensitivity setting overrides.
+        /// </summary>
+        [SettingIgnore]
+        [YamlIgnore]
+        public bool AllowLightning => !Settings.Instance.DisableFlashes || PhotosensitivityLightningOverride;
+
+        [SettingIgnore]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        // This option is exclusively used internally; do not use it in mods. Use AllowScreenFlash instead.
+        // It needs to be public for YamlDotNet to not have an aneurysm, but it really shouldn't be.
+        public bool PhotosensitivityScreenFlashOverride { get; set; } = false;
+
+        /// <summary>
+        /// Whether to render a screenwide flash, respecting Everest's photosensitivity setting overrides.
+        /// </summary>
+        [SettingIgnore]
+        [YamlIgnore]
+        public bool AllowScreenFlash => !Settings.Instance.DisableFlashes || PhotosensitivityScreenFlashOverride; 
+
+        [SettingIgnore]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        // This option is exclusively used internally; do not use it in mods. Use AllowTextHighlight instead.
+        // It needs to be public for YamlDotNet to not have an aneurysm, but it really shouldn't be.
+        public bool PhotosensitivityTextHighlightOverride { get; set; } = false;
+
+        /// <summary>
+        /// Whether text in menus should flash when selected, respecting Everest's photosensitivity setting overrides.
+        /// </summary>
+        [SettingIgnore]
+        [YamlIgnore]
+        public bool AllowTextHighlight => !Settings.Instance.DisableFlashes || PhotosensitivityTextHighlightOverride;
 
         [SettingIgnore]
         public int? QuickRestart { get; set; }
@@ -611,6 +682,54 @@ namespace Celeste.Mod.Core {
 
             menu.Add(submenu);
         }
+
+
+        // If we want to put the advanced photosensitivity settings in Mod Options, just uncomment this.
+        // Left in (albeit commented) in case the implementation changes.
+        /*
+        public void CreatePhotosensitiveModeEntry(TextMenu menu, bool inGame) {
+
+            TextMenu.Item distort = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSDISTORT"), PhotosensitivityDistortOverride)
+                .Change(value => {
+                    PhotosensitivityDistortOverride = value;
+                });
+
+            TextMenu.Item glitch = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSGLITCH"), PhotosensitivityGlitchOverride)
+                .Change(value => {
+                    PhotosensitivityGlitchOverride = value;
+                });
+
+            TextMenu.Item lightning = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSLIGHTNING"), PhotosensitivityLightningOverride)
+                .Change(value => {
+                    PhotosensitivityLightningOverride = value;
+                });
+
+            TextMenu.Item screenFlash = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSSCREENFLASH"), PhotosensitivityScreenFlashOverride)
+                .Change(value => {
+                    PhotosensitivityScreenFlashOverride = value;
+                });
+
+            TextMenu.Item textHighlight = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSTEXTHIGHLIGHT"), PhotosensitivityTextHighlightOverride)
+                .Change(value => {
+                    PhotosensitivityTextHighlightOverride = value;
+                });
+
+            TextMenuExt.SubMenu submenu = new TextMenuExt.SubMenu(Dialog.Clean("MODOPTIONS_COREMODULE_PSOPTIONS"), false)
+                .Add(distort)
+                .Add(glitch)
+                .Add(lightning)
+                .Add(screenFlash)
+                .Add(textHighlight);
+
+            TextMenu.Item masterSwitch = new TextMenu.OnOff(Dialog.Clean("OPTIONS_DISABLE_FLASH"), PhotosensitiveMode)
+                .Change(value => {
+                    PhotosensitiveMode = value;
+                    submenu.Disabled = !value;
+                });
+
+            menu.Add(masterSwitch);
+            menu.Add(submenu);
+        } */
 
         public void CreateMirrorPreferencesEntry(TextMenu menu, bool inGame) {
             if (inGame) return;

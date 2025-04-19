@@ -11,12 +11,21 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.Utils;
+using Celeste.Mod.Core;
 
 namespace Celeste {
     class patch_OuiFileNaming : OuiFileNaming {
 
         private int index;
-        
+
+        private float timer;
+
+        private Color unselectColor = Color.LightGray;
+
+        private Color selectColorA = Calc.HexToColor("84FF54");
+
+        private Color selectColorB = Calc.HexToColor("FCFF59");
+
         public bool UseKeyboardInput {
             get {
                 var settings = Mod.Core.CoreModule.Instance._Settings as Mod.Core.CoreModuleSettings;
@@ -121,6 +130,20 @@ namespace Celeste {
             orig_Render();
 
             index = prevIndex;
+        }
+
+        [MonoModReplace]
+        private Color GetTextColor(bool selected) {
+            if (selected) {
+                if (!CoreModule.Settings.AllowTextHighlight) {
+                    return selectColorA;
+                }
+                if (!Calc.BetweenInterval(timer, 0.1f)) {
+                    return selectColorB;
+                }
+                return selectColorA;
+            }
+            return unselectColor;
         }
 
         private extern void orig_DrawOptionText(string text, Vector2 at, Vector2 justify, Vector2 scale, bool selected, bool disabled = false);

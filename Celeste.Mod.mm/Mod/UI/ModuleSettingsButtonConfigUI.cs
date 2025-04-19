@@ -20,6 +20,17 @@ namespace Celeste.Mod {
             All.Add(Buttons.LeftStick);
 
             Module = module;
+            if (Engine.Scene is Level level) {
+                bool? oldAllowHudHide = null;
+                OnUpdate = () => {
+                    if (oldAllowHudHide == null) {
+                        oldAllowHudHide = level.AllowHudHide;
+                        level.AllowHudHide = false;
+                        // Mods may will reset the initial value of OnClose after ctor and cause this to not work. so lets the later OnUpdate add this for OnClose.
+                        OnClose += () => level.AllowHudHide = oldAllowHudHide.Value;
+                    }
+                };
+            }
             // Base already reloads too early before the module has been set.
             Reload(2);
         }

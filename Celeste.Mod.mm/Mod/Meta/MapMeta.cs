@@ -63,17 +63,7 @@ namespace Celeste.Mod.Meta {
 
         public bool? OverrideASideMeta { get; set; }
 
-        private MapMetaModeProperties[] _modes = new MapMetaModeProperties[3];
-        public MapMetaModeProperties[] Modes {
-            get => _modes;
-            set {
-                _modes = value;
-                // Some of the game's code checks for [1] / [2] explicitly.
-                // Let's just provide null modes to fill any gaps.
-                Array.Resize(ref _modes, 3);
-            }
-        }
-        public MapMetaModeProperties Mode { get; set; } // This property will be null outside of loading
+        public MapMetaModeProperties[] Modes { get; set; }
 
         public MapMetaMountain Mountain { get; set; }
 
@@ -131,7 +121,8 @@ namespace Celeste.Mod.Meta {
             child = meta.Children?.FirstOrDefault(el => el.Name == "cassettemodifier");
             if (child != null)
                 CassetteModifier = new MapMetaCassetteModifier(child);
-            
+
+            Modes = new MapMetaModeProperties[3];
             child = meta.Children?.FirstOrDefault(el => el.Name == "modes");
             if (child != null && child.Children != null) {
                 for (int i = 0; i < child.Children.Count; i++) {
@@ -140,72 +131,6 @@ namespace Celeste.Mod.Meta {
                 for (int i = child.Children?.Count ?? 0; i < Modes.Length; i++) {
                     Modes[i] = null;
                 }
-            }
-            BinaryPacker.Element modeMeta = meta.Children?.FirstOrDefault(el => el.Name == "mode");
-            if (modeMeta != null) {
-                Mode = new MapMetaModeProperties(modeMeta);
-            }
-        }
-
-        public void AddTo(MapMeta other) {
-            if (!string.IsNullOrEmpty(Parent)) { other.Parent = Parent; }
-            if (!string.IsNullOrEmpty(Icon)) { other.Icon = Icon; }
-            if (Interlude != null) { other.Interlude = Interlude; }
-            if (CassetteCheckpointIndex != null) { other.CassetteCheckpointIndex = CassetteCheckpointIndex; }
-            if (!string.IsNullOrEmpty(TitleBaseColor)) { other.TitleBaseColor = TitleBaseColor; }
-            if (!string.IsNullOrEmpty(TitleAccentColor)) { other.TitleAccentColor = TitleAccentColor; }
-            if (!string.IsNullOrEmpty(TitleTextColor)) { other.TitleTextColor = TitleTextColor; }
-            if (IntroType != null) { other.IntroType = IntroType; }
-            if (Dreaming != null) { other.Dreaming = Dreaming; }
-            if (!string.IsNullOrEmpty(ColorGrade)) { other.ColorGrade = ColorGrade; }
-            if (!string.IsNullOrEmpty(Wipe)) { other.Wipe = Wipe; }
-            if (DarknessAlpha != null) { other.DarknessAlpha = DarknessAlpha; }
-            if (BloomBase != null) { other.BloomBase = BloomBase; }
-            if (BloomStrength != null) { other.BloomStrength = BloomStrength; }
-            if (!string.IsNullOrEmpty(Jumpthru)) { other.Jumpthru = Jumpthru; }
-            if (CoreMode != null) { other.CoreMode = CoreMode; }
-            if (!string.IsNullOrEmpty(CassetteNoteColor)) { other.CassetteNoteColor = CassetteNoteColor; }
-            if (!string.IsNullOrEmpty(CassetteSong)) { other.CassetteSong = CassetteSong; }
-            if (!string.IsNullOrEmpty(PostcardSoundID)) { other.PostcardSoundID = PostcardSoundID; }
-            if (!string.IsNullOrEmpty(ForegroundTiles)) { other.ForegroundTiles = ForegroundTiles; }
-            if (!string.IsNullOrEmpty(BackgroundTiles)) { other.BackgroundTiles = BackgroundTiles; }
-            if (!string.IsNullOrEmpty(AnimatedTiles)) { other.AnimatedTiles = AnimatedTiles; }
-            if (!string.IsNullOrEmpty(Sprites)) { other.Sprites = Sprites; }
-            if (!string.IsNullOrEmpty(Portraits)) { other.Portraits = Portraits; }
-            if (OverrideASideMeta != null) { other.OverrideASideMeta = OverrideASideMeta; }
-            if (Modes != null) {
-                if (other.Modes == null) {
-                    other.Modes = Modes;
-                } else {
-                    for (int i = 0; i < Modes.Length && i < other.Modes.Length; i++) {
-                        if (other.Modes[i] == null) {
-                            other.Modes[i] = Modes[i];
-                        } else if (Modes[i] != null) {
-                            Modes[i].AddTo(other.Modes[i]);
-                        }
-                    }
-                }
-            }
-            if (Mountain != null) { other.Mountain = Mountain; }
-            if (CompleteScreen != null) { other.CompleteScreen = CompleteScreen; }
-            if (LoadingVignetteScreen != null) { other.LoadingVignetteScreen = LoadingVignetteScreen; }
-            if (LoadingVignetteText != null) { other.LoadingVignetteText = LoadingVignetteText; }
-            if (CassetteModifier != null) { other.CassetteModifier = CassetteModifier; }
-        }
-
-        public static MapMeta Add(MapMeta self, MapMeta other) {
-            switch ((self, other)) {
-                case (null, null):
-                    return new MapMeta();
-                case (null, _):
-                    return other;
-                case (_, null):
-                    return self;
-                default:
-                    MapMeta result = new MapMeta();
-                    other.AddTo(result);
-                    self.AddTo(result);
-                    return result;
             }
         }
 
@@ -267,7 +192,59 @@ namespace Celeste.Mod.Meta {
             area.MountainCursor = Mountain?.Cursor?.ToVector3() ?? area.MountainCursor;
             area.MountainState = Mountain?.State ?? area.MountainState;
 
-            area.Meta = this;
+            patch_ModeProperties[] modes = area.Mode;
+            area.Mode = Convert(Modes) ?? modes;
+            if (modes != null)
+                for (int i = 0; i < area.Mode.Length && i < modes.Length; i++)
+                    if (area.Mode[i] == null)
+                        area.Mode[i] = modes[i];
+
+            MapMeta meta = area.Meta;
+            if (meta == null) {
+                area.Meta = this;
+            } else {
+                if (!string.IsNullOrEmpty(Parent))
+                    meta.Parent = Parent;
+
+                if (!string.IsNullOrEmpty(PostcardSoundID))
+                    meta.PostcardSoundID = PostcardSoundID;
+
+                if (!string.IsNullOrEmpty(ForegroundTiles))
+                    meta.ForegroundTiles = ForegroundTiles;
+
+                if (!string.IsNullOrEmpty(BackgroundTiles))
+                    meta.BackgroundTiles = BackgroundTiles;
+
+                if (!string.IsNullOrEmpty(AnimatedTiles))
+                    meta.AnimatedTiles = AnimatedTiles;
+
+                if (!string.IsNullOrEmpty(Sprites))
+                    meta.Sprites = Sprites;
+
+                if (!string.IsNullOrEmpty(Portraits))
+                    meta.Portraits = Portraits;
+
+                if (OverrideASideMeta != null)
+                    meta.OverrideASideMeta = OverrideASideMeta;
+
+                if ((Modes?.Length ?? 0) != 0 && Modes.Any(mode => mode != null))
+                    meta.Modes = Modes;
+
+                if (Mountain != null)
+                    meta.Mountain = Mountain;
+
+                if (CompleteScreen != null)
+                    meta.CompleteScreen = CompleteScreen;
+
+                if (LoadingVignetteScreen != null)
+                    meta.LoadingVignetteScreen = LoadingVignetteScreen;
+
+                if (LoadingVignetteText != null)
+                    meta.LoadingVignetteText = LoadingVignetteText;
+
+                if (CassetteModifier != null)
+                    meta.CassetteModifier = CassetteModifier;
+            }
         }
 
         public void ApplyToForOverride(AreaData area) {
@@ -405,41 +382,6 @@ namespace Celeste.Mod.Meta {
             }
             area.Mode[(int) mode] = props;
         }
-
-        public void AddTo(MapMetaModeProperties other) {
-            if (AudioState != null) {
-                if (other.AudioState == null) {
-                    other.AudioState = AudioState;
-                } else {
-                    AudioState.AddTo(other.AudioState);
-                }
-            }
-            if (Checkpoints != null) { other.Checkpoints = Checkpoints; }
-            if (IgnoreLevelAudioLayerData != null) { other.IgnoreLevelAudioLayerData = IgnoreLevelAudioLayerData; }
-            if (!string.IsNullOrEmpty(Inventory)) { other.Inventory = Inventory; }
-            if (!string.IsNullOrEmpty(Path)) { other.Path = Path; }
-            if (!string.IsNullOrEmpty(PoemID)) { other.PoemID = PoemID; }
-            if (!string.IsNullOrEmpty(StartLevel)) { other.StartLevel = StartLevel; }
-            if (HeartIsEnd != null) { other.HeartIsEnd = HeartIsEnd; }
-            if (SeekerSlowdown != null) { other.SeekerSlowdown = SeekerSlowdown; }
-            if (TheoInBubble != null) { other.TheoInBubble = TheoInBubble; }
-        }
-
-        public static MapMetaModeProperties Add(MapMetaModeProperties self, MapMetaModeProperties other) {
-            switch ((self, other)) {
-                case (null, null):
-                    return new MapMetaModeProperties();
-                case (null, _):
-                    return other;
-                case (_, null):
-                    return self;
-                default:
-                    MapMetaModeProperties result = new MapMetaModeProperties();
-                    other.AddTo(result);
-                    self.AddTo(result);
-                    return result;
-            }
-        }
     }
     public class MapMetaAudioState {
         public MapMetaAudioState() {
@@ -458,11 +400,6 @@ namespace Celeste.Mod.Meta {
             meta.AttrIf("Music", v => Music = v);
             meta.AttrIf("Ambience", v => Ambience = v);
         }
-
-        public void AddTo(MapMetaAudioState other) {
-            if (!string.IsNullOrEmpty(Music)) { other.Music = Music; }
-            if (!string.IsNullOrEmpty(Ambience)) { other.Ambience = Ambience; }
-        }
     }
     public class MapMetaCheckpointData {
         public MapMetaCheckpointData() {
@@ -474,14 +411,14 @@ namespace Celeste.Mod.Meta {
 
         public string Level { get; set; }
         public string Name { get; set; }
-        public bool? Dreaming { get; set; }
+        public bool Dreaming { get; set; }
         public string Inventory { get; set; }
         public MapMetaAudioState AudioState { get; set; }
         public string[] Flags { get; set; }
         public Session.CoreModes? CoreMode { get; set; }
         public CheckpointData Convert()
-            => new CheckpointData(Level, Name, MapMeta.GetInventory(Inventory), Dreaming ?? false, AudioState?.Convert()) {
-                Flags = new HashSet<string>(Flags ?? Array.Empty<string>()),
+            => new CheckpointData(Level, Name, MapMeta.GetInventory(Inventory), Dreaming, AudioState?.Convert()) {
+                Flags = new HashSet<string>(Flags ?? new string[0]),
                 CoreMode = CoreMode
             };
 
@@ -506,16 +443,6 @@ namespace Celeste.Mod.Meta {
                 }
             }
         }
-
-        public void AddTo(MapMetaCheckpointData other) {
-            if (!string.IsNullOrEmpty(Level)) { other.Level = Level; }
-            if (!string.IsNullOrEmpty(Name)) { other.Name = Name; }
-            if (Dreaming != null) { other.Dreaming = Dreaming; }
-            if (!string.IsNullOrEmpty(Inventory)) { other.Inventory = Inventory; }
-            if (AudioState != null) { other.AudioState = AudioState; }
-            if (Flags != null) { other.Flags = Flags; }
-            if (CoreMode != null) { other.CoreMode = CoreMode; }
-        }
     }
     public class MapMetaMountain {
         public string MountainModelDirectory { get; set; } = null;
@@ -536,6 +463,7 @@ namespace Celeste.Mod.Meta {
         public bool Rotate { get; set; } = false;
         public bool ShowCore { get; set; } = false;
         public bool ShowSnow { get; set; } = true;
+        public string MarkerTexture { get; set; } = null;
 
     }
     public class MapMetaMountainCamera {

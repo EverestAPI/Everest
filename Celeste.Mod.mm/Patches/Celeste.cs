@@ -38,13 +38,14 @@ namespace Celeste {
                 Thread.CurrentThread.Name = "Main Thread";
             }
 
-            if (File.Exists("BuildIsXNA.txt"))
-                File.Delete("BuildIsXNA.txt");
-            if (File.Exists("BuildIsFNA.txt"))
-                File.Delete("BuildIsFNA.txt");
-
             // we cannot use Everest.Flags.IsFNA at this point because flags aren't initialized yet.
-            File.WriteAllText($"BuildIs{(typeof(Game).Assembly.FullName.Contains("FNA") ? "FNA" : "XNA")}.txt", "");
+            bool isFNA = typeof(Game).Assembly.FullName.Contains("FNA");
+            string correctFile = $"BuildIs{(isFNA ? "FNA" : "XNA")}.txt";
+            string wrongFile = $"BuildIs{(isFNA ? "XNA" : "FNA")}.txt";
+            if (File.Exists(wrongFile))
+                File.Delete(wrongFile);
+            if (!File.Exists(correctFile))
+                File.WriteAllText(correctFile, "");
 
             if (File.Exists("everest-launch.txt")) {
                 args =

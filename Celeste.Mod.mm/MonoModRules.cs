@@ -36,7 +36,13 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInitblk))]
     class PatchInitblkAttribute : Attribute { }
-#endregion
+
+    /// <summary>
+    /// Forces NoInlining onto a given member.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.ForceNoInlining))]
+    class ForceNoInliningAttribute : Attribute { }
+    #endregion
 
     static partial class MonoModRules {
 
@@ -218,6 +224,10 @@ namespace MonoMod {
             if (!match) {
                 throw new Exception("No call to _initblk found in " + il.Method.FullName + "!");
             }
+        }
+
+        public static void ForceNoInlining(MethodDefinition method, CustomAttribute attrib) {
+            method.NoInlining = true;
         }
 
         /// <summary>

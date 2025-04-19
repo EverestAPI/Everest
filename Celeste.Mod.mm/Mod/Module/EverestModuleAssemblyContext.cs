@@ -1,12 +1,11 @@
 using Celeste.Mod.Core;
-using Celeste.Mod.Helpers;
-using Ionic.Zip;
 using Mono.Cecil;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -32,7 +31,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// The folder name where mod unmanaged assemblies will be loaded from.
         /// </summary>
-        internal static string UnmanagedLibraryFolder = 
+        internal static string UnmanagedLibraryFolder =
             RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? (Environment.Is64BitOperatingSystem ? "lib-win-x64" : "lin-win-x86") :
             RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "lib-linux" :
             RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "lib-osx" :
@@ -161,7 +160,7 @@ namespace Celeste.Mod {
                 foreach (ModuleDefinition module in _AssemblyModules.Values)
                     module.Dispose();
                 _AssemblyModules.Clear();
-    
+
                 _AssemblyLoadCache.Clear();
                 _LocalLoadCache.Clear();
                 _AssemblyResolveCache.Clear();
@@ -174,7 +173,7 @@ namespace Celeste.Mod {
             // Clear the assembly resolves caches
             // They are primarily used by the relinker, and as such not needed anymore once the game is running
             _AssemblyResolveCache.Clear();
-            _LocalResolveCache.Clear(); 
+            _LocalResolveCache.Clear();
         }
 
         /// <summary>
@@ -232,13 +231,13 @@ namespace Celeste.Mod {
                 _ActiveLocalLoadContexts = null;
                 try {
                     if (!string.IsNullOrEmpty(ModuleMeta.PathArchive))
-                        using (ZipFile zip = new ZipFile(ModuleMeta.PathArchive)) {
+                        using (ZipArchive zip = ZipFile.OpenRead(ModuleMeta.PathArchive)) {
                             // Try to find + load the (symbol) entry
                             string entryPath = osSepPath.Replace(Path.DirectorySeparatorChar, '/');
-                            ZipEntry entry = zip.Entries.FirstOrDefault(entry => entry.FileName == entryPath);
+                            ZipArchiveEntry entry = zip.GetEntry(entryPath);
 
                             string symEntryPath = Path.ChangeExtension(osSepPath, ".pdb").Replace(Path.DirectorySeparatorChar, '/');
-                            ZipEntry symEntry = zip.Entries.FirstOrDefault(entry => entry.FileName == symEntryPath);
+                            ZipArchiveEntry symEntry = zip.GetEntry(symEntryPath);
                             if (symEntry == null)
                                 symEntryPath = null;
 
@@ -328,8 +327,8 @@ namespace Celeste.Mod {
 
                 Assembly asm;
                 string symPath = Path.ChangeExtension(path, "pdb");
-                using(Stream asmStream = File.OpenRead(path)) {
-                    using(Stream symStream = File.Exists(symPath) ? File.OpenRead(symPath) : null) {
+                using (Stream asmStream = File.OpenRead(path)) {
+                    using (Stream symStream = File.Exists(symPath) ? File.OpenRead(symPath) : null) {
                         asm = LoadFromStream(asmStream, symStream);
                     }
                 }
@@ -528,7 +527,7 @@ namespace Celeste.Mod {
                         Logger.LogDetailed(e);
                     }
                 }
-            
+
                 // Add to cache
                 _GlobalAssemblyResolveCache.Add(asmName.Name, globalAsmDef);
             }
@@ -588,18 +587,19 @@ namespace Celeste.Mod {
                     if (!Directory.Exists(cachePath)) {
                         // Unzip the native libs into the cache folder
                         string zipPath = Path.Combine(_ModAsmDir, UnmanagedLibraryFolder).Replace('\\', '/') + "/";
-                        using (ZipFile zip = new ZipFile(ModuleMeta.PathArchive)) {
-                            foreach (ZipEntry entry in zip) {
-                                if (!entry.FileName.StartsWith(zipPath) || entry.IsDirectory)
+                        using (ZipArchive zip = ZipFile.OpenRead(ModuleMeta.PathArchive)) {
+                            foreach (ZipArchiveEntry entry in zip.Entries) {
+                                if (!entry.FullName.StartsWith(zipPath) || entry.FullName.EndsWith("/"))
                                     continue;
 
-                                string relPath = entry.FileName.Substring(zipPath.Length).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
+                                string relPath = entry.FullName.Substring(zipPath.Length).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
                                 if (relPath.Length <= 0)
                                     continue;
 
                                 Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(cachePath, relPath)));
-                                using (Stream stream = File.Create(Path.Combine(cachePath, relPath)))
-                                    entry.Extract(stream);
+                                using (Stream input = entry.Open())
+                                using (Stream output = File.Create(Path.Combine(cachePath, relPath)))
+                                    input.CopyTo(output);
                             }
                         }
 

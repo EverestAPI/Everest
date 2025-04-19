@@ -131,6 +131,20 @@
 	MODOPTIONS_COREMODULE_DISCORDSHOWBERRIES=				Show Berry Count
 	MODOPTIONS_COREMODULE_DISCORDSHOWDEATHS=				Show Death Count
 	MODOPTIONS_COREMODULE_DISCORDFAILED=					Could not connect to Discord. Turn off and back on to retry.
+	
+	MODOPTIONS_COREMODULE_PSOPTIONS=						Everest Photosensitivity Options
+	MODOPTIONS_COREMODULE_PSOPTIONS_DESC=					Allows toggling parts of Photosensitive Mode. Added by Everest.
+	MODOPTIONS_COREMODULE_PSDISTORT=						Anxiety & Distortion Effects
+	MODOPTIONS_COREMODULE_PSDISTORT_DESC=					Controls the distortion effect created by getting near a Seeker.
+	MODOPTIONS_COREMODULE_PSGLITCH=							Glitch Effects
+	MODOPTIONS_COREMODULE_PSGLITCH_DESC=					Controls the glitch effect from the transition to Event Horizon in Farewell.
+	MODOPTIONS_COREMODULE_PSLIGHTNING=						Internal Lightning Flashes
+	MODOPTIONS_COREMODULE_PSLIGHTNING_DESC=					Controls whether the electricity from Farewell will flash on the inside.
+	MODOPTIONS_COREMODULE_PSSCREENFLASH=					Screen Flashes
+	MODOPTIONS_COREMODULE_PSSCREENFLASH_DESC=				Controls whether the screen can flash white, like on activating a core switch.
+	MODOPTIONS_COREMODULE_PSTEXTHIGHLIGHT=					Text Highlighting
+	MODOPTIONS_COREMODULE_PSTEXTHIGHLIGHT_DESC=				Controls whether text will flash a different color on select.
+	
 
 	MODOPTIONS_COREMODULE_MIRRORPREFERENCES=				Use Mirror by Default
 	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_GB=				Disabled

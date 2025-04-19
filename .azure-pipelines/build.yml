@@ -18,10 +18,15 @@ name: '$(Build.BuildId)+$(Build.BuildIdOffset)'
 steps:
   # Pre-build steps.
 
+- task: ShellScript@2
+  displayName: 'Set up Mono' # the "sn" tool from mono is needed for the build
+  inputs:
+    scriptPath: ./.azure-pipelines/install-mono.sh
+
 - task: UseDotNet@2
   displayName: 'Set up .NET'
   inputs: # packageType defaults to sdk
-    version: 8.x
+    version: 9.0.102 # net9.0 required by MonoMod
 
 - task: DotNetCoreCLI@2
   displayName: 'Restore NuGet packages'

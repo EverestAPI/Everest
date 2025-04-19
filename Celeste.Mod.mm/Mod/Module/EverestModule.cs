@@ -694,33 +694,33 @@ namespace Celeste.Mod {
                 Type propType = prop.PropertyType;
                 object value = prop.GetValue(settingsObject);
 
+                bool forceDisableInGame = false;
+                bool disable = prop.GetCustomAttribute<SettingInGameDisableAttribute>()?.InGame == inGame;
+
                 // Create the matching item based off of the type and attributes.
-                if (propType == typeof(bool)) {
+                if (propType == typeof(bool))
+                {
                     item =
                         new TextMenu.OnOff(name, (bool) value)
-                        .Change(v => prop.SetValue(settingsObject, v))
-                    ;
-
-                } else if (
-                    propType == typeof(int) &&
-                    (attribRange = prop.GetCustomAttribute<SettingRangeAttribute>()) != null
-                ) {
-
+                        .Change(v => prop.SetValue(settingsObject, v));
+                }
+                else if (propType == typeof(int) &&
+                    (attribRange = prop.GetCustomAttribute<SettingRangeAttribute>()) != null)
+                {
                     if (attribRange.LargeRange) {
                         item =
                             new TextMenuExt.IntSlider(name, attribRange.Min, attribRange.Max, (int) value)
-                            .Change(v => prop.SetValue(settingsObject, v))
-                        ;
+                            .Change(v => prop.SetValue(settingsObject, v));
                     } else {
                         item =
                             new TextMenu.Slider(name, i => i.ToString(), attribRange.Min, attribRange.Max, (int) value)
-                            .Change(v => prop.SetValue(settingsObject, v))
-                        ;
+                            .Change(v => prop.SetValue(settingsObject, v));
                     }
-
-                } else if ((propType == typeof(int) || propType == typeof(float)) &&
-                    (attribNumber = prop.GetCustomAttribute<SettingNumberInputAttribute>()) != null) {
-
+                }
+                else if ((propType == typeof(int) || propType == typeof(float)) &&
+                    (attribNumber = prop.GetCustomAttribute<SettingNumberInputAttribute>()) != null)
+                {
+                    forceDisableInGame = true;
                     float currentValue;
                     Action<float> valueSetter;
                     if (propType == typeof(int)) {
@@ -744,9 +744,10 @@ namespace Celeste.Mod {
                                 propType == typeof(float),
                                 allowNegatives
                             );
-                        })
-                    ;
-                } else if (propType.IsEnum) {
+                        });
+                }
+                else if (propType.IsEnum)
+                {
                     Array enumValues = Enum.GetValues(propType);
                     Array.Sort((int[]) enumValues);
                     string enumNamePrefix = $"{nameDefaultPrefix}{prop.Name.ToLowerInvariant()}_";
@@ -758,10 +759,11 @@ namespace Celeste.Mod {
                                 $"modoptions_{propType.Name.ToLowerInvariant()}_{enumName.ToLowerInvariant()}".DialogCleanOrNull() ??
                                 enumName;
                         }, 0, enumValues.Length - 1, (int) value)
-                        .Change(v => prop.SetValue(settingsObject, v))
-                    ;
-
-                } else if (!inGame && propType == typeof(string)) {
+                        .Change(v => prop.SetValue(settingsObject, v));
+                }
+                else if (propType == typeof(string))
+                {
+                    forceDisableInGame = true;
                     int maxValueLength = prop.GetCustomAttribute<SettingMaxLengthAttribute>()?.Max ?? 12;
                     int minValueLength = prop.GetCustomAttribute<SettingMinLengthAttribute>()?.Min ?? 1;
 
@@ -775,9 +777,12 @@ namespace Celeste.Mod {
                                 maxValueLength,
                                 minValueLength
                             );
-                        })
-                    ;
+                        });
                 }
+
+                if (item is not null)
+                    item.Disabled = disable || inGame && forceDisableInGame;
+
                 return item;
             }
 

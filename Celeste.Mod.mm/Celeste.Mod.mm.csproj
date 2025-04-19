@@ -83,13 +83,14 @@
     <ProjectReference Include="..\DiscordGameSDK\DiscordGameSDK.csproj" />
     <ProjectReference Include="..\NETCoreifier\NETCoreifier.csproj" />
     <ProjectReference Include="..\EverestSplash\EverestSplash.csproj" /> <!-- Forces correct build dependency order -->
+    <!-- Ideally EverestSplash would not be copied to the build directory, but that cannot be easily disabled -->
   </ItemGroup>
   
   <Target Name="CopyEverestSplashFiles" AfterTargets="Publish">
     <ItemGroup> <!-- For some reason to use wildcards you have to use a property -->
-      <SplashBinaries Include="$(OutputPath)\publish\EverestSplash*;$(OutputPath)\publish\piton-runtime.yaml" />
+      <SplashBinaries Include="$(PublishDir)\EverestSplash*;$(PublishDir)\piton-runtime.yaml" />
     </ItemGroup>
-    <Move SourceFiles="@(SplashBinaries)" DestinationFolder="$(OutputPath)\publish\EverestSplash\" />
+    <Move SourceFiles="@(SplashBinaries)" DestinationFolder="$(PublishDir)\EverestSplash\" />
   </Target>
 
 </Project>

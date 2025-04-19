@@ -28,29 +28,42 @@ namespace Celeste {
         [XmlIgnore]
         public static int LoadedModSaveDataIndex = int.MinValue;
 
+        private LevelSetStats _cached_LevelSetStats = null;
+        private string _cached_LevelSetStats_LevelSet = null;
+        private LevelSetStats computeLevelSetStats() {
+            Logger.Verbose("SaveData", "Recomputing SaveData.LevelSetStats");
+            string name = LastArea.GetLevelSet() ?? "Celeste";
+            LevelSetStats set = LevelSets.Find(other => other.Name == name);
+
+            if (set == null) {
+                // Just silently add the missing levelset.
+                LevelSets.Add(set = new LevelSetStats {
+                    SaveData = this,
+                    Name = name,
+                    UnlockedAreas = 0
+                });
+                _cached_Areas_Safe = null;
+            }
+
+            // If the levelset doesn't exist in AreaData.Areas anymore (offset == -1), fall back.
+            if (name != "Celeste" && set.AreaOffset == -1) {
+                LastArea = AreaKey.Default;
+                // Recurse - get the new, proper level set.
+                return LevelSetStats;
+            }
+
+            return set;
+        }
+
         [XmlIgnore]
         public LevelSetStats LevelSetStats {
             get {
                 string name = LastArea.GetLevelSet() ?? "Celeste";
-                LevelSetStats set = LevelSets.Find(other => other.Name == name);
-
-                if (set == null) {
-                    // Just silently add the missing levelset.
-                    LevelSets.Add(set = new LevelSetStats {
-                        SaveData = this,
-                        Name = name,
-                        UnlockedAreas = 0
-                    });
+                if (_cached_LevelSetStats == null || _cached_LevelSetStats_LevelSet != name) {
+                    _cached_LevelSetStats = computeLevelSetStats();
+                    _cached_LevelSetStats_LevelSet = name;
                 }
-
-                // If the levelset doesn't exist in AreaData.Areas anymore (offset == -1), fall back.
-                if (name != "Celeste" && set.AreaOffset == -1) {
-                    LastArea = AreaKey.Default;
-                    // Recurse - get the new, proper level set.
-                    return LevelSetStats;
-                }
-
-                return set;
+                return _cached_LevelSetStats;
             }
         }
 
@@ -143,17 +156,27 @@ namespace Celeste {
         [MonoModRemove]
         public List<patch_AreaStats> Areas_Unsafe;
 
+        private List<patch_AreaStats> _cached_Areas_Safe = null;
+        private List<patch_AreaStats> computeAreasSafe() {
+            Logger.Verbose("SaveData", "Recomputing SaveData.Areas_Safe");
+            List<patch_AreaStats> areasAll = new List<patch_AreaStats>(Areas_Unsafe);
+            foreach (LevelSetStats set in LevelSets) {
+                areasAll.AddRange(set.Areas);
+            }
+            return areasAll;
+        }
+
         [XmlIgnore]
         [MonoModLinkFrom("System.Collections.Generic.List`1<Celeste.AreaStats> Celeste.SaveData::Areas")]
         public List<patch_AreaStats> Areas_Safe {
             get {
-                List<patch_AreaStats> areasAll = new List<patch_AreaStats>(Areas_Unsafe);
-                foreach (LevelSetStats set in LevelSets) {
-                    areasAll.AddRange(set.Areas);
-                }
-                return areasAll;
+                _cached_Areas_Safe ??= computeAreasSafe();
+                return _cached_Areas_Safe;
             }
             set {
+                _cached_Areas_Safe = null;
+                _cached_LevelSetStats = null;
+
                 if (LevelSets == null && value.Count == 0) {
                     Areas_Unsafe = value;
                     return;
@@ -536,6 +559,9 @@ namespace Celeste {
                     }
                 }
             }
+
+            _cached_Areas_Safe = null;
+            _cached_LevelSetStats = null;
         }
 
         public extern void orig_BeforeSave();

@@ -1,4 +1,5 @@
 ﻿using Celeste.Mod;
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -838,7 +839,7 @@ namespace Celeste {
                     item.Update();
                 }
 
-                if (Settings.Instance.DisableFlashes) {
+                if (!CoreModule.Settings.AllowTextHighlight) {
                     HighlightColor = TextMenu.HighlightColorA;
                 } else if (Engine.Scene.OnRawInterval(0.1f)) {
                     if (HighlightColor == TextMenu.HighlightColorA) {
