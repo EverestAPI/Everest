@@ -56,7 +56,7 @@ namespace Celeste {
 
             bool fmodLiveUpdate = Settings.Instance.LaunchWithFMODLiveUpdate;
             Settings.Instance.LaunchWithFMODLiveUpdate |= CoreModule.Settings.LaunchWithFMODLiveUpdateInEverest;
-
+        
             // Original initialization code
             {
                 FMOD.Studio.INITFLAGS flags = FMOD.Studio.INITFLAGS.NORMAL;
@@ -72,12 +72,8 @@ namespace Celeste {
 
                 CheckFmod(system.initialize(1024, flags, FMOD.INITFLAGS.NORMAL, IntPtr.Zero));
 
-                attributes3d.forward = new VECTOR {
-                    x = 0f, y = 0f, z = 1f
-                };
-                attributes3d.up = new VECTOR {
-                    x = 0f, y = 1f, z = 0f
-                };
+                attributes3d.forward = new VECTOR { x = 0f, y = 0f, z = 1f };
+                attributes3d.up = new VECTOR { x = 0f, y = 1f, z = 0f };
                 Audio.SetListenerPosition(new Vector3(0f, 0f, 1f), new Vector3(0f, 1f, 0f), new Vector3(0f, 0f, -345f));
 
                 ready = true;
@@ -166,19 +162,27 @@ namespace Celeste {
             if (patch_Banks.ModCache.TryGetValue(asset, out bank))
                 return bank;
 
-            IntPtr handle;
-            modBankAssets[handle = (++modBankHandleLast)] = asset;
-            BANK_INFO info = new BANK_INFO {
-                size = patch_Banks.SizeOfBankInfo,
-                userdata = handle,
-                userdatalength = 0,
-                opencallback = ModBankOpen,
-                closecallback = ModBankClose,
-                readcallback = ModBankRead,
-                seekcallback = ModBankSeek
-            };
+            RESULT loadResult;
+            if (CoreModule.Settings.UnpackFMODBanks) {
+                loadResult = system.loadBankFile(asset.GetCachedPath(), LOAD_BANK_FLAGS.NORMAL, out bank);
 
-            RESULT loadResult = system.loadBankCustom(info, LOAD_BANK_FLAGS.NORMAL, out bank);
+            } else {
+                IntPtr handle;
+                modBankAssets[handle = (IntPtr) (++modBankHandleLast)] = asset;
+                BANK_INFO info = new BANK_INFO() {
+                    size = patch_Banks.SizeOfBankInfo,
+
+                    userdata = handle,
+                    userdatalength = 0,
+
+                    opencallback = ModBankOpen,
+                    closecallback = ModBankClose,
+                    readcallback = ModBankRead,
+                    seekcallback = ModBankSeek
+                };
+
+                loadResult = system.loadBankCustom(info, LOAD_BANK_FLAGS.NORMAL, out bank);
+            }
 
             if (loadResult == RESULT.ERR_EVENT_ALREADY_LOADED) {
                 Logger.Warn("Audio.IngestBank", $"Cannot load {asset.PathVirtual} due to conflicting events!");

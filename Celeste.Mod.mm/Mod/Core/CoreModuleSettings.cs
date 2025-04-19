@@ -185,6 +185,11 @@ namespace Celeste.Mod.Core {
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
+        public bool UnpackFMODBanks { get; set; } = true;
+
+        [SettingNeedsRelaunch]
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
         public bool UnloadUnusedAudio { get; set; } = true;
 
         [SettingNeedsRelaunch]
