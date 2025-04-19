@@ -237,7 +237,6 @@ namespace MonoMod {
         }
 
         public static void PatchStubExtern(MethodDefinition method, CustomAttribute attrib) {
-            // Console.WriteLine($"RUNNING STUB {method} {method.Attributes}");
             method.Attributes &= ~(MethodAttributes.PInvokeImpl | MethodAttributes.CompilerControlled | MethodAttributes.HideBySig);
 
             ILContext il = new ILContext(method);

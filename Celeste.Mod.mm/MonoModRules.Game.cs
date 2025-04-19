@@ -169,7 +169,6 @@ namespace MonoMod {
                 if (MonoModRule.Flag.Get("Headless") && type.Namespace.StartsWith("FMOD")) {
                     foreach (MethodDefinition method in type.Methods) {
                         if ((method.Attributes & MethodAttributes.Static) != 0 && method.Name.StartsWith("FMOD_")) {
-                            // Console.WriteLine($"ADDING ATTR {method}");
                             method.CustomAttributes.Add(new CustomAttribute(stubAttrCtor));
                         }
                     }
