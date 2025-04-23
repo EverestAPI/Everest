@@ -27,6 +27,14 @@ namespace Celeste {
     class patch_Level : Level {
 
         // We're effectively in GameLoader, but still need to "expose" private fields to our mod.
+        private float flash;
+
+        private Color flashColor = Color.White;
+
+        private bool doFlash;
+
+        private bool flashDrawPlayer;
+
         private static EventInstance PauseSnapshot;
         public static EventInstance _PauseSnapshot => PauseSnapshot;
 
@@ -93,6 +101,21 @@ namespace Celeste {
         [MonoModIgnore] // We don't want to change anything about the method...
         [PatchLevelUpdate] // ... except for manually manipulating the method via MonoModRules
         public extern new void Update();
+
+        /// <summary>
+        /// Flash the screen a solid color. Respects the user's advanced photosensitivity settings.
+        /// </summary>
+        /// <param name="color"></param>
+        /// <param name="drawPlayerOver">Whether the player should render over the flash.</param>
+        [MonoModReplace] // We copy the entirety of this method instead of doing an IL patch because it's 5 lines of code.
+        public new void Flash(Color color, bool drawPlayerOver = false) {
+            if (CoreModule.Settings.AllowScreenFlash) {
+                doFlash = true;
+                flashDrawPlayer = drawPlayerOver;
+                flash = 1f;
+                flashColor = color;
+            }
+        }
 
         [MonoModReplace]
         public new void RegisterAreaComplete() {

@@ -28,6 +28,7 @@
 	POSTCARD_TILEXMLERROR=		{big}이런!{/big}{n}{#ff1144}((path)){#}의 타일셋을 파싱하는 과정에서 에러가 발생했습니다.{n}더 자세한 정보는 {#44adf7}log.txt{#}를 확인해주세요.
 	POSTCARD_XMLERROR=			{big}이런!{/big}{n}{#ff1144}((path)){#}에 구문 오류가 있습니다.{n}더 자세한 정보는 {#44adf7}log.txt{#}를 확인해주세요.
 	POSTCARD_BOSSLASTNODEHIT=	{big}이런!{/big}{n}{#ff1144}보스 배들린이{#} 마지막 노드에서 피격되었습니다. 해당 룸에서 보스 배들린이 피격될 수 없는 위치에 노드를 추가해주세요.
+	POSTCARD_LEVELNOROOMS=		{big}이런!{/big}{n}이 맵에 {#f94a4a}룸이 없네요!{#}{n}맵에 룸이{n}{#44adf7}최소 한 개{#} 있는지 확인한 다음, {n}맵이 제대로 저장되었는지 확인해주세요.
 
 # Main Menu
 	MENU_TITLETOUCH= 		TOUCH
@@ -39,13 +40,14 @@
 	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		모드 1개를 로드하지 못했습니다.
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	모드 {0}개를 로드하지 못했습니다.
 	MENU_MODOPTIONS_EVEREST_YAML_ERRORS=		everest.yaml 로드 에러가 발생했습니다.
-	MENU_MODOPTIONS_UPDATE_AVAILABLE=			에버레스트를 업데이트할 수 있습니다.
+	MENU_MODOPTIONS_UPDATE_AVAILABLE=			에베레스트를 업데이트할 수 있습니다.
 	MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE=		모드 1개를 업데이트할 수 있습니다.
 	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		모드 {0}개를 업데이트할 수 있습니다.
 
 # Title Screen
-	MENU_TITLESCREEN_RESTART_VANILLA= 순정 상태의 셀레스트로 다시 실행
-    
+	MENU_TITLESCREEN_RESTART_VANILLA= 바닐라 셀레스트로 다시 실행
+	MENU_TITLESCREEN_RESTART_VANILLA_SAVES_WARN= 주의: OS 제한으로 인해 저장 데이터는 공유되지 않습니다!
+
 # Extra Key Mapping
     KEY_CONFIG_ADDING= PRESS ADDITIONAL KEY FOR
     KEY_CONFIG_ADDITION_HINT= Press SHIFT + CONFIRM to add or remove additional keys
@@ -55,15 +57,17 @@
 	MODOPTIONS_NEEDSRELAUNCH=								설정을 적용하려면 게임을 다시 실행해야 합니다.
 
 # Core Module Options
-	MODOPTIONS_COREMODULE_UPDATE= 							에버레스트를 ((version))으로 업데이트하기
+	MODOPTIONS_COREMODULE_UPDATE= 							에베레스트를 ((version))으로 업데이트하기
 	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					필요한 모드 설치하기
-	MODOPTIONS_COREMODULE_VERSIONLIST= 						에버레스트 버전 변경하기
-	MODOPTIONS_COREMODULE_TITLE= 							Everest Core
+	MODOPTIONS_COREMODULE_VERSIONLIST= 						에베레스트 버전 변경하기
+	MODOPTIONS_COREMODULE_LEGACYREF=						legacyRef 설치 설정
+	MODOPTIONS_COREMODULE_LEGACYREF_DESCR=					Core에 대응하지 않는 코드를 .NET Core Everest 용으로 빌드해야 합니다.
+	ODOPTIONS_COREMODULE_TITLE= 							에베레스트 Core
 	MODOPTIONS_COREMODULE_DEBUGMODE= 						디버그 모드
 	MODOPTIONS_COREMODULE_LAUNCHWITHFMODLIVEUPDATE= 		FMOD Live Update를 활성화한 뒤 실행하기
 	MODOPTIONS_COREMODULE_LAUNCHWITHOUTINTRO= 				인트로 없이 실행하기
 	MODOPTIONS_COREMODULE_SHOWMODOPTIONSINGAME=				일시정지 화면에서 모드 옵션 보여주기
-	MODOPTIONS_COREMODULE_SHOWEVERESTTITLESCREEN=			에버레스트 타이틀 화면 보여주기
+	MODOPTIONS_COREMODULE_SHOWEVERESTTITLESCREEN=			에베레스트 타이틀 화면 보여주기
 	MODOPTIONS_COREMODULE_INPUTGUI= 						입력 방법
 	MODOPTIONS_COREMODULE_INPUTGUI_= 						AUTO
 	MODOPTIONS_COREMODULE_INPUTGUI_KEYBOARD= 				키보드
@@ -77,15 +81,31 @@
 	MODOPTIONS_COREMODULE_MAINMENUMODE_= 					세로
 	MODOPTIONS_COREMODULE_MAINMENUMODE_ROWS= 				가로
 	MODOPTIONS_COREMODULE_MAINMENUMODE_TOUCH= 				TOUCH
+	MODOPTIONS_COREMODULE_COMPATMODE=						호환 모드
+	MODOPTIONS_COREMODULE_COMPATMODE_NONE=					사용 안 함
+	MODOPTIONS_COREMODULE_COMPATMODE_NONE_DESCR_A=
+	MODOPTIONS_COREMODULE_COMPATMODE_NONE_DESCR_B=
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYXNA=				LEGACY XNA
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYXNA_DESCR_A=		XNA의 61 FPS를 재현합니다.
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYXNA_DESCR_B=		FPS와 관련된 문제가 있을 때만 사용할 것을 권장합니다!
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYFNA=				LEGACY FNA
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYFNA_DESCR_A=		구버전 FNA의 입력 지연을 재현합니다.
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYFNA_DESCR_B=		구버전의 조작감에 익숙한 사람들에게만 추천합니다!
+	MODOPTIONS_COREMODULE_COMPATMODE_INCOMPATIBLE=			주의: 현재 바닐라 설치 환경과 호환되지 않습니다!
+	MODOPTIONS_COREMODULE_D3D11EXCLUSIVEFULLSCREEN=			배타적 전체 화면 사용
+	MODOPTIONS_COREMODULE_D3D11EXCLUSIVEFULLSCREEN_DESC=	Windows의 D3D11 렌더링에 영향을 줍니다.
 	MODOPTIONS_COREMODULE_AUTOUPDATEMODSONSTARTUP=			시작할 때 모드를 자동으로 업데이트하기
 	MODOPTIONS_COREMODULE_MODUPDATES= 						모드 업데이트 확인하기
 	MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT=			키보드로 텍스트 입력하기
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS=			everest.yaml 에러를 표시
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC=		모드 제작자한테 유용한 옵션
+	MODOPTIONS_COREMODULE_COLORIZEDLOGGING=			        콘솔 로그 텍스트에 색 추가
+    MODOPTIONS_COREMODULE_COLORIZEDLOGGING_DESC=		    모드 제작자한테 유용한 옵션
 	MODOPTIONS_COREMODULE_MENUNAV_SUBHEADER=				메뉴 이동
 	MODOPTIONS_COREMODULE_MENUPAGEUP=						메뉴 위로 올리기
 	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						메뉴 아래로 내리기
 	MODOPTIONS_COREMODULE_DEBUGMODE_SUBHEADER=				디버그 모드
+	MODOPTIONS_COREMODULE_TOGGLEDEBUGCONSOLE=				디버그 콘솔 활성화
 	MODOPTIONS_COREMODULE_DEBUGCONSOLE=						디버그 콘솔
 	MODOPTIONS_COREMODULE_DEBUGMAP=							디버그 맵
 	MODOPTIONS_COREMODULE_MOUNTAINCAM_SUBHEADER=			메인 화면 산 카메라
@@ -101,8 +121,8 @@
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						사운드 테스트
 	MODOPTIONS_COREMODULE_OOBE= 							처음 설정으로 되돌리기
 	MODOPTIONS_COREMODULE_TOGGLEMODS=						모드 활성화/비활성화
-	
-	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCE=				디스코드 Rich Presence
+
+	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCE=				Discord Rich Presence
 	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCEOPTIONS=		Rich Presence 설정
 	MODOPTIONS_COREMODULE_DISCORDSHOWICON=					아이콘 보여주기
 	MODOPTIONS_COREMODULE_DISCORDSHOWMAP=					챕터 이름 보여주기
@@ -110,22 +130,45 @@
 	MODOPTIONS_COREMODULE_DISCORDSHOWROOM=					룸 이름 보여주기
 	MODOPTIONS_COREMODULE_DISCORDSHOWBERRIES=				모은 딸기 개수 보여주기
 	MODOPTIONS_COREMODULE_DISCORDSHOWDEATHS=				죽은 횟수 보여주기
-	MODOPTIONS_COREMODULE_DISCORDFAILED=					디스코드에 연결할 수 없습니다. 설정을 껐다 켜 다시 시도해보세요.
+	MODOPTIONS_COREMODULE_DISCORDFAILED=					Discord에 연결할 수 없습니다. 설정을 껐다 켜 다시 시도해보세요.
+	
+	MODOPTIONS_COREMODULE_PSOPTIONS=						에베레스트 광과민성 옵션
+	MODOPTIONS_COREMODULE_PSOPTIONS_DESC=					광과민성 옵션 모드를 커스터마이징할 수 있습니다. 에베레스트에서 제공하는 옵션입니다.
+	MODOPTIONS_COREMODULE_PSDISTORT=						불안 및 왜곡 효과
+	MODOPTIONS_COREMODULE_PSDISTORT_DESC=					시커 근처에 다가갔을 때 생기는 왜곡 효과의 여부를 설정합니다.
+	MODOPTIONS_COREMODULE_PSGLITCH=							글리치 효과
+	MODOPTIONS_COREMODULE_PSGLITCH_DESC=					챕터 9에서 사건의 지평선으로 진입할 때 발생하는 글리치 효과의 여부를 설정합니다.
+	MODOPTIONS_COREMODULE_PSLIGHTNING=						전기 깜박임 효과
+	MODOPTIONS_COREMODULE_PSLIGHTNING_DESC=					전기 블록이 내부에서 깜박일지 여부를 설정합니다.
+	MODOPTIONS_COREMODULE_PSSCREENFLASH=					화면 깜박임 효과
+	MODOPTIONS_COREMODULE_PSSCREENFLASH_DESC=				화면이 하얗게 깜박일지 여부를 설정합니다. (예: 코어 스위치를 활성화할 때) 
+	MODOPTIONS_COREMODULE_PSTEXTHIGHLIGHT=					텍스트 강조
+	MODOPTIONS_COREMODULE_PSTEXTHIGHLIGHT_DESC=				텍스트 선택 시, 다른 색으로 깜박일지 여부를 설정합니다.
+	
+
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES=				미러 서버 사용
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_GB=				사용 안 함
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_JADE=			독일
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_WEGFAN=			중국
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_OTOBOT=			북아메리카
 
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						모드 로드에 실패했습니다.
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						자세한 사항은 log.txt를 확인해주세요.
 	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND= 				{0}을(를) 찾을 수 없었습니다.
+	MODOPTIONS_COREMODULE_NOTLOADED_ASMLOADERROR=			mod assembly failed to load
 	MODOPTIONS_COREMODULE_YAMLERRORS= 						everest.yaml 파일 로드에 실패했습니다.
+
+	MODOPTIONS_COREMODULE_SEARCHBOX_PLACEHOLDER=			'Tab'이나 'Enter'를 눌러 다음 검색 결과로 이동
 
 	MODOPTIONS_VANILLATRISTATE_NEVER=						OFF
 	MODOPTIONS_VANILLATRISTATE_EVEREST=						에베레스트
 	MODOPTIONS_VANILLATRISTATE_ALWAYS=						항상
 
 # Sound Test
-	SOUNDTEST_TITLE=	사운드 테스트
-	SOUNDTEST_AUDIOPARAMS_OPEN_1=	Press
-	SOUNDTEST_AUDIOPARAMS_OPEN_2=	to edit Audio Params
-	SOUNDTEST_AUDIOPARAMS=	Audio Params
+	SOUNDTEST_TITLE=	SOUND TEST
+	SOUNDTEST_AUDIOPARAMS_OPEN_1=	오디오 파라미터를 조절하려면
+	SOUNDTEST_AUDIOPARAMS_OPEN_2=	을 눌러 주세요.
+	SOUNDTEST_AUDIOPARAMS=	오디오 파라미터
 
 # Maplist
 	MAPLIST_TITLE= 			챕터 리스트
@@ -136,7 +179,7 @@
 	MAPLIST_LIST= 			챕터
 	MAPLIST_UNCATEGORIZED= 	미분류
 	MAPLIST_SEARCH=			검색
-	MAPLIST_SEARCH_MATCH=	퀵매치
+	MAPLIST_SEARCH_MATCH=	퀵 매치
 	MAPLIST_TYPE_EVERYTHING=  전부
 	MAPLIST_RESULTS_SINGULAR= {0}개의 챕터 검색됨
 	MAPLIST_RESULTS_PLURAL=   {0}개의 챕터 검색됨
@@ -146,10 +189,12 @@
 
 # Updater
 	UPDATER_TITLE= 					UPDATER
-	UPDATER_VERSIONS_TITLE= 		에버레스트 버전 변경
+	UPDATER_LEGACYREF_TITLE=		LEGACYREF 설정
+	UPDATER_VERSIONS_TITLE= 		에베레스트 버전 변경
 	UPDATER_VERSIONS_CURRENT= 		현재 버전: ((version))
 	UPDATER_VERSIONS_REQUESTING= 	새로고침 중...
-	
+
+	UPDATER_VERSIONS_WAIT_REQUEST=	버전 리스트를 요청하는 중입니다...
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	버전 리스트 다운로드에 실패했습니다.
 	UPDATER_VERSIONS_ERR_FORMAT= 	포맷을 읽을 수 없습니다.
 
@@ -160,15 +205,17 @@
 	UPDATER_SRC_DEV=				DEV
 	UPDATER_SRC_CORE=				CORE
 
-	UPDATER_SRC_RELEASE_GITHUB=		Tagged releases (GitHub)
+	UPDATER_SRC_RELEASE_GITHUB=		태그가 붙은 릴리즈 (GitHub)
 	UPDATER_SRC_BUILDBOT_AZURE=		자동 빌드 (Azure)
-	
+
 # currently unused
 	UPDATER_SRC_BUILDBOT= 			자동 빌드
 
 # Everest Updater
 	EVERESTUPDATER_NOTSUPPORTED=	이 플랫폼에서 업데이트가 지원되지 않습니다. - 업데이트 취소
 	EVERESTUPDATER_NOUPDATE=		업데이트가 없습니다. - 업데이트 취소
+	EVERESTUPDATER_CREATINGLEGACYREF=	legacyRef 설치 준비 중
+	EVERESTUPDATER_NOTAVAILABLE=	요구하는 에베레스트 빌드를 사용할 수 없습니다!
 	EVERESTUPDATER_UPDATING=		{0} (브랜치: {1}) @ {2}로 업데이트 중
 	EVERESTUPDATER_DOWNLOADING=		다운로드 중
 	EVERESTUPDATER_DOWNLOADING_PROGRESS=		다운로드 중:
@@ -180,6 +227,8 @@
 	EVERESTUPDATER_EXTRACTIONFINISHED=	파일 추출 완료.
 	EVERESTUPDATER_RESTARTING=		다시 실행
 	EVERESTUPDATER_RESTARTINGIN=	{0}초 후 다시 실행
+	EVERESTUPDATER_WAITFORINSTALLER=	Waiting for installer to finish
+	EVERESTUPDATER_INSTALLERFAILED=	Installer failed: exit code {0}
 	EVERESTUPDATER_STARTINGFAILED=	인스톨러 실행 실패!
 	EVERESTUPDATER_ERRORHINT1=		GitHub @ https://github.com/EverestAPI/Everest 에서 새로운 이슈를 작성하거나
 	EVERESTUPDATER_ERRORHINT2=		셀레스트 공식 디스코드의 #modding_help 채널에 방문해주세요(위의 리포지토리에서 참여 가능).
@@ -205,7 +254,7 @@
 	MODUPDATECHECKER_MENU_HEADER_RESTART= 선택
 	MODUPDATECHECKER_SHUTDOWN= 셀레스트 종료
 	MODUPDATECHECKER_RESTART= 다시 실행
-	
+
 # Auto Mod Updater
 	AUTOUPDATECHECKER_CHECKING=		모드 업데이트 확인 중...
 	AUTOUPDATECHECKER_UPDATING=		자동 업데이트 중
@@ -224,8 +273,8 @@
 	DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS=	설치된 모드의 정보 로드 중...
 	DEPENDENCYDOWNLOADER_DONE=						완료.
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	에러: 데이터베이스 다운로드에 실패했습니다. 자세한 사항은 log.txt를 확인해주세요.
-	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		경고: 일부 모드를 구동하기 위해선 에버레스트를 업데이트해야 합니다. 에버레스트 버전 변경하기 메뉴에서 최신 버전을 설치해주세요.
-	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			일부 모드를 구동하기 위해 에버레스트는 {0}으로 업데이트 됩니다. 확인 버튼을 눌러 진행해주세요.
+	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		경고: 일부 모드를 구동하기 위해선 에베레스트를 업데이트해야 합니다. 에베레스트 버전 변경하기 메뉴에서 최신 버전을 설치해주세요.
+	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			일부 모드를 구동하기 위해 에베레스트는 {0}으로 업데이트 됩니다. 확인 버튼을 눌러 진행해주세요.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				에러: 데이터베이스에서 {0}을(를) 찾을 수 없습니다. 해당 모드는 수동으로 설치해주세요.
 	DEPENDENCYDOWNLOADER_UPDATE_CELESTE=			에러: 일부 모드를 구동하기 위해선 최신 버전의 셀레스트가 필요합니다. 셀레스트를 업데이트해주세요.
 	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	에러: {0}의 여러 버전이 발견되어 자동으로 설치할 수 없습니다. 해당 모드는 수동으로 설치해주세요.
@@ -247,7 +296,7 @@
 	DEPENDENCYDOWNLOADER_LOADING_MOD_NOMETA=		{0}에서 모드 로드 중...
 
 # OOBE (Out Of Box Experience) - first launch stuff
-	OOBE_WELCOME_HEADER=		에버레스트에 오신 것을 환영합니다!
+	OOBE_WELCOME_HEADER=		에베레스트에 오신 것을 환영합니다!
 	OOBE_WELCOME_SUBHEADER=		무엇을 도와드릴까요?
 	OOBE_WELCOME_PLAY=			모드 플레이를 하고 싶습니다.
 	OOBE_WELCOME_SPEEDRUN=		스피드런을 하고 싶습니다.
@@ -255,9 +304,9 @@
 	OOBE_WELCOME_SKIP=			아무런 도움도 필요하지 않습니다.
 
 	OOBE_SETTINGS_PLAY=			GameBanana에서 모드를 검색하고 설치할 수 있습니다.{n}설치된 맵은 챕터 선택 화면에서 찾을 수 있습니다.{n}게임 진행도는 디스코드 게임 활동 창으로 공유됩니다.{n}F6으로 맵을 디버그 화면으로 표시할 수 있습니다.
-	OOBE_SETTINGS_SPEEDRUN=		타이틀 화면에서 오른쪽 키를 길게 눌러 순정 상태의 셀레스트로 다시 실행할 수 있습니다.{n}GameBanana에서 모드를 검색하고 설치할 수 있습니다.{n}설치된 맵은 챕터 선택 화면에서 찾을 수 있습니다.{n}F6으로 맵을 디버그 화면으로 표시할 수 있습니다.
+	OOBE_SETTINGS_SPEEDRUN=		타이틀 화면에서 오른쪽 키를 길게 눌러 바닐라 셀레스트로 다시 실행할 수 있습니다.{n}GameBanana에서 모드를 검색하고 설치할 수 있습니다.{n}설치된 맵은 챕터 선택 화면에서 찾을 수 있습니다.{n}F6으로 맵을 디버그 화면으로 표시할 수 있습니다.
 	OOBE_SETTINGS_CREATE=		GameBanana에서 모드를 검색하고 공유할 수 있습니다.{n}커스텀 맵은 챕터 선택 화면에서 찾을 수 있습니다.{n}F6으로 맵을 디버그 화면으로 표시할 수 있습니다.{n}F5를 눌러 현재 맵을 다시 로드하고, CTRL+F5를 눌러 게임을 다시 로드할 수 있습니다.{n}QWERTY 키보드를 사용하고 있지 않다면, . 버튼으로 콘솔을 열고, q 버튼으로 콘솔을 닫을 수 있습니다.
-	OOBE_SETTINGS_SUBHEADER=	아래의 설정을 통해 에버레스트를 더욱 편리하게 사용할 수 있습니다.
+	OOBE_SETTINGS_SUBHEADER=	아래의 설정을 통해 에베레스트를 더욱 편리하게 사용할 수 있습니다.
 	OOBE_SETTINGS_MORE=			이 외의 설정은 모드 옵션에서 변경 가능합니다.
 	OOBE_SETTINGS_OK=			알겠습니다.
 
@@ -267,6 +316,8 @@
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS=	필요한 모드를 자동으로 활성화
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1=	모드를 활성화하면, 그 모드를 구동하기 위해 필요한 모드가 모두 활성화됩니다.
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2=	모드를 비활성화하면, 그 모드를 구동하기 위해 필요한 모드가 모두 비활성화됩니다.
+	MODOPTIONS_MODTOGGLE_PROTECTFAVORITES=			즐겨찾기 보호
+	MODOPTIONS_MODTOGGLE_PROTECTFAVORITES_MESSAGE=	{0}을 눌러 즐겨찾기에서 모드를 추가하거나 삭제합니다.
 	MODOPTIONS_MODTOGGLE_MESSAGE_1=		모드를 활성화하거나 비활성화하면 blacklist.txt가 교체되고,
 	MODOPTIONS_MODTOGGLE_MESSAGE_2=		변경 사항을 적용하기 위해 셀레스트가 다시 실행됩니다.
 	MODOPTIONS_MODTOGGLE_MESSAGE_3=		이름이 노란색인 모드는 다른 모드를 구동하는 데에 필요합니다.
@@ -277,6 +328,7 @@
 	MODOPTIONS_MODTOGGLE_ZIPS=			Zip 파일
 	MODOPTIONS_MODTOGGLE_DIRECTORIES=	디렉토리(폴더)
 	MODOPTIONS_MODTOGGLE_BINS=			Bin 형식의 맵 파일
+	MODOPTIONS_MODTOGGLE_SEARCHBOX_PLACEHOLDER=		'Tab'이나 'Enter'를 눌러 다음 검색 결과로 이동
 
 # Asset Reload Helper
 	ASSETRELOADHELPER_RELOADINGMAP=			Reloading map

@@ -23,13 +23,13 @@ For information about mod development, check out the [Everest Wiki](https://gith
     - macOS: Right-click and browse the Celeste app in Finder, then navigate to `Contents`, then `MacOS`.
 - Clone the Everest repo **+ submodules**, either in your IDE or via the CLI.
 - Restore Nuget packages either via your IDE or the command line.
-- Everest requires version 7.0.200 or higher of .NET SDK, as well as the .NET 6.0 runtime, for the build process.
+- Everest requires version 9.0.0 or higher of .NET SDK, as well as the .NET 8.0 runtime, for the build process.
 
 ### Windows
 - Open the .sln in the repo with Visual Studio
 - Publish all projects
     - **NOTE:** It is very important that you *publish* the project instead of simply building it, as otherwise required dependency DLLs won't be copied!
-- Copy everything in `MiniInstaller\bin\Release\net7.0\publish` and `Celeste.Mod.mm\bin\Release\net7.0\publish` to your Celeste directory, replacing existing files
+- Copy everything in `MiniInstaller\bin\Release\net8.0\publish` and `Celeste.Mod.mm\bin\Release\net8.0\publish` to your Celeste directory, replacing existing files
 - Run MiniInstaller-win64.exe on 64-bit or MiniInstaller-win.exe on 32-bit
 
 ### macOS / Linux
@@ -38,7 +38,7 @@ For information about mod development, check out the [Everest Wiki](https://gith
     - _With MonoDevelop:_ Open the .sln in the repo with MonoDevelop
     - _Manually:_ Open the terminal in the Everest directory and run `msbuild` or `dotnet publish`
     - **NOTE:** It is very important that you *publish* the project instead of simply building it, as otherwise required dependency DLLs won't be copied!
-- Copy everything in `MiniInstaller/bin/Release/net7.0/publish` and `Celeste.Mod.mm/bin/Release/net7.0/publish` to your Celeste directory
+- Copy everything in `MiniInstaller/bin/Release/net8.0/publish` and `Celeste.Mod.mm/bin/Release/net8.0/publish` to your Celeste directory
     - macOS: `Celeste.app/Contents/Resources`
 - Run `./MiniInstaller-linux` or `./MiniInstaller-osx`
 

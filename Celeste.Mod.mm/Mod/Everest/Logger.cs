@@ -24,8 +24,9 @@ namespace Celeste.Mod {
         private static Dictionary<string, LogLevel> minimumLevels = new Dictionary<string, LogLevel>();
         private static Dictionary<string, LogLevel> minimumLevelsFromEverestSettings = new Dictionary<string, LogLevel>();
         private static Dictionary<string, LogLevel> minimumLevelsCache = new Dictionary<string, LogLevel>();
+        private static readonly object locker = new object();
 
-        private static bool ColorizedLogging => (((CoreModuleSettings)CoreModule.Instance?._Settings)?.ColorizedLogging ?? earlyBootColorizedLogging) && outWriter != null && logWriter != null;
+        private static bool ColorizedLogging => (((CoreModuleSettings) CoreModule.Instance?._Settings)?.ColorizedLogging ?? earlyBootColorizedLogging) && outWriter != null && logWriter != null;
 
         /// <summary>
         /// Sets the minimum log level to be written in the logs for lines matching the given tag prefix.
@@ -149,21 +150,24 @@ namespace Celeste.Mod {
         /// <param name="str">The string / message to log.</param>
         public static void Log(LogLevel level, string tag, string str) {
             if (shouldLog(tag, level)) {
-                if (!ColorizedLogging) {
-                    Console.WriteLine($"({DateTime.Now}) [Everest] [{level.FastToString()}] [{tag}] {str}");
-                    return;
+                lock (locker) {
+                    string now = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+                    string logLevel = level.FastToString();
+
+                    if (!ColorizedLogging) {
+                        Console.WriteLine($"({now}) [Everest] [{logLevel}] [{tag}] {str}");
+                        return;
+                    }
+
+                    const string colorReset = "\x1b[0m";
+                    const string colorFaint = "\x1b[2m";
+                    string colorLevel = level.GetAnsiEscapeCodeForLevel();
+                    string colorText = level.GetAnsiEscapeCodeForText();
+
+                    outWriter.WriteLine($"{colorFaint}({now}) [Everest] {colorReset}{colorLevel}[{logLevel}] [{tag}] {colorText}{str}{colorReset}");
+                    logWriter.WriteLine($"({now}) [Everest] [{logLevel}] [{tag}] {str}");
+                    logWriter.Flush();
                 }
-
-                const string colorReset = "\x1b[0m";
-                const string colorFaint = "\x1b[2m";
-                string colorLevel = level.GetAnsiEscapeCodeForLevel();
-                string colorText = level.GetAnsiEscapeCodeForText();
-
-                string now_str = DateTime.Now.ToString(CultureInfo.InvariantCulture);
-                string level_str = level.FastToString();
-                outWriter.WriteLine($"{colorFaint}({now_str}) [Everest] {colorReset}{colorLevel}[{level_str}] [{tag}] {colorText}{str}{colorReset}");
-                logWriter.WriteLine($"({now_str}) [Everest] [{level_str}] [{tag}] {str}");
-                logWriter.Flush();
             }
         }
 
@@ -184,56 +188,60 @@ namespace Celeste.Mod {
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void LogDetailed(LogLevel level, string tag, string str) {
             if (shouldLog(tag, level)) {
-                Log(level, tag, str);
-                if (!ColorizedLogging) {
-                    Console.WriteLine(new StackTrace(1, true).ToString());
-                    return;
+                lock (locker) {
+                    Log(level, tag, str);
+                    if (!ColorizedLogging) {
+                        Console.WriteLine(new StackTrace(1, true).ToString());
+                        return;
+                    }
+
+                    const string colorReset = "\x1b[0m";
+                    string colorText = level.GetAnsiEscapeCodeForText();
+
+                    outWriter.WriteLine($"{colorText}{new StackTrace(1, true)}{colorReset}");
+                    logWriter.WriteLine(new StackTrace(1, true).ToString());
+                    logWriter.Flush();
                 }
-
-                const string colorReset = "\x1b[0m";
-                string colorText = level.GetAnsiEscapeCodeForText();
-
-                outWriter.WriteLine($"{colorText}{new StackTrace(1, true)}{colorReset}");
-                logWriter.WriteLine(new StackTrace(1, true).ToString());
-                logWriter.Flush();
             }
         }
 
         /// <summary>
         /// Print the exception to the console, including extended loading / reflection data useful for mods.
         /// </summary>
-        public static void LogDetailed(/*this*/ Exception e, string tag = null) {
-            if (ColorizedLogging) {
-                string colorText = LogLevel.Error.GetAnsiEscapeCodeForText();
-                outWriter.Write(colorText);
-            }
+        public static void LogDetailed( /*this*/ Exception e, string tag = null) {
+            lock (locker) {
+                if (ColorizedLogging) {
+                    string colorText = LogLevel.Error.GetAnsiEscapeCodeForText();
+                    outWriter.Write(colorText);
+                }
 
-            if (tag == null) {
-                Console.WriteLine("--------------------------------");
-                Console.WriteLine("Detailed exception log:");
-            }
-            for (Exception e_ = e; e_ != null; e_ = e_.InnerException) {
-                Console.WriteLine("--------------------------------");
-                Console.WriteLine(e_.GetType().FullName + ": " + e_.Message + "\n" + e_.StackTrace);
-                if (e_ is ReflectionTypeLoadException rtle) {
-                    for (int i = 0; i < rtle.Types.Length; i++) {
-                        Console.WriteLine("ReflectionTypeLoadException.Types[" + i + "]: " + rtle.Types[i]);
+                if (tag == null) {
+                    Console.WriteLine("--------------------------------");
+                    Console.WriteLine("Detailed exception log:");
+                }
+                for (Exception e_ = e; e_ != null; e_ = e_.InnerException) {
+                    Console.WriteLine("--------------------------------");
+                    Console.WriteLine(e_.GetType().FullName + ": " + e_.Message + "\n" + e_.StackTrace);
+                    if (e_ is ReflectionTypeLoadException rtle) {
+                        for (int i = 0; i < rtle.Types.Length; i++) {
+                            Console.WriteLine("ReflectionTypeLoadException.Types[" + i + "]: " + rtle.Types[i]);
+                        }
+                        for (int i = 0; i < rtle.LoaderExceptions.Length; i++) {
+                            LogDetailed(rtle.LoaderExceptions[i], tag + (tag == null ? "" : ", ") + "rtle:" + i);
+                        }
                     }
-                    for (int i = 0; i < rtle.LoaderExceptions.Length; i++) {
-                        LogDetailed(rtle.LoaderExceptions[i], tag + (tag == null ? "" : ", ") + "rtle:" + i);
+                    if (e_ is TypeLoadException) {
+                        Console.WriteLine("TypeLoadException.TypeName: " + ((TypeLoadException) e_).TypeName);
+                    }
+                    if (e_ is BadImageFormatException) {
+                        Console.WriteLine("BadImageFormatException.FileName: " + ((BadImageFormatException) e_).FileName);
                     }
                 }
-                if (e_ is TypeLoadException) {
-                    Console.WriteLine("TypeLoadException.TypeName: " + ((TypeLoadException) e_).TypeName);
-                }
-                if (e_ is BadImageFormatException) {
-                    Console.WriteLine("BadImageFormatException.FileName: " + ((BadImageFormatException) e_).FileName);
-                }
-            }
 
-            if (ColorizedLogging) {
-                const string colorReset = "\x1b[0m";
-                outWriter.Write(colorReset);
+                if (ColorizedLogging) {
+                    const string colorReset = "\x1b[0m";
+                    outWriter.Write(colorReset);
+                }
             }
         }
 
@@ -241,13 +249,13 @@ namespace Celeste.Mod {
         private const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004;
 
         [DllImport("kernel32.dll")]
-		private static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
+        private static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
 
-		[DllImport("kernel32.dll")]
-		private static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
+        [DllImport("kernel32.dll")]
+        private static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
 
-		[DllImport("kernel32.dll", SetLastError = true)]
-		private static extern IntPtr GetStdHandle(int nStdHandle);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr GetStdHandle(int nStdHandle);
 
         private static bool enabledVTSupport = false;
         internal static bool TryEnableWindowsVTSupport() {

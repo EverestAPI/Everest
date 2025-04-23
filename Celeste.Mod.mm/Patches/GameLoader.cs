@@ -48,7 +48,7 @@ namespace Celeste {
                 break;
             }
 
-            if (CoreModule.Settings.LaunchWithoutIntro && introRoutine != null) {
+            if ((CoreModule.Settings.LaunchWithoutIntro || Everest.Flags.IsHeadless) && introRoutine != null) {
                 skipped = true;
             }
         }
@@ -85,8 +85,10 @@ namespace Celeste {
             Stopwatch timer = Stopwatch.StartNew();
 
             Audio.Init();
-            // Original code loads audio banks here.
-            Settings.Instance.ApplyVolumes();
+            if (!Everest.Flags.IsHeadless) {
+                // Original code loads audio banks here.
+                Settings.Instance.ApplyVolumes();
+            }
             audioLoaded = true;
             Console.WriteLine(" - AUDIO LOAD: " + timer.ElapsedMilliseconds + "ms");
             timer.Stop();
@@ -134,7 +136,7 @@ namespace Celeste {
 
             bool transitionToModUpdater = false;
 
-            if (CoreModule.Settings.AutoUpdateModsOnStartup) {
+            if (CoreModule.Settings.AutoUpdateModsOnStartup && !Everest.Flags.IsHeadless) {
                 if (!ModUpdaterHelper.IsAsyncUpdateCheckingDone()) {
                     // update checking is not done yet.
                     // transition to mod updater screen to display the "checking for updates" message.

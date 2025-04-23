@@ -223,13 +223,13 @@ namespace Celeste.Mod.UI {
                             // something bad happened during the mod hot loading, log it and prompt to restart the game to load the mod.
                             LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED"));
                             Logger.LogDetailed(e);
-                            shouldAutoExit = false;
                             shouldRestart = true;
                             break;
                         }
                     }
                 }
 
+                // don't waste time hot loading since we're restarting anyway
                 if (!shouldRestart && everestVersionToInstall == null) {
                     foreach (string path in ModPathToLoad) {
                         try {
@@ -239,9 +239,10 @@ namespace Celeste.Mod.UI {
                                 Everest.Loader.LoadDir(path);
                             }
                         } catch (Exception e) {
-                            LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_INSTALL_FAILED"), Path.GetFileName(path)));
+                            // something bad happened during the mod hot loading, log it and prompt to restart the game to load the mod.
+                            LogLine(string.Format(Dialog.Clean("DEPENDENCYDOWNLOADER_HOTLOAD_FAILED"), Path.GetFileName(path)));
                             Logger.LogDetailed(e);
-                            shouldAutoExit = false;
+                            shouldRestart = true;
                             break;
                         }
                     }
@@ -523,7 +524,7 @@ namespace Celeste.Mod.UI {
         }
 
         private void downloadDependency(ModUpdateInfo mod, EverestModuleMetadata installedVersion) {
-            string downloadDestination = Path.Combine(Everest.PathGame, $"dependency-download.zip");
+            string downloadDestination = Path.Combine(Everest.PathTmp, $"dependency-download.zip");
             try {
                 // 1. Download
                 Func<int, long, int, bool> progressCallback = (position, length, speed) => {
@@ -624,7 +625,7 @@ namespace Celeste.Mod.UI {
         public void Exit() {
             task = null;
             Lines.Clear();
-            MainThreadHelper.Schedule(() => ((patch_OuiMainMenu) Overworld.GetUI<OuiMainMenu>())?.RebuildMainAndTitle());
+            MainThreadHelper.Schedule(() => ((patch_OuiMainMenu) Overworld.GetUI<OuiMainMenu>())?.NeedsRebuild());
             Audio.Play(SFX.ui_main_button_back);
             Overworld.Goto<OuiModOptions>();
         }

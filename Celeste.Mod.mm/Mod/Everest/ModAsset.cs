@@ -1,10 +1,7 @@
-﻿using Celeste.Mod.Helpers;
-using Ionic.Zip;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 
 namespace Celeste.Mod {
     public abstract class ModAsset {
@@ -124,7 +121,7 @@ namespace Celeste.Mod {
         public bool TryGetMeta<T>(out T meta) {
             if (Everest.Content.TryGet(PathVirtual + ".meta", out ModAsset metaAsset) &&
                 metaAsset.TryDeserialize(out meta)
-            )
+                )
                 return true;
             meta = default;
             return false;
@@ -278,46 +275,21 @@ namespace Celeste.Mod {
         /// </summary>
         public readonly string Path;
 
-        /// <summary>
-        /// The entry for the source file inside the archive.
-        /// </summary>
-        public readonly ZipEntry Entry;
-
-        private readonly ZipModContent.ZipModSecret Secret;
-
         public override byte[] Data {
             get {
-                using (MemoryStream ms = Entry.ExtractStream())
-                    return ms.ToArray();
+                using Stream stream = Source.Open(Path);
+                using MemoryStream ms = new MemoryStream();
+                stream.CopyTo(ms);
+                return ms.ToArray();
             }
         }
 
-        public ZipModAsset(ZipModContent source, ZipModContent.ZipModSecret secret, string path)
-            : base(source) {
-            Path = path = path.Replace('\\', '/');
-            Secret = secret;
-
-            foreach (ZipEntry entry in source.Zip.Entries) {
-                if (entry.FileName.Replace('\\', '/') == path) {
-                    Entry = entry;
-                    break;
-                }
-            }
-        }
-
-        public ZipModAsset(ZipModContent source, ZipModContent.ZipModSecret secret, ZipEntry entry)
-            : base(source) {
-            Path = entry.FileName.Replace('\\', '/');
-            Secret = secret;
-            Entry = entry;
+        public ZipModAsset(ZipModContent source, string path) : base(source) {
+            Path = path;
         }
 
         protected override void Open(out Stream stream, out bool isSection) {
-            if (Entry == null)
-                throw new KeyNotFoundException($"{GetType().Name} {Path} not found in archive {Source.Path}");
-
-            // Apparently DotNetZip HATES multithreading, concurrent access and seeking.
-            stream = new ZipAssetStream(this, Secret);
+            stream = Source.Open(Path);
             isSection = false;
         }
     }

@@ -26,6 +26,18 @@ namespace Celeste.Mod {
         /// Stores whether Everest's DecalRegistryHandlers have been registered already.
         /// </summary>
         internal static bool EverestHandlersRegistered;
+
+        /// <summary>
+        /// Whether the Decal Registry has been fully loaded,
+        /// used to detect when it needs to be reloaded after AddPropertyHandler gets called.
+        /// </summary>
+        private static bool _loaded;
+
+        /// <summary>
+        /// Whether the Decal Registry will be hot-reloaded on the end of this frame / on the end of the current reload,
+        /// due to AddPropertyHandler being called after the registry was already loaded.
+        /// </summary>
+        private static bool _willHotReload;
         
         /// <summary>
         /// Adds a custom property to the decal registry. See the Celeste.Mod.Registry.DecalRegistryHandlers namespace to see Everest-defined properties.
@@ -40,6 +52,7 @@ namespace Celeste.Mod {
             Logger.Warn("Decal Registry", $"Assembly {asmName} is using the legacy DecalRegistry.AddPropertyHandler(string, Action<Decal, XmlAttributeCollection>) method for property {propertyName}!");
             
             PropertyHandlerFactories[propertyName] = () => new LegacyDecalRegistryHandler(propertyName, action);
+            ScheduleHotReloadIfNeeded();
         }
 
         /// <summary>
@@ -53,6 +66,35 @@ namespace Celeste.Mod {
             }
             
             PropertyHandlerFactories[dummyHandler.Name] = () => new T();
+            ScheduleHotReloadIfNeeded();
+        }
+
+        private static void ScheduleHotReloadIfNeeded() {
+            if (!_loaded || _willHotReload) {
+                return;
+            }
+            
+            // Decal Registry has already been fully loaded, we need to reload it because of new handlers.
+            // Delay this until next frame/end of hot reload though, so that subsequent calls to AddPropertyHandler
+            // don't cause several decal registry reloads.
+
+            _willHotReload = true;
+
+            if (AssetReloadHelper.IsReloading) {
+                // AssetReloadHelper can skip OnEndOfFrame events, register for a post-reload event instead.
+                Everest.Events.AssetReload.OnAfterNextReload += _ => DoReload();
+            } else {
+                Engine.Scene.OnEndOfFrame += DoReload;
+            }
+
+            return;
+
+            static void DoReload() {
+                Logger.Info("Decal Registry", "Reloading Decal Registry due to new handlers getting registered");
+                LoadDecalRegistry();
+                AssetReloadHelper.ReloadLevel();
+                _willHotReload = false;
+            }
         }
 
         internal static DecalRegistryHandler CreateHandlerOrNull(string decalName, string propertyName, XmlAttributeCollection xmlAttributes) {
@@ -119,6 +161,8 @@ namespace Celeste.Mod {
         /// Loads the decal registry for every enabled mod.
         /// </summary>
         internal static void LoadDecalRegistry() {
+            _loaded = false;
+            
             RegisterEverestHandlers();
             
             foreach (ModContent mod in Everest.Content.Mods) {
@@ -126,6 +170,8 @@ namespace Celeste.Mod {
                     LoadModDecalRegistry(asset);
                 }
             }
+
+            _loaded = true;
         }
 
         internal static void RegisterEverestHandlers() {
