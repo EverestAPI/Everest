@@ -8,11 +8,29 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using Celeste.Mod;
 
 namespace Celeste {
     class patch_OuiFileSelect : OuiFileSelect {
 
         internal bool startingNewFile;
+
+        public extern void orig_LoadThread();
+        public new void LoadThread() {
+            orig_LoadThread();
+
+            string saveFilePath = patch_UserIO.GetSaveFilePath();
+            if (!Directory.Exists(saveFilePath))
+                return;
+
+            for (int i = 0; i < Slots.Count() - 1; i++) { // - 1, last slot is always empty
+                if (!Slots[i].Exists && Directory.GetFiles(saveFilePath, $"{i}-mod*.celeste").Length > 0) {
+                    Logger.Warn("save", $"Save slot {i} have modded data but no save file, flagging as corrupted");
+                    Slots[i].Corrupted = true;
+                    Slots[i].Exists = true; // both `Corrupted` and `Exists` flags must be set
+                }
+            }
+        }
 
         [PatchOuiFileSelectSubmenuChecks] // we want to manipulate the orig method with MonoModRules
         public extern IEnumerator orig_Enter(Oui from);
@@ -28,11 +46,15 @@ namespace Celeste {
                     maxSaveFile = 1; // we're adding 2 later, so there will be at least 3 slots.
                     string saveFilePath = patch_UserIO.GetSaveFilePath();
                     if (Directory.Exists(saveFilePath)) {
-                        foreach (string filePath in Directory.GetFiles(saveFilePath)) {
+                        foreach (string filePath in Directory.GetFiles(saveFilePath, "*.celeste")) {
                             string fileName = Path.GetFileName(filePath);
                             // is the file named [number].celeste?
-                            if (fileName.EndsWith(".celeste") && int.TryParse(fileName.Substring(0, fileName.Length - 8), out int fileIndex)) {
+                            if (int.TryParse(fileName.Substring(0, fileName.Length - 8), out int fileIndex)) {
                                 maxSaveFile = Math.Max(maxSaveFile, fileIndex);
+                            }
+                            // or is the file mod data named [number]-mod[save|session]-[modname].celeste?
+                            if (fileName.Contains("-mod") && int.TryParse(fileName.Substring(0, fileName.IndexOf('-')), out int modFileIndex)) {
+                                maxSaveFile = Math.Max(maxSaveFile, modFileIndex);
                             }
                         }
                     }

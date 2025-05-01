@@ -204,8 +204,6 @@ namespace Celeste {
 
         public extern void orig_OnNewGameSelected();
         public void OnNewGameSelected() {
-            patch_SaveData.TryDeleteModSaveData(FileSlot);
-
             orig_OnNewGameSelected();
 
             string newGameLevelSet = newGameLevelSetPicker?.NewGameLevelSet;
