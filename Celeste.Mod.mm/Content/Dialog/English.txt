@@ -187,6 +187,8 @@
 	LEVELSET_CELESTE= 		Celeste
 	LEVELSET_= 				Uncategorized
 
+	MISSING_VANILLA_DATA= Missing Vanilla data :(
+
 # Updater
 	UPDATER_TITLE= 					UPDATER
 	UPDATER_LEGACYREF_TITLE=		LEGACYREF SETUP
