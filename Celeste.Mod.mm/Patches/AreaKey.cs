@@ -1,8 +1,9 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
+using Celeste.Mod;
 using MonoMod;
 using System;
-using System.Xml;
+using System.Collections.Generic;
 using System.Xml.Serialization;
 
 namespace Celeste {
@@ -59,15 +60,26 @@ namespace Celeste {
             }
         }
 
+        private static readonly Dictionary<string, string> _cachedSIDsToLevelSets = new Dictionary<string, string>();
+        private string computeLevelSet() {
+            Logger.Verbose("SaveData", "Recomputing AreaKey.LevelSet");
+            string sid = SID;
+            int lastIndexOfSlash = sid.LastIndexOf('/');
+            if (lastIndexOfSlash == -1) return "";
+            return sid.Substring(0, lastIndexOfSlash);
+        }
+
         public string LevelSet {
             get {
                 string sid = SID;
-                if (string.IsNullOrEmpty(sid))
+                if (string.IsNullOrEmpty(sid)) {
                     return "Celeste";
-                int lastIndexOfSlash = sid.LastIndexOf('/');
-                if (lastIndexOfSlash == -1)
-                    return "";
-                return sid.Substring(0, lastIndexOfSlash);
+                }
+                if (!_cachedSIDsToLevelSets.TryGetValue(sid, out string levelSet)) {
+                    levelSet = computeLevelSet();
+                    _cachedSIDsToLevelSets.Add(sid, levelSet);
+                }
+                return levelSet;
             }
         }
 

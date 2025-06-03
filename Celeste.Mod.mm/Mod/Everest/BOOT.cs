@@ -252,7 +252,7 @@ namespace Celeste.Mod {
             }
 
             Regex escapeArg = new Regex(@"(\\+)$");
-            game.StartInfo.Arguments = string.Join(" ", Environment.GetCommandLineArgs().Select(s => "\"" + escapeArg.Replace(s, @"$1$1") + "\""));
+            game.StartInfo.Arguments = string.Join(" ", Environment.GetCommandLineArgs().Skip(1).Select(s => "\"" + escapeArg.Replace(s, @"$1$1") + "\""));
 
             game.Start();
             return game;

@@ -20,7 +20,7 @@
 
 # Helper Postcards
 	POSTCARD_LEVELGONE= 		{big}Thank you ((player))!{/big}{n}But our {#ff1144}((sid)){#} is on another mountain.
-	POSTCARD_LEVELLOADFAILED= 	{big}Sorry!{/big}{n}But {#ff1144}((sid)){#} has failed loading.{n}Please send your {#44adf7}log.txt{#}{n}to the map builder.
+	POSTCARD_LEVELLOADFAILED= 	{big}Sorry!{/big}{n}But {#ff1144}((sid)){#} has failed to load.{n}Check your {#44adf7}log.txt{#} for the error details, and when reporting this problem to the map author or someone knowledgeable, make sure to attach it!
 	POSTCARD_LEVELNOSPAWN= 		{big}Oops!{/big}{n}Someone misplaced your {#44adf7}starting point!{#}{n}Please check if your map{n}contains a {#44adf7}Player{#} entity.
 	POSTCARD_BADTILEID=			{big}Oops!{/big}{n}There is an undefined ((type))tile id {#ff1144}((id)){#} at{n}{#ff1144}(((x)), ((y))){#} in room {#ff1144}((room)){#}{n}Check your {#44adf7}log.txt{#} for more info.
 	POSTCARD_DECALREGERROR=		{big}Oops!{/big}{n}There was an error applying the{n}{#ff1144}((property)){#} property to {#ff1144}((decal)){#}{n}You may have a missing or invalid attribute in your {#44adf7}Decal Registry{#}.
@@ -290,6 +290,7 @@
 	DEPENDENCYDOWNLOADER_UPDATING=					Installing update for {0} ({1} -> {2}) to {3}...
 	DEPENDENCYDOWNLOADER_INSTALLING=				Installing mod {0} v.{1} to {2}...
 	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			ERROR: Installing {0} failed. Please check your log.txt for more info.
+	DEPENDENCYDOWNLOADER_HOTLOAD_FAILED=			WARNING: Hot loading of {0} failed. A restart will be required.
 	DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST=			Removing mod {0} from the blacklist...
 	DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED=		Automatically unblacklisting some mods failed. Check log.txt for more info.
 	DEPENDENCYDOWNLOADER_LOADING_MOD=				Loading {0} from {1}...

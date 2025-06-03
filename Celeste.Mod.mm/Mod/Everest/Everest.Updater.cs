@@ -39,6 +39,9 @@ namespace Celeste.Mod {
                 }
             }
 
+            private class StringLocker { public string String; }
+            private static readonly Dictionary<string, StringLocker> sharedCache = new Dictionary<string, StringLocker>();
+
             public class Source {
 
                 public string Name;
@@ -82,9 +85,30 @@ namespace Celeste.Mod {
 
                     string data;
                     try {
-                        Logger.Debug("updater", "Attempting to download update list from source: " + Index());
-                        using (HttpClient hc = new CompressedHttpClient())
-                            data = hc.GetStringAsync(Index()).Result;
+                        string source = Index();
+                        StringLocker cacheLocker;
+                        lock (sharedCache) {
+                            if (!sharedCache.TryGetValue(source, out cacheLocker)) {
+                                sharedCache.Add(source, cacheLocker = new StringLocker());
+                            }
+                        }
+
+                        lock (cacheLocker) {
+                            // When we're here, either some other task left us the result in the locker,
+                            // or we're the one that has to fetch the source and put the result in the locker.
+                            // Others won't touch the locker while this happens, so we won't get multiple
+                            // requests to the same source.
+                            if (cacheLocker.String != null) {
+                                Logger.Verbose("updater", "Got value from shared cache for source: " + source);
+                                data = cacheLocker.String;
+                            } else {
+                                Logger.Debug("updater", "Attempting to download update list from source: " + source);
+                                using (HttpClient hc = new CompressedHttpClient())
+                                    data = hc.GetStringAsync(source).Result;
+                                cacheLocker.String = data;
+                                Logger.Verbose("updater", "Download from source done, releasing locker: " + source);
+                            }
+                        }
                     } catch (Exception e) {
                         ErrorDialog = "updater_versions_err_download";
                         Logger.Warn("updater", "Failed requesting index: " + e.ToString());
@@ -175,6 +199,9 @@ namespace Celeste.Mod {
                     tasks[i] = Sources[i].Request();
                 }
                 return Task.Factory.ContinueWhenAll(tasks, finished => {
+                    lock (sharedCache) sharedCache.Clear();
+                    Logger.Verbose("updater", "Flushed shared cache");
+
                     List<Entry> all = new List<Entry>();
                     foreach (Source source in Sources) {
                         if (source.Entries == null || source.Name != CoreModule.Settings.CurrentBranch)
@@ -201,18 +228,21 @@ namespace Celeste.Mod {
             }
 
             private static string _everestUpdaterDatabaseURL;
+            private static readonly object _getUpdaterURLLock = new object();
 
             private static string GetEverestUpdaterDatabaseURL() {
-                if (string.IsNullOrEmpty(_everestUpdaterDatabaseURL)) {
-                    using (HttpClient hc = new CompressedHttpClient()) {
-                        Logger.Verbose("updater", "Fetching everest updater database URL");
+                lock (_getUpdaterURLLock) {
+                    if (string.IsNullOrEmpty(_everestUpdaterDatabaseURL)) {
+                        using (HttpClient hc = new CompressedHttpClient()) {
+                            Logger.Verbose("updater", "Fetching everest updater database URL");
 
-                        UriBuilder uri = new UriBuilder(hc.GetStringAsync("https://everestapi.github.io/everestupdater.txt").Result.Trim());
-                        if ((uri.Query?.Length ?? 0) > 1)
-                            uri.Query = uri.Query.Substring(1) + "&supportsNativeBuilds=true";
-                        else
-                            uri.Query = "supportsNativeBuilds=true";
-                        _everestUpdaterDatabaseURL = uri.ToString();
+                            UriBuilder uri = new UriBuilder(hc.GetStringAsync("https://everestapi.github.io/everestupdater.txt").Result.Trim());
+                            if ((uri.Query?.Length ?? 0) > 1)
+                                uri.Query = uri.Query.Substring(1) + "&supportsNativeBuilds=true";
+                            else
+                                uri.Query = "supportsNativeBuilds=true";
+                            _everestUpdaterDatabaseURL = uri.ToString();
+                        }
                     }
                 }
                 return _everestUpdaterDatabaseURL;

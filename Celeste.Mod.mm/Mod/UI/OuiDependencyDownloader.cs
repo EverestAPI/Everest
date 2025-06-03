@@ -205,17 +205,18 @@ namespace Celeste.Mod.UI {
                             // remove the mod from the loaded blacklist
                             Everest.Loader._Blacklist.RemoveWhere(item => item == modFilename);
 
-                            // hot load the mod
-                            if (modFilename.EndsWith(".zip")) {
-                                Everest.Loader.LoadZip(Path.Combine(Everest.Loader.PathMods, modFilename));
-                            } else {
-                                Everest.Loader.LoadDir(Path.Combine(Everest.Loader.PathMods, modFilename));
+                            if (!shouldRestart) { // don't waste time hot loading since we're restarting anyway
+                                // hot load the mod
+                                if (modFilename.EndsWith(".zip")) {
+                                    Everest.Loader.LoadZip(Path.Combine(Everest.Loader.PathMods, modFilename));
+                                } else {
+                                    Everest.Loader.LoadDir(Path.Combine(Everest.Loader.PathMods, modFilename));
+                                }
                             }
                         } catch (Exception e) {
                             // something bad happened during the mod hot loading, log it and prompt to restart the game to load the mod.
                             LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED"));
                             Logger.LogDetailed(e);
-                            shouldAutoExit = false;
                             shouldRestart = true;
                             break;
                         }
@@ -480,7 +481,17 @@ namespace Celeste.Mod.UI {
                         File.Delete(installDestination);
                     }
                     File.Move(downloadDestination, installDestination);
-                    Everest.Loader.LoadZip(installDestination);
+
+                    try {
+                        if (!shouldRestart) { // don't waste time hot loading since we're restarting anyway
+                            Everest.Loader.LoadZip(installDestination);
+                        }
+                    } catch (Exception e) {
+                        // something bad happened during the mod hot loading, log it and prompt to restart the game to load the mod.
+                        LogLine(string.Format(Dialog.Clean("DEPENDENCYDOWNLOADER_HOTLOAD_FAILED"), mod.Name));
+                        Logger.LogDetailed(e);
+                        shouldRestart = true;
+                    }
                 }
 
             } catch (Exception e) {

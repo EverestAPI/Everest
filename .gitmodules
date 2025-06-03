@@ -5,3 +5,7 @@
 [submodule "external/NLua"]
 	path = external/NLua
 	url = https://github.com/EverestAPI/NLua
+[submodule "lib-ext"]
+	path = lib-ext
+	url = https://github.com/EverestAPI/Everest-libs
+	branch = binaries

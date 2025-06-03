@@ -20,7 +20,7 @@
 
 # Helper Postcards // Pocztówki Wspomagające
 	POSTCARD_LEVELGONE=			{big}Dziękuję ((player))!{/big}{n}Ale niestety {#ff1144}((sid)){#} jest na innej górze.
-	POSTCARD_LEVELLOADFAILED=	{big}Przykro mi!{/big}{n}Ale nie udało się załadować {#ff1144}((sid)){#}.{n}Wyślij swój {#44adf7}log.txt{#}{n}do twórcy mapy.
+	POSTCARD_LEVELLOADFAILED=	{big}Przykro mi!{/big}{n}Ale nie udało się załadować {#ff1144}((sid)){#}.{n}Sprawdź ostatnie błędy w pliku {#44adf7}log.txt{#} i jeśli będziesz zgłaszać ten problem autorowi mapy lub komuś, kto zna się na problemach technicznych, pamiętaj, aby go dołączyć!
 	POSTCARD_LEVELNOSPAWN=		{big}Ups!{/big}{n}Ktoś zagubił {#44adf7}punkt startowy!{#}{n}Sprawdź, czy twoja mapa{n}zawiera obiekt typu {#44adf7}Player{#}.
 	POSTCARD_BADTILEID=			{big}Ups!{/big}{n}Znaleziono niezdefiniowany kafelek ((type)) o id {#ff1144}((id)){#} w punkcie{n}{#ff1144}(((x)), ((y))){#} w pokoju {#ff1144}((room)){#}.{n}Sprawdź swój {#44adf7}log.txt{#} by uzyskać więcej informacji.
 	POSTCARD_DECALREGERROR=		{big}Ups!{/big}{n}Wystąpił błąd podczas zastosowywania{n}własności {#ff1144}((property)){#} dla {#ff1144}((decal)){#}{n}Być może masz brakującą lub nieprawidłową własność w swoim {#44adf7}Decal Registry{#}.

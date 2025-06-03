@@ -254,11 +254,28 @@ namespace Celeste {
                     area.CassseteNoteColor = Calc.HexToColor("33a9ee");
                     area.CassetteSong = SFX.cas_01_forsaken_city;
 
+                    // Custom values can be set via the MapMeta.
+                    MapMeta meta = new MapMeta();
+                    meta.ApplyTo(area);
+                    MapMeta metaLoaded = asset.GetMeta<MapMeta>();
+                    if (metaLoaded != null) {
+                        area.Meta = null;
+                        metaLoaded.ApplyTo(area);
+                        meta = metaLoaded;
+                    }
+
                     if (string.IsNullOrEmpty(area.Mode[0].Path))
                         area.Mode[0].Path = asset.PathVirtual.Substring(5);
 
                     // Some of the game's code checks for [1] / [2] explicitly.
                     // Let's just provide null modes to fill any gaps.
+                    meta.Modes = meta.Modes ?? new MapMetaModeProperties[3];
+                    if (meta.Modes.Length < 3) {
+                        MapMetaModeProperties[] larger = new MapMetaModeProperties[3];
+                        for (int i = 0; i < meta.Modes.Length; i++)
+                            larger[i] = meta.Modes[i];
+                        meta.Modes = larger;
+                    }
                     if (area.Mode.Length < 3) {
                         patch_ModeProperties[] larger = new patch_ModeProperties[3];
                         for (int i = 0; i < area.Mode.Length; i++)
@@ -274,6 +291,7 @@ namespace Celeste {
 
                     // Some special handling.
                     area.OnLevelBegin = (level) => {
+                        MapMeta levelMeta = patch_AreaData.Get(level.Session).Meta;
                         MapMetaModeProperties levelMetaMode = ((patch_MapData) level.Session.MapData).Meta;
 
                         if (levelMetaMode?.SeekerSlowdown ?? false)
@@ -297,25 +315,30 @@ namespace Celeste {
                 }
             }
 
+            // Sort areas.
+            Areas.Sort(AreaComparison);
+
+            // Remove AreaDatas which are now a mode of another AreaData.
+            // This can happen late as the map data (.bin) can contain additional metadata.
             for (int i = 0; i < Areas.Count; i++) {
-                // Check for .bins possibly belonging to A side .bins by their path and lack of existing modes.
                 patch_AreaData area = Areas[i];
                 string path = area.Mode[0].Path;
+                int otherIndex = Areas.FindIndex(other => other.Mode.Any(otherMode => otherMode?.Path == path));
+                if (otherIndex != -1 && otherIndex != i) {
+                    Areas.RemoveAt(i);
+                    i--;
+                    continue;
+                }
+
                 ParseName(path, out int? order, out AreaMode side, out string name);
-                if (side == AreaMode.Normal) continue;
 
-                Logger.Verbose("AreaData", $"Checking for area to attach {side} {i} ({area.Mode[0].Path}) to...");
-
+                // Also check for .bins possibly belonging to A side .bins by their path and lack of existing modes.
                 for (int ii = 0; ii < Areas.Count; ii++) {
                     patch_AreaData other = Areas[ii];
                     ParseName(other.Mode[0].Path, out int? otherOrder, out AreaMode otherSide, out string otherName);
-                    if (otherSide != AreaMode.Normal) continue;
 
                     if (area.LevelSet == other.LevelSet && order == otherOrder && name == otherName && side != otherSide &&
                         !other.HasMode(side)) {
-
-                        Logger.Verbose("AreaData", $"Found: {ii} ({other.Mode[0].Path})");
-
                         if (other.Mode[(int) side] == null)
                             other.Mode[(int) side] = new patch_ModeProperties {
                                 Inventory = PlayerInventory.Default,
@@ -333,12 +356,6 @@ namespace Celeste {
                 patch_AreaData area = Areas[i];
                 area.ID = i;
 
-                // Add the A side MapData or update its area key.
-                if (area.Mode[0].MapData != null)
-                    area.Mode[0].MapData.Area = area.ToKey();
-                else
-                    area.Mode[0].MapData = new patch_MapData(area.ToKey());
-
                 // Clean up non-existing modes.
                 int modei = 0;
                 for (; modei < area.Mode.Length; modei++) {
@@ -349,6 +366,14 @@ namespace Celeste {
                 Array.Resize(ref area.Mode, modei);
 
                 Logger.Verbose("AreaData", string.Format("{0}: {1} - {2} sides", i, area.SID, area.Mode.Length));
+
+                // Update old MapData areas and load any new areas.
+
+                // Add the A side MapData or update its area key.
+                if (area.Mode[0].MapData != null)
+                    area.Mode[0].MapData.Area = area.ToKey();
+                else
+                    area.Mode[0].MapData = new patch_MapData(area.ToKey());
 
                 if (area.IsInterludeUnsafe())
                     continue;
@@ -371,25 +396,6 @@ namespace Celeste {
                     else
                         area.Mode[mode].MapData = new patch_MapData(area.ToKey((AreaMode) mode));
                 }
-            }
-            
-            // Sort areas.
-            Areas.Sort(AreaComparison);
-
-            for (int i = 0; i < Areas.Count; i++) {
-                // Remove AreaDatas which are now a mode of another AreaData.
-                // This can happen late as the map data (.bin) can contain additional metadata.
-                patch_AreaData area = Areas[i];
-                string path = area.Mode[0].Path;
-                int otherIndex = Areas.FindIndex(other => other.Mode.Any(otherMode => otherMode?.Path == path));
-                if (otherIndex != -1 && otherIndex != i) {
-                    Logger.Verbose("AreaData", $"Removing area {i} since it has the same path {path} as one of area {otherIndex}'s modes");
-                    Areas.RemoveAt(i);
-                    i--;
-                }
-            }
-            for (int i = 0; i < Areas.Count; i++) {
-                Areas[i].ID = i;
             }
 
             // Load custom mountains

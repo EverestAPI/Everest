@@ -7,6 +7,9 @@ using System.Runtime.InteropServices;
 namespace MiniInstaller {
     public static partial class Program {
         public static int Main(string[] args) {
+            // Forward to MonoModRules
+            AppDomain.CurrentDomain.SetData("Everest_IsHeadless", args.Contains("headless"));
+
             if (args.Length == 0) return StandardMode(args);
             if (args[0] == "--fastmode") return FastMode(args);
             return StandardMode(args);
@@ -20,12 +23,11 @@ namespace MiniInstaller {
 
             // Set working directory
             Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!);
-            
+
             if (!Globals.SetupPaths()) {
                 // setting up paths failed (Celeste.exe was not found).
                 return false;
             }
-            
             
             Globals.DetermineInstallPlatform();
 

@@ -444,7 +444,7 @@ namespace Monocle {
                 if (index < 0 || index >= list.Count) {
                     Logger.Warn("Atlas", $"Requested atlas subtexture that falls out of range: {RelativeDataPath}{key} {index}");
                     return GetFallback();
-                } 
+                }
                 return list[index];
             }
 

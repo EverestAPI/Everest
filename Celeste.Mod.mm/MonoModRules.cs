@@ -38,11 +38,18 @@ namespace MonoMod {
     class PatchInitblkAttribute : Attribute { }
 
     /// <summary>
+    /// Patches an extern method to be stubbed. Uses default values for return type / out-parameters
+    /// </summary>
+    [MonoModIfFlag("Headless")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchStubExtern))]
+    class PatchStubExternAttribute : Attribute { }
+
+    /// <summary>
     /// Forces NoInlining onto a given member.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.ForceNoInlining))]
     class ForceNoInliningAttribute : Attribute { }
-    #endregion
+#endregion
 
     static partial class MonoModRules {
 
@@ -107,6 +114,9 @@ namespace MonoMod {
             AssemblyNameReference monoModderAsmRef = RulesModule.AssemblyReferences.First(a => a.Name == monoModderAsmName);
             if (MonoModder.Version < monoModderAsmRef.Version)
                 throw new Exception($"Unexpected version of MonoMod patcher: {MonoModder.Version} (expected {monoModderAsmRef.Version}+)");
+
+            // Data is set by MiniInstaller
+            MonoModRule.Flag.Set("Headless", (bool?)AppDomain.CurrentDomain.GetData("Everest_IsHeadless") ?? false);
 
             // Add common post processor
             modder.PostProcessors += CommonPostProcessor;
@@ -223,6 +233,81 @@ namespace MonoMod {
 
             if (!match) {
                 throw new Exception("No call to _initblk found in " + il.Method.FullName + "!");
+            }
+        }
+
+        public static void PatchStubExtern(MethodDefinition method, CustomAttribute attrib) {
+            method.Attributes &= ~(MethodAttributes.PInvokeImpl | MethodAttributes.CompilerControlled | MethodAttributes.HideBySig);
+
+            ILContext il = new ILContext(method);
+            ILCursor cursor = new ILCursor(il);
+
+            TypeDefinition returnType = method.ReturnType.Resolve();
+
+            // Insert 'outParam = default;'
+            foreach (ParameterDefinition param in method.Parameters) {
+                if (!param.IsOut) continue;
+
+                TypeDefinition paramType = param.ParameterType.Resolve();
+                TypeReference enumType = paramType.IsEnum ? GetEnumUnderlyingType(paramType) : null;
+
+                if (paramType.FullName is "System.Byte" or "System.SByte" || enumType?.FullName is "System.Byte" or "System.SByte") {
+                    cursor.EmitLdarg(param.Index);
+                    cursor.EmitLdcI4(0);
+                    cursor.EmitStindI1();
+                } else if (paramType.FullName is "System.Int16" or "System.UInt16" || enumType?.FullName is "System.Int16" or "System.UInt16") {
+                    cursor.EmitLdarg(param.Index);
+                    cursor.EmitLdcI4(0);
+                    cursor.EmitStindI2();
+                } else if (paramType.FullName is "System.Int32" or "System.UInt32" || enumType?.FullName is "System.Int32" or "System.UInt32") {
+                    cursor.EmitLdarg(param.Index);
+                    cursor.EmitLdcI4(0);
+                    cursor.EmitStindI4();
+                } else if (paramType.FullName is "System.Int64" or "System.UInt64" || enumType?.FullName is "System.Int64" or "System.UInt64") {
+                    cursor.EmitLdarg(param.Index);
+                    cursor.EmitLdcI8(0);
+                    cursor.EmitStindI8();
+                } else if (paramType.FullName is "System.IntPtr" or "System.UIntPtr" || enumType?.FullName is "System.IntPtr" or "System.UIntPtr") {
+                    cursor.EmitLdarg(param.Index);
+                    cursor.EmitLdcI4(0);
+                    cursor.EmitConvI();
+                    cursor.EmitStindI();
+                } else if (paramType.FullName is "System.Single" || enumType?.FullName is "System.Single") {
+                    cursor.EmitLdarg(param.Index);
+                    cursor.EmitLdcR4(0.0f);
+                    cursor.EmitStindR4();
+                } else if (paramType.FullName is "System.Double" || enumType?.FullName is "System.Double") {
+                    cursor.EmitLdarg(param.Index);
+                    cursor.EmitLdcR8(0.0);
+                    cursor.EmitStindR8();
+                } else if (paramType.IsValueType) {
+                    cursor.EmitLdarg(param.Index);
+                    cursor.EmitInitobj(MonoModRule.Modder.Module.ImportReference(paramType));
+                } else {
+                    cursor.EmitLdarg(param.Index);
+                    cursor.EmitLdnull();
+                    cursor.EmitStindRef();
+                }
+            }
+
+            // Insert 'return default;'
+            if (returnType.FullName == "System.Void") {
+                cursor.EmitRet();
+            } else if (returnType.IsPrimitive || returnType.IsEnum) {
+                cursor.EmitLdcI4(0);
+                cursor.EmitRet();
+            } else if (!returnType.IsValueType) {
+                cursor.EmitLdnull();
+                cursor.EmitRet();
+            } else {
+                throw new Exception($"Unsupported return type '{returnType.FullName}' of method '{method.FullName}' to be stubbed");
+            }
+
+            return;
+
+            // Adapted from Mono.Cecil.Rocks.TypeDefinitionsRock.GetEnumUnderlyingType
+            static TypeReference GetEnumUnderlyingType(TypeDefinition enumType) {
+                return enumType.Fields.First(f => !f.IsStatic).FieldType;
             }
         }
 

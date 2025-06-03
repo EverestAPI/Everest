@@ -15,6 +15,7 @@ using System.Threading;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using MonoMod.InlineRT;
 using MonoMod.Utils;
 using System.Text.RegularExpressions;
 using System.Text;
@@ -28,12 +29,17 @@ namespace Celeste {
         // We're effectively in Celeste, but still need to "expose" private fields to our mod.
         private bool firstLoad;
 
-        
+
+        // Method needs to be created dynamically, since the headless state is only known during MMR
+        [PatchCelesteSetHeadlessFlag]
+        private static void SetHeadlessFlag() {}
 
         [PatchCelesteMain]
         public static extern void orig_Main(string[] args);
         [MonoModPublic]
         public static void Main(string[] args) {
+            SetHeadlessFlag();
+
             if (Thread.CurrentThread.Name != "Main Thread") {
                 Thread.CurrentThread.Name = "Main Thread";
             }
@@ -198,7 +204,7 @@ namespace Celeste {
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
 
             // Get the splash up and running asap
-            if (!args.Contains("--disable-splash") && File.Exists(Path.Combine(".", "EverestSplash", "EverestSplash.dll"))) {
+            if (!Everest.Flags.IsHeadless && !args.Contains("--disable-splash") && File.Exists(Path.Combine(".", "EverestSplash", "EverestSplash.dll"))) {
                 string targetRenderer = "";
                 for (int i = 0; i < args.Length; i++) { // The splash will use the same renderer as fna
                     if (args[i] == "--graphics" && args.Length > i + 1) {
@@ -236,11 +242,16 @@ namespace Celeste {
 
             SetEnvVar("FNA_AUDIO_DISABLE_SOUND", "1");
             for (int i = 0; i < args.Length; i++) {
-                if (args[i] == "--graphics" && i < args.Length - 1) {
+                if (!Everest.Flags.IsHeadless && args[i] == "--graphics" && i < args.Length - 1) {
                     SetEnvVar("FNA3D_FORCE_DRIVER", args[i + 1]);
                     i++;
                 }
                 // No --disable-lateswaptear as that is now explicitly opt-in
+            }
+
+            // Force "Headless" driver
+            if (Everest.Flags.IsHeadless) {
+                SetEnvVar("FNA3D_FORCE_DRIVER", "Headless");
             }
         }
 
@@ -294,14 +305,7 @@ https://discord.gg/6qjaePQ");
         [MonoModConstructor]
         [MonoModOriginalName("orig_ctor_Celeste")] // For Everest.Installer
         public void ctor() {
-            // Everest.Flags aren't initialized this early.
-            if (Environment.GetEnvironmentVariable("EVEREST_HEADLESS") == "1") {
-                Instance = this;
-                Version = new Version(0, 0, 0, 0);
-                Console.WriteLine("CELESTE HEADLESS VIA EVEREST");
-            } else {
-                orig_ctor_Celeste();
-            }
+            orig_ctor_Celeste();
 
             Logger.Info("boot", $"Active compatibility mode: {Everest.CompatibilityMode}");
 
@@ -385,6 +389,12 @@ https://discord.gg/6qjaePQ");
 
 namespace MonoMod {
     /// <summary>
+    /// Patch the original Celeste constructor, to set the state of headless mode
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCelesteSetHeadlessFlag))]
+    class PatchCelesteSetHeadlessFlagAttribute : Attribute { }
+
+    /// <summary>
     /// Patch the original Celeste entry point instead of reimplementing it in Everest.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCelesteMain))]
@@ -392,8 +402,20 @@ namespace MonoMod {
 
     static partial class MonoModRules {
 
+        public static void PatchCelesteSetHeadlessFlag(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(context);
+
+            TypeDefinition t_Flags = MonoModRule.Modder.Module.GetType("Celeste.Mod.Everest/Flags");
+            MethodReference m_Flags_setIsHeadless = MonoModRule.Modder.Module.ImportReference(t_Flags.FindProperty("IsHeadless")!.SetMethod);
+
+            // Insert 'Everest.Flags.IsHeadless = <true/false>'
+            cursor.EmitLdcI4(MonoModRule.Flag.Get("Headless") ? 1 : 0);
+            cursor.EmitCall(m_Flags_setIsHeadless);
+        }
+
         public static void PatchCelesteMain(ILContext context, CustomAttribute attrib) {
             ILCursor cursor = new ILCursor(context);
+
             // TryGotoNext used because SDL_GetPlatform does not exist on XNA
             if (cursor.TryGotoNext(instr => instr.MatchCall("SDL2.SDL", "SDL_GetPlatform"))) {
                 cursor.Next.OpCode = OpCodes.Ldstr;
