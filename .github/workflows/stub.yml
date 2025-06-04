@@ -1,0 +1,12 @@
+name: stub
+
+on:
+  pull_request:
+    branches: [ dev ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - run: echo success
