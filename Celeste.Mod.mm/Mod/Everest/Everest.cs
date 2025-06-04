@@ -319,6 +319,7 @@ namespace Celeste.Mod {
             Logger.Info("core", $"VersionCelesteString: {VersionCelesteString}");
             Logger.Info("core", $"SystemMemoryMB: {SystemMemoryMB:F3} MB");
             Logger.Info("core", $"RuntimeVersion: {Environment.Version}");
+            Logger.Info("core", "TAS Madness was here");
 
             if (Type.GetType("Mono.Runtime") != null) {
                 // Mono hates HTTPS.
