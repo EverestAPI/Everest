@@ -25,7 +25,7 @@ namespace Celeste {
 
             for (int i = 0; i < Slots.Count() - 1; i++) { // - 1, last slot is always empty
                 if (!Slots[i].Exists && Directory.GetFiles(saveFilePath, $"{i}-mod*.celeste").Length > 0) {
-                    Logger.Warn("save", $"Save slot {i} have modded data but no save file, flagging as corrupted");
+                    Logger.Warn("OuiFileSelect", $"Save slot {i} has modded data but no vanilla save data, flagging as corrupted");
                     ((patch_OuiFileSelectSlot) Slots[i]).MissingVanillaData = true;
                     Slots[i].Corrupted = true;
                     Slots[i].Exists = true; // both `Corrupted` and `Exists` flags must be set

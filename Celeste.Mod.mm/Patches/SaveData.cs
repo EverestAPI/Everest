@@ -303,11 +303,13 @@ namespace Celeste {
             if (Directory.Exists(saveFilePath))
                 vanillaExists = File.Exists(Path.Combine(saveFilePath, $"{slot}.celeste"));
 
-            if (vanillaExists)
-                if (!orig_TryDelete(slot))
+            if (vanillaExists) {
+                if (!orig_TryDelete(slot)) {
                     return false;
+                }
+            }
             else
-                Logger.Warn("save", $"Deleting save data for slot {slot} which have no vanilla data");
+                Logger.Warn("SaveData", $"Deleting save data for slot {slot} which has no vanilla data");
 
             return TryDeleteModSaveData(slot);
         }
