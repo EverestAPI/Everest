@@ -104,6 +104,9 @@ namespace MonoMod {
 
             // Remove patches targeting game dependencies
             RemoveDependencyPatches();
+
+            // Downgrade to SDL2 until SDL3 support is added
+            RelinkSDLCalls(modder, 3, 2);
         }
 
         private static Version DetermineGameVersion(MonoModder modder) {
@@ -211,6 +214,16 @@ namespace MonoMod {
             }
 
             il.Emit(OpCodes.Ret);
+        }
+
+        public static void RelinkSDLCalls(MonoModder modder, int fromVersion, int toVersion) {
+            if (fromVersion == toVersion) return;
+
+            // Vanilla does a few sdl calls, Celeste 1.4.1.0 is supposed to ship with SDL3 instead, so downgrade those
+            modder.RelinkMap[$"System.String SDL{fromVersion}.SDL::SDL_GetPlatform()"] =
+                new RelinkMapEntry($"SDL{toVersion}.SDL", "System.String SDL_GetPlatform()");
+            modder.RelinkMap[$"System.String SDL{fromVersion}.SDL::SDL_GetPrefPath(System.String,System.String)"] =
+                new RelinkMapEntry($"SDL{toVersion}.SDL", "System.String SDL_GetPrefPath(System.String,System.String)");
         }
 
 #region Game Patches
