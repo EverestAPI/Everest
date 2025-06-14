@@ -13,4 +13,9 @@
     <ProjectReference Include="..\external\MonoMod\src\MonoMod.Utils\MonoMod.Utils.csproj" />
   </ItemGroup>
 
+  <!-- Anonymize paths -->
+  <PropertyGroup>
+    <PathMap>$(MSBuildProjectDirectory)=NETCoreifier/</PathMap>
+  </PropertyGroup>
+
 </Project>

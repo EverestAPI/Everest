@@ -267,7 +267,8 @@ namespace Celeste {
             }
 
             bool fillTile = true;
-            char[] adjacent = new char[width * height];
+            Span<char> adjacent = stackalloc char[width * height];
+            Span<bool> adjacentPresent = stackalloc bool[width * height]; // Whether a tile is present (not air and not ignored).
 
             int idx = 0;
             for (int yOffset = 0; yOffset < height; yOffset++) {
@@ -277,6 +278,7 @@ namespace Celeste {
                     if (!tilePresent && behaviour.EdgesIgnoreOutOfLevel && !CheckForSameLevel(x, y, x + xOffset, y + yOffset)) {
                         tilePresent = true;
                     }
+                    adjacentPresent[idx] = tilePresent;
                     adjacent[idx++] = adjTile;
                     if (!tilePresent)
                         fillTile = false;
@@ -302,12 +304,12 @@ namespace Celeste {
                     if (item.Mask[i] == 2) // Matches Any
                         continue;
 
-                    if (item.Mask[i] == 1 && IsEmpty(adjacent[i])) {
+                    if (item.Mask[i] == 1 && !adjacentPresent[i]) {
                         matched = false;
                         break;
                     }
 
-                    if (item.Mask[i] == 0 && !IsEmpty(adjacent[i])) {
+                    if (item.Mask[i] == 0 && adjacentPresent[i]) {
                         matched = false;
                         break;
                     }

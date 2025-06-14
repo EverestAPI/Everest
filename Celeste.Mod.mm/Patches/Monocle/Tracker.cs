@@ -5,6 +5,7 @@ using Celeste.Mod.Helpers;
 using MonoMod;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -194,6 +195,64 @@ namespace Monocle {
                 }
                 tracker.EntityAdded(entity);
             }
+        }
+
+        /// <summary>
+        /// Gets all entities of the given type, adding that type to the tracker if needed.
+        /// </summary>
+        public List<Entity> GetEntitiesTrackIfNeeded<T>() where T : Entity
+            => GetEntitiesTrackIfNeeded(typeof(T));
+        
+        /// <summary>
+        /// Gets all components of the given type, adding that type to the tracker if needed.
+        /// </summary>
+        public List<Component> GetComponentsTrackIfNeeded<T>() where T : Component
+            => GetComponentsTrackIfNeeded(typeof(T));
+        
+        /// <summary>
+        /// Gets all entities of the given type, adding that type to the tracker if needed.
+        /// Will throw an exception when the type does not derive from Entity.
+        /// </summary>
+        public List<Entity> GetEntitiesTrackIfNeeded(Type type) {
+            if (Entities.TryGetValue(type, out var tracked))
+                return tracked;
+
+            // We only validate the type on the cold path
+            // - if the type does not derive from Entity, it couldn't have been added to Entities in the first place.
+            if (!typeof(Entity).IsAssignableFrom(type))
+                throw new Exception($"Type '{type}' does not derive from Entity.");
+
+            AddTypeToTracker(type);
+            Refresh();
+            
+            if (Entities.TryGetValue(type, out tracked))
+                return tracked;
+
+            // Should never happen
+            throw new UnreachableException($"Tracking type '{type}' failed for an unknown reason!");
+        }
+        
+        /// <summary>
+        /// Gets all components of the given type, adding that type to the tracker if needed.
+        /// Will throw an exception when the type does not derive from Component.
+        /// </summary>
+        public List<Component> GetComponentsTrackIfNeeded(Type type) {
+            if (Components.TryGetValue(type, out var tracked))
+                return tracked;
+
+            // We only validate the type on the cold path
+            // - if the type does not derive from Component, it couldn't have been added to Components in the first place.
+            if (!typeof(Component).IsAssignableFrom(type))
+                throw new Exception($"Type '{type}' does not derive from Component.");
+
+            AddTypeToTracker(type);
+            Refresh();
+            
+            if (Components.TryGetValue(type, out tracked))
+                return tracked;
+
+            // Should never happen
+            throw new UnreachableException($"Tracking type '{type}' failed for an unknown reason!");
         }
     }
 }

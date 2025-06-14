@@ -199,6 +199,180 @@ namespace Celeste.Mod {
                 throw new UnreachableException();
         }
 
+        private string CalcChecksumForFile(string path) {
+            if (!string.IsNullOrEmpty(ModuleMeta.PathArchive)) {
+                return ModuleMeta.Hash.ToHexadecimalString();
+            } else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory)) {
+                return Everest.GetChecksum(path).ToHexadecimalString();
+            } else throw new UnreachableException();
+        }
+
+        /// <summary>
+        /// Calculates the checksums used to cache the assembly in any relevant
+        /// caches (like the relinker cache).
+        /// </summary>
+        /// <param name="path">The path of the assembly inside of the mod.</param>
+        /// <param name="symPath">The path of the assembly's symbols inside of mod, or null.</param>
+        /// <returns>The calculated checksums for the file.</returns>
+        public AsmChecksums CalcAssemblyCacheChecksums(string path, string symPath) {
+            Dictionary<string, string> depChecksums = new();
+            FillChecksums(depChecksums, ModuleMeta.Dependencies);
+            
+            Dictionary<string, string> optDepChecksums = new();
+            FillChecksums(optDepChecksums, ModuleMeta.OptionalDependencies);
+            
+            return new AsmChecksums(
+                Everest.Relinker.GameChecksum, 
+                CalcChecksumForFile(path), 
+                symPath != null ? CalcChecksumForFile(symPath) : "",
+                depChecksums,
+                optDepChecksums);
+
+            static void FillChecksums(Dictionary<string, string> dict, List<EverestModuleMetadata> deps) {
+                foreach (EverestModuleMetadata depMeta in deps) {
+                    if (depMeta.Name == CoreModule.NETCoreMetaName || depMeta.Name == "Everest") continue;
+                    EverestModule actualModule = Everest.Modules.FirstOrDefault(m => m.Metadata.Name == depMeta.Name, null);
+                    if (actualModule == null) continue;
+                    dict[depMeta.Name] = actualModule.Metadata.Hash.ToHexadecimalString();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Represents all the checksum data for an assembly, either from the cache or
+        /// from one that's about to be loaded.
+        /// </summary>
+        public sealed record AsmChecksums(
+            string GameChecksum,
+            string FileChecksum,
+            string SymFileChecksum = "",
+            Dictionary<string, string> DepHashes = null,
+            Dictionary<string, string> OptDepHashes = null) {
+
+            public static readonly AsmChecksums Empty = new("", "");
+
+            /// <summary>
+            /// Writes the data to a file, see <see cref="ReadFromFile"/> for a description
+            /// of the file format.
+            /// </summary>
+            /// <param name="path">The path to the file to write to.</param>
+            public void WriteToFile(string path) {
+                List<string> lines = new();
+                lines.Add(GameChecksum);
+                lines.Add(FileChecksum);
+                lines.Add(SymFileChecksum ?? "");
+
+                WriteAsLines(DepHashes);
+                
+                lines.Add("");
+                
+                WriteAsLines(OptDepHashes);
+                
+                File.WriteAllLines(path, lines);
+                return;
+
+                void WriteAsLines(Dictionary<string, string> dict) {
+                    foreach ((string metaName, string hash) in dict) {
+                        lines.Add($"{metaName}:{hash}");
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Creates an instance from a file, format is as following:
+            /// We take all the data and partition it on each new line character into strings, keeping empty strings.
+            /// Then, the first element will be the game checksum, the second one, the file checksum,
+            /// the third one, the symbol file (pdb) checksum, or empty an empty string if it doesn't exist or we are working with
+            /// archives (zips).
+            /// After the third element, each element is of the format `Name:Hash`, where Name is the meta name and
+            /// Hash is the hash for that meta, this represents a dependency. Until an empty element, which marks the
+            /// end of the dependencies list. After this element and until the end of file, the optional dependencies list follow
+            /// in the same format.
+            /// </summary>
+            /// <param name="path">Path to read from.</param>
+            /// <returns>A populated instance.</returns>
+            public static AsmChecksums ReadFromFile(string path) {
+                string[] data = File.ReadAllLines(path);
+                if (data.Length < 2) return Empty;
+                
+                string gameChecksum = data[0];
+                string fileChecksum = data[1];
+                if (data.Length <= 2) return new AsmChecksums(gameChecksum, fileChecksum);
+                string symChecksum = data[2];
+                if (data.Length <= 3) return new AsmChecksums(gameChecksum, fileChecksum, symChecksum);
+                Dictionary<string, string> depChecksums = new();
+                Dictionary<string, string> optDepChecksums = new();
+                
+                Dictionary<string, string> currentDict = depChecksums;
+                int index = 3;
+                while (index < data.Length) {
+                    if (data[index] == "") {
+                        if (currentDict == depChecksums) {
+                            currentDict = optDepChecksums;
+                            index++;
+                            continue;
+                        } else {
+                            // Malformed cache, return minimum data
+                            return new AsmChecksums(gameChecksum, fileChecksum, symChecksum);
+                        }
+                    }
+                    ReadOnlySpan<char> curr = data[index];
+                    int sepIdx = curr.LastIndexOf(':');
+                    if (sepIdx == -1) {
+                        // Malformed cache, return minimum data
+                        return new AsmChecksums(gameChecksum, fileChecksum, symChecksum);
+                    }
+                    
+                    ReadOnlySpan<char> metaName = curr[..sepIdx];
+                    ReadOnlySpan<char> metaHash = curr[(sepIdx + 1)..];
+                    currentDict[metaName.ToString()] = metaHash.ToString();
+                    
+                    index++;
+                }
+                return new AsmChecksums(gameChecksum, fileChecksum, symChecksum, depChecksums, optDepChecksums);
+            }
+
+            /// <summary>
+            /// Verifies whether the current instance is a valid in respect to the one passed in:
+            /// Game, file, and symbol checksums must always match for it to be valid, but
+            /// the requirements for dependencies and optional dependencies are different.
+            /// We consider this instance valid with respect to the one passed in, if for every dependency D present
+            /// in this instance, D is also present in <paramref name="other"/>, and it is associated with the same checksum.
+            /// The same reasoning goes with optional dependencies.
+            /// </summary>
+            /// <param name="other">The other cache to check with.</param>
+            /// <returns>Whether this is compatible with <paramref name="other"/></returns>
+            public bool IsValidWith(AsmChecksums other) {
+                if (other == null) return false;
+                if (GameChecksum != other.GameChecksum) return false;
+                if (FileChecksum != other.FileChecksum) return false;
+                if (SymFileChecksum != other.SymFileChecksum) return false;
+
+                if (!Check(DepHashes, other.DepHashes)) return false;
+
+                if (!Check(OptDepHashes, other.OptDepHashes)) return false;
+
+                return true;
+
+                static bool Check(Dictionary<string, string> dict, Dictionary<string, string> otherDict) {
+                    // A null list indicates no dependencies, thus, it always satisfies the requirements
+                    if (dict != null) {
+                        if (otherDict != null) {
+                            foreach ((string metaName, string hash) in dict) {
+                                if (!otherDict.TryGetValue(metaName, out string otherHash)) {
+                                    return false;
+                                }
+                                if (hash != otherHash) return false;
+                            }
+                        } else if (dict.Count != 0)
+                            // Having an empty and null list should be equivalent
+                            return false;
+                    }
+                    return true;
+                }
+            }
+        }
+
         /// <summary>
         /// Tries to load an assembly from a given path inside the mod.
         /// This path is an absolute path if the the mod was loaded from a directory, or a path into the mod ZIP otherwise.

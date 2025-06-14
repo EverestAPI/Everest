@@ -1,0 +1,38 @@
+name: TAS Sync Check
+
+on:
+  pull_request:
+    branches: [dev]
+
+jobs:
+  check:
+    strategy:
+      matrix:
+        tas:
+          - name: Celeste 100%
+            url: "https://github.com/VampireFlower/CelesteTAS/archive/60b1680e61e43ec4681d7c9053d249491e0fe905.zip"
+            path: "CelesteTAS-60b1680e61e43ec4681d7c9053d249491e0fe905/0 - 100%.tas"
+
+          - name: Strawberry Jam All Levels
+            url: "https://github.com/VampireFlower/StrawberryJamTAS/archive/c9c589a8ef225def5aca869cc1ed3eedf588ec14.zip"
+            path: "StrawberryJamTAS-c9c589a8ef225def5aca869cc1ed3eedf588ec14/0-SJ All Levels.tas"
+            bundle: "https://celestemodupdater.0x0a.de/pinned-mods/StrawberryJam2021-Bundle-134df0f4.zip"
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    name: ${{ matrix.tas.name }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Wait for Azure build on commit ${{ github.sha }}
+      run: cd .github/tas-check && ./1-get-build-url.sh "${{ github.sha }}"
+
+    - name: Install Everest and required mods
+      run: cd .github/tas-check && ./2-1-install.sh "${{ matrix.tas.url }}" "${{ matrix.tas.bundle }}"
+
+    - name: Run TAS at ${{ matrix.tas.path }}
+      run: cd .github/tas-check && ./3-run.sh "${{ matrix.tas.path }}"

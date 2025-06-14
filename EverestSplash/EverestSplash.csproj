@@ -53,4 +53,9 @@
         <CreateAppHost AppHostSourcePath="$(AppHost_osx-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_osx-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
     </Target>
 
+    <!-- Anonymize paths -->
+    <PropertyGroup>
+        <PathMap>$(MSBuildProjectDirectory)=EverestSplash/</PathMap>
+    </PropertyGroup>
+
 </Project>

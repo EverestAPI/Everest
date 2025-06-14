@@ -111,7 +111,7 @@ namespace Celeste.Mod {
                     Assembly asm = null;
 
                     // Try to load the assembly from the cache
-                    if (TryLoadCachedAssembly(meta, asmname, path, symPath, cachePath, cacheChecksumPath, out string[] checksums) is not Assembly cacheAsm) {
+                    if (TryLoadCachedAssembly(meta, asmname, path, symPath, cachePath, cacheChecksumPath, out EverestModuleAssemblyContext.AsmChecksums checksums) is not Assembly cacheAsm) {
                         // Delete cached files
                         File.Delete(cachePath);
                         File.Delete(cacheChecksumPath);
@@ -130,7 +130,7 @@ namespace Celeste.Mod {
                                 // Write the checksums for the cached assembly to be loaded in the future
                                 // Skip this step if the relinker had to fall back to using a temporary output file
                                 if (tmpOutPath == null)
-                                    File.WriteAllLines(cacheChecksumPath, checksums);
+                                    checksums.WriteToFile(cacheChecksumPath);
                             } catch (Exception e) {
                                 Logger.Warn("relinker", $"Failed relinking {meta} - {asmname}");
                                 Logger.LogDetailed(e);
@@ -145,21 +145,15 @@ namespace Celeste.Mod {
                 }
             }
 
-            private static Assembly TryLoadCachedAssembly(EverestModuleMetadata meta, string asmName, string inPath, string inSymPath, string cachePath, string cacheChecksumsPath, out string[] curChecksums) {
+            private static Assembly TryLoadCachedAssembly(EverestModuleMetadata meta, string asmName, string inPath, string inSymPath, string cachePath, string cacheChecksumsPath, out EverestModuleAssemblyContext.AsmChecksums curChecksums) {
                 // Calculate checksums
-                // If the stream originates from a 
-                List<string> checksums = new List<string>();
-                checksums.Add(GameChecksum);
-
-                meta.AssemblyContext.CalcAssemblyCacheChecksums(checksums, inPath, inSymPath);
-
-                curChecksums = checksums.ToArray();
+                curChecksums = meta.AssemblyContext.CalcAssemblyCacheChecksums(inPath, !string.IsNullOrEmpty(meta.PathArchive) ? null : inSymPath);
 
                 // Check if the cached assembly + its checksums exist on disk, and if the checksums match
                 if (!File.Exists(cachePath) || !File.Exists(cacheChecksumsPath))
                     return null;
 
-                if (!ChecksumsEqual(curChecksums, File.ReadAllLines(cacheChecksumsPath)))
+                if (!curChecksums.IsValidWith(EverestModuleAssemblyContext.AsmChecksums.ReadFromFile(cacheChecksumsPath)))
                     return null;
                 
                 Logger.Verbose("relinker", $"Loading cached assembly for {meta} - {asmName}");

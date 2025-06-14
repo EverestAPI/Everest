@@ -2,6 +2,7 @@ using Celeste.Mod.Backdrops;
 using Celeste.Mod.Core;
 using Celeste.Mod.Entities;
 using Celeste.Mod.Helpers;
+using Celeste.Mod.Registry;
 using MAB.DotIgnore;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -610,36 +611,68 @@ namespace Celeste.Mod {
 
                             patch_Level.EntityLoader loader = null;
 
-                            ConstructorInfo ctor;
+                            ConstructorInfo ctor = null;
                             MethodInfo gen;
 
                             gen = type.GetMethod(genName, new Type[] { typeof(Level), typeof(LevelData), typeof(Vector2), typeof(EntityData) });
                             if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
-                                loader = (level, levelData, offset, entityData) => (Entity) gen.Invoke(null, new object[] { level, levelData, offset, entityData });
+                                loader = (level, levelData, offset, entityData) => {
+                                    var entityId = ((patch_Level)level).CreateEntityId(levelData, entityData);
+                                    var entity = (patch_Entity) gen.Invoke(null, new object[] { level, levelData, offset, entityData });
+                                    if (entity != null) {
+                                        entity.SourceData = entityData;
+                                        entity.SourceId = entityId;
+                                    }
+                                    
+                                    return entity;
+                                };
                                 goto RegisterEntityLoader;
                             }
 
                             ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2), typeof(EntityID) });
                             if (ctor != null) {
-                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset, new EntityID(levelData.Name, entityData.ID + (patch_Level._isLoadingTriggers ? 10000000 : 0)) });
+                                loader = (level, levelData, offset, entityData) => {
+                                    var entityId = ((patch_Level)level).CreateEntityId(levelData, entityData);
+                                    var entity = (patch_Entity) ctor.Invoke(new object[] { entityData, offset, entityId });
+                                    entity.SourceData = entityData;
+                                    entity.SourceId = entityId;
+                                    
+                                    return entity;
+                                };
                                 goto RegisterEntityLoader;
                             }
 
                             ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2) });
                             if (ctor != null) {
-                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset });
+                                loader = (level, levelData, offset, entityData) => {
+                                    var entity = (patch_Entity)ctor.Invoke(new object[] { entityData, offset });
+                                    entity.SourceData = entityData;
+                                    entity.SourceId = ((patch_Level)level).CreateEntityId(levelData, entityData);
+                                    
+                                    return entity;
+                                };
                                 goto RegisterEntityLoader;
                             }
 
                             ctor = type.GetConstructor(new Type[] { typeof(Vector2) });
                             if (ctor != null) {
-                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { offset });
+                                loader = (level, levelData, offset, entityData) => {
+                                    var entity = (patch_Entity)ctor.Invoke(new object[] { offset });
+                                    entity.SourceData = entityData;
+                                    entity.SourceId = ((patch_Level)level).CreateEntityId(levelData, entityData);
+                                    return entity;
+                                };
                                 goto RegisterEntityLoader;
                             }
 
                             ctor = type.GetConstructor(Type.EmptyTypes);
                             if (ctor != null) {
-                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(null);
+                                loader = (level, levelData, offset, entityData) => {
+                                    var entity = (patch_Entity)ctor.Invoke(null);
+                                    entity.SourceData = entityData;
+                                    entity.SourceId = ((patch_Level)level).CreateEntityId(levelData, entityData);
+                                    return entity;
+                                };
                                 goto RegisterEntityLoader;
                             }
 
@@ -648,6 +681,13 @@ namespace Celeste.Mod {
                                 Logger.Warn("core", $"Found custom entity without suitable constructor / {genName}(Level, LevelData, Vector2, EntityData): {id} ({type.FullName})");
                                 continue;
                             }
+
+                            // Immediately register the connection when we're calling the ctor,
+                            // since we know the return type upfront.
+                            if (ctor != null) {
+                                EntityRegistry.RegisterSidToTypeConnection(id, ctor.DeclaringType);
+                            }
+                            
                             patch_Level.EntityLoaders[id] = loader;
                         }
                     }

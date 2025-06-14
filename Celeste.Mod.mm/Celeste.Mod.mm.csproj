@@ -93,4 +93,9 @@
     <Move SourceFiles="@(SplashBinaries)" DestinationFolder="$(PublishDir)\EverestSplash\" />
   </Target>
 
+  <!-- Anonymize paths -->
+  <PropertyGroup>
+    <PathMap>$(MSBuildProjectDirectory)=Celeste.Mod.mm/</PathMap>
+  </PropertyGroup>
+
 </Project>

@@ -1,5 +1,7 @@
 ﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
+using Celeste;
+using Celeste.Mod.Registry;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod;
@@ -8,6 +10,7 @@ using MonoMod.InlineRT;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Monocle {
     // No public constructors.
@@ -37,6 +40,19 @@ namespace Monocle {
         [MonoModIgnore]
         [PatchEntityListAdd]
         public extern void Add(Entity entity);
+
+        private void _HandleEntityData(Entity entity) {
+            if (patch_Level._currentEntityData is { } data && ((patch_Entity)entity).SourceData is null) {
+                ((patch_Entity)entity).SourceData = data;
+                ((patch_Entity)entity).SourceId = patch_Level._currentEntityId;
+                // We don't reset '_currentEntityData' here, in case an entity Adds entities in the ctor,
+                // in which case we'll see that other entity before the actual entity,
+                // meaning the real entity wouldn't get its SourceData set at all,
+                // which is worse than setting it for an unrelated entity.
+                // This can only happen with entities added via the legacy Everest.Events.Level.LoadEntity event anyway,
+                // so this should be very rare in practice.
+            }
+        }
     }
 
     public static class EntityListExt {
@@ -140,6 +156,14 @@ namespace MonoMod {
                 .Emit(OpCodes.Newobj, ctor_ArgumentNullException)
                 .Emit(OpCodes.Throw)
                 .MarkLabel(label);
+            
+            // Add call to _HandleEntityData to track EntityData -> Entity relations
+            TypeDefinition t_EntityList = MonoModRule.Modder.FindType("Monocle.EntityList").Resolve();
+            MethodDefinition m_EntityList_HandleEntityData = t_EntityList.FindMethod("_HandleEntityData");
+            cursor.GotoNext(MoveType.Before, instr => instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference).GetID().Contains("HashSet`1<Monocle.Entity>::Add"));
+            cursor.EmitLdarg0();
+            cursor.EmitLdarg1();
+            cursor.EmitCall(m_EntityList_HandleEntityData);
         }
 
     }
