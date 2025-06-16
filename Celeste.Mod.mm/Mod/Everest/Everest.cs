@@ -54,7 +54,7 @@ namespace Celeste.Mod {
         /// </summary>
         public readonly static string VersionTag;
         /// <summary>
-        /// The currently installed Everest version tag. For "1.2.3-a-b", this is "b"
+        /// The currently installed Everest version commit. For "1.2.3-a-b", this is "b"
         /// </summary>
         public readonly static string VersionCommit;
 

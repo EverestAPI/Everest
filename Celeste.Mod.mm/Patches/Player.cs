@@ -329,6 +329,10 @@ namespace Celeste {
         [MonoModIgnore]
         [PatchPlayerApproachMaxMove]
         private extern int NormalUpdate();
+
+        [MonoModIgnore]
+        [ForceNoInlining]
+        private extern ParticleType DustParticleFromSurfaceIndex(int index);
     }
 
     public static class PlayerExt {
@@ -475,6 +479,7 @@ namespace MonoMod {
 
         public static void PatchPlayerOnCollideV(ILContext context, CustomAttribute attrib) {
             MethodDefinition m_SurfaceIndex_GetPathFromIndex = context.Module.GetType("Celeste.SurfaceIndex").FindMethod("System.String GetPathFromIndex(System.Int32)");
+            MethodDefinition m_SurfaceIndex_GetSoundParamFromIndex = context.Module.GetType("Celeste.SurfaceIndex").FindMethod("System.Int32 GetSoundParamFromIndex(System.Int32)");
             MethodReference m_String_Concat = MonoModRule.Modder.Module.ImportReference(
                 MonoModRule.Modder.FindType("System.String").Resolve()
                     .FindMethod("System.String Concat(System.String,System.String)")
@@ -498,7 +503,7 @@ namespace MonoMod {
             /*  Change
                     Play((playFootstepOnLand > 0f) ? "event:/char/madeline/footstep" : "event:/char/madeline/landing", "surface_index", num2);
                 to
-                    Play(SurfaceIndex.GetPathFromIndex(num2) + ((playFootstepOnLand > 0f) ? "/footstep" : "/landing"), "surface_index", num2);
+                    Play(SurfaceIndex.GetPathFromIndex(num2) + ((playFootstepOnLand > 0f) ? "/footstep" : "/landing"), "surface_index", SurfaceIndex.GetSoundParamFromIndex(num2));
             */
             cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdarg(0), instr => instr.MatchLdfld("Celeste.Player", "playFootstepOnLand"));
             cursor.Emit(OpCodes.Ldloc, loc_landSoundIdx);
@@ -509,6 +514,9 @@ namespace MonoMod {
                 .Next.Operand = "/footstep";
             cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("surface_index"));
             cursor.Emit(OpCodes.Call, m_String_Concat);
+
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdloc(loc_landSoundIdx));
+            cursor.Emit(OpCodes.Call, m_SurfaceIndex_GetSoundParamFromIndex);
         }
 
         public static void PatchPlayerClimbBegin(ILContext context, CustomAttribute attrib) {
@@ -519,6 +527,7 @@ namespace MonoMod {
             // Doesn't use PatchPlaySurfaceIndex because index, not platform, is stored in the local variable
 
             MethodDefinition m_SurfaceIndex_GetPathFromIndex = context.Module.GetType("Celeste.SurfaceIndex").FindMethod("System.String GetPathFromIndex(System.Int32)");
+            MethodDefinition m_SurfaceIndex_GetSoundParamFromIndex = context.Module.GetType("Celeste.SurfaceIndex").FindMethod("System.Int32 GetSoundParamFromIndex(System.Int32)");
             MethodReference m_String_Concat = MonoModRule.Modder.Module.ImportReference(
                 MonoModRule.Modder.FindType("System.String").Resolve()
                     .FindMethod("System.String Concat(System.String,System.String)")
@@ -529,7 +538,7 @@ namespace MonoMod {
             /*  Change:
                     Play("event:/char/madeline/landing", "surface_index", num);
                 to:
-                    Play(SurfaceIndex.GetPathFromIndex(num) + "/landing", "surface_index", num);
+                    Play(SurfaceIndex.GetPathFromIndex(num) + "/landing", "surface_index", SurfaceIndex.GetSoundParamFromIndex(num));
             */
             cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("event:/char/madeline/landing"));
             cursor.Emit(OpCodes.Ldloc_0);
@@ -537,6 +546,9 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldstr, "/landing");
             cursor.Emit(OpCodes.Call, m_String_Concat);
             cursor.Remove();
+
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdloc0());
+            cursor.Emit(OpCodes.Call, m_SurfaceIndex_GetSoundParamFromIndex);
         }
 
         public static void PatchPlayerCtor(MethodDefinition method, CustomAttribute attrib) {

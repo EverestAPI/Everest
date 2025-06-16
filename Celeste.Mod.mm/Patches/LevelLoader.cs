@@ -86,6 +86,9 @@ namespace Celeste {
             // Clear any custom tileset sound paths
             patch_SurfaceIndex.IndexToCustomPath.Clear();
 
+            // Clear any sound parameter overrides
+            patch_SurfaceIndex.IndexToSoundParam.Clear();
+
             string path = "";
 
             try {

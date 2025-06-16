@@ -1,4 +1,4 @@
-﻿using Celeste.Mod.Backdrops;
+using Celeste.Mod.Backdrops;
 using Celeste.Mod.Core;
 using Celeste.Mod.Entities;
 using Celeste.Mod.Helpers;
@@ -209,6 +209,7 @@ namespace Celeste.Mod {
 
                 watch.Stop();
                 Logger.Verbose("loader", $"ALL MODS LOADED IN {watch.ElapsedMilliseconds}ms");
+                Logger.Info("loader", $"Loaded {Everest._Modules.Count} modules");
 
                 try {
                     Watcher = new FileSystemWatcher {
