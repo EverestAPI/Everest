@@ -180,9 +180,12 @@ namespace MonoMod {
         
         public static void PatchEngineCctor(ILContext context, CustomAttribute attrib) {
             ILCursor cursor = new ILCursor(context);
-
-            cursor.GotoNext(instr => instr.MatchLdstr(".NET Framework "));
-            cursor.Next!.Operand = ".NET Core ";
+            
+            // This only exists in 1.4.1.0 and later
+            if (CurrentGameVersion >= new Version(1, 4, 1, 0)) {
+                cursor.GotoNext(instr => instr.MatchLdstr(".NET Framework "));
+                cursor.Next!.Operand = ".NET Core ";
+            }
         }
     }
 }
