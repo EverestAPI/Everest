@@ -27,7 +27,7 @@ rm -v t.zip
 
 # install CelesteTAS
 cd celeste/Mods
-curl --fail -Lo CelesteTAS.zip "https://github.com/EverestAPI/CelesteTAS-EverestInterop/releases/download/v3.45.1/CelesteTAS.zip"
+curl --fail -Lo CelesteTAS.zip "https://github.com/EverestAPI/CelesteTAS-EverestInterop/releases/download/v3.45.2/CelesteTAS.zip"
 
 # install the mod that is going to be TASed, downloaded as a bundle zip containing the mod zip
 # and all of its dependencies (https://maddie480.ovh/celeste/bundle-download?id=${TAS_TO_RUN})
