@@ -16,7 +16,7 @@ jobs:
           - name: Strawberry Jam All Levels
             url: "https://github.com/VampireFlower/StrawberryJamTAS/archive/5c3e1a904af8bb0e37fe88e084a0fbf7241eee0b.zip"
             path: "StrawberryJamTAS-5c3e1a904af8bb0e37fe88e084a0fbf7241eee0b/0-SJ All Levels.tas"
-            bundle: "https://celestemodupdater.0x0a.de/pinned-mods/StrawberryJam2021-Bundle-8cc2878e.zip"
+            bundle: "https://celestemodupdater.0x0a.de/pinned-mods/StrawberryJam2021-Bundle-36e2909e.zip"
 
     runs-on: ubuntu-latest
     timeout-minutes: 60
