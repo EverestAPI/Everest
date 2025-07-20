@@ -4,16 +4,21 @@ using FMOD.Studio;
 using Celeste.Mod.Core;
 using Celeste.Mod;
 using Microsoft.Xna.Framework;
+using Monocle;
 
 namespace Celeste {
     class patch_MenuOptions {
 
         public static extern TextMenu orig_Create(bool inGame = false, EventInstance snapshot = null);
         public static TextMenu Create(bool inGame = false, EventInstance snapshot = null) {
-
             // Create the original options menu
             patch_TextMenu menu = (patch_TextMenu) orig_Create(inGame, snapshot);
+            menu = AddPhotosensitiveOptions(menu);
+            menu = AddMusicMuteToggle(menu);
+            return menu;
+        }
 
+        private static patch_TextMenu AddPhotosensitiveOptions(patch_TextMenu menu) {
             // Get the index of the photosensitive mode option
             int photosensitiveIndex = menu.GetItems().FindIndex(item =>
                 item.GetType() == typeof(TextMenu.OnOff) && ((TextMenu.OnOff) item).Label == Dialog.Clean("OPTIONS_DISABLE_FLASH"));
@@ -72,7 +77,7 @@ namespace Celeste {
                 .Add(screenFlashDesc)
                 .Add(textHighlight)
                 .Add(textHighlightDesc);
-            
+
             // Create a master switch that toggles the submenu to replace the existing photosensitive mode option
             TextMenu.Item masterSwitch = new TextMenu.OnOff(Dialog.Clean("OPTIONS_DISABLE_FLASH"), Settings.Instance.DisableFlashes)
                 .Change(value => {
@@ -91,6 +96,26 @@ namespace Celeste {
             submenu.Disabled = !Settings.Instance.DisableFlashes;
 
             // Send back the menu
+            return menu;
+        }
+
+        private static patch_TextMenu AddMusicMuteToggle(patch_TextMenu menu) {
+            int audioOptionsIndex = menu.Items.FindIndex(item =>
+                item.GetType() == typeof(TextMenu.SubHeader) && ((TextMenu.SubHeader) item).Title == Dialog.Clean("options_audio"));
+
+            TextMenu.Item musicSlider = menu.Items.Find(item =>
+                item.GetType() == typeof(TextMenu.Slider) && ((TextMenu.Slider) item).Label == Dialog.Clean("options_music"));
+
+            TextMenu.Item muteSwitch = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_MUTEMUSIC"), CoreModule.Settings.MuteMusic)
+                .Change(value => {
+                    CoreModule.Settings.MuteMusic = value;
+                    musicSlider.Disabled = value;
+                });
+
+            musicSlider.Disabled = CoreModule.Settings.MuteMusic;
+
+            menu.Insert(audioOptionsIndex + 1, muteSwitch);
+
             return menu;
         }
     }

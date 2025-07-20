@@ -10,6 +10,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.Utils;
+using Celeste.Mod.Core;
 
 namespace Celeste {
     class patch_Settings : Settings {
@@ -172,6 +173,17 @@ namespace Celeste {
             if (UserIO.Open(UserIO.Mode.Read)) {
                 (UserIO.Load<VanillaMouseBindings>("modsettings-Everest_MouseBindings") ?? new VanillaMouseBindings().Init()).Apply();
                 UserIO.Close();
+            }
+        }
+
+        [MonoModIgnore]
+        public extern void orig_ApplyVolumes();
+        public new void ApplyVolumes() {
+            if (CoreModule.Settings.MuteMusic) {
+                Audio.SfxVolume = SFXVolume / 10f;
+                Audio.MusicVolume = 0;
+            } else {
+                orig_ApplyVolumes();
             }
         }
 

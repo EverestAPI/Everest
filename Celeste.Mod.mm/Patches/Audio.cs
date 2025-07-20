@@ -47,6 +47,19 @@ namespace Celeste {
         private static extern void FMOD_SDL_Register(IntPtr system);
 
         [MonoModReplace]
+        public static void Update() {
+            if (system != null && ready) {
+                CheckFmod(system.update());
+
+                // do not apply mute toggle while in options
+                if (CoreModule.Settings.ToggleMuteMusic.Pressed && ((Engine.Scene is not Overworld) || !(Engine.Scene as Overworld).IsCurrent<OuiOptions>())) {
+                    CoreModule.Settings.ToggleMuteMusic.ConsumePress();
+                    CoreModule.Settings.MuteMusic = !CoreModule.Settings.MuteMusic;
+                }
+            }
+        }
+
+        [MonoModReplace]
         public static void Init() {
             if (Everest.Flags.IsHeadless) {
                 // Stub out audio system

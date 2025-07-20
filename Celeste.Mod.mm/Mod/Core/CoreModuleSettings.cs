@@ -478,6 +478,22 @@ namespace Celeste.Mod.Core {
         [DefaultButtonBinding(0, Keys.Space)]
         public ButtonBinding ToggleMountainFreeCam { get; set; }
 
+        private bool _MuteMusic = false;
+        [SettingIgnore]
+        public bool MuteMusic {
+            get => _MuteMusic;
+            set {
+                _MuteMusic = value;
+                if (patch_Audio.AudioInitialized)
+                    ((patch_Settings) Settings.Instance).ApplyVolumes();
+            }
+        }
+
+        [SettingSubHeader("MODOPTIONS_COREMODULE_MISC")]
+        [SettingInGame(false)]
+        [DefaultButtonBinding(0, Keys.M)]
+        public ButtonBinding ToggleMuteMusic { get; set; }
+
         /*
         [SettingRange(0, 10)]
         public int ExampleSlider { get; set; } = 5;
