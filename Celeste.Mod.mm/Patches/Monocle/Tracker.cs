@@ -94,7 +94,7 @@ namespace Monocle {
         /// <summary>
         /// Dynamically add a new type to the active scene's tracker. The <paramref name="type"/> can also be TrackedAs if <paramref name="trackedAs"/> is provided.
         /// If <paramref name="inheritAll"/> is true, all subtypes of <paramref name="type"/> will be tracked under it.
-        /// Call <seealso cref="AddSpecificType(Type, Type, Dictionary{Type, List{Type}})"/> to add the scene's entities to the tracker after adding the type.
+        /// Call <seealso cref="AddSpecificType(Type, Type, Dictionary{Type, List{Type}}, HashSet{Type})"/> to add the scene's entities to the tracker after adding the type.
         /// </summary>
         /// <param name="type">The type to add to the Tracker</param>
         /// <param name="trackedAs">If the type should be TrackedAs</param>
@@ -106,7 +106,7 @@ namespace Monocle {
         /// <summary>
         /// Dynamically add a new type to the active scene's tracker. The <paramref name="type"/> can also be TrackedAs if <paramref name="trackedAs"/> is provided.
         /// Any <paramref name="subtypes"/> passed will also be tracked under <paramref name="type"/>.
-        /// Call <seealso cref="AddSpecificType(Type, Type, Dictionary{Type, List{Type}})"/> to add the scene's entities to the tracker after adding the type.
+        /// Call <seealso cref="AddSpecificType(Type, Type, Dictionary{Type, List{Type}}, HashSet{Type})"/> to add the scene's entities to the tracker after adding the type.
         /// </summary>
         /// <param name="type">The type to add to the Tracker</param>
         /// <param name="trackedAs">If the type should be TrackedAs</param>
