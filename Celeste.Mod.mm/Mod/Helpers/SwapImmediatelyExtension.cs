@@ -9,14 +9,29 @@ using System.Collections.Generic;
 namespace Celeste.Mod {
     public static class SwapImmediatelyExtension {
         /// <summary>
-        ///   when you want to enumerate a coroutine ienumerator,
-        ///   always keep in mind that the original sequence may have been wrapped into <see cref="SwapImmediately"/>.
-        ///   this method helps you to handle it correctly like <see cref="Coroutine"/>.<br/>
-        ///   also known as, flattening the given sequence.
+        ///   Flattens all <see cref="SwapImmediately"/> returned by the source IEnumerator.
+        ///   When writing hooks on Coroutine-style methods, 
+        ///   this method is needed if you want to access values returned from the orig Coroutine,
+        ///   for instance, if it were to return the following sequence `{1, 2, SwapImmediately({1, 2}), 3}`
+        ///   a simple enumeration of it would not pass properly the values inside the <see cref="SwapImmediately" />.
+        ///   This method makes it so the returned values become the sequence `{1, 2, 1, 2, 3}`.
+        ///   (Behaviour mimicks <see cref="Coroutine"/>'s handling of <see cref="SwapImmediately"/>.)
         /// </summary>
         /// <returns>
-        ///   A new enumerator, but all <see cref="SwapImmediately"/> is safely handled.
+        ///   A new enumerator which flattens the sequence once <see cref="SwapImmediately" />s are received.
         /// </returns>
+        /// <example>
+        /// The most common use would be hooking a Coroutine method:
+        /// <code>
+        ///   private static IEnumerator DashCoroutine(On.Celeste.Player.orig_DashCoroutine orig, Player self) {
+        ///     IEnumerator origEnum = orig(self).SafeEnumerate();
+        ///     while (origEnum.MoveNext()) {
+        ///       yield return origEnum.Current;
+        ///       // Do anything here
+        ///     }
+        ///   }
+        /// </code>
+        /// </example>
         public static IEnumerator SafeEnumerate(this IEnumerator self) {
             Stack<IEnumerator> enums = new();
             enums.Push(self);
