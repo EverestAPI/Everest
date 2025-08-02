@@ -32,24 +32,46 @@ namespace Celeste.Mod {
         ///   }
         /// </code>
         /// </example>
-        public static IEnumerator SafeEnumerate(this IEnumerator self) {
-            Stack<IEnumerator> enums = new();
-            enums.Push(self);
+        public static Flattened SafeEnumerate(this IEnumerator self) {
+            if(self is Flattened f) {
+                return f;
+            }
+            return new(self);
+        }
 
-            while (enums.Count > 0) {
-                IEnumerator cur = enums.Peek();
+        public struct Flattened : IEnumerator {
+            private readonly Stack<IEnumerator> enums = new();
+            private object current = null;
 
-                if (cur.MoveNext()) {
-                    object obj = cur.Current;
+            public readonly object Current => current;
 
-                    if (obj is SwapImmediately swap) {
-                        enums.Push(swap.Inner);
+            public Flattened(IEnumerator from) {
+                enums.Push(from);
+            }
+
+            public bool MoveNext() {
+                while (enums.Count > 0) {
+                    IEnumerator cur = enums.Peek();
+
+                    if (cur.MoveNext()) {
+                        object obj = cur.Current;
+
+                        if (obj is SwapImmediately swap) {
+                            enums.Push(swap.Inner);
+                        } else {
+                            current = obj;
+                            return true;
+                        }
                     } else {
-                        yield return obj;
+                        enums.Pop();
                     }
-                } else {
-                    enums.Pop();
                 }
+                current = null;
+                return false;
+            }
+
+            public void Reset() {
+                throw new NotSupportedException();
             }
         }
     }
