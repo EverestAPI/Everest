@@ -30,24 +30,16 @@ namespace Monocle {
         public extern void orig_Update();
         public override void Update() {
             do {
+                if (Current is { } cur && cur is not SwapImmediatelyExtension.Flattened) {
+                    enumerators.Pop();
+                    enumerators.Push(cur.SafeEnumerate());
+                }
+
                 orig_Update();
 
                 // if the coroutine last returned an Action<Coroutine>, run it passing the coroutine.
                 if (Current?.Current is Action<patch_Coroutine> cb) {
                     cb(this);
-                    continue;
-                }
-
-                // if the top of the stack is a SwapImmediately... swap it immediately.
-                if (Current is SwapImmediately swap) {
-                    enumerators.Pop();
-                    enumerators.Push(swap.Inner);
-                    continue;
-                }
-
-                // if the coroutine last returned a SwapImmediately, this means we returned from a coroutine that swaps immediately...
-                // so, swap immediately.
-                if (Current?.Current is SwapImmediately) {
                     continue;
                 }
 
