@@ -64,13 +64,12 @@ public static class InGameUpdaterHelper {
 
             if (CanReadWrite(Globals.PathCelesteExe, out Exception error) && CanReadWrite(Globals.PathEverestDLL, out error))
                 return;
-
-            if (i == MaxRetryCount - 1)
-                throw new InvalidOperationException(
-                    "Celeste is not read-writeable. "
-                    + "Please ensure the game is not running, its files are not in use and that you have write permissions.",
-                    error);
         }
+
+        throw new InvalidOperationException(
+            "Celeste is not read-writeable. "
+            + "Please ensure the game is not running, its files are not in use and that you have write permissions.",
+            error);
     }
 
     // AFAIK there's no "clean" way to check for any file locks in C#.
