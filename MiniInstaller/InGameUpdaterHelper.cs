@@ -67,7 +67,8 @@ public static class InGameUpdaterHelper {
 
             if (i == MaxRetryCount - 1)
                 throw new InvalidOperationException(
-                    "Celeste is not read-writeable. Please ensure the game is not running and its files are not in use.",
+                    "Celeste is not read-writeable. "
+                    + "Please ensure the game is not running, its files are not in use and that you have write permissions.",
                     error);
         }
     }
