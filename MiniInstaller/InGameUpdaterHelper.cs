@@ -60,7 +60,7 @@ public static class InGameUpdaterHelper {
         const int WaitTimeSeconds = 60;
         const int MaxRetryCount = 12;
 
-        Exception error;
+        Exception error = null;
         for (int i = 0; i < MaxRetryCount; i++) {
             Thread.Sleep(WaitTimeSeconds * 1000 / MaxRetryCount);
 
