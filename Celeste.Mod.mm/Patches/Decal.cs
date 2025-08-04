@@ -65,6 +65,7 @@ namespace Celeste {
 
             [MonoModIgnore]
             [PatchDecalImageRender]
+            [PatchBannerRotation]
             public extern override void Render();
 
         }
@@ -300,10 +301,10 @@ namespace Celeste {
 
             if (!DecalRegistry.RegisteredDecals.TryGetValue(text, out DecalRegistry.DecalInfo info))
                 return;
-            
+
             Remove(image);
             image = null;
-            
+
             // apply all decal registry handlers.
             foreach (var handler in info.Handlers) {
                 try {
@@ -362,6 +363,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDecalImageRender))]
     class PatchDecalImageRenderAttribute : Attribute { }
+
+    /// <summary>
+    /// Make "Banner" decal slices respect the decal's rotation.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchBannerRotation))]
+    class PatchBannerRotationAttribute : Attribute { }
 
     /// <summary>
     /// Allow mirror masks to be rotated.
@@ -463,6 +470,26 @@ namespace MonoMod {
                 cursor.Emit(OpCodes.Callvirt, m_DrawCentered);
                 cursor.Remove();
             });
+        }
+
+        public static void PatchBannerRotation(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_Rotate = MonoModRule.Modder.FindType("Monocle.Calc").Resolve()
+                .FindMethod("Microsoft.Xna.Framework.Vector2 Rotate(Microsoft.Xna.Framework.Vector2,System.Single)");
+            FieldDefinition f_Decal_Rotation = MonoModRule.Modder.FindType("Celeste.Decal").Resolve()
+                .FindField("Rotation");
+            PropertyDefinition p_Decal = context.Method.DeclaringType
+                .FindProperty("Decal");
+
+            ILCursor cursor = new ILCursor(context);
+
+            // we want to attach a .Rotate(Decal.Rotation) to the new vector like so:
+            //   Decal.Position + new Vector2(x, 0).Rotate(Decal.Rotation)
+
+            cursor.GotoNext(MoveType.After, static instr => instr.MatchNewobj("Microsoft.Xna.Framework.Vector2"));
+            cursor.EmitLdarg0();
+            cursor.EmitCallvirt(p_Decal.GetMethod);
+            cursor.EmitLdfld(f_Decal_Rotation);
+            cursor.EmitCall(m_Rotate);
         }
     }
 }
