@@ -59,10 +59,12 @@ public static class InGameUpdaterHelper {
         // let's wait for 1 minute
         const int WaitTimeSeconds = 60;
         const int MaxRetryCount = 12;
+
+        Exception error;
         for (int i = 0; i < MaxRetryCount; i++) {
             Thread.Sleep(WaitTimeSeconds * 1000 / MaxRetryCount);
 
-            if (CanReadWrite(Globals.PathCelesteExe, out Exception error) && CanReadWrite(Globals.PathEverestDLL, out error))
+            if (CanReadWrite(Globals.PathCelesteExe, out error) && CanReadWrite(Globals.PathEverestDLL, out error))
                 return;
         }
 
