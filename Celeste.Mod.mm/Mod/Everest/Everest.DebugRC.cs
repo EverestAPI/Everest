@@ -374,7 +374,7 @@ header {
                     Handle = c => {
                         NameValueCollection data = ParseQueryString(c.Request.RawUrl);
 
-                        string sid = data["area"];
+                        string sid = WebUtility.UrlDecode(data["area"]);
                         if (string.IsNullOrEmpty(sid))
                             sid = (Engine.Scene as Level)?.Session.Area.GetSID();
                         if (string.IsNullOrEmpty(sid)) {
@@ -475,7 +475,7 @@ header {
                             return;
                         }
 
-                        string sid = data["area"];
+                        string sid = WebUtility.UrlDecode(data["area"]);
                         if (string.IsNullOrEmpty(sid))
                             sid = session.Area.GetSID();
                         if (string.IsNullOrEmpty(sid)) {

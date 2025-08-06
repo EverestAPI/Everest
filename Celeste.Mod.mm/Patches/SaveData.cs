@@ -327,6 +327,22 @@ namespace Celeste {
                 }
             }
 
+            // clean modsave and modsession files which are not deleted if their module is not loaded
+            string saveFilePath = patch_UserIO.GetSaveFilePath();
+            if (Directory.Exists(saveFilePath)) {
+                foreach (string modSaveFile in Directory.GetFiles(saveFilePath, $"{slot}-modsave-*.celeste")) {
+                    string file = Path.GetFileNameWithoutExtension(modSaveFile);
+                    Logger.Info("SaveData", $"Save slot {slot} has modsave {file} which was not cleaned, deleting file");
+                    UserIO.Delete(file);
+                }
+
+                foreach (string modSessionFile in Directory.GetFiles(saveFilePath, $"{slot}-modsession-*.celeste")) {
+                    string file = Path.GetFileNameWithoutExtension(modSessionFile);
+                    Logger.Info("SaveData", $"Save slot {slot} has modsession {file} which was not cleaned, deleting file");
+                    UserIO.Delete(file);
+                }
+            }
+
             LoadedModSaveDataIndex = int.MinValue;
 
             // delete the modsavedata file if it exists.
