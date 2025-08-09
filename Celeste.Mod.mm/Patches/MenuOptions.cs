@@ -2,8 +2,8 @@
 
 using FMOD.Studio;
 using Celeste.Mod.Core;
-using Celeste.Mod;
-using Microsoft.Xna.Framework;
+using MonoMod;
+using System.Diagnostics;
 
 namespace Celeste {
     class patch_MenuOptions {
@@ -82,15 +82,45 @@ namespace Celeste {
             // Disable the submenu if necessary
             submenu.Disabled = !Settings.Instance.DisableFlashes;
 
+            // Create our new Window Mode option
+            // TODO: Create Dialog for menu item
+            TextMenu.Item windowMode = new TextMenu.Slider(Dialog.Clean("MODOPTIONS_CODEMODULE_WMSLIDER"), i =>
+                ((GameWindowMode) i).ToDialog(), 0, 2, (int) ((patch_Settings) Settings.Instance).WindowMode)
+                .Change(SetWindowMode);
+
+            // Replace Fullscreen with Window Mode Options
+            menu.ModifyOption<TextMenu.OnOff>("options_fullscreen", windowMode);
+
             // Send back the menu
             return menu;
         }
+
+        private static patch_TextMenu.patch_Item window;
+
+        private static patch_TextMenu.patch_Item viewport;
+
+        private static void SetWindowMode(int mode) {
+            GameWindowMode value = (GameWindowMode) mode;
+
+            ((patch_Settings) Settings.Instance).WindowMode = value;
+            Settings.Instance.Fullscreen = value == GameWindowMode.Fullscreen;
+            ((patch_Settings) Settings.Instance).ApplyScreen();
+            if (window != null) {
+                window.Visible = value == GameWindowMode.Windowed;
+            }
+            if (viewport != null) {
+                viewport.Visible = value != GameWindowMode.Windowed;
+            }
+        }
+
+        //This Method would be unnecessary with the followig changes, I don't know if this is correctly removed, though
+        [MonoModRemove]
+        private static extern void SetFullscreen(bool on);
     }
 
     static class MenuOptionsExt {
         public static void ModifyOption<TItem>(this patch_TextMenu menu, string label, params TextMenu.Item[] replacements)
             where TItem : TextMenu.Item {
-            // I don't know how fix these generic constraints within pre-patch -Dav
             // Get the index of the option to replace
             int oldMenuIndex = menu.Items.FindIndex(item =>
                 item is TItem specificItem && (specificItem as patch_TextMenu.patch_Item).SearchLabel() == Dialog.Clean(label));
@@ -106,6 +136,15 @@ namespace Celeste {
             foreach (TextMenu.Item item in replacements) {
                 menu.Insert(oldMenuIndex++, item);
             }
+        }
+
+        public static string ToDialog(this GameWindowMode mode) {
+            return mode switch {
+                GameWindowMode.Fullscreen => "options_fullscreen",
+                GameWindowMode.Borderless => "MODOPTIONS_CODEMODULE_WMBORDERLESS",
+                GameWindowMode.Windowed => "MODOPTIONS_CODEMODULE_WMWINDOWED",
+                _ => throw new UnreachableException("Failed to get Dialog string somehow.")
+            };
         }
     }
 }

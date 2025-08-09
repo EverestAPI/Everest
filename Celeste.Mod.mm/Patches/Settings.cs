@@ -210,6 +210,13 @@ namespace Celeste {
                 keys[i] = Keyboard.GetKeyFromScancodeEXT(keys[i]);
         }
 
+        public GameWindowMode WindowMode;
+    }
+
+    public enum GameWindowMode {
+        Fullscreen,
+        Borderless,
+        Windowed
     }
 }
 
