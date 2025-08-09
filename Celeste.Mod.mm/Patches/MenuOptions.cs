@@ -14,10 +14,6 @@ namespace Celeste {
             // Create the original options menu
             patch_TextMenu menu = (patch_TextMenu) orig_Create(inGame, snapshot);
 
-            // Get the index of the photosensitive mode option
-            int photosensitiveIndex = menu.GetItems().FindIndex(item =>
-                item.GetType() == typeof(TextMenu.OnOff) && ((TextMenu.OnOff) item).Label == Dialog.Clean("OPTIONS_DISABLE_FLASH"));
-
             // Create all of our submenu options and their descriptions
             // TODO: Make this less redundant using a loop and reflection
             TextMenu.Item distort = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSDISTORT"), CoreModule.Settings.PhotosensitivityDistortOverride)
@@ -80,18 +76,34 @@ namespace Celeste {
                     submenu.Disabled = !value;
                 });
 
-            // Remove the existing photosensitive menu and replace it with our master switch
-            menu.Remove(menu.GetItems()[photosensitiveIndex]);
-            menu.Insert(photosensitiveIndex, masterSwitch);
-
-            // Insert the submenu at the correct point
-            menu.Insert(photosensitiveIndex + 1, submenu);
+            // Remove the existing photosensitive menu and replace it with our master switch and submenu
+            ModifyMenuOption<TextMenu.OnOff, bool>(menu, "OPTIONS_DISABLE_FLASH", masterSwitch, submenu);
 
             // Disable the submenu if necessary
             submenu.Disabled = !Settings.Instance.DisableFlashes;
 
             // Send back the menu
             return menu;
+        }
+
+        private static void ModifyMenuOption<TItem, TValue>(patch_TextMenu menu, string label, params TextMenu.Item[] replacements)
+            where TItem : TextMenu.Option<TValue> {
+            // I don't know how fix these generic constraints within pre-patch -Dav
+            // Get the index of the option to replace
+            int oldMenuIndex = menu.Items.FindIndex(item =>
+                item is TItem specificItem && specificItem.Label == Dialog.Clean(label));
+
+            //Ensure we found the option
+            if (oldMenuIndex != -1)
+                return;
+
+            //Remove the existing menu item
+            menu.Remove(menu.Items[oldMenuIndex]);
+
+            //Replace the menu item with the new ones at the same position, in order
+            foreach (TextMenu.Item item in replacements) {
+                menu.Insert(oldMenuIndex++, item);
+            }
         }
     }
 }
