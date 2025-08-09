@@ -77,7 +77,7 @@ namespace Celeste {
                 });
 
             // Remove the existing photosensitive menu and replace it with our master switch and submenu
-            ModifyMenuOption<TextMenu.OnOff, bool>(menu, "OPTIONS_DISABLE_FLASH", masterSwitch, submenu);
+            ModifyMenuOption<TextMenu.OnOff>(menu, "OPTIONS_DISABLE_FLASH", masterSwitch, submenu);
 
             // Disable the submenu if necessary
             submenu.Disabled = !Settings.Instance.DisableFlashes;
@@ -86,12 +86,12 @@ namespace Celeste {
             return menu;
         }
 
-        private static void ModifyMenuOption<TItem, TValue>(patch_TextMenu menu, string label, params TextMenu.Item[] replacements)
-            where TItem : TextMenu.Option<TValue> {
+        private static void ModifyMenuOption<TItem>(patch_TextMenu menu, string label, params TextMenu.Item[] replacements)
+            where TItem : TextMenu.Item {
             // I don't know how fix these generic constraints within pre-patch -Dav
             // Get the index of the option to replace
             int oldMenuIndex = menu.Items.FindIndex(item =>
-                item is TItem specificItem && specificItem.Label == Dialog.Clean(label));
+                item is TItem specificItem && (specificItem as patch_TextMenu.patch_Item).SearchLabel() == Dialog.Clean(label));
 
             //Ensure we found the option
             if (oldMenuIndex != -1)
