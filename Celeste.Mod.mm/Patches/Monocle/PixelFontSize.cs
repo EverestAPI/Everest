@@ -1,16 +1,29 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
+using System;
 
 namespace Monocle {
     class patch_PixelFontSize : PixelFontSize {
 
+        [PatchTextIteration]
         public extern Vector2 orig_Measure(string text);
         public new Vector2 Measure(string text) {
             text = Emoji.Apply(text);
             return orig_Measure(text);
         }
+
+        [MonoModIgnore]
+        [PatchTextIteration]
+        public extern new float WidthToNextLine(string text, int start);
 
         public extern void orig_Draw(char character, Vector2 position, Vector2 justify, Vector2 scale, Color color);
         public new void Draw(char character, Vector2 position, Vector2 justify, Vector2 scale, Color color) {
@@ -22,7 +35,7 @@ namespace Monocle {
             orig_Draw(character, position, justify, scale, color);
         }
 
-        public extern void orig_Draw(string text, Vector2 position, Vector2 justify, Vector2 scale, Color color, float edgeDepth, Color edgeColor, float stroke, Color strokeColor);
+        [MonoModReplace]
         public new void Draw(string text, Vector2 position, Vector2 justify, Vector2 scale, Color color, float edgeDepth, Color edgeColor, float stroke, Color strokeColor) {
             text = Emoji.Apply(text);
 
@@ -35,8 +48,9 @@ namespace Monocle {
                 HeightOf(text) * justify.Y
             );
 
-            for (int i = 0; i < text.Length; i++) {
-                if (text[i] == '\n') {
+            UnicodeStringHelper.ListInt codePoints = UnicodeStringHelper.ToCodePointList(text);
+            for (int i = 0; i < codePoints.Count; i++) {
+                if (codePoints[i] == '\n') {
                     offset.X = 0f;
                     offset.Y += LineHeight;
                     if (justify.X != 0f)
@@ -45,7 +59,7 @@ namespace Monocle {
                 }
 
                 PixelFontCharacter c = null;
-                if (!Characters.TryGetValue(text[i], out c))
+                if (!Characters.TryGetValue(codePoints[i], out c))
                     continue;
 
                 Vector2 pos = position + (offset + new Vector2(c.XOffset, c.YOffset) - justifyOffs) * scale;
@@ -84,11 +98,70 @@ namespace Monocle {
 
                 offset.X += c.XAdvance;
 
-                if (i < text.Length - 1 && c.Kerning.TryGetValue(text[i + 1], out int kerning)) {
+                if (i < codePoints.Count - 1 && c.Kerning.TryGetValue(codePoints[i + 1], out int kerning)) {
                     offset.X += kerning;
                 }
             }
         }
 
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Replace the char-by-char text iteration with a codepoint-per-codepoint one.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTextIteration))]
+    class PatchTextIterationAttribute : Attribute {
+    }
+
+    static partial class MonoModRules {
+        public static void PatchTextIteration(ILContext context, CustomAttribute attrib) {
+            TypeReference t_List_int = MonoModRule.Modder.FindType("Celeste.Mod.Helpers.UnicodeStringHelper").Resolve().NestedTypes[0];
+            VariableDefinition v_listOfCodePoints = new VariableDefinition(t_List_int);
+            context.Body.Variables.Add(v_listOfCodePoints);
+
+            ILCursor cursor = new ILCursor(context);
+            if (context.Method.Name == "orig_AddWord") {
+                // start after the PixelFontSize.Measure call because it needs to get the original text, not the code point thingy
+                cursor.GotoNext(MoveType.After, instr => instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.Name == "Measure");
+            }
+
+            // List<int> listOfCodePoints = UnicodeStringHelper.ToCodePointList(text);
+            cursor.Emit(OpCodes.Ldarg_1);
+            cursor.Emit(OpCodes.Call, MonoModRule.Modder.FindType("Celeste.Mod.Helpers.UnicodeStringHelper").Resolve().FindMethod("ToCodePointList"));
+            cursor.Emit(OpCodes.Stloc, v_listOfCodePoints);
+
+            // string.IsNullOrEmpty => isEmpty
+            int index = cursor.Index;
+            while (cursor.TryGotoNext(instr => instr.MatchCall<string>("IsNullOrEmpty"))) {
+                cursor.Next.OpCode = OpCodes.Call;
+                cursor.Next.Operand = t_List_int.Resolve().FindMethod("get_Count");
+                cursor.Index++;
+                cursor.Emit(OpCodes.Ldc_I4_0);
+                cursor.Emit(OpCodes.Ceq);
+            }
+
+            // text => listOfCodePoints
+            cursor.Index = index;
+            while (cursor.TryGotoNext(instr => instr.MatchLdarg1())) {
+                cursor.Next.OpCode = OpCodes.Ldloc;
+                cursor.Next.Operand = v_listOfCodePoints;
+            }
+
+            // text.Length => listOfCodePoints.Count
+            cursor.Index = index;
+            while (cursor.TryGotoNext(instr => instr.MatchCallvirt<string>("get_Length"))) {
+                cursor.Next.OpCode = OpCodes.Call;
+                cursor.Next.Operand = t_List_int.Resolve().FindMethod("get_Count");
+            }
+
+            // text[i] => listOfCodePoints[i]
+            cursor.Index = index;
+            while (cursor.TryGotoNext(instr => instr.MatchCallvirt<string>("get_Chars"))) {
+                cursor.Next.OpCode = OpCodes.Call;
+                cursor.Next.Operand = t_List_int.Resolve().FindMethod("get_Item");
+            }
+        }
     }
 }
