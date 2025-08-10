@@ -256,10 +256,12 @@ namespace Celeste {
             /// </summary>
             /// <param name="label">Slider label (defaults to enum name)</param>
             /// <param name="startValue">Initial value</param>
-            public EnumSlider(string label = null, T startValue = default) : base(label ?? typeof(T).Name) {
+            /// <param name="formatter">Function to convert enum values to their dialog version</param>
+            public EnumSlider(string label = null, T startValue = default, Func<T, string> formatter = null) : base(label ?? typeof(T).Name) {
                 Array enumValues = Enum.GetValues(typeof(T));
+                formatter ??= (e => e.ToString());
                 foreach (T value in enumValues) {
-                    Add(value.ToString(), value, value.Equals(startValue));
+                    Add(formatter(value), value, value.Equals(startValue));
                 }
             }
         }
