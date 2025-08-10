@@ -532,6 +532,31 @@ namespace Celeste {
                 return ((Button) (object) this).Label;
             }
         }
+
+        /// <summary>
+        /// Finds the Menu Item with the provided <paramref name="label"/> and will place the <paramref name="replacements"/>
+        /// in its place in the same order as they were given.
+        /// </summary>
+        /// <typeparam name="T">The type of Item to try to replace.</typeparam>
+        /// <param name="label">The label the Item must match.</param>
+        /// <param name="replacements">The Menu Items that will replace the found Item.</param>
+        public void ReplaceByLabel<T>(string label, params Item[] replacements) where T : Item {
+            // Get the index of the option to replace
+            int oldMenuIndex = Items.FindIndex(item =>
+                item is T specificItem && (specificItem as patch_Item).SearchLabel() == Dialog.Clean(label));
+
+            //Ensure we found the option
+            if (oldMenuIndex != -1)
+                return;
+
+            //Remove the existing menu item
+            Remove(Items[oldMenuIndex]);
+
+            //Replace the menu item with the new ones at the same position, in order
+            foreach (Item item in replacements) {
+                Insert(oldMenuIndex++, item);
+            }
+        }
         
     }
 

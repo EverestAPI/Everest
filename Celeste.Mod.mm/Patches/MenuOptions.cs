@@ -77,19 +77,19 @@ namespace Celeste {
                 });
 
             // Remove the existing photosensitive menu and replace it with our master switch and submenu
-            menu.ModifyOption<TextMenu.OnOff>("OPTIONS_DISABLE_FLASH", masterSwitch, submenu);
+            menu.ReplaceByLabel<TextMenu.OnOff>("OPTIONS_DISABLE_FLASH", masterSwitch, submenu);
 
             // Disable the submenu if necessary
             submenu.Disabled = !Settings.Instance.DisableFlashes;
 
             // Create our new Window Mode option
             // TODO: Create Dialog for menu item
-            TextMenu.Item windowMode = new TextMenuExt.EnumSlider<GameWindowMode>(Dialog.Clean("MODOPTIONS_CODEMODULE_WMSLIDER"),
-                ((patch_Settings) Settings.Instance).WindowMode, MenuOptionsExt.ToDialog)
+            TextMenu.Item windowMode = new TextMenuExt.EnumSlider<GameWindowMode>(Dialog.Clean("MODOPTIONS_CODEMODULE_WMSLIDER"), ((patch_Settings) Settings.Instance).WindowMode,
+                MenuOptionsExt.ToDialog)
                 .Change(SetWindowMode);
 
             // Replace Fullscreen with Window Mode Options
-            menu.ModifyOption<TextMenu.OnOff>("options_fullscreen", windowMode);
+            menu.ReplaceByLabel<TextMenu.OnOff>("options_fullscreen", windowMode);
 
             // Send back the menu
             return menu;
@@ -117,25 +117,6 @@ namespace Celeste {
     }
 
     static class MenuOptionsExt {
-        public static void ModifyOption<TItem>(this patch_TextMenu menu, string label, params TextMenu.Item[] replacements)
-            where TItem : TextMenu.Item {
-            // Get the index of the option to replace
-            int oldMenuIndex = menu.Items.FindIndex(item =>
-                item is TItem specificItem && (specificItem as patch_TextMenu.patch_Item).SearchLabel() == Dialog.Clean(label));
-
-            //Ensure we found the option
-            if (oldMenuIndex != -1)
-                return;
-
-            //Remove the existing menu item
-            menu.Remove(menu.Items[oldMenuIndex]);
-
-            //Replace the menu item with the new ones at the same position, in order
-            foreach (TextMenu.Item item in replacements) {
-                menu.Insert(oldMenuIndex++, item);
-            }
-        }
-
         public static string ToDialog(this GameWindowMode mode) {
             return mode switch {
                 GameWindowMode.Fullscreen => "options_fullscreen",
