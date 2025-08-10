@@ -84,8 +84,8 @@ namespace Celeste {
 
             // Create our new Window Mode option
             // TODO: Create Dialog for menu item
-            TextMenu.Item windowMode = new TextMenu.Slider(Dialog.Clean("MODOPTIONS_CODEMODULE_WMSLIDER"), i =>
-                ((GameWindowMode) i).ToDialog(), 0, 2, (int) ((patch_Settings) Settings.Instance).WindowMode)
+            TextMenu.Item windowMode = new TextMenuExt.EnumSlider<GameWindowMode>(Dialog.Clean("MODOPTIONS_CODEMODULE_WMSLIDER"),
+                ((patch_Settings) Settings.Instance).WindowMode, MenuOptionsExt.ToDialog)
                 .Change(SetWindowMode);
 
             // Replace Fullscreen with Window Mode Options
@@ -99,9 +99,7 @@ namespace Celeste {
 
         private static patch_TextMenu.patch_Item viewport;
 
-        private static void SetWindowMode(int mode) {
-            GameWindowMode value = (GameWindowMode) mode;
-
+        private static void SetWindowMode(GameWindowMode value) {
             ((patch_Settings) Settings.Instance).WindowMode = value;
             Settings.Instance.Fullscreen = value == GameWindowMode.Fullscreen;
             ((patch_Settings) Settings.Instance).ApplyScreen();
