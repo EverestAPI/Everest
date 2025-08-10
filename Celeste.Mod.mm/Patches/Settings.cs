@@ -211,6 +211,19 @@ namespace Celeste {
         }
 
         public GameWindowMode WindowMode;
+
+        [MonoModIgnore]
+        public extern void orig_ApplyScreen();
+
+        public new void ApplyScreen() {
+            if (WindowMode == GameWindowMode.Borderless) {
+                Engine.ViewPadding = ViewportPadding;
+                patch_Engine.SetBorderlessWindow();
+            }
+            else {
+                orig_ApplyScreen();
+            }
+        }
     }
 
     public enum GameWindowMode {
