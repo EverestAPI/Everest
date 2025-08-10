@@ -115,6 +115,20 @@ namespace Monocle {
                    ?? 1;
         }
 
+        // Not modified but used in the new method
+        private static bool resizing;
+
+        public static void SetBorderlessWindow() {
+            resizing = true;
+            Graphics.PreferredBackBufferWidth = Graphics.GraphicsDevice.Adapter.CurrentDisplayMode.Width;
+            Graphics.PreferredBackBufferHeight = Graphics.GraphicsDevice.Adapter.CurrentDisplayMode.Height;
+            Graphics.IsFullScreen = false;
+            //FNAPlatform which creates FNAWindow : GameWindow sets this to the SDL2 API which "should" handle borderless
+            Instance.Window.IsBorderlessEXT = true;
+            Graphics.ApplyChanges();
+            Console.WriteLine("BORDERLESS");
+            resizing = false;
+        }
     }
     public static class EngineExt {
 
