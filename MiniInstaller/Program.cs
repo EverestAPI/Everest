@@ -62,6 +62,7 @@ namespace MiniInstaller {
             using Logger.DisposableTuple _ = Logger.SetupLogger();
             try {
                 InGameUpdaterHelper.WaitForGameExit();
+                InGameUpdaterHelper.EnsureGameIsWriteable();
 
                 BackUp.Backup();
 

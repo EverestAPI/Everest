@@ -1,8 +1,7 @@
-﻿using Monocle;
-using System.Collections;
+﻿using Celeste.Mod.Helpers;
+using Monocle;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Text;
 using System.Xml;
 
@@ -16,6 +15,7 @@ namespace Celeste.Mod {
         /// A list of all registered emoji names, in order of their IDs.
         /// </summary>
         public static ReadOnlyCollection<string> Registered => new ReadOnlyCollection<string>(_Registered);
+
         public static char Last => (char) ('\uE000' + _Registered.Count - 1);
 
         private static List<string> _Registered = new List<string>();
@@ -23,9 +23,12 @@ namespace Celeste.Mod {
         private static List<bool> _IsMonochrome = new List<bool>();
         private static List<PixelFontCharacter> _Chars = new List<PixelFontCharacter>();
 
+        private static readonly CachedApply cachedApplies = new CachedApply();
+
         private static bool Initialized = false;
         private static Queue<KeyValuePair<string, MTexture>> Queue = new Queue<KeyValuePair<string, MTexture>>();
         private static XmlElement _FakeXML;
+
         public static XmlElement FakeXML {
             get {
                 if (_FakeXML != null)
@@ -129,6 +132,7 @@ namespace Celeste.Mod {
             }
 
             _Chars.Add(new PixelFontCharacter(Start + id, emoji, xml));
+            cachedApplies.Clear();
         }
 
         /// <summary>
@@ -174,68 +178,76 @@ namespace Celeste.Mod {
         public static bool IsMonochrome(char c)
             => _IsMonochrome[c - Start];
 
+        private class CachedApply : CacheHelper<string, string> {
+            public CachedApply() : base(name: "Emoji.Apply", maxSize: 1000) { }
+
+            protected override string Compute(string text) {
+                if (text == null)
+                    return text;
+
+                // TODO: This trashes the GC and doesn't allow escaping!
+                lock (_IDs) {
+                    StringBuilder resultBuilder = new StringBuilder();
+                    int appendStartIndex = 0;
+                    int head = -1, tail = 0;
+                    // suppose text is "aaaa:1111:2222:bbbb", and only ":2222:" is emoji name
+                    // H = head, T = tail, S = appendStartIndex
+                    while (tail < text.Length) {
+                        if (text[tail] == ':') {
+                            if (head >= 0 && text[head] == ':') {
+                                /*
+                                        aaaa:1111:2222:bbbb
+                                    (2) ^S  ^H   ^T   ^
+                                    (4) ^S       ^H   ^T
+                                    now head and tail are pointing to colons so we need to check if the text inside colons is an emoji name
+                                */
+                                string name = text.Substring(head + 1, (tail - 1) - (head + 1) + 1);
+                                if (_IDs.TryGetValue(name, out int value)) {
+                                    // if it is, we need to first append the text before emoji
+                                    resultBuilder.Append(text, appendStartIndex, (head - 1) - appendStartIndex + 1);
+                                    // then append the emoji itself
+                                    resultBuilder.Append((char) (Start + value));
+                                    // the emoji name has been replaced, we need to advance tail pointer once
+                                    // because the colon is used and can't belong to next emoji
+                                    tail++;
+                                    appendStartIndex = tail;
+                                    /*
+                                            aaaa:1111:2222:bbbb
+                                        (5)          ^H   S^T
+                                    */
+                                }
+                            }
+                            head = tail;
+                            /*
+                                    aaaa:1111:2222:bbbb
+                                (1) ^S H^T   ^
+                                (3) ^S      H^T
+                                when tail is pointing to a colon, we need to let head also points to it
+                                so when tail moves to next colon, text[head..tail] can be an emoji name and we can check then replace it
+                            */
+                        }
+                        tail++;
+                    }
+                    /*
+                            aaaa:1111:2222:bbbb
+                        (6)               H^S  ^T
+                        there are still text left since last append, so we need to append them
+                    */
+                    if (appendStartIndex < text.Length) {
+                        resultBuilder.Append(text, appendStartIndex, (text.Length - 1) - appendStartIndex + 1);
+                    }
+                    return resultBuilder.ToString();
+                }
+            }
+        }
+
         /// <summary>
         /// Transforms all instances of :emojiname: to \uSTART+ID
         /// </summary>
         /// <param name="text"></param>
         /// <returns></returns>
         public static string Apply(string text) {
-            if (text == null)
-                return text;
-            // TODO: This trashes the GC and doesn't allow escaping!
-            lock (_IDs) {
-                StringBuilder resultBuilder = new StringBuilder();
-                int appendStartIndex = 0;
-                int head = -1, tail = 0;
-                // suppose text is "aaaa:1111:2222:bbbb", and only ":2222:" is emoji name
-                // H = head, T = tail, S = appendStartIndex
-                while (tail < text.Length) {
-                    if (text[tail] == ':') {
-                        if (head >= 0 && text[head] == ':') {
-                            /*
-                                    aaaa:1111:2222:bbbb
-                                (2) ^S  ^H   ^T   ^
-                                (4) ^S       ^H   ^T
-                                now head and tail are pointing to colons so we need to check if the text inside colons is an emoji name
-                            */
-                            string name = text.Substring(head + 1, (tail - 1) - (head + 1) + 1);
-                            if (_IDs.TryGetValue(name, out int value)) {
-                                // if it is, we need to first append the text before emoji
-                                resultBuilder.Append(text, appendStartIndex, (head - 1) - appendStartIndex + 1);
-                                // then append the emoji itself
-                                resultBuilder.Append((char) (Start + value));
-                                // the emoji name has been replaced, we need to advance tail pointer once
-                                // because the colon is used and can't belong to next emoji
-                                tail++;
-                                appendStartIndex = tail;
-                                /*
-                                        aaaa:1111:2222:bbbb
-                                    (5)          ^H   S^T
-                                */
-                            }
-                        }
-                        head = tail;
-                        /*
-                                aaaa:1111:2222:bbbb
-                            (1) ^S H^T   ^
-                            (3) ^S      H^T
-                            when tail is pointing to a colon, we need to let head also points to it
-                            so when tail moves to next colon, text[head..tail] can be an emoji name and we can check then replace it
-                        */
-                    }
-                    tail++;
-                }
-                /*
-                        aaaa:1111:2222:bbbb
-                    (6)               H^S  ^T
-                    there are still text left since last append, so we need to append them
-                */
-                if (appendStartIndex < text.Length) {
-                    resultBuilder.Append(text, appendStartIndex, (text.Length - 1) - appendStartIndex + 1);
-                }
-                return resultBuilder.ToString();
-            }
+            return cachedApplies.GetCached(text);
         }
-
     }
 }
