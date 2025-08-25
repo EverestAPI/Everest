@@ -66,7 +66,10 @@ public static class MiscUtil {
             "Mono.Security.dll"
         }.Any(name => Path.GetFileName(file).Equals(name, StringComparison.OrdinalIgnoreCase));
     }
-    
+
+    public static bool IsSteamworksNet(string file) {
+        return Path.GetFileName(file).Equals("Steamworks.NET.dll", StringComparison.OrdinalIgnoreCase);
+    }
     // This is not "pure" but I guess it also somewhat fits here
     public static void MoveExecutable(string srcPath, string dstPath) {
         File.Delete(dstPath);

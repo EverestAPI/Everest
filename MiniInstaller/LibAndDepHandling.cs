@@ -26,19 +26,22 @@ public static class LibAndDepHandling {
     public static void SetupNativeLibs() {
         string[] libSrcs; // Later entries take priority
         string libDstDir;
+        string steamworksLibSrc;
         Dictionary<string, string> dllMap = new Dictionary<string, string>();
 
         switch (Globals.Platform) {
             case Globals.InstallPlatform.Windows: {
                 // Setup Windows native libs
                 if (Environment.Is64BitOperatingSystem) {
+                    steamworksLibSrc = Path.Combine(Globals.PathEverestLib, "lib64-win-x64", "Steamworks.NET.dll");
                     libSrcs = new string[] { Path.Combine(Globals.PathEverestLib, "lib64-win-x64"), Path.Combine(Globals.PathGame, "runtimes", "win-x64", "native") };
                     libDstDir = Path.Combine(Globals.PathGame, "lib64-win-x64");
                     dllMap.Add("fmodstudio64.dll", "fmodstudio.dll");
                 } else {
                     // We can take some native libraries from the vanilla install
+                    steamworksLibSrc = Path.Combine(Globals.PathEverestLib, "lib64-win-x86", "Steamworks.NET.dll");
                     libSrcs = new string[] {
-                        Path.Combine(Globals.PathOrig, "fmod.dll"), Path.Combine(Globals.PathOrig, "fmodstudio.dll"), Path.Combine(Globals.PathOrig, "steam_api.dll"),
+                        Path.Combine(Globals.PathOrig, "fmod.dll"), Path.Combine(Globals.PathOrig, "fmodstudio.dll"),
                         Path.Combine(Globals.PathEverestLib, "lib64-win-x86"), Path.Combine(Globals.PathGame, "runtimes", "win-x86", "native")
                     };
                     libDstDir = Path.Combine(Globals.PathGame, "lib64-win-x86");
@@ -46,6 +49,7 @@ public static class LibAndDepHandling {
             } break;
             case Globals.InstallPlatform.Linux: {
                 // Setup Linux native libs
+                steamworksLibSrc = Path.Combine(Globals.PathEverestLib, "lib64-linux", "Steamworks.NET.dll");
                 libSrcs = new string[] { Path.Combine(Globals.PathOrig, "lib64"), Path.Combine(Globals.PathEverestLib, "lib64-linux"), Path.Combine(Globals.PathGame, "runtimes", "linux-x64", "native") };
                 libDstDir = Path.Combine(Globals.PathGame, "lib64-linux");
                 MiscUtil.ParseMonoNativeLibConfig(Path.Combine(Globals.PathOrig, "Celeste.exe.config"), "linux", dllMap, "lib{0}.so");
@@ -53,6 +57,7 @@ public static class LibAndDepHandling {
             } break;
             case Globals.InstallPlatform.MacOS:{
                 // Setup MacOS native libs
+                steamworksLibSrc = Path.Combine(Globals.PathEverestLib, "lib64-osx", "Steamworks.NET.dll");
                 libSrcs = new string[] { Path.Combine(Globals.PathOrig, "osx"), Path.Combine(Globals.PathEverestLib, "lib64-osx"), Path.Combine(Globals.PathGame, "runtimes", "osx", "native") };
                 libDstDir = Path.Combine(Globals.PathGame, "lib64-osx");
                 MiscUtil.ParseMonoNativeLibConfig(Path.Combine(Globals.PathOrig, "Celeste.exe.config"), "osx", dllMap, "lib{0}.dylib");
@@ -98,6 +103,11 @@ public static class LibAndDepHandling {
                     CopyNativeLib(fileSrc, Path.Combine(libDstDir, Path.GetRelativePath(libSrc, fileSrc)));
             }
         }
+
+        // Copy our Steamworks.NET.dll
+        string steamworksLibDst = Path.Combine(Globals.PathGame, "Steamworks.NET.dll");
+        File.Delete(steamworksLibDst);
+        File.Copy(steamworksLibSrc, steamworksLibDst);
 
         // Delete old libraries
         foreach (string libFile in Globals.WindowsNativeLibFileNames)

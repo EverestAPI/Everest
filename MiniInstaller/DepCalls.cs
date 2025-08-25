@@ -105,9 +105,11 @@ public static class DepCalls {
         foreach (string dep in deps) {
             string srcDepPath = Path.Combine(Path.GetDirectoryName(asmFrom), $"{dep}.dll");
             string dstDepPath = Path.Combine(Path.GetDirectoryName(asmTo), $"{dep}.dll");
-            if (File.Exists(srcDepPath) && !MiscUtil.IsSystemLibrary(srcDepPath))
+            // Don't convert steamworks - doing so would copy it from the vanilla backup location instead of taking our updated version.
+            bool isSteamworks = MiscUtil.IsSteamworksNet(srcDepPath);
+            if (File.Exists(srcDepPath) && !MiscUtil.IsSystemLibrary(srcDepPath) && !isSteamworks)
                 ConvertToNETCore(srcDepPath, dstDepPath, convertedAsms);
-            else if (File.Exists(dstDepPath) && !MiscUtil.IsSystemLibrary(srcDepPath))
+            else if (File.Exists(dstDepPath) && !MiscUtil.IsSystemLibrary(srcDepPath) && !isSteamworks)
                 ConvertToNETCore(dstDepPath, convertedAsms: convertedAsms);
         }
 
