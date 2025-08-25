@@ -186,6 +186,7 @@ namespace MonoMod {
             FieldReference sf_timeRate = t_Engine.FindField("TimeRate");
             FieldReference sf_timeRateB = t_Engine.FindField("TimeRateB");
             FieldReference sf_effectiveTimeRate = t_Engine.FindField("EffectiveTimeRate");
+            MethodReference m_set_DeltaTime = t_Engine.FindMethod("set_DeltaTime");
             MethodReference m_get_RawDeltaTime = t_Engine.FindMethod("get_RawDeltaTime");
             MethodReference m_GetTimeRateComponentMultiplier = t_Engine.FindMethod("GetTimeRateComponentMultiplier");
 
@@ -198,8 +199,7 @@ namespace MonoMod {
                 .GotoNext()
                 .Remove()
                 // multiply time rate with GetTimeRateComponentMultiplier(scene)
-                .GotoNext(MoveType.After, instr => instr.MatchLdsfld(sf_timeRateB),
-                                                   instr => instr.MatchMul())
+                .GotoNext(instr => instr.MatchCall(m_set_DeltaTime))
                 .EmitLdarg0()
                 .EmitLdfld(f_scene)
                 .EmitCall(m_GetTimeRateComponentMultiplier)
