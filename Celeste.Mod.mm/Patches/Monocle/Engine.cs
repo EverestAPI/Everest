@@ -122,6 +122,8 @@ namespace Monocle {
         [Obsolete("This field should be reserved to Assists/Variants. Use a TimeRateModifier instead to prevent conflicts.")]
         public static float TimeRateB;
 
+        public static float EffectiveTimeRate;
+
         private static float GetTimeRateComponentMultiplier(Scene scene) {
             return scene?.Tracker.GetComponents<TimeRateModifier>()
                                  .Cast<TimeRateModifier>()
@@ -182,15 +184,35 @@ namespace MonoMod {
         public static void PatchEngineUpdate(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_Engine = context.Method.DeclaringType;
             FieldReference f_scene = t_Engine.FindField("scene");
+            FieldReference sf_timeRate = t_Engine.FindField("TimeRate");
+            FieldReference sf_timeRateB = t_Engine.FindField("TimeRateB");
+            FieldReference sf_effectiveTimeRate = t_Engine.FindField("EffectiveTimeRate");
+            MethodReference m_get_RawDeltaTime = t_Engine.FindMethod("get_RawDeltaTime");
             MethodReference m_GetTimeRateComponentMultiplier = t_Engine.FindMethod("GetTimeRateComponentMultiplier");
 
-            ILCursor cursor = new ILCursor(context);
+            // remove loading RawDeltaTime and multiplying it with TimeRate
+            ILCursor cursor = new(context);
+            cursor.GotoNext(instr => instr.MatchCall(m_get_RawDeltaTime),
+                            instr => instr.MatchLdsfld(sf_timeRate),
+                            instr => instr.MatchMul());
+            cursor.Remove();    // Remove call get_RawDeltaTime
+            cursor.GotoNext();  // Keep ldsfld TimeRate
+            cursor.Remove();    // Remove mul
+
             // multiply time rate with GetTimeRateComponentMultiplier(scene)
-            cursor.GotoNext(MoveType.After, instr => instr.MatchLdsfld("Monocle.Engine", "TimeRateB"),
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdsfld(sf_timeRateB),
                                             instr => instr.MatchMul());
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Emit(OpCodes.Ldfld, f_scene);
             cursor.Emit(OpCodes.Call, m_GetTimeRateComponentMultiplier);
+            cursor.Emit(OpCodes.Mul);
+
+            // load time rate into EffectiveTimeRate
+            cursor.Emit(OpCodes.Stsfld, sf_effectiveTimeRate);
+
+            // multiply previous result with RawDeltaTime
+            cursor.Emit(OpCodes.Call, m_get_RawDeltaTime);
+            cursor.EmitLdsfld(sf_effectiveTimeRate);
             cursor.Emit(OpCodes.Mul);
         }
 
