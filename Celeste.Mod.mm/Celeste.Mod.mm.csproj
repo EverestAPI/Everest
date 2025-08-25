@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
     <ProjectReference Include="..\external\MonoMod\src\MonoMod.Patcher\MonoMod.Patcher.csproj" />
     <ProjectReference Include="..\external\MonoMod\src\MonoMod.Utils\MonoMod.Utils.csproj" />
     <ProjectReference Include="..\external\MonoMod\src\MonoMod.RuntimeDetour\MonoMod.RuntimeDetour.csproj" />
@@ -47,7 +47,7 @@
     <PackageReference Include="MAB.DotIgnore" Version="3.0.2" />
 
     <!-- Dependency not used by Everest itself, but kept for mod compatibility reasons -->
-    <PackageReference Include="DotNetZip" Version="1.16.0" />
+    <PackageReference Include="DotNetZip" Version="1.16.0" NoWarn="NU1903" />
   </ItemGroup>
 
   <!--
