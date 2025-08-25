@@ -49,6 +49,18 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.ForceNoInlining))]
     class ForceNoInliningAttribute : Attribute { }
+    
+    /// <summary>
+    /// Forces AggressiveInlining onto a given member. Works for methods as well as properties.
+    /// </summary>
+    [MonoModCustomAttribute(nameof(MonoModRules.ForceAggressiveInlining))]
+    class ForceAggressiveInliningAttribute : Attribute { }
+    
+    /// <summary>
+    /// Forces the given member to be sealed. Works for methods as well as properties.
+    /// </summary>=
+    [MonoModCustomAttribute(nameof(MonoModRules.ForceSealed))]
+    class ForceSealedAttribute : Attribute { }
 #endregion
 
     static partial class MonoModRules {
@@ -313,6 +325,35 @@ namespace MonoMod {
 
         public static void ForceNoInlining(MethodDefinition method, CustomAttribute attrib) {
             method.NoInlining = true;
+        }
+        
+        public static void ForceAggressiveInlining(ICustomAttributeProvider provider, CustomAttribute attrib) {
+            switch (provider) {
+                case PropertyDefinition prop:
+                    ForceAggressiveInlining(prop.GetMethod, attrib);
+                    ForceAggressiveInlining(prop.SetMethod, attrib);
+                    break;
+                case MethodDefinition method:
+                    method.NoInlining = false;
+                    method.AggressiveInlining = true;
+                    break;
+            }
+
+            provider?.CustomAttributes?.Remove(attrib);
+        }
+        
+        public static void ForceSealed(ICustomAttributeProvider provider, CustomAttribute attrib) {
+            switch (provider) {
+                case PropertyDefinition prop:
+                    ForceSealed(prop.GetMethod, attrib);
+                    ForceSealed(prop.SetMethod, attrib);
+                    break;
+                case MethodDefinition method:
+                    method.IsFinal = true;
+                    break;
+            }
+            
+            provider?.CustomAttributes?.Remove(attrib);
         }
 
         /// <summary>

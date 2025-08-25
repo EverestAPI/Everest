@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Xml;
 
 namespace MiniInstaller;
@@ -64,7 +66,10 @@ public static class MiscUtil {
             "Mono.Security.dll"
         }.Any(name => Path.GetFileName(file).Equals(name, StringComparison.OrdinalIgnoreCase));
     }
-    
+
+    public static bool IsSteamworksNet(string file) {
+        return Path.GetFileName(file).Equals("Steamworks.NET.dll", StringComparison.OrdinalIgnoreCase);
+    }
     // This is not "pure" but I guess it also somewhat fits here
     public static void MoveExecutable(string srcPath, string dstPath) {
         File.Delete(dstPath);
@@ -81,5 +86,24 @@ public static class MiscUtil {
                 File.Move(Path.ChangeExtension(srcPath, ".mdb"), Path.ChangeExtension(dstPath, ".mdb"));
             }
         }
+    }
+
+    public static void EnsureFileIsWriteable(string path) {
+        if (!File.Exists(path))
+            return;
+
+        if ((File.GetAttributes(path) & FileAttributes.ReadOnly) == 0)
+            return;
+
+        StringBuilder errorMessage = new StringBuilder()
+            .Append(Path.GetFileName(path))
+            .Append(" is marked as read-only. ");
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            errorMessage.Append("Please remove the read-only attribute from the game folder and its files.");
+        else
+            errorMessage.Append("Please ensure the user has write permissions to the file.");
+
+        throw new InvalidOperationException(errorMessage.ToString());
     }
 }

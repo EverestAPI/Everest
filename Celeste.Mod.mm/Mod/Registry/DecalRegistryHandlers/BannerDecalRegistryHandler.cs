@@ -1,4 +1,5 @@
-﻿using System.Xml;
+﻿using Microsoft.Xna.Framework;
+using System.Xml;
 
 namespace Celeste.Mod.Registry.DecalRegistryHandlers; 
 
@@ -20,9 +21,10 @@ internal sealed class BannerDecalRegistryHandler : DecalRegistryHandler {
     }
 
     public override void ApplyTo(Decal decal) {
-        _amplitude *= ((patch_Decal)decal).Scale.X;
-        _offset *= float.Sign(((patch_Decal)decal).Scale.X) * float.Abs(((patch_Decal)decal).Scale.Y);
+        Vector2 scale = ((patch_Decal) decal).Scale;
+        float amplitude = _amplitude * scale.X;
+        float offset = _offset * float.Sign(scale.X) * float.Abs(scale.Y);
 
-        ((patch_Decal)decal).MakeBanner(_speed, _amplitude, _sliceSize, _sliceSinIncrement, _easeDown, _offset, _onlyIfWindy);
+        ((patch_Decal)decal).MakeBanner(_speed, amplitude, _sliceSize, _sliceSinIncrement, _easeDown, offset, _onlyIfWindy);
     }
 }

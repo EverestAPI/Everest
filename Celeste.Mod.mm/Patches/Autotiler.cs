@@ -85,6 +85,9 @@ namespace Celeste {
             if (xml.HasAttr("debris"))
                 data.Debris = xml.Attr("debris");
 
+            if (xml.HasAttr("debrisImpactSfx"))
+                data.DebrisImpactSfx = xml.Attr("debrisImpactSfx");
+
             if (xml.HasAttr("ignoreExceptions")) {
                 string[] array = xml.Attr("ignoreExceptions").Split(',');
 
@@ -399,6 +402,10 @@ namespace Celeste {
             return !string.IsNullOrEmpty(path = lookup.TryGetValue(tiletype, out patch_TerrainType t) ? t.Debris : "");
         }
 
+        public bool TryGetCustomDebrisImpactSfx(out string sfxEvent, char tiletype) {
+            return !string.IsNullOrEmpty(sfxEvent = lookup.TryGetValue(tiletype, out patch_TerrainType t) ? t.DebrisImpactSfx : "");
+        }
+
         // Required because TerrainType is private.
         private class patch_TerrainType {
             public char ID;
@@ -411,6 +418,7 @@ namespace Celeste {
             public patch_Tiles Padded;
 
             public string Debris;
+            public string DebrisImpactSfx;
 
             public int ScanWidth;
             public int ScanHeight;

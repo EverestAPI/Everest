@@ -386,6 +386,7 @@ namespace Celeste.Mod {
             }
 
             DetourManager.DetourApplied += info => {
+                HookUtils.EnsureLegalHook(info);
                 if (GetHookOwner(out bool isMMHook) is not Assembly owner)
                     return;
 
@@ -399,6 +400,7 @@ namespace Celeste.Mod {
             DetourManager.DetourUndone += UnregisterModDetour;
 
             DetourManager.ILHookApplied += info => {
+                HookUtils.EnsureLegalHook(info);
                 if (GetHookOwner(out bool isMMHook) is not Assembly owner)
                     return;
 

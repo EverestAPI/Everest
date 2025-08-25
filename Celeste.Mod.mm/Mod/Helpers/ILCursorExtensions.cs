@@ -229,6 +229,13 @@ namespace Celeste.Mod.Helpers {
             Logger.Debug(NextBestFitLogID,
                 $"Selecting next best fit between indices 0x{bestMatch.start:X4} and 0x{bestMatch.end:X4} for cursor {nameof(ILCursor)}#{cursor.GetHashCode():X8}.");
 
+            // some predicates may be using out parameters; invoke the predicates again to make sure
+            // that the out parameters are set to ones from the match
+            cursor.Index = bestMatch.start;
+            foreach (Func<Instruction, bool> predicate in predicates)
+                cursor.GotoNext(predicate);
+
+            // and finally move the cursor to the correct place
             cursor.Index = GetIndexFromMatch(moveType, bestMatch);
 
             if (moveType is MoveType.AfterLabel)
@@ -420,7 +427,6 @@ namespace Celeste.Mod.Helpers {
                         matchFound = false;
                         break;
                     }
-
                 }
 
                 if (matchFound)
@@ -473,6 +479,13 @@ namespace Celeste.Mod.Helpers {
             Logger.Debug(PrevBestFitLogID,
                 $"Selecting previous best fit between indices 0x{bestMatch.start:X4} and 0x{bestMatch.end:X4} for cursor {nameof(ILCursor)}#{cursor.GetHashCode():X8}.");
 
+            // some predicates may be using out parameters; invoke them again to make sure
+            // that the out parameters are set to ones from the match
+            cursor.Index = bestMatch.start;
+            foreach (Func<Instruction, bool> predicate in predicates)
+                cursor.GotoNext(predicate);
+
+            // and finally move the cursor to the correct place
             cursor.Index = GetIndexFromMatch(moveType, bestMatch);
 
             if (moveType is MoveType.AfterLabel)
