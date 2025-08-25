@@ -109,7 +109,7 @@ namespace Monocle {
         /// <summary>
         /// Modifies the <see cref="Engine.RawDeltaTime"/>, aggregated with <see cref="Engine.TimeRateB"/> and any existing
         /// <see cref="TimeRateModifier"/> found in <see cref="Engine.Scene"/>.<br/>
-        /// This variable is set by various Vanilla entities such as <seealso cref="Celeste.Seeker"/> or <seealso cref="Celeste.AngryOshiro"/>.
+        /// This variable is set by various Vanilla entities such as <see cref="Celeste.Seeker"/> or <see cref="Celeste.AngryOshiro"/>.
         /// </summary>
         [Obsolete("This variable is often set by vanilla entities that don't naturally appear together. Use a TimeRateModifier instead to prevent conflicts.")]
         public static float TimeRate;
