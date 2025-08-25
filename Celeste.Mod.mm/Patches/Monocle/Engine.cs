@@ -109,17 +109,17 @@ namespace Monocle {
         /// <summary>
         /// Modifies the <see cref="Engine.RawDeltaTime"/>, aggregated with <see cref="Engine.TimeRateB"/> and any existing
         /// <see cref="TimeRateModifier"/> found in <see cref="Engine.Scene"/>.<br/>
-        /// This variable is set by various Vanilla entities such as <see cref="Celeste.Seeker"/> or <see cref="Celeste.AngryOshiro"/>.
+        /// This field is set by various Vanilla entities such as <see cref="Celeste.Seeker"/> or <see cref="Celeste.AngryOshiro"/>.
         /// </summary>
-        [Obsolete("This variable is often set by vanilla entities that don't naturally appear together. Use a TimeRateModifier instead to prevent conflicts.")]
+        [Obsolete("This field is often set by vanilla entities that don't naturally appear together. Use a TimeRateModifier instead to prevent conflicts.")]
         public static float TimeRate;
 
         /// <summary>
         /// Modifies the <see cref="Engine.RawDeltaTime"/>, aggregated with <see cref="Engine.TimeRate"/> and any existing
         /// <see cref="TimeRateModifier"/> found in <see cref="Engine.Scene"/>.<br/>
-        /// This variable is set by AssistMode/VariantMode game speed.
+        /// This field is set by AssistMode/VariantMode game speed.
         /// </summary>
-        [Obsolete("This variable should be reserved to Assists/Variants. Use a TimeRateModifier instead to prevent conflicts.")]
+        [Obsolete("This field should be reserved to Assists/Variants. Use a TimeRateModifier instead to prevent conflicts.")]
         public static float TimeRateB;
 
         private static float GetTimeRateComponentMultiplier(Scene scene) {
