@@ -183,35 +183,35 @@ namespace MonoMod {
         public static void PatchEngineUpdate(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_Engine = context.Method.DeclaringType;
             FieldReference f_scene = t_Engine.FindField("scene");
-            FieldReference sf_timeRate = t_Engine.FindField("TimeRate");
-            FieldReference sf_timeRateB = t_Engine.FindField("TimeRateB");
-            FieldReference sf_effectiveTimeRate = t_Engine.FindField("EffectiveTimeRate");
-            MethodReference m_set_DeltaTime = t_Engine.FindMethod("set_DeltaTime");
-            MethodReference m_get_RawDeltaTime = t_Engine.FindMethod("get_RawDeltaTime");
+            FieldReference sf_EffectiveTimeRate = t_Engine.FindField("EffectiveTimeRate");
             MethodReference m_GetTimeRateComponentMultiplier = t_Engine.FindMethod("GetTimeRateComponentMultiplier");
-
-            ILCursor cursor = new(context);
+            MethodReference m_get_RawDeltaTime = t_Engine.FindMethod("get_RawDeltaTime");
 
             // remove loading RawDeltaTime and multiplying it with TimeRate
-            cursor.GotoNext(instr => instr.MatchCall(m_get_RawDeltaTime),
-                            instr => instr.MatchLdsfld(sf_timeRate),
-                            instr => instr.MatchMul());
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(
+                instr => instr.MatchCall("Monocle.Engine", "System.Single get_RawDeltaTime()"),
+                instr => instr.MatchLdsfld("Monocle.Engine", "TimeRate"),
+                instr => instr.MatchMul());
             cursor.Remove();
             cursor.Index++;
             cursor.Remove();
+
             // multiply time rate with GetTimeRateComponentMultiplier(scene)
-            cursor.GotoNext(instr => instr.MatchCall(m_set_DeltaTime));
+            cursor.GotoNext(MoveType.After,
+                instr => instr.MatchLdsfld("Monocle.Engine", "TimeRateB"),
+                instr => instr.MatchMul());
             cursor.EmitLdarg0();
             cursor.EmitLdfld(f_scene);
             cursor.EmitCall(m_GetTimeRateComponentMultiplier);
             cursor.EmitMul();
 
             // load time rate into EffectiveTimeRate
-            cursor.EmitStsfld(sf_effectiveTimeRate);
+            cursor.EmitStsfld(sf_EffectiveTimeRate);
 
-            // multiply previous result with RawDeltaTime
+            // multiply the previous result with RawDeltaTime
             cursor.EmitCall(m_get_RawDeltaTime);
-            cursor.EmitLdsfld(sf_effectiveTimeRate);
+            cursor.EmitLdsfld(sf_EffectiveTimeRate);
             cursor.EmitMul();
         }
 
