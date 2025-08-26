@@ -183,35 +183,36 @@ namespace MonoMod {
         public static void PatchEngineUpdate(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_Engine = context.Method.DeclaringType;
             FieldReference f_scene = t_Engine.FindField("scene");
-            FieldReference sf_timeRate = t_Engine.FindField("TimeRate");
-            FieldReference sf_timeRateB = t_Engine.FindField("TimeRateB");
-            FieldReference sf_effectiveTimeRate = t_Engine.FindField("EffectiveTimeRate");
-            MethodReference m_set_DeltaTime = t_Engine.FindMethod("set_DeltaTime");
-            MethodReference m_get_RawDeltaTime = t_Engine.FindMethod("get_RawDeltaTime");
+            FieldReference sf_EffectiveTimeRate = t_Engine.FindField("EffectiveTimeRate");
             MethodReference m_GetTimeRateComponentMultiplier = t_Engine.FindMethod("GetTimeRateComponentMultiplier");
+            MethodReference m_get_RawDeltaTime = t_Engine.FindMethod("get_RawDeltaTime");
 
-            new ILCursor(context)
-                // remove loading RawDeltaTime and multiplying it with TimeRate
-                .GotoNext(instr => instr.MatchCall(m_get_RawDeltaTime),
-                          instr => instr.MatchLdsfld(sf_timeRate),
-                          instr => instr.MatchMul())
-                .Remove()
-                .GotoNext()
-                .Remove()
-                // multiply time rate with GetTimeRateComponentMultiplier(scene)
-                .GotoNext(instr => instr.MatchCall(m_set_DeltaTime))
-                .EmitLdarg0()
-                .EmitLdfld(f_scene)
-                .EmitCall(m_GetTimeRateComponentMultiplier)
-                .EmitMul()
+            // remove loading RawDeltaTime and multiplying it with TimeRate
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(
+                instr => instr.MatchCall("Monocle.Engine", "System.Single get_RawDeltaTime()"),
+                instr => instr.MatchLdsfld("Monocle.Engine", "TimeRate"),
+                instr => instr.MatchMul());
+            cursor.Remove();
+            cursor.Index++;
+            cursor.Remove();
 
-                // load time rate into EffectiveTimeRate
-                .EmitStsfld(sf_effectiveTimeRate)
+            // multiply time rate with GetTimeRateComponentMultiplier(scene)
+            cursor.GotoNext(MoveType.After,
+                instr => instr.MatchLdsfld("Monocle.Engine", "TimeRateB"),
+                instr => instr.MatchMul());
+            cursor.EmitLdarg0();
+            cursor.EmitLdfld(f_scene);
+            cursor.EmitCall(m_GetTimeRateComponentMultiplier);
+            cursor.EmitMul();
 
-                // multiply previous result with RawDeltaTime
-                .EmitCall(m_get_RawDeltaTime)
-                .EmitLdsfld(sf_effectiveTimeRate)
-                .EmitMul();
+            // load time rate into EffectiveTimeRate
+            cursor.EmitStsfld(sf_EffectiveTimeRate);
+
+            // multiply the previous result with RawDeltaTime
+            cursor.EmitCall(m_get_RawDeltaTime);
+            cursor.EmitLdsfld(sf_EffectiveTimeRate);
+            cursor.EmitMul();
         }
 
         public static void PatchEngineCctor(ILContext context, CustomAttribute attrib) {
