@@ -137,6 +137,10 @@ namespace Monocle {
         /// </summary>
         public static float EffectiveTimeRate;
 
+        /// <summary>
+        /// Aggregates the <see cref="TimeRateModifier.Multiplier"/>s of all enabled <see cref="TimeRateModifier"/>s in the scene
+        /// by multiplying them together.
+        /// </summary>
         private static float GetTimeRateComponentMultiplier(Scene scene) {
             return scene?.Tracker.GetComponents<TimeRateModifier>()
                                  .Cast<TimeRateModifier>()
