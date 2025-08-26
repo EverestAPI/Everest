@@ -106,20 +106,28 @@ namespace Monocle {
         protected override extern void Update(GameTime gameTime);
 
         /// <summary>
-        /// Modifies the <see cref="Engine.RawDeltaTime"/>, aggregated with <see cref="Engine.TimeRateB"/> and any existing
-        /// <see cref="TimeRateModifier"/> found in <see cref="Engine.Scene"/>.<br/>
-        /// This field is set by various Vanilla entities such as <see cref="Celeste.Seeker"/> or <see cref="Celeste.AngryOshiro"/>.
+        /// A game speed factor set by various entities, such as <see cref="Celeste.Seeker"/> or <see cref="Celeste.AngryOshiro"/>.<br/>
+        /// This field should not be modified by mods. Use a <see cref="TimeRateModifier"/> component instead.
         /// </summary>
-        [Obsolete("This field is often set by vanilla entities that don't naturally appear together. Use a TimeRateModifier instead to prevent conflicts.")]
-        public static float TimeRate;
+        /// <remarks>
+        /// This field is used by entities which don't appear in vanilla together, or more than once in the same room.
+        /// As such, if two of them try to modify the time rate, they will overwrite each other's values.
+        /// </remarks>
+        /// <seealso cref="EffectiveTimeRate"/>
+        [Obsolete(
+            "This field should be reserved to vanilla entities which modify time. "
+            + "Use a TimeRateModifier component instead to prevent conflicts.")]
+        public static new float TimeRate;
 
         /// <summary>
-        /// Modifies the <see cref="Engine.RawDeltaTime"/>, aggregated with <see cref="Engine.TimeRate"/> and any existing
-        /// <see cref="TimeRateModifier"/> found in <see cref="Engine.Scene"/>.<br/>
-        /// This field is set by AssistMode/VariantMode game speed.
+        /// The Assist/Variant Mode "Game Speed" factor by which <see cref="Engine.RawDeltaTime"/> is multiplied.<br/>
+        /// This field should not be modified by mods. Use a <see cref="TimeRateModifier"/> component instead.
         /// </summary>
-        [Obsolete("This field should be reserved to Assists/Variants. Use a TimeRateModifier instead to prevent conflicts.")]
-        public static float TimeRateB;
+        /// <seealso cref="EffectiveTimeRate"/>
+        [Obsolete(
+            "This field should be reserved to the Assist/Variant Mode \"Game Speed\" modifier. "
+            + "Use a TimeRateModifier component instead to prevent conflicts.")]
+        public static new float TimeRateB;
 
         /// <summary>
         /// The final time rate factor applied to <see cref="Engine.RawDeltaTime"/> before being set to
