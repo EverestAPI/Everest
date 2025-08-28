@@ -218,6 +218,7 @@ namespace Celeste.Mod {
                     };
 
                     Watcher.Created += LoadAutoUpdated;
+                    Watcher.Error += WatcherError;
 
                     Watcher.EnableRaisingEvents = true;
                     AutoLoadNewMods = true;
@@ -241,6 +242,11 @@ namespace Celeste.Mod {
                         LoadZip(e.FullPath);
                     ((patch_OuiMainMenu) (AssetReloadHelper.ReturnToScene as Overworld)?.GetUI<OuiMainMenu>())?.NeedsRebuild();
                 })));
+            }
+
+            private static void WatcherError(object source, ErrorEventArgs e) {
+                Logger.Error("loader", $"Error while watching \"{PathMods}\" for changes. Updates will no longer be detected.");
+                Logger.LogDetailed(e.GetException());
             }
 
             /// <summary>
