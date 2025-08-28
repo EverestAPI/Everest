@@ -473,6 +473,11 @@ namespace Celeste.Mod {
                     Logger.Info("modasmctx", $"Reloading mod assembly context because of changed assembly: {e.FullPath}");
                     Everest.Loader.ReloadMod(ModuleMeta);
                 };
+                watcher.Error += (s, e) => {
+                    Logger.Error("modasmctx", $"Error while watching \"{asmDir}\" for changes. Updates will no longer be detected.");
+                    Logger.LogDetailed(e.GetException());
+                };
+
                 watcher.EnableRaisingEvents = true;
 
                 _AssemblyReloadWatchers.Add(asmDir, watcher);
