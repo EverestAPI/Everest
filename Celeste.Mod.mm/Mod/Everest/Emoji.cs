@@ -247,6 +247,7 @@ namespace Celeste.Mod {
         /// <param name="text"></param>
         /// <returns></returns>
         public static string Apply(string text) {
+            if (text == null) return null;
             return cachedApplies.GetCached(text);
         }
     }
