@@ -116,6 +116,13 @@ namespace MonoMod {
     }
 
     static partial class MonoModRules {
+        private static void emitCallToCodePointList(ILCursor cursor, VariableDefinition v_listOfCodePoints) {
+            // List<int> listOfCodePoints = UnicodeStringHelper.ToCodePointList(text);
+            cursor.Emit(OpCodes.Ldarg_1);
+            cursor.Emit(OpCodes.Call, MonoModRule.Modder.FindType("Celeste.Mod.Helpers.UnicodeStringHelper").Resolve().FindMethod("ToCodePointList"));
+            cursor.Emit(OpCodes.Stloc, v_listOfCodePoints);
+        }
+
         public static void PatchTextIteration(ILContext context, CustomAttribute attrib) {
             TypeReference t_List_int = MonoModRule.Modder.FindType("Celeste.Mod.Helpers.UnicodeStringHelper").Resolve().NestedTypes[0];
             VariableDefinition v_listOfCodePoints = new VariableDefinition(t_List_int);
@@ -125,25 +132,21 @@ namespace MonoMod {
             if (context.Method.Name == "orig_AddWord") {
                 // start after the PixelFontSize.Measure call because it needs to get the original text, not the code point thingy
                 cursor.GotoNext(MoveType.After, instr => instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.Name == "Measure");
-            }
 
-            // List<int> listOfCodePoints = UnicodeStringHelper.ToCodePointList(text);
-            cursor.Emit(OpCodes.Ldarg_1);
-            cursor.Emit(OpCodes.Call, MonoModRule.Modder.FindType("Celeste.Mod.Helpers.UnicodeStringHelper").Resolve().FindMethod("ToCodePointList"));
-            cursor.Emit(OpCodes.Stloc, v_listOfCodePoints);
+                emitCallToCodePointList(cursor, v_listOfCodePoints);
+            } else {
+                // jump after the initial if (string.IsNullOrEmpty) { return; }
+                cursor.GotoNext(MoveType.After, instr => instr.MatchRet());
 
-            // string.IsNullOrEmpty => isEmpty
-            int index = cursor.Index;
-            while (cursor.TryGotoNext(instr => instr.MatchCall<string>("IsNullOrEmpty"))) {
-                cursor.Next.OpCode = OpCodes.Call;
-                cursor.Next.Operand = t_List_int.Resolve().FindMethod("get_Count");
-                cursor.Index++;
-                cursor.Emit(OpCodes.Ldc_I4_0);
-                cursor.Emit(OpCodes.Ceq);
+                emitCallToCodePointList(cursor, v_listOfCodePoints);
+
+                // make sure the call to ToCodePointList is outside the if (string.IsNullOrEmpty) { ... }
+                ILCursor branch = cursor.Clone().GotoPrev(instr => instr.OpCode == OpCodes.Brfalse_S);
+                branch.Next.Operand = cursor.Previous.Previous.Previous;
             }
 
             // text => listOfCodePoints
-            cursor.Index = index;
+            int index = cursor.Index;
             while (cursor.TryGotoNext(instr => instr.MatchLdarg1())) {
                 cursor.Next.OpCode = OpCodes.Ldloc;
                 cursor.Next.Operand = v_listOfCodePoints;

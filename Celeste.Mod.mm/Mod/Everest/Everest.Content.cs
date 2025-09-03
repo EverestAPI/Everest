@@ -177,6 +177,7 @@ namespace Celeste.Mod {
                 watcher.Created += FileUpdated;
                 watcher.Deleted += FileUpdated;
                 watcher.Renamed += FileRenamed;
+                watcher.Error += WatcherError;
 
                 watcher.EnableRaisingEvents = true;
             } catch (Exception e) {
@@ -289,6 +290,11 @@ namespace Celeste.Mod {
         private void FileRenamed(object source, RenamedEventArgs e) {
             Logger.Verbose("content", $"File renamed: {e.OldFullPath} - {e.FullPath}");
             QueuedTaskHelper.Do(Tuple.Create(e.OldFullPath, e.FullPath), () => Update(e.OldFullPath, e.FullPath));
+        }
+
+        private void WatcherError(object source, ErrorEventArgs e) {
+            Logger.Error("content", $"Error while watching \"{Path}\" for changes. Updates will no longer be detected.");
+            Logger.LogDetailed(e.GetException());
         }
 
         private void Update(string pathPrev, string pathNext) {
