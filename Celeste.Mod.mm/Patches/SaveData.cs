@@ -409,10 +409,11 @@ namespace Celeste {
             if (LevelSets.Count <= 1 && LevelSetRecycleBin.Count == 0 && !HasModdedSaveData) {
                 // the save file doesn't have any mod save data (just created, overwritten by vanilla, or Everest just updated).
                 // we want to carry mod save data that was backed up in the mod save file, if any.
-                ModSaveData modSaveData = UserIO.Load<ModSaveData>(GetFilename(FileSlot) + "-modsavedata");
+                string saveFileName = GetFilename(FileSlot);
+                ModSaveData modSaveData = UserIO.Load<ModSaveData>($"{saveFileName}-modsavedata");
                 if (modSaveData != null) {
                     modSaveData.CopyToCelesteSaveData(this);
-                    Logger.Warn("SaveData", $"{LevelSets.Count} level set(s) were restored from mod backup for save slot {FileSlot}");
+                    Logger.Warn("SaveData", $"{LevelSets.Count} level set(s) were restored from mod backup for save slot {saveFileName}");
                 }
             }
 
