@@ -310,7 +310,7 @@ namespace Celeste {
                 }
             }
             else
-                Logger.Warn("SaveData", $"Deleting save data for slot {slot} which has no vanilla data");
+                Logger.Warn("SaveData", $"Deleting save data for slot {saveFileName} which has no vanilla data");
 
             return TryDeleteModSaveData(slot);
         }
@@ -334,13 +334,13 @@ namespace Celeste {
             if (Directory.Exists(saveFilePath)) {
                 foreach (string modSaveFile in Directory.GetFiles(saveFilePath, $"{saveFileName}-modsave-*.celeste")) {
                     string file = Path.GetFileNameWithoutExtension(modSaveFile);
-                    Logger.Info("SaveData", $"Save slot {slot} has modsave {file} which was not cleaned, deleting file");
+                    Logger.Info("SaveData", $"Save slot {saveFileName} has modsave {file} which was not cleaned, deleting file");
                     UserIO.Delete(file);
                 }
 
                 foreach (string modSessionFile in Directory.GetFiles(saveFilePath, $"{saveFileName}-modsession-*.celeste")) {
                     string file = Path.GetFileNameWithoutExtension(modSessionFile);
-                    Logger.Info("SaveData", $"Save slot {slot} has modsession {file} which was not cleaned, deleting file");
+                    Logger.Info("SaveData", $"Save slot {saveFileName} has modsession {file} which was not cleaned, deleting file");
                     UserIO.Delete(file);
                 }
             }
