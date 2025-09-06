@@ -94,6 +94,16 @@ namespace Celeste.Mod {
                     => OnCreateButtons?.Invoke(menu, buttons);
             }
 
+            public static class GameLoader {
+                /// <summary>
+                /// Called at the end of the game loading thread, <see cref="GameLoader.LoadThread()"/>.<br/>
+                /// This event is invoked <b>only once</b>, when starting the game.
+                /// </summary>
+                public static event Action OnLoadThread;
+                internal static void LoadThread()
+                    => OnLoadThread?.Invoke();
+            }
+
             public static class LevelLoader {
                 public delegate void LoadingThreadHandler(_Level level);
                 /// <summary>

@@ -124,6 +124,9 @@ namespace Celeste {
             Console.WriteLine("DONE LOADING (in " + Celeste.LoadTimer.ElapsedMilliseconds + "ms)");
             Celeste.LoadTimer.Stop();
             Celeste.LoadTimer = null;
+
+            Everest.Events.GameLoader.LoadThread();
+
             loaded = true;
         }
 
