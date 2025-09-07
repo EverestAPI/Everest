@@ -4,10 +4,9 @@ using System.Collections.Generic;
 
 namespace Celeste.Mod.Entities {
     /// <summary>
-    /// Allows for Collision with any type of entity in the game, similar to a PlayerCollider or PufferCollider.
-    /// Performs the Action provided on collision. 
+    /// <inheritdoc/>
     /// </summary>
-    /// <typeparam name="T">The specific type of Entity this component should try to collide with</typeparam>
+    /// <typeparam name="T">The specific type of <see cref="Entity"/> this <see cref="CustomCollider{T}"/> should try to collide with.</typeparam>
     public class EntityCollider<T> : CustomCollider<T> where T : Entity {
         public EntityCollider(Action<T> onEntityAction, Collider collider = null)
             : base(onEntityAction, collider)
