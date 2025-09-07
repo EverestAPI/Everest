@@ -206,6 +206,7 @@ namespace MonoMod {
             FieldReference sf_EffectiveTimeRate = t_Engine.FindField("EffectiveTimeRate");
             MethodReference m_GetTimeRateComponentMultiplier = t_Engine.FindMethod("GetTimeRateComponentMultiplier");
             VariableDefinition v_componentTimeRate = new(context.Import(typeof(float)));
+            context.Method.Body.Variables.Add(v_componentTimeRate);
 
             ILCursor cursor = new ILCursor(context);
             cursor.GotoNext(
