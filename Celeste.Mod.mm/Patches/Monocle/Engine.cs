@@ -132,8 +132,9 @@ namespace Monocle {
         /// <summary>
         /// The final time rate factor applied to <see cref="Engine.RawDeltaTime"/> before being set to
         /// <see cref="Engine.DeltaTime"/>.<br />
-        /// This value is calculated by multiplying <see cref="TimeRate"/>, <see cref="TimeRateB"/>, and the
-        /// <see cref="TimeRateModifier.Multiplier"/>s of all enabled <see cref="TimeRateModifier"/>s in the scene together.
+        /// This value is calculated <b>at the beginning of the frame</b> by multiplying
+        /// <see cref="TimeRate"/>, <see cref="TimeRateB"/>, and the <see cref="TimeRateModifier.Multiplier"/>s
+        /// of all enabled <see cref="TimeRateModifier"/>s in the scene together.
         /// </summary>
         public static float EffectiveTimeRate;
 
