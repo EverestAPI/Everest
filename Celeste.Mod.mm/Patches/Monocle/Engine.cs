@@ -3,6 +3,7 @@ using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using MonoMod;
 using MonoMod.Cil;
 using MonoMod.Utils;
@@ -200,35 +201,36 @@ namespace MonoMod {
         public static void PatchEngineUpdate(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_Engine = context.Method.DeclaringType;
             FieldReference f_scene = t_Engine.FindField("scene");
+            FieldReference sf_TimeRate = t_Engine.FindField("TimeRate");
+            FieldReference sf_TimeRateB = t_Engine.FindField("TimeRateB");
             FieldReference sf_EffectiveTimeRate = t_Engine.FindField("EffectiveTimeRate");
             MethodReference m_GetTimeRateComponentMultiplier = t_Engine.FindMethod("GetTimeRateComponentMultiplier");
-            MethodReference m_get_RawDeltaTime = t_Engine.FindMethod("get_RawDeltaTime");
+            VariableDefinition v_componentTimeRate = new(context.Import(typeof(float)));
 
-            // remove loading RawDeltaTime and multiplying it with TimeRate
             ILCursor cursor = new ILCursor(context);
             cursor.GotoNext(
                 instr => instr.MatchCall("Monocle.Engine", "System.Single get_RawDeltaTime()"),
                 instr => instr.MatchLdsfld("Monocle.Engine", "TimeRate"),
                 instr => instr.MatchMul());
-            cursor.Remove();
-            cursor.Index++;
-            cursor.Remove();
-
-            // multiply time rate with GetTimeRateComponentMultiplier(scene)
-            cursor.GotoNext(MoveType.After,
-                instr => instr.MatchLdsfld("Monocle.Engine", "TimeRateB"),
-                instr => instr.MatchMul());
+            // float componentTimeRate = GetTimeRateMultiplier(this.Scene);
             cursor.EmitLdarg0();
             cursor.EmitLdfld(f_scene);
             cursor.EmitCall(m_GetTimeRateComponentMultiplier);
-            cursor.EmitMul();
+            cursor.EmitStloc(v_componentTimeRate);
 
-            // load time rate into EffectiveTimeRate
+            // EffectiveTimeRate = TimeRate * TimeRateB * componentTimeRate
+            cursor.EmitLdsfld(sf_TimeRate);
+            cursor.EmitLdsfld(sf_TimeRateB);
+            cursor.EmitMul();
+            cursor.EmitLdloc(v_componentTimeRate);
+            cursor.EmitMul();
             cursor.EmitStsfld(sf_EffectiveTimeRate);
 
-            // multiply the previous result with RawDeltaTime
-            cursor.EmitCall(m_get_RawDeltaTime);
-            cursor.EmitLdsfld(sf_EffectiveTimeRate);
+            // multiply time rate with GetTimeRateComponentMultiplier(scene) stored in componentTimeRate
+            cursor.GotoNext(MoveType.After,
+                instr => instr.MatchLdsfld("Monocle.Engine", "TimeRateB"),
+                instr => instr.MatchMul());
+            cursor.EmitLdloc(v_componentTimeRate);
             cursor.EmitMul();
         }
         
