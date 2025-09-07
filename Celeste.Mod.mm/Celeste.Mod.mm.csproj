@@ -46,7 +46,13 @@
     <ProjectReference Include="..\external\NLua\build\net6.0\NLua.net6.0.csproj" />
     <PackageReference Include="MAB.DotIgnore" Version="3.0.2" />
 
-    <!-- Dependency not used by Everest itself, but kept for mod compatibility reasons -->
+    <!--
+        Dependency not used by Everest itself, but kept for mod compatibility reasons.
+
+        DotNetZip has a high-severity vulnerability (https://github.com/advisories/GHSA-xhg6-9j5j-w4vf),
+        but the dependency is no longer maintained, and this kind of vulnerability *isn't really a concern* for Celeste mods,
+        since they already let people run arbitrary code. It's fine to ignore the warning.
+    -->
     <PackageReference Include="DotNetZip" Version="1.16.0" NoWarn="NU1903" />
   </ItemGroup>
 
