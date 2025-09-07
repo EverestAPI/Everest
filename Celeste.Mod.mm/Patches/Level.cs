@@ -972,8 +972,14 @@ namespace MonoMod {
             MethodReference m_Everest_CoreModule_Settings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModule").FindProperty("Settings").GetMethod;
             TypeDefinition t_Everest_CoreModuleSettings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModuleSettings");
             MethodReference m_ButtonBinding_Pressed = MonoModRule.Modder.Module.GetType("Celeste.Mod.ButtonBinding").FindProperty("Pressed").GetMethod;
-
+            TypeDefinition t_Everest_Events_Level = MonoModRule.Modder.Module.GetType("Celeste.Mod.Everest/Events/Level");
+            MethodReference m_Everest_Events_Level_BeforeUpdate = t_Everest_Events_Level.FindMethod(nameof(Everest.Events.Level.BeforeUpdate));
+            MethodReference m_Everest_Events_Level_AfterUpdate = t_Everest_Events_Level.FindMethod(nameof(Everest.Events.Level.AfterUpdate));
+            
             ILCursor cursor = new ILCursor(context);
+            
+            // Invoke Celeste.Mod.Everest.Events.Level.OnBeforeUpdate
+            cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_Everest_Events_Level_BeforeUpdate);
 
             // Insert CheckForErrors() at the beginning so we can display an error screen if needed
             cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_CheckForErrors);
@@ -1005,6 +1011,13 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Call, m_Everest_CoreModule_Settings);
             cursor.Emit(OpCodes.Call, t_Everest_CoreModuleSettings.FindProperty("DebugMap").GetMethod);
             cursor.Emit(OpCodes.Call, m_ButtonBinding_Pressed);
+            
+            // Invoke Everest.Events.Level.OnAfterUpdate before each ret.
+            cursor.Index = 0;
+            while (cursor.TryGotoNext(MoveType.AfterLabel, instr => instr.MatchRet())) {
+                cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_Everest_Events_Level_AfterUpdate);
+                cursor.Index++;
+            }
         }
 
         public static void PatchLevelRender(ILContext context, CustomAttribute attrib) {

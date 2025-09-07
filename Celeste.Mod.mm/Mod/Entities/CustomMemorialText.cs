@@ -108,7 +108,7 @@ namespace Celeste.Mod.Entities {
             }
 
             Camera camera = level.Camera;
-            Vector2 pos = new Vector2((Memorial.X - camera.X) * 6f, (Memorial.Y - camera.Y) * 6f - 350f - ActiveFont.LineHeight * 3.3f);
+            Vector2 pos = new Vector2((Memorial.X - camera.X) * (6f * level.Zoom), (Memorial.Y - camera.Y) * (6f * level.Zoom) - 350f - ActiveFont.LineHeight * 3.3f);
             if (SaveData.Instance != null && SaveData.Instance.Assists.MirrorMode)
                 pos.X = 1920f - pos.X;
 

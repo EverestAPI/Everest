@@ -187,6 +187,21 @@ namespace Celeste.Mod {
                 public static event CompleteHandler OnComplete;
                 internal static void Complete(_Level level)
                     => OnComplete?.Invoke(level);
+                
+                /// <summary>
+                /// Called at the very beginning of <see cref="global::Celeste.Level.Update"/>.
+                /// </summary>
+                public static event Action<_Level> OnBeforeUpdate;
+                internal static void BeforeUpdate(_Level level)
+                    => OnBeforeUpdate?.Invoke(level);
+                
+                /// <summary>
+                /// Called at the very end of <see cref="global::Celeste.Level.Update"/>.
+                /// </summary>
+                public static event Action<_Level> OnAfterUpdate;
+                
+                internal static void AfterUpdate(_Level level)
+                    => OnAfterUpdate?.Invoke(level);
             }
 
             public static class Session {
@@ -196,17 +211,41 @@ namespace Celeste.Mod {
             }
 
             public static class Player {
+                /// <summary>
+                /// Called at the end of <see cref="global::Celeste.Player.Added"/>.
+                /// </summary>
                 public static event Action<_Player> OnSpawn;
                 internal static void Spawn(_Player player)
                     => OnSpawn?.Invoke(player);
 
+                /// <summary>
+                /// Called in <see cref="global::Celeste.Player.Die"/>, only if a PlayerDeadBody will be returned from the method.
+                /// </summary>
                 public static event Action<_Player> OnDie;
                 internal static void Die(_Player player)
                     => OnDie?.Invoke(player);
 
+                /// <summary>
+                /// Called in the Player constructor during <see cref="StateMachine"/> initialisation, to be used to register custom Player states.
+                /// </summary>
                 public static event Action<_Player> OnRegisterStates;
                 internal static void RegisterStates(_Player player)
                     => OnRegisterStates?.Invoke(player);
+
+                /// <summary>
+                /// Called at the very beginning of <see cref="global::Celeste.Player.Update"/>.
+                /// </summary>
+                public static event Action<_Player> OnBeforeUpdate;
+                internal static void BeforeUpdate(_Player player)
+                    => OnBeforeUpdate?.Invoke(player);
+                
+                /// <summary>
+                /// Called at the very end of <see cref="global::Celeste.Player.Update"/>.
+                /// </summary>
+                public static event Action<_Player> OnAfterUpdate;
+                
+                internal static void AfterUpdate(_Player player)
+                    => OnAfterUpdate?.Invoke(player);
             }
 
             public static class Seeker {
