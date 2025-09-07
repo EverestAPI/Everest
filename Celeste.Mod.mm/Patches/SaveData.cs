@@ -300,8 +300,9 @@ namespace Celeste {
         public static new bool TryDelete(int slot) {
             bool vanillaExists = false;
             string saveFilePath = patch_UserIO.GetSaveFilePath();
+            string saveFileName = GetFilename(slot);
             if (Directory.Exists(saveFilePath))
-                vanillaExists = File.Exists(Path.Combine(saveFilePath, $"{slot}.celeste"));
+                vanillaExists = File.Exists(Path.Combine(saveFilePath, $"{saveFileName}.celeste"));
 
             if (vanillaExists) {
                 if (!orig_TryDelete(slot)) {
@@ -309,7 +310,7 @@ namespace Celeste {
                 }
             }
             else
-                Logger.Warn("SaveData", $"Deleting save data for slot {slot} which has no vanilla data");
+                Logger.Warn("SaveData", $"Deleting save data for slot {saveFileName} which has no vanilla data");
 
             return TryDeleteModSaveData(slot);
         }
@@ -329,16 +330,17 @@ namespace Celeste {
 
             // clean modsave and modsession files which are not deleted if their module is not loaded
             string saveFilePath = patch_UserIO.GetSaveFilePath();
+            string saveFileName = GetFilename(slot);
             if (Directory.Exists(saveFilePath)) {
-                foreach (string modSaveFile in Directory.GetFiles(saveFilePath, $"{slot}-modsave-*.celeste")) {
+                foreach (string modSaveFile in Directory.GetFiles(saveFilePath, $"{saveFileName}-modsave-*.celeste")) {
                     string file = Path.GetFileNameWithoutExtension(modSaveFile);
-                    Logger.Info("SaveData", $"Save slot {slot} has modsave {file} which was not cleaned, deleting file");
+                    Logger.Info("SaveData", $"Save slot {saveFileName} has modsave {file} which was not cleaned, deleting file");
                     UserIO.Delete(file);
                 }
 
-                foreach (string modSessionFile in Directory.GetFiles(saveFilePath, $"{slot}-modsession-*.celeste")) {
+                foreach (string modSessionFile in Directory.GetFiles(saveFilePath, $"{saveFileName}-modsession-*.celeste")) {
                     string file = Path.GetFileNameWithoutExtension(modSessionFile);
-                    Logger.Info("SaveData", $"Save slot {slot} has modsession {file} which was not cleaned, deleting file");
+                    Logger.Info("SaveData", $"Save slot {saveFileName} has modsession {file} which was not cleaned, deleting file");
                     UserIO.Delete(file);
                 }
             }
@@ -346,7 +348,7 @@ namespace Celeste {
             LoadedModSaveDataIndex = int.MinValue;
 
             // delete the modsavedata file if it exists.
-            string modSaveDataName = GetFilename(slot) + "-modsavedata";
+            string modSaveDataName = $"{saveFileName}-modsavedata";
             if (UserIO.Exists(modSaveDataName)) {
                 return UserIO.Delete(modSaveDataName);
             } else {
@@ -407,10 +409,11 @@ namespace Celeste {
             if (LevelSets.Count <= 1 && LevelSetRecycleBin.Count == 0 && !HasModdedSaveData) {
                 // the save file doesn't have any mod save data (just created, overwritten by vanilla, or Everest just updated).
                 // we want to carry mod save data that was backed up in the mod save file, if any.
-                ModSaveData modSaveData = UserIO.Load<ModSaveData>(GetFilename(FileSlot) + "-modsavedata");
+                string saveFileName = GetFilename(FileSlot);
+                ModSaveData modSaveData = UserIO.Load<ModSaveData>($"{saveFileName}-modsavedata");
                 if (modSaveData != null) {
                     modSaveData.CopyToCelesteSaveData(this);
-                    Logger.Warn("SaveData", $"{LevelSets.Count} level set(s) were restored from mod backup for save slot {FileSlot}");
+                    Logger.Warn("SaveData", $"{LevelSets.Count} level set(s) were restored from mod backup for save slot {saveFileName}");
                 }
             }
 

@@ -135,6 +135,7 @@ namespace Celeste {
         [PatchPlayerOrigUpdate] // Manipulate the method via MonoModRules
         public extern void orig_Update();
         public override void Update() {
+            Everest.Events.Player.BeforeUpdate(this);
             orig_Update();
 
             Level level = Scene as Level;
@@ -144,6 +145,8 @@ namespace Celeste {
                 framesAlive++;
             if (framesAlive >= 8)
                 diedInGBJ = 0;
+
+            Everest.Events.Player.AfterUpdate(this);
         }
 
         public bool _IsOverWater() {
