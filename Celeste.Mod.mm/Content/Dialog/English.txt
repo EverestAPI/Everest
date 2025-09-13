@@ -345,3 +345,21 @@
 	ASSETRELOADHELPER_LOADINGNEWMOD=		Loading new mod:
 	ASSETRELOADHELPER_RELOADINGMODASSEMBLY=	Reloading mod assembly:
 	ASSETRELOADHELPER_RELOADINGMOUNTAIN=	Reloading mountain
+
+# Critical Error Handler
+	CRITICALERRORHANDLER_OOOOPS=				Ooops! :(
+	CRITICALERRORHANDLER_OOOOPS_COLON_THREE=	Ooops! :3
+	CRITICALERRORHANDLER_CRITICAL_ERROR=		Celeste/Everest encountered a critical error.
+	CRITICALERRORHANDLER_DISCORD=				Please report this in the Celeste discord!
+	CRITICALERRORHANDLER_DISCORD_LINK=			discord.gg/celeste - channel #modding_help
+	CRITICALERRORHANDLER_LOG_FILE_BACKED_UP=	Your log file has been backed up; please attach it to your bug report.
+	CRITICALERRORHANDLER_ADDITIONAL_ERRORS=		Additional errors have occurred since the initial crash!
+	CRITICALERRORHANDLER_ERROR_DETAILS=			Error Details
+
+	CRITICALERRORHANDLER_OPEN_LOG_FILE_FOLDER=	Open log file folder
+	CRITICALERRORHANDLER_RETRY_LEVEL=			Retry level
+	CRITICALERRORHANDLER_SAVE_QUIT=				Save & Quit
+	CRITICALERRORHANDLER_SAVE_PROGRESS=			Save current progress
+	CRITICALERRORHANDLER_RETURN_TO_MENU=		Return to main menu
+	CRITICALERRORHANDLER_EXIT_GAME=				Exit Game
+	CRITICALERRORHANDLER_RESTART_GAME=			Restart Game

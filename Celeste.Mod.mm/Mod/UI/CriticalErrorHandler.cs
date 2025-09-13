@@ -330,6 +330,24 @@ namespace Celeste.Mod.UI {
         private bool playerShouldTeabag;
         private bool isCrouched;
         private float crouchTimer;
+        private bool isColonThree;
+
+        private string textOooops = "Oooops! :(";
+        private string textOooopsColonThree = "Oooops :3";
+        private string textCriticalError = "Celeste/Everest encountered a critical error.";
+        private string textDiscord = "Please report this in the Celeste discord!";
+        private string textDiscordLink = "discord.gg/celeste - channel #modding_help";
+        private string textLogFileBackedUp = "Your log file has been backed up; please attach it to your bug report.";
+        private string textAdditionalErrors = "Additional errors have occurred since the initial crash!";
+        private string textErrorDetails = "Error Details";
+
+        private string textOpenLogFileFolder = "Open log file folder";
+        private string textRetryLevel = "Retry level";
+        private string textSaveQuit = "Save & Quit";
+        private string textSaveProgress = "Save current progress";
+        private string textReturnToMenu = "Return to main menu";
+        private string textExitGame = "Exit Game";
+        private string textRestartGame = "Restart Game";
 
         private CriticalErrorHandler(ExceptionDispatchInfo error, string logFile, string logFileError) {
             Depth += 100; // Render below other overlays
@@ -348,10 +366,39 @@ namespace Celeste.Mod.UI {
             LogFileError = string.IsNullOrEmpty(logFile) ? logFileError : null;
 
             playerShouldTeabag = CoreModule.Settings.CrashHandlerAlwaysTeabag || (!(Settings.Instance?.DisableFlashes ?? true) && new Random().Next(0, 10) == 0);
+            isColonThree = CoreModule.Settings.CrashHandlerAlwaysColonThree || new Random().Next(0, 10) == 0;
+
+            PopulateDialog();
 
             beforeRenderInterceptor = new BeforeRenderInterceptor(BeforeRender);
             Add(new Coroutine(Routine()));
             Logger.Info("crit-error-handler", $"Created critical error handler for exception {errorType}: {errorMessage}");
+        }
+
+        private void PopulateDialog() {
+            if (Dialog.Language == null) return;
+
+            void Populate(ref string val, string key) {
+                if (Dialog.Has(key))
+                    val = Dialog.Get(key);
+            }
+
+            Populate(ref textOooops, "CRITICALERRORHANDLER_OOOOPS");
+            Populate(ref textOooopsColonThree, "CRITICALERRORHANDLER_OOOOPS_COLON_THREE");
+            Populate(ref textCriticalError, "CRITICALERRORHANDLER_CRITICAL_ERROR");
+            Populate(ref textDiscord, "CRITICALERRORHANDLER_DISCORD");
+            Populate(ref textDiscordLink, "CRITICALERRORHANDLER_DISCORD_LINK");
+            Populate(ref textLogFileBackedUp, "CRITICALERRORHANDLER_LOG_FILE_BACKED_UP");
+            Populate(ref textAdditionalErrors, "CRITICALERRORHANDLER_ADDITIONAL_ERRORS");
+            Populate(ref textErrorDetails, "CRITICALERRORHANDLER_ERROR_DETAILS");
+
+            Populate(ref textOpenLogFileFolder, "CRITICALERRORHANDLER_OPEN_LOG_FILE_FOLDER");
+            Populate(ref textRetryLevel, "CRITICALERRORHANDLER_RETRY_LEVEL");
+            Populate(ref textSaveQuit, "CRITICALERRORHANDLER_SAVE_QUIT");
+            Populate(ref textSaveProgress, "CRITICALERRORHANDLER_SAVE_PROGRESS");
+            Populate(ref textReturnToMenu, "CRITICALERRORHANDLER_RETURN_TO_MENU");
+            Populate(ref textExitGame, "CRITICALERRORHANDLER_EXIT_GAME");
+            Populate(ref textRestartGame, "CRITICALERRORHANDLER_RESTART_GAME");
         }
 
         public void Dispose() {
@@ -369,7 +416,7 @@ namespace Celeste.Mod.UI {
             // Create the options menu
             optMenu = new TextMenu() { AutoScroll = false };
 
-            optMenu.Add(new TextMenu.Button("Open log file folder") { Disabled = LogFileError != null }.Pressed(() => {
+            optMenu.Add(new TextMenu.Button(textOpenLogFileFolder) { Disabled = LogFileError != null }.Pressed(() => {
                 string openProg =
                     RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "explorer.exe" :
                     RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "xdg-open" :
@@ -385,19 +432,19 @@ namespace Celeste.Mod.UI {
 
             UserChoice? choice = null;
             if (Session != null) {
-                optMenu.Add(new TextMenu.Button("Retry level") { Disabled = !CanExecuteChoice(UserChoice.RetryLevel) }.Pressed(() => choice = UserChoice.RetryLevel));
-                optMenu.Add(new TextMenu.Button("Save & Quit") { Disabled = !CanExecuteChoice(UserChoice.SaveAndQuit) }.Pressed(() => choice = UserChoice.SaveAndQuit));
+                optMenu.Add(new TextMenu.Button(textRetryLevel) { Disabled = !CanExecuteChoice(UserChoice.RetryLevel) }.Pressed(() => choice = UserChoice.RetryLevel));
+                optMenu.Add(new TextMenu.Button(textSaveQuit) { Disabled = !CanExecuteChoice(UserChoice.SaveAndQuit) }.Pressed(() => choice = UserChoice.SaveAndQuit));
             }
 
             if (SaveData.Instance != null && !hasFlushedSaveData)
-                optMenu.Add(new TextMenu.Button("Save current progress") { Disabled = !CanExecuteChoice(UserChoice.FlushSaveData) }.Pressed(() => choice = UserChoice.FlushSaveData));
+                optMenu.Add(new TextMenu.Button(textSaveProgress) { Disabled = !CanExecuteChoice(UserChoice.FlushSaveData) }.Pressed(() => choice = UserChoice.FlushSaveData));
 
-            optMenu.Add(new TextMenu.Button("Return to main menu") { Disabled = !CanExecuteChoice(UserChoice.ReturnToMainMenu) }.Pressed(() => choice = UserChoice.ReturnToMainMenu));
+            optMenu.Add(new TextMenu.Button(textReturnToMenu) { Disabled = !CanExecuteChoice(UserChoice.ReturnToMainMenu) }.Pressed(() => choice = UserChoice.ReturnToMainMenu));
 
-            optMenu.Add(new TextMenu.Button("Exit Game").Pressed(() => {
+            optMenu.Add(new TextMenu.Button(textExitGame).Pressed(() => {
                 Scene.OnEndOfFrame += static () => Engine.Instance.Exit();
             }));
-            optMenu.Add(new TextMenu.Button("Restart Game").Pressed(() => {
+            optMenu.Add(new TextMenu.Button(textRestartGame).Pressed(() => {
                 Everest.Events.Celeste.OnShutdown += static () => BOOT.StartCelesteProcess();
                 Scene.OnEndOfFrame += static () => Engine.Instance.Exit();
             }));
@@ -649,7 +696,6 @@ namespace Celeste.Mod.UI {
         /// ended.
         /// </summary>
         public static event Action OnAfterPlayerRender;
-
         public override void Render() {
             // Draw the background
             switch (State) {
@@ -695,7 +741,7 @@ namespace Celeste.Mod.UI {
 
             // Draw the error UI
             Vector2 textPos = new Vector2(Celeste.TargetWidth * 0.3f, Celeste.TargetHeight * 0.35f);
-            ActiveFont.Draw("Oooops! :(", textPos, new Vector2(0, 1), new Vector2(3), Color.White * Fade);
+            ActiveFont.Draw(isColonThree ? textOooopsColonThree : textOooops, textPos, new Vector2(0, 1), new Vector2(3), Color.White * Fade);
             textPos.X += 50;
 
             void DrawLineWrap(string text, float scale, Color color, Vector2 posOff = default) {
@@ -730,10 +776,10 @@ namespace Celeste.Mod.UI {
                 }
             }
 
-            DrawLineWrap("Celeste/Everest encountered a critical error.", 0.7f, Color.LightGray);
-            DrawLineWrap("Please report this in the Celeste discord!", 0.7f, Color.LightGray);
-            DrawLineWrap("discord.gg/celeste - channel #modding_help", 0.5f, Color.Gray, Vector2.UnitX * 50);
-            DrawLineWrap("Your log file has been backed up; please attach it to your bug report.", 0.7f, Color.LightGray);
+            DrawLineWrap(textCriticalError, 0.7f, Color.LightGray);
+            DrawLineWrap(textDiscord, 0.7f, Color.LightGray);
+            DrawLineWrap(textDiscordLink, 0.5f, Color.Gray, Vector2.UnitX * 50);
+            DrawLineWrap(textLogFileBackedUp, 0.7f, Color.LightGray);
             if (string.IsNullOrEmpty(LogFileError))
                 DrawLineWrap(LogFile, 0.4f, Color.Gray, Vector2.UnitX * 50);
             else
@@ -741,12 +787,12 @@ namespace Celeste.Mod.UI {
 
             if (EncounteredAdditionalErrors) {
                 textPos.Y += 20;
-                DrawLineWrap("Additional errors have occurred since the initial crash!", 0.7f, Color.IndianRed);
+                DrawLineWrap(textAdditionalErrors, 0.7f, Color.IndianRed);
             }
 
             textPos.Y += 20;
 
-            DrawLineWrap($"Error Details: {errorType}: {errorMessage}", 0.7f, Color.LightGray);
+            DrawLineWrap($"{textErrorDetails}: {errorType}: {errorMessage}", 0.7f, Color.LightGray);
             textPos.X += 50;
             string[] btLines = (errorStackTrace ?? string.Empty)
                 .Split('\n')

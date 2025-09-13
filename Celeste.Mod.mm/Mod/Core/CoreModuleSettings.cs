@@ -398,6 +398,9 @@ namespace Celeste.Mod.Core {
         public bool CrashHandlerAlwaysTeabag { get; set; } = false; // The world is a cruel place, so we can't turn this on by default... ._.
 
         [SettingIgnore]
+        public bool CrashHandlerAlwaysColonThree { get; set; } = false;
+
+        [SettingIgnore]
         public string CurrentVersion { get; set; }
 
         private string _CurrentBranch;

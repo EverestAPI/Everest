@@ -300,5 +300,10 @@ namespace Celeste {
             else
                 Engine.Commands.Log($"{pathLog} does not exist");
         }
+
+        [Command("criticalerrorhandler", "open the critical error handler screen")]
+        private static void CmdCriticalErrorHandler() {
+            Engine.Scene.OnEndOfFrame += static () => throw new Exception("Pretend error thrown to open the critical error handler screen");
+        }
     }
 }
