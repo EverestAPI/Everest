@@ -37,6 +37,9 @@ namespace Celeste {
         public Color Color;
 
 #pragma warning disable CS0649
+        private bool parallax;
+        private float parallaxAmount;
+
         public bool DepthSetByPlacement;
         public bool ParallaxSetByPlacement;
 #pragma warning restore CS0649
@@ -149,9 +152,14 @@ namespace Celeste {
             ctor(texture, position, scale, depth, rotation, patch_Calc.HexToColorWithAlpha(color_hex));
         }
 
-        [MonoModIgnore]
+        [MonoModReplace]
         [MonoModPublic]
-        public extern void MakeParallax(float amount);
+        public void MakeParallax(float amount) {
+            if (ParallaxSetByPlacement) return;
+
+            parallax = (amount != 0f);
+            parallaxAmount = amount;
+        }
 
         [MonoModIgnore]
         [MonoModPublic]

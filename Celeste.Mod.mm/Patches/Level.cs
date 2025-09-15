@@ -915,9 +915,6 @@ namespace MonoMod {
             FieldDefinition f_DecalData_ColorHex = t_DecalData.FindField("ColorHex");
             FieldDefinition f_DecalData_Depth    = t_DecalData.FindField("Depth");
 
-            FieldDefinition f_Decal_parallax       = t_Decal.FindField("parallax");
-            FieldDefinition f_Decal_parallaxAmount = t_Decal.FindField("parallaxAmount");
-
             FieldDefinition f_Decal_DepthSetByPlacement = t_Decal.FindField("DepthSetByPlacement");
             FieldDefinition f_Decal_ParallaxSetByPlacement = t_Decal.FindField("ParallaxSetByPlacement");
 
@@ -927,7 +924,8 @@ namespace MonoMod {
             MethodDefinition m_DecalData_HasParallax = t_DecalData.FindMethod("HasParallax");
             MethodDefinition m_DecalData_GetParallax = t_DecalData.FindMethod("GetParallax");
 
-            MethodDefinition m_Decal_ctor = t_Decal.FindMethod("System.Void .ctor(System.String,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2,System.Int32,System.Single,System.String)");
+            MethodDefinition m_Decal_ctor         = t_Decal.FindMethod("System.Void .ctor(System.String,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2,System.Int32,System.Single,System.String)");
+            MethodDefinition m_Decal_MakeParallax = t_Decal.FindMethod("MakeParallax");
 
             ILCursor cursor = new ILCursor(context);
 
@@ -971,15 +969,11 @@ namespace MonoMod {
                 cursor.Emit(OpCodes.Ldloc_S, (byte) loc_decaldata);
                 cursor.Emit(OpCodes.Call, m_DecalData_HasParallax);
                 cursor.Emit(OpCodes.Brfalse_S, after_set_parallax);
-                // turn on parallax on the decal...
-                cursor.Emit(OpCodes.Dup);
-                cursor.Emit(OpCodes.Ldc_I4_1);
-                cursor.Emit(OpCodes.Stfld, f_Decal_parallax);
-                // store the parallax amount...
+                // set the parallax...
                 cursor.Emit(OpCodes.Dup);
                 cursor.Emit(OpCodes.Ldloc_S, (byte) loc_decaldata);
                 cursor.Emit(OpCodes.Call, m_DecalData_GetParallax);
-                cursor.Emit(OpCodes.Stfld, f_Decal_parallaxAmount);
+                cursor.Emit(OpCodes.Call, m_Decal_MakeParallax);
                 // ...and finally the fact that the parallax was set here
                 cursor.Emit(OpCodes.Dup);
                 cursor.Emit(OpCodes.Ldc_I4_1);
