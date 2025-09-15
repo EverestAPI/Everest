@@ -417,6 +417,14 @@ namespace Celeste.Mod {
             return int.Parse(obj.ToString(), CultureInfo.InvariantCulture);
         }
 
+        public static float? AttrNullableFloat(this BinaryPacker.Element el, string name) {
+            if (el.Attributes == null || !el.Attributes.TryGetValue(name, out object obj))
+                return null;
+            if (obj is float v)
+                return v;
+            return float.Parse(obj.ToString(), CultureInfo.InvariantCulture);
+        }
+
         public static bool AttrRef(this BinaryPacker.Element el, string name, ref string value) {
             if (el.HasAttr(name)) {
                 value = el.Attr(name);

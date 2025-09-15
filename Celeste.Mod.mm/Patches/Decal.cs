@@ -38,6 +38,7 @@ namespace Celeste {
 
 #pragma warning disable CS0649
         public bool DepthSetByPlacement;
+        public bool ParallaxSetByPlacement;
 #pragma warning restore CS0649
 
         private bool scaredAnimal;

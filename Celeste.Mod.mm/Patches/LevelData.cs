@@ -167,14 +167,16 @@ namespace MonoMod {
             TypeDefinition t_BinaryPackerElement = MonoModRule.Modder.FindType("Celeste.BinaryPacker/Element").Resolve();
             TypeDefinition t_Extensions = MonoModRule.Modder.FindType("Celeste.Mod.Extensions").Resolve();
 
-            MethodDefinition m_BinaryPackerElementHasAttr         = t_BinaryPackerElement.FindMethod("HasAttr");
-            MethodDefinition m_BinaryPackerElementAttr            = t_BinaryPackerElement.FindMethod("Attr");
-            MethodDefinition m_BinaryPackerElementAttrFloat       = t_BinaryPackerElement.FindMethod("AttrFloat");
-            MethodDefinition m_BinaryPackerElementAttrNullableInt = t_Extensions.FindMethod("AttrNullableInt");
+            MethodDefinition m_BinaryPackerElementHasAttr           = t_BinaryPackerElement.FindMethod("HasAttr");
+            MethodDefinition m_BinaryPackerElementAttr              = t_BinaryPackerElement.FindMethod("Attr");
+            MethodDefinition m_BinaryPackerElementAttrFloat         = t_BinaryPackerElement.FindMethod("AttrFloat");
+            MethodDefinition m_BinaryPackerElementAttrNullableInt   = t_Extensions.FindMethod("AttrNullableInt");
+            MethodDefinition m_BinaryPackerElementAttrNullableFloat = t_Extensions.FindMethod("AttrNullableFloat");
 
             FieldDefinition f_DecalDataRotation = t_DecalData.FindField("Rotation");
             FieldDefinition f_DecalDataColorHex = t_DecalData.FindField("ColorHex");
             FieldDefinition f_DecalDataDepth    = t_DecalData.FindField("Depth");
+            FieldDefinition f_DecalDataParallax = t_DecalData.FindField("Parallax");
 
             ILCursor cursor = new ILCursor(context);
 
@@ -191,7 +193,9 @@ namespace MonoMod {
                 //   decaldata.Rotation = element.AttrFloat("rotation", 0.0f);
                 //   decaldata.ColorHex = element.AttrString("color", "");
                 //   if (element.HasAttr("depth"))
-                //      decaldata.Depth = element.AttrNullableInt("depth");
+                //     decaldata.Depth = element.AttrNullableInt("depth");
+                //   if (element.HasAttr("parallax"))
+                //     decaldata.Parallax = element.AttrNullableFloat("parallax");
 
                 // copy the reference to the DecalData
                 cursor.Emit(OpCodes.Dup);
@@ -231,6 +235,25 @@ namespace MonoMod {
                 cursor.Emit(OpCodes.Stfld, f_DecalDataDepth);
 
                 cursor.MarkLabel(after_attr_depth);
+
+                // find out if there is a parallax field in the BinaryPacker.Element
+                cursor.Emit(OpCodes.Ldloc, loc_element);
+                cursor.Emit(OpCodes.Ldstr, "parallax");
+                cursor.Emit(OpCodes.Call, m_BinaryPackerElementHasAttr);
+                // if not, skip to after setting it
+                ILLabel after_attr_parallax = cursor.DefineLabel();
+                cursor.Emit(OpCodes.Brfalse_S, after_attr_parallax);
+
+                // copy the reference to the DecalData again
+                cursor.Emit(OpCodes.Dup);
+                // load the parallax from the BinaryPacker.Element
+                cursor.Emit(OpCodes.Ldloc, loc_element);
+                cursor.Emit(OpCodes.Ldstr, "parallax");
+                cursor.Emit(OpCodes.Call, m_BinaryPackerElementAttrNullableFloat);
+                // put the parallax into the DecalData
+                cursor.Emit(OpCodes.Stfld, f_DecalDataParallax);
+
+                cursor.MarkLabel(after_attr_parallax);
 
                 matches++;
             }

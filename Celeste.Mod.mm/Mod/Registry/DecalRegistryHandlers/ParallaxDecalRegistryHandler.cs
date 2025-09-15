@@ -13,7 +13,7 @@ internal sealed class ParallaxDecalRegistryHandler : DecalRegistryHandler {
     }
 
     public override void ApplyTo(Decal decal) {
-        if (_amount is { } amount)
+        if (_amount is { } amount && !((patch_Decal)decal).ParallaxSetByPlacement)
             ((patch_Decal)decal).MakeParallax(amount);
     }
 }
