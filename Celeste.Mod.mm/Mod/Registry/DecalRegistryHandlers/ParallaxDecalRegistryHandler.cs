@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Xml;
 
 namespace Celeste.Mod.Registry.DecalRegistryHandlers; 
