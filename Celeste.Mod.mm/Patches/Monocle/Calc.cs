@@ -66,6 +66,18 @@ namespace Monocle {
             return new Vector2((float) (val.X + (double) delta.X * maxMove), (float) (val.Y + (double) delta.Y * maxMove)); // Patch in XNA float jank
         }
 
+        public static Vector2 Approach(Vector2 val, Vector2 target, Vector2 maxMove) {
+            if (maxMove == Vector2.Zero || val == target)
+                return val;
+
+            Vector2 delta = target - val;
+            if (delta.Length() < maxMove.Length())
+                return target;
+
+            delta.Normalize();
+            return val + delta * maxMove;
+        }
+
         [MonoModReplace]
         public static Vector3 Approach(this Vector3 v, Vector3 target, float amount) {
             if (amount > (target - v).Length())
