@@ -8,7 +8,6 @@ using MonoMod;
 using MonoMod.Cil;
 using MonoMod.Utils;
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
@@ -106,6 +105,43 @@ namespace Monocle {
         [PatchEngineUpdate]
         protected override extern void Update(GameTime gameTime);
 
+        /// <summary>
+        /// A game speed factor set by various entities, such as <see cref="Celeste.Seeker"/> or <see cref="Celeste.AngryOshiro"/>.<br/>
+        /// This field should not be modified by mods. Use a <see cref="TimeRateModifier"/> component instead.
+        /// </summary>
+        /// <remarks>
+        /// This field is used by entities which don't appear in vanilla together, or more than once in the same room.
+        /// As such, if two of them try to modify the time rate, they will overwrite each other's values.
+        /// </remarks>
+        /// <seealso cref="EffectiveTimeRate"/>
+        [Obsolete(
+            "This field should be reserved to vanilla entities which modify time. "
+            + "Use a TimeRateModifier component instead to prevent conflicts.")]
+        public static new float TimeRate;
+
+        /// <summary>
+        /// The Assist/Variant Mode "Game Speed" factor by which <see cref="Engine.RawDeltaTime"/> is multiplied.<br/>
+        /// This field should not be modified by mods. Use a <see cref="TimeRateModifier"/> component instead.
+        /// </summary>
+        /// <seealso cref="EffectiveTimeRate"/>
+        [Obsolete(
+            "This field should be reserved to the Assist/Variant Mode \"Game Speed\" modifier. "
+            + "Use a TimeRateModifier component instead to prevent conflicts.")]
+        public static new float TimeRateB;
+
+        /// <summary>
+        /// The final time rate factor applied to <see cref="Engine.RawDeltaTime"/> before being set to
+        /// <see cref="Engine.DeltaTime"/>.<br />
+        /// This value is calculated <b>at the beginning of the frame</b> by multiplying
+        /// <see cref="TimeRate"/>, <see cref="TimeRateB"/>, and the <see cref="TimeRateModifier.Multiplier"/>s
+        /// of all enabled <see cref="TimeRateModifier"/>s in the scene together.
+        /// </summary>
+        public static float EffectiveTimeRate;
+
+        /// <summary>
+        /// Aggregates the <see cref="TimeRateModifier.Multiplier"/>s of all enabled <see cref="TimeRateModifier"/>s in the scene
+        /// by multiplying them together.
+        /// </summary>
         private static float GetTimeRateComponentMultiplier(Scene scene) {
             return scene?.Tracker.GetComponents<TimeRateModifier>()
                                  .Cast<TimeRateModifier>()
@@ -166,16 +202,38 @@ namespace MonoMod {
         public static void PatchEngineUpdate(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_Engine = context.Method.DeclaringType;
             FieldReference f_scene = t_Engine.FindField("scene");
+            FieldReference sf_TimeRate = t_Engine.FindField("TimeRate");
+            FieldReference sf_TimeRateB = t_Engine.FindField("TimeRateB");
+            FieldReference sf_EffectiveTimeRate = t_Engine.FindField("EffectiveTimeRate");
             MethodReference m_GetTimeRateComponentMultiplier = t_Engine.FindMethod("GetTimeRateComponentMultiplier");
-            
+            VariableDefinition v_componentTimeRate = new(context.Import(typeof(float)));
+            context.Method.Body.Variables.Add(v_componentTimeRate);
+
             ILCursor cursor = new ILCursor(context);
-            // multiply time rate with GetTimeRateComponentMultiplier(scene)
-            cursor.GotoNext(MoveType.After, instr => instr.MatchLdsfld("Monocle.Engine", "TimeRateB"),
-                                            instr => instr.MatchMul());
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Ldfld, f_scene);
-            cursor.Emit(OpCodes.Call, m_GetTimeRateComponentMultiplier);
-            cursor.Emit(OpCodes.Mul);
+            cursor.GotoNext(
+                instr => instr.MatchCall("Monocle.Engine", "System.Single get_RawDeltaTime()"),
+                instr => instr.MatchLdsfld("Monocle.Engine", "TimeRate"),
+                instr => instr.MatchMul());
+            // float componentTimeRate = GetTimeRateMultiplier(this.Scene);
+            cursor.EmitLdarg0();
+            cursor.EmitLdfld(f_scene);
+            cursor.EmitCall(m_GetTimeRateComponentMultiplier);
+            cursor.EmitStloc(v_componentTimeRate);
+
+            // EffectiveTimeRate = TimeRate * TimeRateB * componentTimeRate
+            cursor.EmitLdsfld(sf_TimeRate);
+            cursor.EmitLdsfld(sf_TimeRateB);
+            cursor.EmitMul();
+            cursor.EmitLdloc(v_componentTimeRate);
+            cursor.EmitMul();
+            cursor.EmitStsfld(sf_EffectiveTimeRate);
+
+            // multiply time rate with GetTimeRateComponentMultiplier(scene) stored in componentTimeRate
+            cursor.GotoNext(MoveType.After,
+                instr => instr.MatchLdsfld("Monocle.Engine", "TimeRateB"),
+                instr => instr.MatchMul());
+            cursor.EmitLdloc(v_componentTimeRate);
+            cursor.EmitMul();
         }
         
         public static void PatchEngineCctor(ILContext context, CustomAttribute attrib) {
