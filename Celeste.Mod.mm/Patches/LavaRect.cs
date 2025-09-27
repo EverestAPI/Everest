@@ -1,3 +1,4 @@
+using Celeste.Mod.Helpers;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod;
@@ -20,6 +21,15 @@ namespace Celeste {
         [MonoModIgnore]
         [PatchLavaRectRender]
         public override extern void Render();
+        
+        [MonoModIgnore]
+        [PatchLavaRectUpdate]
+        public override extern void Update();
+        
+        private bool IsVisible() {
+            var renderPos = Entity.Position + Position;
+            return CullHelper.IsRectangleVisible(renderPos.X, renderPos.Y, Width, Height, lenience: 8f);
+        }
     }
 }
 
@@ -32,9 +42,16 @@ namespace MonoMod {
     
     /// <summary>
     /// Patch LavaRect.Render to fix the half pixel offset issue on FNA. This is planned to be patched in Celeste 1.4.1.0!
+    /// Also implements camera culling.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLavaRectRender))]
     class PatchLavaRectRenderAttribute : Attribute { }
+    
+    /// <summary>
+    /// Patch LavaRect.Update to implement camera culling.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLavaRectUpdate))]
+    class PatchLavaRectUpdateAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -80,9 +97,20 @@ namespace MonoMod {
         }
 
         public static void PatchLavaRectRender(ILContext context, CustomAttribute attrib) {
-            // This was fixed in 1.4.1.0
-            if (CurrentGameVersion >= new Version(1, 4, 1, 0)) return;
             ILCursor cursor = new ILCursor(context);
+            
+            // Insert this code at the start of the method:
+            // if (!IsVisible())
+            //     return;
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, context.Method.DeclaringType.FindMethod("System.Boolean IsVisible()")!);
+            ILLabel label = cursor.DefineLabel();
+            cursor.Emit(OpCodes.Brtrue, label);
+            cursor.Emit(OpCodes.Ret);
+            cursor.MarkLabel(label);
+            
+            // The half pixel offset issue was fixed in 1.4.1.0
+            if (CurrentGameVersion >= new Version(1, 4, 1, 0)) return;
 
             MethodReference m_Vector2_op_Addition = null;
             cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.LavaRect", "Position"), instr => instr.MatchCall(out m_Vector2_op_Addition));
@@ -94,5 +122,19 @@ namespace MonoMod {
             cursor.EmitCall(m_Vector2_op_Addition);
         }
 
+        public static void PatchLavaRectUpdate(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(context);
+            
+            // Insert this code at the start of the method:
+            // if (!IsVisible())
+            //     return;
+
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, context.Method.DeclaringType.FindMethod("System.Boolean IsVisible()")!);
+            ILLabel label = cursor.DefineLabel();
+            cursor.Emit(OpCodes.Brtrue, label);
+            cursor.Emit(OpCodes.Ret);
+            cursor.MarkLabel(label);
+        }
     }
 }
