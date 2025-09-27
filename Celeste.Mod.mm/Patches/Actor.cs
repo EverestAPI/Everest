@@ -36,51 +36,55 @@ namespace Celeste {
             movementCounter = Vector2.Zero;
         }
 
-        private static Point VectorToPoint(Vector2 source) {
-            return new(
-                (int) Math.Round(source.X, MidpointRounding.ToEven),
-                (int) Math.Round(source.Y, MidpointRounding.ToEven)
-            );
+        private static int RoundF(float value) {
+            return (int) Math.Round(value, MidpointRounding.ToEven);
         }
 
-        public bool Move(Vector2 move, Collision onCollide = null, Solid pusher = null) {
-            movementCounter += move;
-            Point num = VectorToPoint(move);
-            if (num != Point.Zero) {
-                movementCounter.X -= num.X;
-                movementCounter.Y -= num.Y;
-                return MoveExact(num, onCollide, pusher);
+        public bool Move(Vector2 move, Collision onCollide = null, Solid pusher = null)
+            => Move(move.X, move.Y, onCollide, pusher);
+
+        public bool Move(float moveH, float moveV, Collision onCollide = null, Solid pusher = null) {
+            movementCounter.X += moveH;
+            movementCounter.Y += moveV;
+            int numH = RoundF(moveH);
+            int numV = RoundF(moveV);
+            if (numH != 0 && numV != 0) {
+                movementCounter.X -= numH;
+                movementCounter.Y -= numV;
+                return MoveExact(numH, numV, onCollide, pusher);
             }
             return false;
         }
 
         public bool MoveExact(Vector2 move, Collision onCollide = null, Solid pusher = null)
-            => MoveExact(VectorToPoint(move), onCollide, pusher);
+            => MoveExact(RoundF(move.X), RoundF(move.Y), onCollide, pusher);
 
-        public bool MoveExact(Point move, Collision onCollide = null, Solid pusher = null) {
-            Vector2 targetPosition = Position + Vector2.UnitX * move.X + Vector2.UnitY * move.Y;
-            Point num = new(Math.Sign(move.X), Math.Sign(move.Y));
-            Point num2 = new(0, 0);
-            while (move.X != 0 && move.Y != 0) {
-                Platform platform = CollideFirst<Solid>(Position + Vector2.UnitX * num.X + Vector2.UnitY * num.Y);
+        public bool MoveExact(int moveH, int moveV, Collision onCollide = null, Solid pusher = null) {
+            Vector2 targetPosition = Position + Vector2.UnitX * moveH + Vector2.UnitY * moveV;
+            int numH = Math.Sign(moveH);
+            int numV = Math.Sign(moveV);
+            int num2H = 0;
+            int num2V = 0;
+            while (moveH != 0 && moveV != 0) {
+                Platform platform = CollideFirst<Solid>(Position + Vector2.UnitX * numH + Vector2.UnitY * numV);
                 if (platform != null) {
                     movementCounter = Vector2.Zero;
                     onCollide?.Invoke(new CollisionData {
-                        Direction = Vector2.UnitX * num.X + Vector2.UnitY * num.Y,
-                        Moved = Vector2.UnitX * num2.X + Vector2.UnitY * num2.Y,
+                        Direction = Vector2.UnitX * numH + Vector2.UnitY * numV,
+                        Moved = Vector2.UnitX * num2H + Vector2.UnitY * num2V,
                         TargetPosition = targetPosition,
                         Hit = platform,
                         Pusher = pusher
                     });
                     return true;
                 }
-                if (move.Y > 0 && !IgnoreJumpThrus) {
-                    platform = CollideFirstOutside<JumpThru>(Position + Vector2.UnitX * num.X + Vector2.UnitY * num.Y);
+                if (moveV > 0 && !IgnoreJumpThrus) {
+                    platform = CollideFirstOutside<JumpThru>(Position + Vector2.UnitX * numH + Vector2.UnitY * numV);
                     if (platform != null) {
                         movementCounter = Vector2.Zero;
                         onCollide?.Invoke(new CollisionData {
-                            Direction = Vector2.UnitX * num.X + Vector2.UnitY * num.Y,
-                            Moved = Vector2.UnitX * num2.X + Vector2.UnitY * num2.Y,
+                            Direction = Vector2.UnitX * numH + Vector2.UnitY * numV,
+                            Moved = Vector2.UnitX * num2H + Vector2.UnitY * num2V,
                             TargetPosition = targetPosition,
                             Hit = platform,
                             Pusher = pusher
@@ -88,28 +92,36 @@ namespace Celeste {
                         return true;
                     }
                 }
-                num2.X += num.X;
-                num2.Y += num.Y;
-                move.X -= num.X;
-                move.Y -= num.Y;
-                base.X += num.X;
-                base.Y += num.Y;
+                num2H += numH;
+                num2V += numV;
+                moveH -= numH;
+                moveV -= numV;
+                base.X += numH;
+                base.Y += numV;
             }
             return false;
         }
 
-        public void MoveTowards(Vector2 target, Vector2 maxAmount, Collision onCollide = null) {
-            Vector2 to = patch_Calc.Approach(ExactPosition, target, maxAmount);
-            MoveTo(to, onCollide);
+        public void MoveTowards(Vector2 target, float maxAmount, Collision onCollide = null)
+            => MoveTowards(target.X, target.Y, maxAmount, onCollide);
+
+        public void MoveTowards(Vector2 target, Vector2 maxAmount, Collision onCollide = null)
+            => MoveTowards(target.X, target.Y, maxAmount.X, maxAmount.Y, onCollide);
+
+        public void MoveTowards(float targetX, float targetY, float maxAmount, Collision onCollide = null)
+            => MoveTowards(targetX, targetY, maxAmount, maxAmount, onCollide);
+
+        public void MoveTowards(float targetX, float targetY, float maxAmountX, float maxAmountY, Collision onCollide = null) {
+            float toX = Calc.Approach(ExactPosition.X, targetX, maxAmountX);
+            float toY = Calc.Approach(ExactPosition.Y, targetY, maxAmountY);
+            MoveTo(toX, toY, onCollide);
         }
 
-        public void MoveTowards(Vector2 target, float maxAmount, Collision onCollide = null) {
-            Vector2 to = patch_Calc.Approach(ExactPosition, target, maxAmount);
-            MoveTo(to, onCollide);
-        }
+        public void MoveTo(Vector2 to, Collision onCollide = null)
+            => MoveTo(to.X, to.Y, onCollide);
 
-        public void MoveTo(Vector2 to, Collision onCollide = null) {
-            Move(to - Position - movementCounter, onCollide);
+        public void MoveTo(float toX, float toY, Collision onCollide = null) {
+            Move(toX, toY, onCollide);
         }
     }
 }
