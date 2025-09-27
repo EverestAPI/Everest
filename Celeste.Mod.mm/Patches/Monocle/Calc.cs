@@ -75,7 +75,7 @@ namespace Monocle {
                 return target;
 
             delta.Normalize();
-            return val + delta * maxMove;
+            return new Vector2((float) (val.X + (double) delta.X * maxMove.X), (float) (val.Y + (double) delta.Y * maxMove.Y)); // Patch in XNA float jank
         }
 
         [MonoModReplace]
