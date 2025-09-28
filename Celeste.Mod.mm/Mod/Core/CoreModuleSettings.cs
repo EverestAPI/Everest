@@ -308,11 +308,6 @@ namespace Celeste.Mod.Core {
 
         [SettingIgnore]
         public int DebugRCPort { get; set; } = 32270;
-
-        public bool PhotosensitiveMode {
-            get => Settings.Instance.DisableFlashes;
-            set => Settings.Instance.DisableFlashes = value;
-        }
         
         [SettingIgnore]
         [EditorBrowsable(EditorBrowsableState.Never)]
@@ -682,54 +677,6 @@ namespace Celeste.Mod.Core {
 
             menu.Add(submenu);
         }
-
-
-        // If we want to put the advanced photosensitivity settings in Mod Options, just uncomment this.
-        // Left in (albeit commented) in case the implementation changes.
-        /*
-        public void CreatePhotosensitiveModeEntry(TextMenu menu, bool inGame) {
-
-            TextMenu.Item distort = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSDISTORT"), PhotosensitivityDistortOverride)
-                .Change(value => {
-                    PhotosensitivityDistortOverride = value;
-                });
-
-            TextMenu.Item glitch = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSGLITCH"), PhotosensitivityGlitchOverride)
-                .Change(value => {
-                    PhotosensitivityGlitchOverride = value;
-                });
-
-            TextMenu.Item lightning = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSLIGHTNING"), PhotosensitivityLightningOverride)
-                .Change(value => {
-                    PhotosensitivityLightningOverride = value;
-                });
-
-            TextMenu.Item screenFlash = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSSCREENFLASH"), PhotosensitivityScreenFlashOverride)
-                .Change(value => {
-                    PhotosensitivityScreenFlashOverride = value;
-                });
-
-            TextMenu.Item textHighlight = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSTEXTHIGHLIGHT"), PhotosensitivityTextHighlightOverride)
-                .Change(value => {
-                    PhotosensitivityTextHighlightOverride = value;
-                });
-
-            TextMenuExt.SubMenu submenu = new TextMenuExt.SubMenu(Dialog.Clean("MODOPTIONS_COREMODULE_PSOPTIONS"), false)
-                .Add(distort)
-                .Add(glitch)
-                .Add(lightning)
-                .Add(screenFlash)
-                .Add(textHighlight);
-
-            TextMenu.Item masterSwitch = new TextMenu.OnOff(Dialog.Clean("OPTIONS_DISABLE_FLASH"), PhotosensitiveMode)
-                .Change(value => {
-                    PhotosensitiveMode = value;
-                    submenu.Disabled = !value;
-                });
-
-            menu.Add(masterSwitch);
-            menu.Add(submenu);
-        } */
 
         public void CreateMirrorPreferencesEntry(TextMenu menu, bool inGame) {
             if (inGame) return;

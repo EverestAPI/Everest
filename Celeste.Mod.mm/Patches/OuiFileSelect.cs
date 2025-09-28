@@ -112,6 +112,23 @@ namespace Celeste {
         public override void Update() {
             int initialFileIndex = SlotIndex;
 
+            // allow wrapping from first to last/last to first slot
+            if (Focused && !SlotSelected) {
+                if ((Input.MenuUp.Pressed || CoreModule.Settings.MenuPageUp.Pressed) && SlotIndex == 0) {
+                    Audio.Play("event:/ui/main/savefile_rollover_up");
+                    SlotIndex = Slots.Length - 1;
+                    // consume presses to prevent changing slot again
+                    Input.MenuUp.ConsumePress();
+                    CoreModule.Settings.MenuPageUp.ConsumePress();
+                } else if ((Input.MenuDown.Pressed || CoreModule.Settings.MenuPageDown.Pressed) && SlotIndex == Slots.Length - 1) {
+                    Audio.Play("event:/ui/main/savefile_rollover_down");
+                    SlotIndex = 0;
+                    // consume presses to prevent changing slot again
+                    Input.MenuDown.ConsumePress();
+                    CoreModule.Settings.MenuPageDown.ConsumePress();
+                }
+            }
+
             orig_Update();
 
             if (Focused && !SlotSelected) {

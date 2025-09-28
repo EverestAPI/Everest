@@ -256,7 +256,20 @@ namespace Celeste {
 
                     // Custom values can be set via the MapMeta.
                     MapMeta meta = new MapMeta();
+                    // default values for mountain camera and cursor
+                    meta.Mountain = new MapMetaMountain();
+                    meta.Mountain.Idle = new MapMetaMountainCamera();
+                    meta.Mountain.Idle.Position = new float[] { 10, 16, 10 };
+                    meta.Mountain.Idle.Target = new float[] { 1, 10, 1 };
+                    meta.Mountain.Select = new MapMetaMountainCamera();
+                    meta.Mountain.Select.Position = new float[] { 8, 13, 8 };
+                    meta.Mountain.Select.Target = new float[] { 1, 8, 1 };
+                    meta.Mountain.Zoom = new MapMetaMountainCamera();
+                    meta.Mountain.Zoom.Position = new float[] { 6, 10, 6 };
+                    meta.Mountain.Zoom.Target = new float[] { 1, 6, 1 };
+                    meta.Mountain.Cursor = new float[] { 3, 10, 3 };
                     meta.ApplyTo(area);
+
                     MapMeta metaLoaded = asset.GetMeta<MapMeta>();
                     if (metaLoaded != null) {
                         area.Meta = null;
