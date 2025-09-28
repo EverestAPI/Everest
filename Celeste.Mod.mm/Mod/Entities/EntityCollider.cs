@@ -4,13 +4,14 @@ using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.Entities {
     /// <summary>
-    /// Allows for Collision with any type of entity in the game, similar to a PlayerCollider or PufferCollider.
-    /// Performs the Action provided on collision. 
+    /// Allows for collision with any type in the game, similar to a <see cref="PlayerCollider"/> or <see cref="PufferCollider"/>,
+    /// but on all objects of type <typeparamref name="T"/>.<br/>
+    /// Performs the <see cref="Action{T}"/> provided on collision. 
     /// </summary>
-    /// <typeparam name="T">The specific type of Entity this component should try to collide with</typeparam>
+    /// <typeparam name = "T"> The specific type of<see cref="Entity"/> this <see cref="EntityCollider{T}"/> should try to collide with.</typeparam>
     public class EntityCollider<T> : Component where T : Entity {
         /// <summary>
-        /// The Action invoked on Collision, with the Entity collided with passed as a parameter
+        /// The <see cref="Action{T}"/> invoked on collision, with the object collided with passed as a parameter
         /// </summary>
         public Action<T> OnEntityAction;
 
