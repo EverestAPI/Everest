@@ -23,28 +23,6 @@ namespace Celeste.Mod.Entities {
             Collider = collider;
         }
 
-        public override void Added(Entity entity) {
-            base.Added(entity);
-            //Only called if Component is added post Scene Begin and Entity Adding and Awake time.
-            if (Scene != null) {
-                if (!Scene.Tracker.IsEntityTracked<T>()) {
-                    patch_Tracker.AddTypeToTracker(typeof(T));
-                }
-                patch_Tracker.Refresh(Scene);
-            }
-        }
-
-        public override void EntityAdded(Scene scene) {
-            if (!scene.Tracker.IsEntityTracked<T>()) {
-                patch_Tracker.AddTypeToTracker(typeof(T));
-            }
-            base.EntityAdded(scene);
-        }
-
-        public override void EntityAwake() {
-            patch_Tracker.Refresh(Scene);
-        }
-
         public override void Update() {
             if (OnEntityAction == null) {
                 return;
@@ -55,7 +33,11 @@ namespace Celeste.Mod.Entities {
                 Entity.Collider = Collider;
             }
 
-            Entity.CollideDo(OnEntityAction);
+            foreach (Entity item in (Scene.Tracker as patch_Tracker).GetEntitiesTrackIfNeeded<T>()) {
+                if (Entity.CollideCheck(item)) {
+                    OnEntityAction(item as T);
+                }
+            }
 
             Entity.Collider = collider;
         }
