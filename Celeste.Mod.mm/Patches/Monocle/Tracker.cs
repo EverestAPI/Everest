@@ -178,6 +178,10 @@ namespace Monocle {
                 return;
             }
             tracker.currentVersion = TrackedTypeVersion;
+
+            var origEntities = tracker.Entities.ToDictionary(entry => entry.Key, entry => new List<Entity>(entry.Value));
+            var origComponents = tracker.Components.ToDictionary(entry => entry.Key, entry => new List<Component>(entry.Value));
+
             foreach (Type entityType in StoredEntityTypes) {
                 ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(tracker.Entities, entityType, out _);
                 list ??= new();
@@ -194,6 +198,39 @@ namespace Monocle {
                     tracker.ComponentAdded(component);
                 }
                 tracker.EntityAdded(entity);
+            }
+
+            // Keep original order of existing instances
+            // Especially important in the case of overlapping PlayerCollider components
+            foreach (Type entityType in StoredEntityTypes) {
+                var newList = tracker.Entities[entityType];
+                if (!origEntities.TryGetValue(entityType, out var oldList)) {
+                    continue;
+                }
+
+                newList.Sort((lhs, rhs) => {
+                    int lhsIdx = oldList.IndexOf(lhs);
+                    int rhsIdx = oldList.IndexOf(rhs);
+                    if (lhsIdx == rhsIdx) return 0;
+                    if (lhsIdx == -1) return  1;
+                    if (rhsIdx == -1) return -1;
+                    return lhsIdx - rhsIdx;
+                });
+            }
+            foreach (Type componentType in StoredComponentTypes) {
+                var newList = tracker.Components[componentType];
+                if (!origComponents.TryGetValue(componentType, out var oldList)) {
+                    continue;
+                }
+
+                newList.Sort((lhs, rhs) => {
+                    int lhsIdx = oldList.IndexOf(lhs);
+                    int rhsIdx = oldList.IndexOf(rhs);
+                    if (lhsIdx == rhsIdx) return 0;
+                    if (lhsIdx == -1) return  1;
+                    if (rhsIdx == -1) return -1;
+                    return lhsIdx - rhsIdx;
+                });
             }
         }
 
