@@ -446,6 +446,10 @@ namespace Celeste {
                 LevelSetStats set = LevelSets[lsi];
                 set.SaveData = this;
                 List<patch_AreaStats> areas = set.Areas;
+                List<patch_AreaStats> areasBin = set.AreasRecycleBin;
+                // Mix everything together and clear the bin to recalculate it
+                areas.AddRange(areasBin);
+                areasBin.Clear();
                 if (set.Name == "Celeste")
                     areas = Areas_Unsafe;
 
@@ -477,17 +481,24 @@ namespace Celeste {
                 // Fix IDs
                 for (int i = 0; i < areas.Count; i++) {
                     patch_AreaData area = patch_AreaData.Get(areas[i]);
-                    if (!string.IsNullOrEmpty(area?.Meta?.Parent))
-                        area = null;
-                    ((patch_AreaStats) areas[i]).ID_Unsafe = area?.ID ?? int.MaxValue;
+                    if (!string.IsNullOrEmpty(area?.Meta?.Parent)) { // Distinguish between subareas and missing areas
+                        areas[i].ID_Unsafe = int.MaxValue - 1;
+                    } else {
+                        areas[i].ID_Unsafe = area?.ID ?? int.MaxValue;
+                    }
                 }
 
                 // Sort
                 areas.Sort((a, b) => ((patch_AreaStats) a).ID_Unsafe - ((patch_AreaStats) b).ID_Unsafe);
 
-                // Remove leftovers
-                while (areas.Count > 0 && ((patch_AreaStats) areas[areas.Count - 1]).ID_Unsafe == int.MaxValue)
+                // Remove leftovers and subareas
+                while (areas.Count > 0 && areas[^1].ID_Unsafe >= int.MaxValue - 1) {
+                    patch_AreaStats area = areas[^1];
                     areas.RemoveAt(areas.Count - 1);
+                    // But keep missing areas in the bin
+                    if (area.ID_Unsafe == int.MaxValue)
+                        areasBin.Add(area);
+                }
 
                 // Fill gaps
                 for (int i = 0; i < countRoots; i++)
@@ -677,6 +688,8 @@ namespace Celeste {
         }
 
         public List<patch_AreaStats> Areas = new List<patch_AreaStats>();
+
+        public List<patch_AreaStats> AreasRecycleBin = new List<patch_AreaStats>();
         [XmlIgnore]
         public List<patch_AreaStats> AreasIncludingCeleste => Name == "Celeste" ? SaveData.Areas_Unsafe : Areas;
 
