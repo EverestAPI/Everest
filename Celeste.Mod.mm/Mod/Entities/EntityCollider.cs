@@ -8,7 +8,7 @@ namespace Celeste.Mod.Entities {
     /// but on all objects of type <typeparamref name="T"/>.<br/>
     /// Performs the <see cref="Action{T}"/> provided on collision. 
     /// </summary>
-    /// <typeparam name = "T"> The specific type of<see cref="Entity"/> this <see cref="EntityCollider{T}"/> should try to collide with.</typeparam>
+    /// <typeparam name="T">The specific type of <see cref="Entity"/> this <see cref="EntityCollider{T}"/> should try to collide with.</typeparam>
     public class EntityCollider<T> : Component where T : Entity {
         /// <summary>
         /// The <see cref="Action{T}"/> invoked on collision, with the object collided with passed as a parameter
