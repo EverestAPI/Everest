@@ -19,6 +19,10 @@ namespace Celeste {
 
         public List<LevelSetStats> LevelSets = new List<LevelSetStats>();
 
+        /// <summary>
+        /// Contains the <see cref="LevelSetStats"/> for <see cref="LevelSet"/>s that are currently not loaded.
+        /// Entries are restored back to the main LevelSets list once their respective <see cref="LevelSet"/> is loaded.
+        /// </summary>
         public List<LevelSetStats> LevelSetRecycleBin = new List<LevelSetStats>();
 
         public bool HasModdedSaveData = false;
@@ -429,6 +433,7 @@ namespace Celeste {
                     LevelSetStats recycleBinLevelSet = LevelSetRecycleBin.FirstOrDefault(other => other.Name == set);
                     if (recycleBinLevelSet != null) {
                         // the level set is actually in the recycle bin - restore it.
+                        Logger.Verbose("SaveData", $"Restoring levelset {recycleBinLevelSet.Name} from the recycle bin");
                         LevelSets.Add(recycleBinLevelSet);
                         LevelSetRecycleBin.Remove(recycleBinLevelSet);
                     } else {
@@ -459,6 +464,7 @@ namespace Celeste {
                 int offset = set.AreaOffset;
                 if (offset == -1) {
                     // LevelSet gone - let's move it to the recycle bin.
+                    Logger.Verbose("SaveData", $"Moving levelset {set.Name} to the recycle bin");
                     LevelSetStats levelSetAlreadyInRecycleBin = LevelSetRecycleBin.FirstOrDefault(other => other.Name == set.Name);
                     if (levelSetAlreadyInRecycleBin != null) {
                         // a level set with the same name already exists in the recycle bin - replace it.
@@ -478,13 +484,15 @@ namespace Celeste {
                 int countRoots = patch_AreaData.Areas.Count(other => other.LevelSet == set.Name && string.IsNullOrEmpty(other?.Meta?.Parent));
                 int countAll = patch_AreaData.Areas.Count(other => other.LevelSet == set.Name);
 
+                const int MissingArea = int.MaxValue;
+                const int ParentArea = int.MaxValue - 1;
                 // Fix IDs
                 for (int i = 0; i < areas.Count; i++) {
                     patch_AreaData area = patch_AreaData.Get(areas[i]);
                     if (!string.IsNullOrEmpty(area?.Meta?.Parent)) { // Distinguish between subareas and missing areas
-                        areas[i].ID_Unsafe = int.MaxValue - 1;
+                        areas[i].ID_Unsafe = ParentArea;
                     } else {
-                        areas[i].ID_Unsafe = area?.ID ?? int.MaxValue;
+                        areas[i].ID_Unsafe = area?.ID ?? MissingArea;
                     }
                 }
 
@@ -492,12 +500,16 @@ namespace Celeste {
                 areas.Sort((a, b) => ((patch_AreaStats) a).ID_Unsafe - ((patch_AreaStats) b).ID_Unsafe);
 
                 // Remove leftovers and subareas
-                while (areas.Count > 0 && areas[^1].ID_Unsafe >= int.MaxValue - 1) {
+                while (areas.Count > 0 && areas[^1].ID_Unsafe is ParentArea or MissingArea) {
                     patch_AreaStats area = areas[^1];
                     areas.RemoveAt(areas.Count - 1);
                     // But keep missing areas in the bin
-                    if (area.ID_Unsafe == int.MaxValue)
+                    if (area.ID_Unsafe == MissingArea) {
+                        Logger.Verbose("SaveData", $"Moving area {area.SID} to areas recycle bin since it is not loaded");
                         areasBin.Add(area);
+                    } else {
+                        Logger.Verbose("SaveData", $"Removing area {area.SID} because it has a parent");
+                    }
                 }
 
                 // Fill gaps
@@ -689,6 +701,10 @@ namespace Celeste {
 
         public List<patch_AreaStats> Areas = new List<patch_AreaStats>();
 
+        /// <summary>
+        /// Similarly to <see cref="patch_SaveData.LevelSetRecycleBin"/> holds <see cref="AreaStats"/> whose respective <see cref="AreaData"/> is not loaded.
+        /// Entries are restored back to the main <see cref="AreaStats"/> list once their respective <see cref="AreaData"/> is loaded.
+        /// </summary>
         public List<patch_AreaStats> AreasRecycleBin = new List<patch_AreaStats>();
         [XmlIgnore]
         public List<patch_AreaStats> AreasIncludingCeleste => Name == "Celeste" ? SaveData.Areas_Unsafe : Areas;
