@@ -134,6 +134,13 @@ namespace Celeste.Mod {
                 public static event UnpauseHandler OnUnpause;
                 internal static void Unpause(_Level level) => OnUnpause?.Invoke(level);
 
+                public delegate void SkipCutsceneHandler(_Level level);
+                /// <summary>
+                /// Called before skipping a cutscene.
+                /// </summary>
+                public static SkipCutsceneHandler OnSkipCutscene;
+                internal static void SkipCutscene(_Level level) => OnSkipCutscene?.Invoke(level);
+
                 public delegate void CreatePauseMenuButtonsHandler(_Level level, patch_TextMenu menu, bool minimal);
                 /// <summary>
                 /// Called when the Level's pause menu is created.

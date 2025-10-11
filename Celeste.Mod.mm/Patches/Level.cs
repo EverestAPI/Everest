@@ -217,6 +217,12 @@ namespace Celeste {
             }
         }
 
+        public extern void orig_SkipCutscene();
+        public new void SkipCutscene() {
+            Everest.Events.Level.SkipCutscene(this);
+            orig_SkipCutscene();
+        }
+
         public extern void orig_TransitionTo(LevelData next, Vector2 direction);
         public new void TransitionTo(LevelData next, Vector2 direction) {
             orig_TransitionTo(next, direction);
