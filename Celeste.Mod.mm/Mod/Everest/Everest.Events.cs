@@ -13,6 +13,7 @@ using _Player = Celeste.Player;
 using _Seeker = Celeste.Seeker;
 using _AngryOshiro = Celeste.AngryOshiro;
 using _SubHudRenderer = Celeste.Mod.UI.SubHudRenderer;
+using _FancyText = Celeste.FancyText;
 using Monocle;
 
 namespace Celeste.Mod {
@@ -381,6 +382,38 @@ namespace Celeste.Mod {
                 public static event BeforeRenderHandler OnBeforeRender;
                 internal static void BeforeRender(_SubHudRenderer renderer, Scene scene)
                     => OnBeforeRender?.Invoke(renderer, scene);
+            }
+
+            public static class FancyText {
+                public delegate bool ParseCustomCommandHandler(_FancyText fancyText, string command, List<string> args, Stack<Color> colorStack, _FancyText.Portrait[] lastPortrait);
+                public static event ParseCustomCommandHandler OnParseCustomCommand;
+                internal static bool ParseCustomCommand(_FancyText fancyText, string command, List<string> args, Stack<Color> colorStack, _FancyText.Portrait[] lastPortrait)
+                    => OnParseCustomCommand?.InvokeWhileFalse(fancyText, command, args, colorStack, lastPortrait) ?? false;
+
+                public delegate void BeforeParseHandler(_FancyText fancyText);
+                public static event BeforeParseHandler OnBeforeParse;
+                internal static void BeforeParse(_FancyText fancyText)
+                    => OnBeforeParse?.Invoke(fancyText);
+
+                public delegate void AfterParseHandler(_FancyText fancyText);
+                public static event AfterParseHandler OnAfterParse;
+                internal static void AfterParse(_FancyText fancyText)
+                    => OnAfterParse?.Invoke(fancyText);
+
+                public delegate void WordAddedHandler(_FancyText fancyText, string word, int[] codepoints, List<_FancyText.Char> chars);
+                public static event WordAddedHandler OnWordAdded;
+                internal static void WordAdded(_FancyText fancyText, string word, int[] codepoints, List<_FancyText.Char> chars)
+                    => OnWordAdded?.Invoke(fancyText, word, codepoints, chars);
+
+                public delegate void BeforeDrawHandler(_FancyText fancyText, Vector2 position, Vector2 justify, Vector2 scale, float alpha, int start, int end);
+                public static event BeforeDrawHandler OnBeforeDraw;
+                internal static void BeforeDraw(_FancyText fancyText, Vector2 position, Vector2 justify, Vector2 scale, float alpha, int start, int end)
+                    => OnBeforeDraw?.Invoke(fancyText, position, justify, scale, alpha, start, end);
+
+                public delegate void AfterDrawHandler(_FancyText fancyText, Vector2 position, Vector2 justify, Vector2 scale, float alpha, int start, int end);
+                public static event AfterDrawHandler OnAfterDraw;
+                internal static void AfterDraw(_FancyText fancyText, Vector2 position, Vector2 justify, Vector2 scale, float alpha, int start, int end)
+                    => OnAfterDraw?.Invoke(fancyText, position, justify, scale, alpha, start, end);
             }
         }
     }
