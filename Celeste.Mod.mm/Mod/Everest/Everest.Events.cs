@@ -1,6 +1,7 @@
 ﻿using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using _Decal = Celeste.Decal;
 using _EventTrigger = Celeste.EventTrigger;
@@ -14,6 +15,7 @@ using _Seeker = Celeste.Seeker;
 using _AngryOshiro = Celeste.AngryOshiro;
 using _SubHudRenderer = Celeste.Mod.UI.SubHudRenderer;
 using _FancyText = Celeste.FancyText;
+using _Textbox = Celeste.Textbox;
 using Monocle;
 
 namespace Celeste.Mod {
@@ -421,6 +423,25 @@ namespace Celeste.Mod {
                 public static event AfterDrawHandler OnAfterDraw;
                 internal static void AfterDraw(_FancyText fancyText, Vector2 position, Vector2 justify, Vector2 scale, float alpha, int start, int end)
                     => OnAfterDraw?.Invoke(fancyText, position, justify, scale, alpha, start, end);
+            }
+
+            public static class Textbox {
+                public delegate IEnumerable<Func<IEnumerator>> AddCustomEventsHandler(_Textbox textbox, string dialog, Language language);
+                public static event AddCustomEventsHandler OnAddCustomEvents;
+                internal static List<Func<IEnumerator>> AddCustomEvents(_Textbox textbox, string dialog, Language language) {
+                    List<Func<IEnumerator>> extraEvents = new();
+
+                    if (OnAddCustomEvents is null)
+                        return extraEvents;
+
+                    foreach (Delegate del in OnAddCustomEvents.GetInvocationList()) {
+                        var res = del.DynamicInvoke(new object[] {textbox, dialog, language});
+                        if (res is IEnumerable<Func<IEnumerator>> events)
+                            extraEvents.AddRange(events);
+                    }
+
+                    return extraEvents;
+                }
             }
         }
     }
