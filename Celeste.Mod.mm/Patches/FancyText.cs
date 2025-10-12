@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Celeste.Mod;
 using Celeste.Mod.Helpers;
@@ -53,6 +54,12 @@ namespace Celeste {
         [PatchFancyTextParse]  // ... except for manually manipulating the method via MonoModRules
         private extern FancyText.Text Parse();
 
+        private static Color ApplyOpacityArgument(Color col, List<string> args) {
+            if (args.Count > 0 && float.TryParse(args[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float opacity))
+                return col * opacity;
+            return col;
+        }
+
         private void ParseCustomCommand(string command, List<string> args, Stack<Color> colorStack, FancyText.Portrait[] lastPortrait) {
             if (Everest.Events.FancyText.ParseCustomCommand((FancyText)(object)this, command, args, colorStack, lastPortrait))
                 return;
@@ -92,9 +99,13 @@ namespace MonoMod {
 
         public static void PatchFancyTextParse(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_FancyText = MonoModRule.Modder.FindType("Celeste.FancyText").Resolve();
+            TypeDefinition t_Calc = MonoModRule.Modder.FindType("Monocle.Calc").Resolve();
+
             MethodDefinition m_BeforeParse = t_FancyText.FindMethod("BeforeParse");
             MethodDefinition m_FancyText_ParseCustomCommand = t_FancyText.FindMethod("ParseCustomCommand");
+            MethodDefinition m_FancyText_ApplyOpacityArgument= t_FancyText.FindMethod("ApplyOpacityArgument");
             MethodDefinition m_AfterParse = t_FancyText.FindMethod("AfterParse");
+            MethodDefinition m_Calc_HexToColorWithAlpha = t_Calc.FindMethod("HexToColorWithAlpha");
 
             VariableDefinition v_command = context.Body.Variables.First(v => v.VariableType.FullName == "System.String");
             VariableDefinition v_args = context.Body.Variables.First(v => v.VariableType.FullName == "System.Collections.Generic.List`1<System.String>");
@@ -108,6 +119,20 @@ namespace MonoMod {
 
             cursor.EmitLdarg0();
             cursor.EmitCall(m_BeforeParse);
+
+            // ... (getting color from {#hex})
+            // - call Calc::HexToColor
+            // + call Calc::HexToColorWithAlpha
+            // + ldloc.8 (args)
+            // + call FancyText::ApplyOpacityArgument
+            //   stfld valuetype Color FancyText::currentColor
+
+            cursor.GotoNext(MoveType.After,
+                            instr => instr.MatchCallOrCallvirt("Monocle.Calc", "HexToColor"));
+
+            cursor.Previous.Operand = m_Calc_HexToColorWithAlpha;
+            cursor.EmitLdloc(v_args);
+            cursor.EmitCall(m_FancyText_ApplyOpacityArgument);
 
             //   ldstr "savedata"
             //   callvirt System.Boolean System.String::Equals(System.String)
