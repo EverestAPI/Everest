@@ -204,32 +204,11 @@ namespace Celeste.Mod {
             _UnloadTextureRaw(dataPtr);
         }
 
-        [MonoModIgnore]
-        private static extern void _SetTextureDataPtr(Texture2D tex, IntPtr ptr);
-
-        [MonoModIgnore]
-        private static extern Texture2D _LoadTextureLazyPremultiplyFull(GraphicsDevice gd, Stream stream);
-
-        [MonoModIgnore]
-        private static extern void _LoadTextureRaw(GraphicsDevice gd, Stream stream, out int w, out int h, out byte[] data, out IntPtr dataPtr, bool gc);
-
-        [MonoModIgnore]
-        private static extern void _LoadTextureLazyPremultiply(GraphicsDevice gd, Stream stream, out int w, out int h, out byte[] data, out IntPtr dataPtr, bool gc);
-
-        [MonoModIgnore]
-        private static extern void _UnloadTextureRaw(IntPtr dataPtr);
-
-        [MonoModIfFlag("FNA")]
-        [MonoModPatch("_SetTextureDataPtr")]
-        [MonoModReplace]
-        private static unsafe void _SetTextureDataPtrFNA(Texture2D tex, IntPtr ptr) {
+        private static unsafe void _SetTextureDataPtr(Texture2D tex, IntPtr ptr) {
             tex.SetDataPointerEXT(0, null, ptr, tex.Width * tex.Height * 4);
         }
 
-        [MonoModIfFlag("FNA")]
-        [MonoModPatch("_LoadTextureLazyPremultiplyFull")]
-        [MonoModReplace]
-        private static unsafe Texture2D _LoadTextureLazyPremultiplyFullFNA(GraphicsDevice gd, Stream stream) {
+        private static unsafe Texture2D _LoadTextureLazyPremultiplyFull(GraphicsDevice gd, Stream stream) {
             _LoadTextureLazyPremultiply(gd, stream, out int w, out int h, out _, out IntPtr dataPtr, false);
             Texture2D tex = new Texture2D(gd, w, h, false, SurfaceFormat.Color);
             tex.SetDataPointerEXT(0, null, dataPtr, w * h * 4);
@@ -237,10 +216,7 @@ namespace Celeste.Mod {
             return tex;
         }
 
-        [MonoModIfFlag("FNA")]
-        [MonoModPatch("_LoadTextureRaw")]
-        [MonoModReplace]
-        private static unsafe void _LoadTextureRawFNA(GraphicsDevice gd, Stream stream, out int w, out int h, out byte[] data, out IntPtr dataPtr, bool gc) {
+        private static unsafe void _LoadTextureRaw(GraphicsDevice gd, Stream stream, out int w, out int h, out byte[] data, out IntPtr dataPtr, bool gc) {
             if (gc) {
                 Texture2D.TextureDataFromStreamEXT(stream, out w, out h, out data);
                 dataPtr = IntPtr.Zero;
@@ -251,10 +227,7 @@ namespace Celeste.Mod {
         }
 
 
-        [MonoModIfFlag("FNA")]
-        [MonoModPatch("_LoadTextureLazyPremultiply")]
-        [MonoModReplace]
-        private static unsafe void _LoadTextureLazyPremultiplyFNA(GraphicsDevice gd, Stream stream, out int w, out int h, out byte[] data, out IntPtr dataPtr, bool gc) {
+        private static unsafe void _LoadTextureLazyPremultiply(GraphicsDevice gd, Stream stream, out int w, out int h, out byte[] data, out IntPtr dataPtr, bool gc) {
             int length;
             if (gc) {
                 Texture2D.TextureDataFromStreamEXT(stream, out w, out h, out data);
@@ -282,10 +255,7 @@ namespace Celeste.Mod {
             }
         }
 
-        [MonoModIfFlag("FNA")]
-        [MonoModPatch("_UnloadTextureRaw")]
-        [MonoModReplace]
-        private static unsafe void _UnloadTextureRawFNA(IntPtr dataPtr) {
+        private static unsafe void _UnloadTextureRaw(IntPtr dataPtr) {
             FNA3D_Image_Free(dataPtr);
         }
 
