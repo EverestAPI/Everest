@@ -58,7 +58,7 @@ namespace Celeste.Mod.Core {
             }
 
             // If we're running in an environment that prefers this flag, forcibly enable them.
-            Settings.LazyLoading |= Everest.Flags.PreferLazyLoading;
+            // Settings.LazyLoading |= Everest.Flags.PreferLazyLoading;
         }
 
         public override void SaveSettings() {

@@ -359,7 +359,7 @@ https://discord.gg/6qjaePQ");
                 if (limit <= (128L * 1024L * 1024L))
                     limit = (128L * 1024L * 1024L);
 
-                patch_VirtualTexture.StartFastTextureLoading(limit);
+                // patch_VirtualTexture.StartFastTextureLoading(limit);
             }
 
             orig_LoadContent();
@@ -367,7 +367,7 @@ https://discord.gg/6qjaePQ");
             foreach (EverestModule mod in Everest._Modules)
                 mod.LoadContent(firstLoad);
 
-            patch_VirtualTexture.StopFastTextureLoading();
+            // patch_VirtualTexture.StopFastTextureLoading();
 
             Everest._ContentLoaded = true;
         }

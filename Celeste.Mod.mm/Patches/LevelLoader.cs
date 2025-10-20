@@ -52,7 +52,8 @@ namespace Celeste {
             }
 
             if (CoreModule.Settings.LazyLoading) {
-                MainThreadHelper.Schedule(() => patch_VirtualContent.UnloadOverworld());
+                // Saves memory at the cost of having to reload them each time
+                MainThreadHelper.Schedule(patch_VirtualContent.UnloadOverworld);
             }
 
             // Vanilla TileToIndex mappings.

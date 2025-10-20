@@ -221,7 +221,7 @@ namespace Celeste.Mod {
                 Texture2D.TextureDataFromStreamEXT(stream, out w, out h, out data);
                 dataPtr = IntPtr.Zero;
             } else {
-                data = Array.Empty<byte>();
+                data = [];
                 dataPtr = FNA3D_ReadImageStream(stream, out w, out h, out _);
             }
         }
@@ -234,7 +234,7 @@ namespace Celeste.Mod {
                 dataPtr = IntPtr.Zero;
                 length = data.Length;
             } else {
-                data = Array.Empty<byte>();
+                data = [];
                 dataPtr = FNA3D_ReadImageStream(stream, out w, out h, out length);
             }
 

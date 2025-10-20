@@ -11,6 +11,7 @@ using System.IO;
 namespace Monocle {
     static class patch_VirtualContent {
 
+        // TODO: add locking around this field
         // We're effectively in VirtualContent, but still need to "expose" private fields to our mod.
         private static List<VirtualAsset> assets;
         /// <summary>
@@ -76,8 +77,9 @@ namespace Monocle {
         public static void UnloadOverworld() {
             foreach (patch_VirtualAsset asset in assets) {
                 string path = asset.Name.Replace('\\', '/');
-                if (asset is patch_VirtualTexture && path.StartsWith("Graphics/Atlases/")) {
-                    path = path.Substring(17);
+                const string pfx = "Graphics/Atlases/";
+                if (asset is patch_VirtualTexture && path.StartsWith(pfx)) {
+                    path = path[pfx.Length..];
                     if (path.StartsWith("Opening") || path.StartsWith("Overworld") || path.StartsWith("Mountain") || path.StartsWith("Journal")) {
                         asset.Unload();
                     }

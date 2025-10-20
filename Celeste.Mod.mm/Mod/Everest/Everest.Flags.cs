@@ -48,8 +48,10 @@ namespace Celeste.Mod {
             public static bool AvoidRenderTargets { get; private set; }
             /// <summary>
             /// Does the environment (platform, ...) prefer lazy loading?
+            /// Used to be used by android platform, which are not supported currently.
             /// </summary>
-            public static bool PreferLazyLoading { get; private set; }
+            [Obsolete("`PreferLazyLoading` is always false on Everest Core")]
+            public static bool PreferLazyLoading => false;
 
             /// <summary>
             /// Does the environment (renderer, framework ,...) prefer threaded GL?
@@ -80,7 +82,6 @@ namespace Celeste.Mod {
                 }
 
                 AvoidRenderTargets = Environment.GetEnvironmentVariable("EVEREST_NO_RT") == "1";
-                PreferLazyLoading = false;
 
                 SupportRuntimeMods = true;
                 SupportUpdatingEverest = true;
