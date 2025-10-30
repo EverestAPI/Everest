@@ -63,6 +63,9 @@ namespace Monocle {
         [MonoModLinkFrom("System.Void Monocle.VirtualContent::_Unload()")]
         public static extern void Unload();
 
+        [MonoModIgnore]
+        public static extern void Remove(VirtualAsset asset);
+
         /// <summary>
         /// Forcibly unload and reload all content.
         /// </summary>

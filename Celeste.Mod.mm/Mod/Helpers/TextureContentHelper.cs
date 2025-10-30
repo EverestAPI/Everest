@@ -22,15 +22,11 @@ public static class TextureContentHelper {
     private static bool inGC = true;
     private static readonly SpanPool<byte> spanPool = new(atlasSize * 2, inGC);
     
-    // Same signature as .NET Core Unsafe variant, which also matches IL expectations.
-    // This should get replaced with initblk at the call site in Reload as PatchInitblk is used
-    [MonoModIgnore]
-    private static unsafe extern void _initblk(void* startAddress, byte value, uint byteCount);
-    
     public static unsafe Func<Texture2D> LoadFromPath(string path) {
         int w, h;
         switch (Path.GetExtension(path)) {
             case ".data":
+                bool hasSegment;
                 SpanPool<byte>.SegmentIdentifier seg;
                 using (FileStream stream = File.OpenRead(Path.Combine(Engine.ContentDirectory, path))) {
                     
@@ -46,9 +42,9 @@ public static class TextureContentHelper {
                     bool hasAlpha = read[8] == 1;
     
                     int size = w * h * 4;
-                    bool rent = spanPool.TryRent(size, out seg);
+                    hasSegment = spanPool.TryRent(size, out seg);
                     Span<byte> buffer;
-                    if (rent) {
+                    if (hasSegment) {
                         buffer = seg.Memory.Span;
                     } else {
                         // Fall back to gc allocs
@@ -67,7 +63,8 @@ public static class TextureContentHelper {
                     fixed (byte* ptr = seg.Memory.Span)
                         tex.SetData((IntPtr)ptr);
                     
-                    spanPool.Return(seg);
+                    if (hasSegment)
+                        spanPool.Return(seg);
                     return tex;
                 };
             case ".png":
@@ -76,12 +73,14 @@ public static class TextureContentHelper {
                 return () => Engine.Instance.Content.Load<Texture2D>(path.Replace(".xnb", ""));
             default:
                 return () => {
+                    return LoadFromStream(File.OpenRead(Path.Combine(Engine.ContentDirectory, path)), false)();
                     using FileStream stream = File.OpenRead(Path.Combine(Engine.ContentDirectory, path));
                     return Texture2D.FromStream(Engine.Graphics.GraphicsDevice, stream);
                 };
         }
     }
     
+    // stb path
     public static Func<Texture2D> LoadFromStream(Stream stream, bool premul) {
         using (stream) {
             int w, h;
@@ -102,12 +101,10 @@ public static class TextureContentHelper {
     
     public static unsafe Func<Texture2D> LoadFromSizeAndColor(int width, int height, Color color) {
         // Layout order for Color is unknown, but since it's guaranteed to be consistent everywhere this will work
-        Memory<byte> data;
-        if (spanPool.TryRent(width * height * sizeof(Color), out SpanPool<byte>.SegmentIdentifier seg)) {
-            data = seg.Memory;
-        } else {
-            data = new byte[width * height * sizeof(Color)];
-        }
+        bool hasSegment = spanPool.TryRent(width * height * sizeof(Color), out SpanPool<byte>.SegmentIdentifier seg);
+        Memory<byte> data = hasSegment ? seg.Memory :
+            // TODO: Improve this to bound max mem usage
+            new byte[width * height * sizeof(Color)];
         fixed (Color* ptr = MemoryMarshal.Cast<byte, Color>(data.Span)) {
             for (int i = 0; i < data.Length; i++) {
                 ptr[i] = color;
@@ -120,7 +117,8 @@ public static class TextureContentHelper {
             }
             // Fall back to gc allocs
             // TODO: Improve this to bound max mem usage
-            spanPool.Return(seg);
+            if (hasSegment)
+                spanPool.Return(seg);
             return tex;
         };
     }
@@ -130,8 +128,7 @@ public static class TextureContentHelper {
     // It also expects `read` to be prefilled with the first part of `stream` and it 
     // will keep reading from `stream` until all data is decoded.
     // Assumptions: read.Length >= bytesCheckSize, stream.Position == read.Length
-    [PatchInitblk]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] // This used to be inlined manually
     private static unsafe void ReadDataFile<T>(Stream stream, byte[] read, Span<byte> buffer) where T : AlphaMode {
         int size = buffer.Length;
         fixed (byte* to = buffer)
@@ -139,7 +136,7 @@ public static class TextureContentHelper {
             int* toI = (int*) to;
             uint toIdxB = 0;
             uint toIdxI = 0;
-            int readIdx = 9;
+            int readIdx = 9; // the first 9 bytes describe width, height and alpha mode (4+4+1), those have been read already
             while (toIdxB < size) {
                 // Pixel values are run length encoded, this counts the number of pixels in this line
                 uint lineSize = from[readIdx];
@@ -168,9 +165,9 @@ public static class TextureContentHelper {
                 }
 
                 if (lineSize > 1) {
-                    if (typeof(T) == typeof(int) && zeroSplat) {
+                    if (typeof(T) == typeof(HasAlpha) && zeroSplat) {
                         // If alpha was zero, bulk write 0 to the whole line
-                        _initblk(to + toIdxB + 4, 0, lineSize * 4 - 4);
+                        Unsafe.InitBlockUnaligned(to + toIdxB + 4, 0, lineSize * 4 - 4);
                     } else {
                         // Write via integers for performance
                         int splatValue = toI[toIdxI];
@@ -309,7 +306,7 @@ public static class TextureContentHelper {
     /// <summary>
     /// A simple MemoryManager for unmanaged memory arrays.
     /// </summary>
-    /// <param name="size">Number of elements of the array.</param>
+    /// <param name="itemCount">Number of elements of the array.</param>
     /// <typeparam name="T">Type of the array.</typeparam>
     private sealed unsafe class UnmanagedMemoryManager<T>(int itemCount) : MemoryManager<T>
         where T : unmanaged {

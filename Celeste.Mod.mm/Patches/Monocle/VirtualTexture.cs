@@ -10,8 +10,8 @@ using Microsoft.Xna.Framework.Graphics;
 using MonoMod;
 using System;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Threading.Tasks;
 
 #nullable enable
 
@@ -21,9 +21,6 @@ namespace Monocle {
         // We're effectively in VirtualAsset, but still need to "expose" private fields to our mod.
         public string? Path { get; private set; }
         private Color color;
-
-        internal const int bytesSize = 512 * 1024; // 524288
-        internal const int bytesCheckSize = 512 * 1024 - 32; // 524256
         
         private static extern void orig_cctor();
         [MonoModConstructor]
@@ -39,27 +36,62 @@ namespace Monocle {
         public Texture2D? Texture;
 
         [MonoModRemove] 
-        private Texture2D Texture_Unsafe;
+        private Texture2D? Texture_Unsafe;
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture")]
-        public Texture2D Texture_Safe {
+        public Texture2D? Texture_Safe {
             get {
-                return Texture_Unsafe;
+                // Return the texture if it is ready
+                if (Texture_Unsafe != null)
+                    return Texture_Unsafe;
+                
+                // Otherwise wait for the queued load
+                if (_queuedLoad == null) {
+                    Reload();
+                    if (Texture_Unsafe != null)
+                        return Texture_Unsafe;
+                    // if reload doesn't set a texture, _queuedLoad must be non-null
+                    Debug.Assert(_queuedLoad != null);
+                }
+                // Deadlock prevention for main thread
+                if (MainThreadHelper.IsMainThread) {
+                    if (!_waitingForLoadOnMainThread) {
+                        _waitingForLoadOnMainThread = true;
+                    } else {
+                        throw new Exception("This is a bug! Deadlock prevented! Task would be waiting for itself to complete!");
+                    }
+                }
+
+                _queuedLoad.Wait();
+                if (MainThreadHelper.IsMainThread) {
+                    _waitingForLoadOnMainThread = false;
+                }
+                return Texture_Unsafe!;
             }
             set {
-                Texture_Unsafe = value;
+                if (value == null) {
+                    Unload();
+                } else {
+                    AssignTexture(value);
+                }
             }
         }
 
-        public ModAsset? Metadata;
+        public readonly ModAsset? Metadata;
 
         public VirtualTexture? Fallback;
+
+        private readonly object _textureLock;
+        private Task? _queuedLoad;
+        // Deadlock prevention for main thread
+        private bool _waitingForLoadOnMainThread;
 
         [MonoModConstructor]
         [MonoModReplace]
         internal patch_VirtualTexture(string path) {
             Path = path;
             Name = path;
+            _textureLock = new object();
             // if (!Preload(force: Everest.Flags.IsHeadless) && !Everest.Flags.IsHeadless)
                 Reload();
             if (Everest.Flags.IsHeadless)
@@ -73,6 +105,7 @@ namespace Monocle {
             Width = width;
             Height = height;
             this.color = color;
+            _textureLock = new object();
             // if (!Preload(force: Everest.Flags.IsHeadless) && !Everest.Flags.IsHeadless)
                 Reload();
             if (Everest.Flags.IsHeadless)
@@ -83,6 +116,7 @@ namespace Monocle {
         internal patch_VirtualTexture(ModAsset metadata) {
             Metadata = metadata;
             Name = metadata.PathVirtual;
+            _textureLock = new object();
             // if (!Preload(force: Everest.Flags.IsHeadless) && !Everest.Flags.IsHeadless)
                 Reload();
             if (Everest.Flags.IsHeadless)
@@ -90,14 +124,41 @@ namespace Monocle {
         }
 
 
-        [MemberNotNull(nameof(Texture_Unsafe))]
-        private void Load(Func<Texture2D> cb) {
-            Texture_Unsafe = cb();
+        /// <summary>
+        /// Runs a callback in the main thread.
+        /// </summary>
+        /// <param name="cb">The callback.</param>
+        /// <param name="wait">Whether to wait.</param>
+        private void RunSafely(Func<Texture2D> cb, bool wait = true) {
+            if (LoadImmediately) {
+                AssignTexture(cb());
+                return;
+            }
+
+            ValueTask vt = MainThreadHelper.Schedule((Action)RunAndStore);
+            // This is somewhat pointless, IsCompleted cant be true with the current LoadImmediately criteria
+            if (vt.IsCompleted) { // TODO: What if the completion was not successful
+                return;
+            }
+            
+            Task t = vt.AsTask();
+            lock (_textureLock) 
+                _queuedLoad = t;
+            if (wait) {
+                t.Wait();
+            }
+            
+            return;
+
+            void RunAndStore() {
+                Texture2D tex = cb();
+                AssignTexture(tex);
+            }
         }
 
         private bool LoadImmediately => MainThreadHelper.IsMainThread;
 
-        [MemberNotNull(nameof(Texture_Unsafe))]
+        [MonoModReplace]
         internal override sealed void Reload() {
             if (Everest.Flags.IsHeadless) {
                 Texture_Unsafe = new Texture2D(Engine.Graphics.GraphicsDevice, 1, 1);
@@ -105,6 +166,7 @@ namespace Monocle {
             }
             
             Unload();
+            // Important, this is the main entrypoint, and any code-path should lead to an eventual unique call to RunSafely or AssignTexture
         
             if (Metadata != null) {
                 Stream stream = Metadata.Stream;
@@ -112,22 +174,51 @@ namespace Monocle {
                     bool premul = false; // Assume unpremultiplied by default.
                     if (Metadata.TryGetMeta(out TextureMeta meta))
                         premul = meta.Premultiplied;
-                    Load(TextureContentHelper.LoadFromStream(stream, premul));
+                    // If we have async streams, read async, otherwise, wrap everything in the RunSafely call and run the returned cb immediately
+                    RunSafely(Metadata.StreamAsync ?
+                        TextureContentHelper.LoadFromStream(stream, premul) : 
+                        () => TextureContentHelper.LoadFromStream(stream, premul)());
                 } else if (Fallback != null) {
+                    // ReSharper disable once SuspiciousTypeConversion.Global
                     ((patch_VirtualTexture) (object) Fallback).Reload();
-                    Texture_Unsafe = Fallback.Texture!;
+                    AssignTexture(Fallback.Texture!);
                 } else {
                     throw new InvalidOperationException();
                 }
             } else if (string.IsNullOrEmpty(Path)) {
-                Load(TextureContentHelper.LoadFromSizeAndColor(Width, Height, color));
+                RunSafely(TextureContentHelper.LoadFromSizeAndColor(Width, Height, color));
             } else {
-                Load(TextureContentHelper.LoadFromPath(Path));
+                RunSafely(TextureContentHelper.LoadFromPath(Path));
             }
+        }
+
+        private void AssignTexture(Texture2D tex) {
+            ArgumentNullException.ThrowIfNull(tex);
+            lock (_textureLock) {
+                // if (Texture_Unsafe != null) {
+                //     throw new InvalidOperationException("Double Texture_Unsafe assignment!");
+                // }
+                Texture_Unsafe = tex;
+                Width = tex.Width;
+                Height = tex.Height;
+            }
+        }
         
-            Texture2D tex = Texture_Unsafe;
-            Width = tex.Width;
-            Height = tex.Height;
+        // TODO: Get rid of the replace and ilpatch to use Texture_Unsafe
+        [MonoModReplace]
+        internal override void Unload() {
+            if (Texture_Unsafe is { IsDisposed: false }) {
+                Texture_Unsafe.Dispose();
+            }
+            Texture_Unsafe = null;
+        }
+
+        // TODO: Get rid of the replace and ilpatch to use Texture_Unsafe
+        [MonoModReplace]
+        public override void Dispose() {
+            Unload();
+            Texture_Unsafe = null;
+            patch_VirtualContent.Remove(this);
         }
 
         private bool CanPreload {
