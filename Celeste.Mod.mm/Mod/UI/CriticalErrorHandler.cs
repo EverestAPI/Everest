@@ -332,22 +332,22 @@ namespace Celeste.Mod.UI {
         private float crouchTimer;
         private bool isColonThree;
 
-        private string textOooops = "Oooops! :(";
-        private string textOooopsColonThree = "Oooops :3";
-        private string textCriticalError = "Celeste/Everest encountered a critical error.";
-        private string textDiscord = "Please report this in the Celeste discord!";
-        private string textDiscordLink = "discord.gg/celeste - channel #modding_help";
-        private string textLogFileBackedUp = "Your log file has been backed up; please attach it to your bug report.";
-        private string textAdditionalErrors = "Additional errors have occurred since the initial crash!";
-        private string textErrorDetails = "Error Details";
+        private string textOooops;
+        private string textOooopsColonThree;
+        private string textCriticalError;
+        private string textDiscord;
+        private string textDiscordLink;
+        private string textLogFileBackedUp;
+        private string textAdditionalErrors;
+        private string textErrorDetails;
 
-        private string textOpenLogFileFolder = "Open log file folder";
-        private string textRetryLevel = "Retry level";
-        private string textSaveQuit = "Save & Quit";
-        private string textSaveProgress = "Save current progress";
-        private string textReturnToMenu = "Return to main menu";
-        private string textExitGame = "Exit Game";
-        private string textRestartGame = "Restart Game";
+        private string textOpenLogFileFolder;
+        private string textRetryLevel;
+        private string textSaveQuit;
+        private string textSaveProgress;
+        private string textReturnToMenu;
+        private string textExitGame;
+        private string textRestartGame;
 
         private CriticalErrorHandler(ExceptionDispatchInfo error, string logFile, string logFileError) {
             Depth += 100; // Render below other overlays
@@ -376,29 +376,22 @@ namespace Celeste.Mod.UI {
         }
 
         private void PopulateDialog() {
-            if (Dialog.Language == null) return;
+            textOooops = Dialog.Get("CRITICALERRORHANDLER_OOOOPS");
+            textOooopsColonThree = Dialog.Get("CRITICALERRORHANDLER_OOOOPS_COLON_THREE");
+            textCriticalError = Dialog.Get("CRITICALERRORHANDLER_CRITICAL_ERROR");
+            textDiscord = Dialog.Get("CRITICALERRORHANDLER_DISCORD");
+            textDiscordLink = Dialog.Get("CRITICALERRORHANDLER_DISCORD_LINK");
+            textLogFileBackedUp = Dialog.Get("CRITICALERRORHANDLER_LOG_FILE_BACKED_UP");
+            textAdditionalErrors = Dialog.Get("CRITICALERRORHANDLER_ADDITIONAL_ERRORS");
+            textErrorDetails = Dialog.Get("CRITICALERRORHANDLER_ERROR_DETAILS");
 
-            void Populate(ref string val, string key) {
-                if (Dialog.Has(key))
-                    val = Dialog.Get(key);
-            }
-
-            Populate(ref textOooops, "CRITICALERRORHANDLER_OOOOPS");
-            Populate(ref textOooopsColonThree, "CRITICALERRORHANDLER_OOOOPS_COLON_THREE");
-            Populate(ref textCriticalError, "CRITICALERRORHANDLER_CRITICAL_ERROR");
-            Populate(ref textDiscord, "CRITICALERRORHANDLER_DISCORD");
-            Populate(ref textDiscordLink, "CRITICALERRORHANDLER_DISCORD_LINK");
-            Populate(ref textLogFileBackedUp, "CRITICALERRORHANDLER_LOG_FILE_BACKED_UP");
-            Populate(ref textAdditionalErrors, "CRITICALERRORHANDLER_ADDITIONAL_ERRORS");
-            Populate(ref textErrorDetails, "CRITICALERRORHANDLER_ERROR_DETAILS");
-
-            Populate(ref textOpenLogFileFolder, "CRITICALERRORHANDLER_OPEN_LOG_FILE_FOLDER");
-            Populate(ref textRetryLevel, "CRITICALERRORHANDLER_RETRY_LEVEL");
-            Populate(ref textSaveQuit, "CRITICALERRORHANDLER_SAVE_QUIT");
-            Populate(ref textSaveProgress, "CRITICALERRORHANDLER_SAVE_PROGRESS");
-            Populate(ref textReturnToMenu, "CRITICALERRORHANDLER_RETURN_TO_MENU");
-            Populate(ref textExitGame, "CRITICALERRORHANDLER_EXIT_GAME");
-            Populate(ref textRestartGame, "CRITICALERRORHANDLER_RESTART_GAME");
+            textOpenLogFileFolder = Dialog.Get("CRITICALERRORHANDLER_OPEN_LOG_FILE_FOLDER");
+            textRetryLevel = Dialog.Get("CRITICALERRORHANDLER_RETRY_LEVEL");
+            textSaveQuit = Dialog.Get("CRITICALERRORHANDLER_SAVE_QUIT");
+            textSaveProgress = Dialog.Get("CRITICALERRORHANDLER_SAVE_PROGRESS");
+            textReturnToMenu = Dialog.Get("CRITICALERRORHANDLER_RETURN_TO_MENU");
+            textExitGame = Dialog.Get("CRITICALERRORHANDLER_EXIT_GAME");
+            textRestartGame = Dialog.Get("CRITICALERRORHANDLER_RESTART_GAME");
         }
 
         public void Dispose() {
