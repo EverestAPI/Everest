@@ -9,8 +9,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod;
 using System;
-using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 #nullable enable
@@ -41,34 +41,45 @@ namespace Monocle {
         [MonoModLinkFrom("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture")]
         public Texture2D? Texture_Safe {
             get {
-                // Return the texture if it is ready
-                if (Texture_Unsafe != null)
-                    return Texture_Unsafe;
-                
-                // Otherwise wait for the queued load
-                if (_queuedLoad == null) {
-                    Reload();
-                    if (Texture_Unsafe != null)
-                        return Texture_Unsafe;
-                    // if reload doesn't set a texture, _queuedLoad must be non-null
-                    Debug.Assert(_queuedLoad != null);
-                }
-                // Deadlock prevention for main thread
-                if (MainThreadHelper.IsMainThread) {
-                    if (!_waitingForLoadOnMainThread) {
-                        _waitingForLoadOnMainThread = true;
-                    } else {
-                        throw new Exception("This is a bug! Deadlock prevented! Task would be waiting for itself to complete!");
+                do {
+                    // Return the texture if it is ready
+                    if (Texture_Unsafe != null) {
+                        lock (_textureLock) {
+                            if (Texture_Unsafe != null)
+                                return Texture_Unsafe;
+                        }
                     }
-                }
 
-                _queuedLoad.Wait();
-                if (MainThreadHelper.IsMainThread) {
-                    _waitingForLoadOnMainThread = false;
-                }
-                return Texture_Unsafe!;
+                    // Otherwise try queuing a reload
+                    Reload(true);
+
+                    Task queuedLoad;
+                    // Prevent any texture swaps in the meanwhile
+                    lock (_textureLock) {
+                        if (_queuedLoad == null || _queuedLoad.IsCompleted) {
+                            // If there's no task to use Texture_Unsafe cannot be swapped anymore here so this check is thread-safe
+                            if (Texture_Unsafe != null)
+                                return Texture_Unsafe;
+
+                            continue; // We have got no texture, and we cannot wait for anything so try again
+                        }
+                        // Wait for the _queuedLoad, but not locked
+                        queuedLoad = _queuedLoad;
+                    }
+
+                    // Wait for the texture load, and check again if we have got anything to return
+                    if (MainThreadHelper.IsMainThread) {
+                        // But waiting for the load on the main thread would be disastrous (deadlock)
+                        // so just run it directly, we are on the main thread anyway
+                        queuedLoad.RunSynchronously();
+                    } else {
+                        queuedLoad.Wait();
+                    }
+                } while (true);
             }
             set {
+                // It does not make much sense to assign to the texture, but some mods do, and vanilla allows for that to happen.
+                // Un-synchronized assignments will often lead to race conditions, but there's not much we can do.
                 if (value == null) {
                     Unload();
                 } else {
@@ -82,9 +93,10 @@ namespace Monocle {
         public VirtualTexture? Fallback;
 
         private readonly object _textureLock;
+        // Queued upload to gpu of the texture, assumed to always run on main thread
         private Task? _queuedLoad;
-        // Deadlock prevention for main thread
-        private bool _waitingForLoadOnMainThread;
+        private readonly object _reloadLock;
+        private bool _reloadInProgress;
 
         [MonoModConstructor]
         [MonoModReplace]
@@ -92,10 +104,10 @@ namespace Monocle {
             Path = path;
             Name = path;
             _textureLock = new object();
+            _reloadLock = new object();
             // if (!Preload(force: Everest.Flags.IsHeadless) && !Everest.Flags.IsHeadless)
                 Reload();
-            if (Everest.Flags.IsHeadless)
-                Texture_Unsafe = new Texture2D(Engine.Graphics.GraphicsDevice, Width, Height);
+                // TODO: Headless
         }
 
         [MonoModConstructor]
@@ -106,10 +118,9 @@ namespace Monocle {
             Height = height;
             this.color = color;
             _textureLock = new object();
+            _reloadLock = new object();
             // if (!Preload(force: Everest.Flags.IsHeadless) && !Everest.Flags.IsHeadless)
                 Reload();
-            if (Everest.Flags.IsHeadless)
-                Texture_Unsafe = new Texture2D(Engine.Graphics.GraphicsDevice, Width, Height);
         }
 
         [MonoModConstructor]
@@ -117,10 +128,9 @@ namespace Monocle {
             Metadata = metadata;
             Name = metadata.PathVirtual;
             _textureLock = new object();
+            _reloadLock = new object();
             // if (!Preload(force: Everest.Flags.IsHeadless) && !Everest.Flags.IsHeadless)
                 Reload();
-            if (Everest.Flags.IsHeadless)
-                Texture_Unsafe = new Texture2D(Engine.Graphics.GraphicsDevice, Width, Height);
         }
 
 
@@ -129,7 +139,7 @@ namespace Monocle {
         /// </summary>
         /// <param name="cb">The callback.</param>
         /// <param name="wait">Whether to wait.</param>
-        private void RunSafely(Func<Texture2D> cb, bool wait = true) {
+        private void RunSafely(Func<Texture2D> cb, bool wait = false) {
             if (LoadImmediately) {
                 AssignTexture(cb());
                 return;
@@ -156,12 +166,13 @@ namespace Monocle {
             }
         }
 
+        // Make sure that MainThreadHelper.IsMainThread == true implies LoadImmediately == true
         private bool LoadImmediately => MainThreadHelper.IsMainThread;
 
-        [MonoModReplace]
-        internal override sealed void Reload() {
+        // This function assumes it is executing on at most one thread at a time
+        private void InnerReload(bool block = false) {
             if (Everest.Flags.IsHeadless) {
-                Texture_Unsafe = new Texture2D(Engine.Graphics.GraphicsDevice, 1, 1);
+                AssignTexture(new Texture2D(Engine.Graphics.GraphicsDevice, 1, 1));
                 return;
             }
             
@@ -177,7 +188,7 @@ namespace Monocle {
                     // If we have async streams, read async, otherwise, wrap everything in the RunSafely call and run the returned cb immediately
                     RunSafely(Metadata.StreamAsync ?
                         TextureContentHelper.LoadFromStream(stream, premul) : 
-                        () => TextureContentHelper.LoadFromStream(stream, premul)());
+                        () => TextureContentHelper.LoadFromStream(stream, premul)(), block);
                 } else if (Fallback != null) {
                     // ReSharper disable once SuspiciousTypeConversion.Global
                     ((patch_VirtualTexture) (object) Fallback).Reload();
@@ -186,10 +197,41 @@ namespace Monocle {
                     throw new InvalidOperationException();
                 }
             } else if (string.IsNullOrEmpty(Path)) {
-                RunSafely(TextureContentHelper.LoadFromSizeAndColor(Width, Height, color));
+                RunSafely(TextureContentHelper.LoadFromSizeAndColor(Width, Height, color), block);
             } else {
-                RunSafely(TextureContentHelper.LoadFromPath(Path));
+                RunSafely(TextureContentHelper.LoadFromPath(Path), block);
             }
+        }
+
+        // Attempts to start a Reload on the current thread or returns if one is already ongoing.
+        // If block is true it guarantees that either: a texture is assigned after its load or that _queuedLoad is not null and has pending work.
+        // If block is false it only guarantees that a Reload is happening on some thread.
+        private void Reload(bool block) {
+            retry:
+            bool got = Monitor.TryEnter(_reloadLock);
+            if (!got) {
+                // Failing to acquire the lock does not guarantee a reload is going to happen since there are other acquires down below
+                if (!_reloadInProgress) goto retry;
+                if (block) {
+                    // There has to be a better way to do this
+                    Monitor.Enter(_reloadLock);
+                    Monitor.Exit(_reloadLock);
+                }
+                return;
+            }
+            _reloadInProgress = true;
+            try {
+                // Do not wait for the main thread to finish the load, it could deadlock if a blocking Reload is called on there
+                InnerReload(false);
+            } finally {
+                _reloadInProgress = false;
+                Monitor.Exit(_reloadLock);
+            }
+        }
+
+        [MonoModReplace]
+        internal override sealed void Reload() {
+            Reload(false);
         }
 
         private void AssignTexture(Texture2D tex) {
