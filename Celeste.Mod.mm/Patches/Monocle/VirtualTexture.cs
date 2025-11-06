@@ -54,6 +54,7 @@ namespace Monocle {
                     Reload(true);
 
                     Task queuedLoad;
+                    Action queuedLoadAct;
                     // Prevent any texture swaps in the meanwhile
                     lock (_textureLock) {
                         if (_queuedLoad == null || _queuedLoad.IsCompleted) {
@@ -65,19 +66,22 @@ namespace Monocle {
                         }
                         // Wait for the _queuedLoad, but not locked
                         queuedLoad = _queuedLoad;
+                        queuedLoadAct = _queuedLoadAct!;
                     }
 
                     // Wait for the texture load, and check again if we have got anything to return
                     if (MainThreadHelper.IsMainThread) {
                         // But waiting for the load on the main thread would be disastrous (deadlock)
                         // so just run it directly, we are on the main thread anyway
-                        queuedLoad.RunSynchronously();
+                        // queuedLoad.RunSynchronously();
+                        queuedLoadAct();
                     } else {
                         queuedLoad.Wait();
                     }
                 } while (true);
             }
             set {
+                // TODO: Add a flag to know if the texture was overriden, so that Reload is idempotent
                 // It does not make much sense to assign to the texture, but some mods do, and vanilla allows for that to happen.
                 // Un-synchronized assignments will often lead to race conditions, but there's not much we can do.
                 if (value == null) {
@@ -95,8 +99,12 @@ namespace Monocle {
         private readonly object _textureLock;
         // Queued upload to gpu of the texture, assumed to always run on main thread
         private Task? _queuedLoad;
+        private Action? _queuedLoadAct;
         private readonly object _reloadLock;
-        private bool _reloadInProgress;
+        private volatile bool _reloadInProgress;
+        private bool isPreloaded;
+
+        public static bool FtlToggle { get; internal set; }
 
         [MonoModConstructor]
         [MonoModReplace]
@@ -105,9 +113,7 @@ namespace Monocle {
             Name = path;
             _textureLock = new object();
             _reloadLock = new object();
-            // if (!Preload(force: Everest.Flags.IsHeadless) && !Everest.Flags.IsHeadless)
-                Reload();
-                // TODO: Headless
+            CtorLoad();
         }
 
         [MonoModConstructor]
@@ -119,8 +125,7 @@ namespace Monocle {
             this.color = color;
             _textureLock = new object();
             _reloadLock = new object();
-            // if (!Preload(force: Everest.Flags.IsHeadless) && !Everest.Flags.IsHeadless)
-                Reload();
+            CtorLoad();
         }
 
         [MonoModConstructor]
@@ -129,7 +134,17 @@ namespace Monocle {
             Name = metadata.PathVirtual;
             _textureLock = new object();
             _reloadLock = new object();
-            // if (!Preload(force: Everest.Flags.IsHeadless) && !Everest.Flags.IsHeadless)
+            CtorLoad();
+        }
+
+        private void CtorLoad() {
+            if (Everest.Flags.IsHeadless) {
+                Preload();
+                AssignTexture(new Texture2D(Engine.Graphics.GraphicsDevice, 1, 1));
+                return;
+            }
+            // Only skip reloads with lazyloading and successful preloads
+            if (!Preload() || !CoreModule.Settings.LazyLoading)
                 Reload();
         }
 
@@ -145,15 +160,19 @@ namespace Monocle {
                 return;
             }
 
-            ValueTask vt = MainThreadHelper.Schedule((Action)RunAndStore);
+            bool hasRunQueuedLoad = false;
+            Action act = RunAndStore;
+            ValueTask vt = MainThreadHelper.Schedule(act);
             // This is somewhat pointless, IsCompleted cant be true with the current LoadImmediately criteria
             if (vt.IsCompleted) { // TODO: What if the completion was not successful
                 return;
             }
-            
+
             Task t = vt.AsTask();
-            lock (_textureLock) 
+            lock (_textureLock) {
                 _queuedLoad = t;
+                _queuedLoadAct = act;
+            }
             if (wait) {
                 t.Wait();
             }
@@ -161,6 +180,8 @@ namespace Monocle {
             return;
 
             void RunAndStore() {
+                if (hasRunQueuedLoad) return;
+                hasRunQueuedLoad = true;
                 Texture2D tex = cb();
                 AssignTexture(tex);
             }
@@ -171,13 +192,14 @@ namespace Monocle {
 
         // This function assumes it is executing on at most one thread at a time
         private void InnerReload(bool block = false) {
-            if (Everest.Flags.IsHeadless) {
-                AssignTexture(new Texture2D(Engine.Graphics.GraphicsDevice, 1, 1));
-                return;
-            }
-            
             Unload();
             // Important, this is the main entrypoint, and any code-path should lead to an eventual unique call to RunSafely or AssignTexture
+            int preW = -1;
+            int preH = -1;
+            if (isPreloaded) {
+                preW = Width;
+                preH = Height;
+            }
         
             if (Metadata != null) {
                 Stream stream = Metadata.Stream;
@@ -186,9 +208,10 @@ namespace Monocle {
                     if (Metadata.TryGetMeta(out TextureMeta meta))
                         premul = meta.Premultiplied;
                     // If we have async streams, read async, otherwise, wrap everything in the RunSafely call and run the returned cb immediately
+                    // TODO: This is a bit wasteful, especially if we moved out of main thread to load asynchronously, maybe check asynchronousness beforehand?
                     RunSafely(Metadata.StreamAsync ?
-                        TextureContentHelper.LoadFromStream(stream, premul) : 
-                        () => TextureContentHelper.LoadFromStream(stream, premul)(), block);
+                        TextureContentHelper.LoadFromStream(stream, premul, preW, preH) : 
+                        () => TextureContentHelper.LoadFromStream(stream, premul, preW, preH)(), block);
                 } else if (Fallback != null) {
                     // ReSharper disable once SuspiciousTypeConversion.Global
                     ((patch_VirtualTexture) (object) Fallback).Reload();
@@ -199,7 +222,7 @@ namespace Monocle {
             } else if (string.IsNullOrEmpty(Path)) {
                 RunSafely(TextureContentHelper.LoadFromSizeAndColor(Width, Height, color), block);
             } else {
-                RunSafely(TextureContentHelper.LoadFromPath(Path), block);
+                RunSafely(TextureContentHelper.LoadFromPath(Path, preW, preH), block);
             }
         }
 
@@ -207,6 +230,20 @@ namespace Monocle {
         // If block is true it guarantees that either: a texture is assigned after its load or that _queuedLoad is not null and has pending work.
         // If block is false it only guarantees that a Reload is happening on some thread.
         private void Reload(bool block) {
+            if (_reloadInProgress && !block) {
+                // Someone has the lock, and we are not going to block anyway, so return early
+                return;
+            } 
+            if (FtlToggle && isPreloaded && !block && MainThreadHelper.IsMainThread) {
+                // This is the main asynchronous FTL entry point
+                // isPreloaded is required to be true so we can have some knowledge of the memory usage of the load
+                Task.Run(() => {
+                    // Logger.Log(LogLevel.Info, nameof(VirtualTexture), "Offloading texture: " + (Path ?? Name ?? $"{Width}x{Height}"));
+                    Reload(false);
+                });
+                // Since we are not blocking, we are free to return whenever we want
+                return;
+            }
             retry:
             bool got = Monitor.TryEnter(_reloadLock);
             if (!got) {
@@ -289,10 +326,6 @@ namespace Monocle {
         }
 
         private bool Preload(bool force = false) {
-            if (!CoreModule.Settings.LazyLoading && !force) {
-                return false;
-            }
-
             // Preload the width / height, and if needed, the entire texture (not actually done currently though).
 
             if (!string.IsNullOrEmpty(Path)) {
@@ -304,12 +337,12 @@ namespace Monocle {
                         Width = reader.ReadInt32();
                         Height = reader.ReadInt32();
                     }
-                    return true;
+                    return isPreloaded = true;
 
                 } else if (extension == ".png") {
                     // Hard.
                     using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
-                        return PreloadSizeFromPNG(stream, Path);
+                        return isPreloaded = PreloadSizeFromPNG(stream, Path);
 
                 } else {
                     // .xnb and other file formats - impossible.
@@ -321,7 +354,7 @@ namespace Monocle {
                 if (Metadata.Format == "png") {
                     // Hard.
                     using (Stream stream = Metadata.Stream)
-                        return PreloadSizeFromPNG(stream, $"{Metadata.PathVirtual} (mod {Metadata.Source.Mod?.Name ?? "*unknown*"})");
+                        return isPreloaded = PreloadSizeFromPNG(stream, $"{Metadata.PathVirtual} (mod {Metadata.Source.Mod?.Name ?? "*unknown*"})");
 
                 } else {
                     // .xnb and other file formats - impossible.

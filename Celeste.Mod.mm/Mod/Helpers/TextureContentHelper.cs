@@ -1,13 +1,17 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
-using MonoMod;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.IO;
+using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 #nullable enable
 
@@ -18,16 +22,21 @@ public static class TextureContentHelper {
     private static byte[]? bytes;
     private const int bytesSize = 512 * 1024; // 524288
     private const int bytesCheckSize = 512 * 1024 - 32; // 524256
-    private const int atlasSize = 4096 * 4096 * 4;
-    private static bool inGC = true;
-    private static readonly SpanPool<byte> spanPool = new(atlasSize * 2, inGC);
+    public const int atlasSize = 4096 * 4096 * 4;
+    internal static readonly FTLMemoryManger MemoryManager;
+    static TextureContentHelper() {
+        const bool inGC = true; // TODO: unhardcode
+        const int initialMemUsage = atlasSize * 4; // TODO: unhardcode
+        MemoryManager = new FTLMemoryManger(initialMemUsage, inGC);
+    }
     
-    public static unsafe Func<Texture2D> LoadFromPath(string path) {
+    public static unsafe Func<Texture2D> LoadFromPath(string path, int preW = -1, int preH = -1) {
         int w, h;
         switch (Path.GetExtension(path)) {
             case ".data":
                 bool hasSegment;
-                SpanPool<byte>.SegmentIdentifier seg;
+                SpanPoolPool<byte>.SegmentIdentifier seg;
+                Memory<byte> mem;
                 using (FileStream stream = File.OpenRead(Path.Combine(Engine.ContentDirectory, path))) {
                     
                     // Vanilla has got a static readonly byte[] bytes of fixed length - currently 524288
@@ -42,16 +51,12 @@ public static class TextureContentHelper {
                     bool hasAlpha = read[8] == 1;
     
                     int size = w * h * 4;
-                    hasSegment = spanPool.TryRent(size, out seg);
-                    Span<byte> buffer;
-                    if (hasSegment) {
-                        buffer = seg.Memory.Span;
-                    } else {
-                        // Fall back to gc allocs
-                        // TODO: Improve this to bound max mem usage
-                        buffer = new byte[size];
+                    {
+                        hasSegment = MemoryManager.GetChunkOrGcAlloc(size, out seg, out byte[] gcArray);
+                        mem = hasSegment ? seg.SegId.Memory : gcArray;
                     }
 
+                    Span<byte> buffer = mem.Span;
                     if (hasAlpha) {
                         ReadDataFile<HasAlpha>(stream, read, buffer);
                     } else {
@@ -60,30 +65,35 @@ public static class TextureContentHelper {
                 }
                 return () => {
                     Texture2D tex = new(Celeste.Instance.GraphicsDevice, w, h);
-                    fixed (byte* ptr = seg.Memory.Span)
+                    fixed (byte* ptr = mem.Span)
                         tex.SetData((IntPtr)ptr);
                     
                     if (hasSegment)
-                        spanPool.Return(seg);
+                        MemoryManager.ReturnChunk(seg);
                     return tex;
                 };
             case ".png":
-                return LoadFromStream(File.OpenRead(Path.Combine(Engine.ContentDirectory, path)), false /* pngs are never premultiplied */);
+                return LoadFromStream(File.OpenRead(Path.Combine(Engine.ContentDirectory, path)), false /* pngs are never premultiplied */, preW, preH);
             case ".xnb":
+                // TODO: Are xnbs worth accelerating?
                 return () => Engine.Instance.Content.Load<Texture2D>(path.Replace(".xnb", ""));
             default:
-                return () => {
-                    return LoadFromStream(File.OpenRead(Path.Combine(Engine.ContentDirectory, path)), false)();
-                    using FileStream stream = File.OpenRead(Path.Combine(Engine.ContentDirectory, path));
-                    return Texture2D.FromStream(Engine.Graphics.GraphicsDevice, stream);
-                };
+                return () => LoadFromStream(File.OpenRead(Path.Combine(Engine.ContentDirectory, path)), false)();
         }
     }
     
-    // stb path
-    public static Func<Texture2D> LoadFromStream(Stream stream, bool premul) {
+    public static Func<Texture2D> LoadFromStream(Stream stream, bool premul, int w = -1, int h = -1) {
         using (stream) {
-            int w, h;
+            // This code will ultimately use stb_image to decode whatever is in stream
+            // we cannot control its allocation, so estimate it based on the image size
+            // and some arbitrary inflation coefficient
+            const double inflationCoef = 1.2;
+            long unmanagedClaimed = 0;
+            if (w > 0 && h > 0) {
+                unmanagedClaimed = (long)((double)w * h * 4 * inflationCoef);
+                MemoryManager.ClaimUnmanaged(unmanagedClaimed);
+            }
+            // If we don't know the size beforehand VirtualTexture is in charge of not multithreading loads
             IntPtr dataPtr; // assume Texture.SetData supports Ptr since we are using FNA
             if (premul)
                 ContentExtensions.LoadTextureRaw(Celeste.Instance.GraphicsDevice, stream, out w, out h, out dataPtr);
@@ -94,6 +104,8 @@ public static class TextureContentHelper {
                 Texture2D tex = new(Celeste.Instance.GraphicsDevice, w, h);
                 tex.SetData(dataPtr);
                 ContentExtensions.UnloadTextureRaw(dataPtr);
+                if (unmanagedClaimed != 0)
+                    MemoryManager.ReturnUnmanaged(unmanagedClaimed);
                 return tex;
             };
         }
@@ -101,10 +113,9 @@ public static class TextureContentHelper {
     
     public static unsafe Func<Texture2D> LoadFromSizeAndColor(int width, int height, Color color) {
         // Layout order for Color is unknown, but since it's guaranteed to be consistent everywhere this will work
-        bool hasSegment = spanPool.TryRent(width * height * sizeof(Color), out SpanPool<byte>.SegmentIdentifier seg);
-        Memory<byte> data = hasSegment ? seg.Memory :
-            // TODO: Improve this to bound max mem usage
-            new byte[width * height * sizeof(Color)];
+        bool hasSegment = MemoryManager.GetChunkOrGcAlloc(width*height*sizeof(Color), 
+            out SpanPoolPool<byte>.SegmentIdentifier seg, out byte[] gcArray);
+        Memory<byte> data = hasSegment ? seg.SegId.Memory : gcArray;
         fixed (Color* ptr = MemoryMarshal.Cast<byte, Color>(data.Span)) {
             for (int i = 0; i < data.Length; i++) {
                 ptr[i] = color;
@@ -118,7 +129,7 @@ public static class TextureContentHelper {
             // Fall back to gc allocs
             // TODO: Improve this to bound max mem usage
             if (hasSegment)
-                spanPool.Return(seg);
+                MemoryManager.ReturnChunk(seg);
             return tex;
         };
     }
@@ -199,23 +210,212 @@ public static class TextureContentHelper {
 
     private sealed class NoAlpha : AlphaMode;
 
-    private class SpanPool<T> : IDisposable where T : unmanaged {
-        private readonly int Size;
+    internal class FTLMemoryManger(long initialMemUsage, bool inGC) {
+        private const double SplitPercent = 1 / 4D;
+        private readonly long initialMemUsage = initialMemUsage;
+        // Managed
+        private readonly ManualResetEventSlim waitingForSpace = new();
+        private readonly SpanPoolPool<byte> spanPool = new(atlasSize, (long)(initialMemUsage*SplitPercent), inGC);
+        private volatile CancellationTokenSource waitingForSpaceCts = new();
+        
+        // Unmanaged
+        private long unmanagedMemoryUsage = 0;
+        private readonly object unmanagedLock = new();
+        
+        public long CurrMemUsage { get; private set; } = initialMemUsage;
+        
+        public bool GetChunkOrGcAlloc(int chunkSize, out SpanPoolPool<byte>.SegmentIdentifier seg, out byte[] gcArray) {
+            // The cts may be swapped at any point, so if the available space decreases after TryRent fails and a new cts
+            // is assigned before this gets to the Wait it would be waiting to never have space anyway (for now)
+            if (chunkSize > atlasSize) { // It's not going to fit
+                // Just gc alloc it, TODO: what should we do here?
+                Logger.Log(LogLevel.Warn, nameof(TextureContentHelper), $"Chunk size was too big for the current allocated memory ({chunkSize} > {spanPool.CurrMemUsage})!");
+                gcArray =  new byte[chunkSize];
+                seg = default;
+                return false;
+            }
+            const int MainThreadTimeout = 500;
+            const int OtherThreadTimeout = -1;
+            bool isMainThread = MainThreadHelper.IsMainThread;
+            
+            while (true) {
+                bool hasSegment = spanPool.TryRent(chunkSize, out seg);
+                if (hasSegment) {
+                    gcArray = [];
+                    return true;
+                }
+
+                try {
+                    // TODO: this is sort of ugly, all threads should attempt to claim memory but we have no guarantee of that
+                    if (waitingForSpace.Wait(isMainThread ? MainThreadTimeout : OtherThreadTimeout, waitingForSpaceCts.Token))
+                        waitingForSpace.Reset();
+                    else // On timeout just exit and gc alloc
+                        break;
+                } catch (OperationCanceledException) { // The currently allocated memory changed, and we may be able to succeed now
+                    continue;
+                } catch (ObjectDisposedException) { 
+                    // Very rare case, the current cts is disposed, just try again since a new one will be assigned very soon
+                    continue;
+                }
+
+                // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
+            }
+        
+            Logger.Log(LogLevel.Warn, nameof(TextureContentHelper), $"Allocating {chunkSize} bytes in the gc because " +
+                                                                    $"{(isMainThread ? "the main-thread" : "a worker thread")} was " +
+                                                                    $"blocked for more than {(isMainThread ? MainThreadTimeout : OtherThreadTimeout)}ms");
+            gcArray = new byte[chunkSize];
+            seg = default;
+            return false;
+        }
+
+        public void ReturnChunk(SpanPoolPool<byte>.SegmentIdentifier seg) {
+            spanPool.Return(seg);
+            waitingForSpace.Set();
+        }
+
+        public void ClaimUnmanaged(long amount) {
+            lock (unmanagedLock) {
+                while (true) {
+                    if (unmanagedMemoryUsage + amount >= CurrMemUsage * (1 - SplitPercent)) {
+                        Monitor.Wait(unmanagedLock);
+                    } else {
+                        unmanagedMemoryUsage += amount;
+                        break;
+                    }
+                }
+            }
+        }
+
+        public void ReturnUnmanaged(long amount) {
+            lock (unmanagedLock) {
+                unmanagedMemoryUsage -= amount;
+                Debug.Assert(unmanagedMemoryUsage >= 0);
+                Monitor.PulseAll(unmanagedLock);
+            }
+        }
+
+        public void SetAllocSize(long limit) {
+            CurrMemUsage = limit == -1 ? initialMemUsage : limit;
+            spanPool.CurrMemUsage = (long) (limit * SplitPercent);
+            // Make everyone waiting recheck
+            waitingForSpaceCts.Cancel();
+            waitingForSpaceCts.Dispose();
+            waitingForSpaceCts = new CancellationTokenSource();
+            ReturnUnmanaged(0);
+        }
+    }
+
+    // This class is thread-safe
+    internal class SpanPoolPool<T> where T : unmanaged {
         private readonly object @lock = new();
+        private readonly int size;
+        private long currMemUsage;
+        private readonly Dictionary<int, SpanPool<T>> pools = [];
+        private int poolId = 0;
+        private long releasePending = 0;
+        private readonly bool _inGC;
+
+        public long CurrMemUsage {
+            get => Volatile.Read(ref currMemUsage);
+            set {
+                lock (@lock) {
+                    currMemUsage = value;
+                    CheckAlloc();
+                }
+            }
+        }
+
+        public SpanPoolPool(int poolSize, long initialMemUsage, bool gc) {
+            size = poolSize;
+            currMemUsage = initialMemUsage;
+            _inGC = gc;
+            CheckAlloc();
+        }
+
+        // Must be called from a lock
+        private void CheckAlloc() {
+            releasePending = 0;
+            long minPoolCount = currMemUsage / size + (currMemUsage % size != 0 ? 1 : 0);
+            if (pools.Count < minPoolCount) {
+                for (int i = pools.Count; i < minPoolCount; i++) {
+                    pools.Add(poolId++, new SpanPool<T>(size, _inGC));
+                }
+            } else if (pools.Count > minPoolCount) {
+                int count = pools.Count;
+                List<int> deallocating = [];
+                foreach ((int id, SpanPool<T> pool) in pools) {
+                    if (!pool.IsEmpty()) continue;
+                    deallocating.Add(id);
+                    count--;
+                    if (count == minPoolCount) break;
+                }
+                foreach (int id in deallocating) {
+                    pools[id].Dispose();
+                    pools.Remove(id);
+                }
+                releasePending = count - minPoolCount;
+            }
+        }
+
+        public bool TryRent(int chunkSize, out SegmentIdentifier segment) {
+            lock (@lock) {
+                for (int i = 0; i < 2; i++) {
+                    // First try non-empty pools, then try empty ones
+                    foreach ((int id, SpanPool<T> pool) in pools) {
+                        if (pool.IsEmpty() == (i == 0)) continue;
+                        bool hasSegment = pool.TryRent(chunkSize, out SpanPool<T>.SegmentIdentifier seg);
+                        if (!hasSegment) continue;
+                        segment = new SegmentIdentifier(seg, id);
+                        return true;
+                    }
+                }
+                
+                // There's no space anywhere
+                segment = default;
+                return false;
+            }
+        }
+
+        public void Return(SegmentIdentifier segment) {
+            lock (@lock) {
+                // Just return it to the correct pool
+                if (!pools.TryGetValue(segment.PoolId, out SpanPool<T>? pool)) {
+                    throw new ArgumentException($"Unknown pool with id {segment.PoolId}", nameof(segment));
+                }
+                pool.Return(segment.SegId);
+                // But if we are looking to deallocate more, do so now
+                if (pool.IsEmpty() && releasePending > 0) {
+                    pool.Dispose();
+                    pools.Remove(segment.PoolId);
+                    releasePending--;
+                }
+            }
+        }
+
+        public readonly struct SegmentIdentifier(SpanPool<T>.SegmentIdentifier segmentIdentifier, int poolId) {
+            public readonly SpanPool<T>.SegmentIdentifier SegId = segmentIdentifier;
+            public readonly int PoolId = poolId;
+        }
+    }
+
+    internal class SpanPool<T> : IDisposable where T : unmanaged {
+        private readonly int size;
+        // private readonly object @lock = new();
 
         private readonly ManagedOrNotArray<T> arrayHolder;
         private readonly Memory<T> array;
         private readonly List<(int start, int end)> usedSegments = new();
         
         public SpanPool(int itemCount, bool inGC) {
-            Size = itemCount;
+            size = itemCount;
             arrayHolder = new ManagedOrNotArray<T>(itemCount, inGC);
             array = arrayHolder.AsMemory();
         }
 
-        public bool TryRent(int size, out SegmentIdentifier seg) {
-            lock (@lock) {
-                (int start, int end)? freeSegment = NextFreeSegmentAndReserve(size);
+        public bool TryRent(int chunkSize, out SegmentIdentifier seg) {
+            // lock (@lock) {
+                (int start, int end)? freeSegment = NextFreeSegmentAndReserve(chunkSize);
                 if (!freeSegment.HasValue) { // No space
                     seg = default;
                     return false;
@@ -225,11 +425,11 @@ public static class TextureContentHelper {
                 Memory<T> memory = array[freeSegment.Value.start..freeSegment.Value.end];
                 seg = new SegmentIdentifier(memory, freeSegment.Value.start, freeSegment.Value.end);
                 return true;
-            }
+            // }
         }
 
         public void Return(SegmentIdentifier seg) {
-            lock (@lock) {
+            // lock (@lock) {
                 // Find the matching segment and remove it
                 for (int i = 0; i < usedSegments.Count; i++) {
                     if (seg.Start == usedSegments[i].start) {
@@ -241,10 +441,15 @@ public static class TextureContentHelper {
                         break;
                     }
                 }
-            }
+            // }
         }
         
+        public bool IsEmpty() => usedSegments.Count == 0;
+        
         public void Dispose() {
+            if (!IsEmpty()) {
+                throw new Exception("Attempted to deallocate with segments potentially in use!");
+            }
             arrayHolder.Dispose();
         }
 
@@ -261,7 +466,7 @@ public static class TextureContentHelper {
                 prevIdx = usedSegments[i].Item2;
             }
             // No in-between segments, check remaining space
-            if (Size - prevIdx >= minSize) {
+            if (size - prevIdx >= minSize) {
                 (int, int) newSegment = (prevIdx, prevIdx + minSize);
                 usedSegments.Add(newSegment);
                 return newSegment;

@@ -346,7 +346,8 @@ https://discord.gg/6qjaePQ");
              * -ade
              */
 
-            if (CoreModule.Settings.FastTextureLoading ?? (Environment.ProcessorCount >= 4 && (!CoreModule.Settings.ThreadedGL ?? true))) {
+            Logger.Info("LoadContent", CoreModule.Settings.FastTextureLoading?.ToString() ?? "null");
+            if (CoreModule.Settings.FastTextureLoading ?? Environment.ProcessorCount >= 4) {
                 long limit = (long) (CoreModule.Settings.FastTextureLoadingMaxMB * 1024f * 1024f);
 
                 if (limit <= 0) {
@@ -359,7 +360,9 @@ https://discord.gg/6qjaePQ");
                 if (limit <= (128L * 1024L * 1024L))
                     limit = (128L * 1024L * 1024L);
 
-                // patch_VirtualTexture.StartFastTextureLoading(limit);
+                Logger.Info("LoadContent", $"Enabling FLT with {limit} bytes");
+                patch_VirtualTexture.FtlToggle = true;
+                TextureContentHelper.MemoryManager.SetAllocSize(limit);
             }
 
             orig_LoadContent();
@@ -367,7 +370,8 @@ https://discord.gg/6qjaePQ");
             foreach (EverestModule mod in Everest._Modules)
                 mod.LoadContent(firstLoad);
 
-            // patch_VirtualTexture.StopFastTextureLoading();
+            TextureContentHelper.MemoryManager.SetAllocSize(-1);
+            // There's no need to stop Ftl if it started in the first place ;)
 
             Everest._ContentLoaded = true;
         }
