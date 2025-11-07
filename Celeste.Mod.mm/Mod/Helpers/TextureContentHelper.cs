@@ -30,7 +30,7 @@ public static class TextureContentHelper {
         MemoryManager = new FTLMemoryManger(initialMemUsage, inGC);
     }
     
-    public static unsafe Func<Texture2D> LoadFromPath(string path, int preW = -1, int preH = -1) {
+    public static Func<Texture2D> LoadFromPath(string path, int preW = -1, int preH = -1) {
         int w, h;
         switch (Path.GetExtension(path)) {
             case ".data":
@@ -65,9 +65,10 @@ public static class TextureContentHelper {
                 }
                 return () => {
                     Texture2D tex = new(Celeste.Instance.GraphicsDevice, w, h);
-                    fixed (byte* ptr = mem.Span)
-                        tex.SetData((IntPtr)ptr);
-                    
+                    unsafe {
+                        fixed (byte* ptr = mem.Span)
+                            tex.SetData((IntPtr) ptr);
+                    }
                     if (hasSegment)
                         MemoryManager.ReturnChunk(seg);
                     return tex;
@@ -111,20 +112,19 @@ public static class TextureContentHelper {
         }
     }
     
-    public static unsafe Func<Texture2D> LoadFromSizeAndColor(int width, int height, Color color) {
+    public static Func<Texture2D> LoadFromSizeAndColor(int width, int height, Color color) {
         // Layout order for Color is unknown, but since it's guaranteed to be consistent everywhere this will work
-        bool hasSegment = MemoryManager.GetChunkOrGcAlloc(width*height*sizeof(Color), 
+        bool hasSegment = MemoryManager.GetChunkOrGcAlloc(width*height*Unsafe.SizeOf<Color>(), 
             out SpanPoolPool<byte>.SegmentIdentifier seg, out byte[] gcArray);
         Memory<byte> data = hasSegment ? seg.SegId.Memory : gcArray;
-        fixed (Color* ptr = MemoryMarshal.Cast<byte, Color>(data.Span)) {
-            for (int i = 0; i < data.Length; i++) {
-                ptr[i] = color;
-            }
-        }
+        Span<Color> colorData = MemoryMarshal.Cast<byte, Color>(data.Span);
+        colorData.Fill(color);
         return () => {
             Texture2D tex = new(Engine.Instance.GraphicsDevice, width, height);
-            fixed (byte* ptr = data.Span) {
-                tex.SetData((IntPtr)ptr);
+            unsafe {
+                fixed (byte* ptr = data.Span) {
+                    tex.SetData((IntPtr)ptr);
+                }
             }
             // Fall back to gc allocs
             // TODO: Improve this to bound max mem usage
