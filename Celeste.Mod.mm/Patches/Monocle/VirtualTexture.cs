@@ -184,6 +184,11 @@ namespace Monocle {
                 hasRunQueuedLoad = true;
                 Texture2D tex = cb();
                 AssignTexture(tex);
+                // This callback may hold references to big memory arrays, so cut the references once we are done
+                lock (_textureLock) {
+                    _queuedLoad = null;
+                    _queuedLoadAct = null;
+                }
             }
         }
 
@@ -286,17 +291,19 @@ namespace Monocle {
         // TODO: Get rid of the replace and ilpatch to use Texture_Unsafe
         [MonoModReplace]
         internal override void Unload() {
-            if (Texture_Unsafe is { IsDisposed: false }) {
-                Texture_Unsafe.Dispose();
+            lock (_textureLock) {
+                if (Texture_Unsafe is { IsDisposed: false }) {
+                    Texture_Unsafe.Dispose();
+                }
+                Texture_Unsafe = null;
             }
-            Texture_Unsafe = null;
         }
 
         // TODO: Get rid of the replace and ilpatch to use Texture_Unsafe
         [MonoModReplace]
         public override void Dispose() {
             Unload();
-            Texture_Unsafe = null;
+            // Texture_Unsafe = null;
             patch_VirtualContent.Remove(this);
         }
 

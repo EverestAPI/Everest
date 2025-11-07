@@ -346,7 +346,6 @@ https://discord.gg/6qjaePQ");
              * -ade
              */
 
-            Logger.Info("LoadContent", CoreModule.Settings.FastTextureLoading?.ToString() ?? "null");
             if (CoreModule.Settings.FastTextureLoading ?? Environment.ProcessorCount >= 4) {
                 long limit = (long) (CoreModule.Settings.FastTextureLoadingMaxMB * 1024f * 1024f);
 
@@ -360,7 +359,7 @@ https://discord.gg/6qjaePQ");
                 if (limit <= (128L * 1024L * 1024L))
                     limit = (128L * 1024L * 1024L);
 
-                Logger.Info("LoadContent", $"Enabling FLT with {limit} bytes");
+                Logger.Info("LoadContent", $"Enabling FTL with {limit} bytes");
                 patch_VirtualTexture.FtlToggle = true;
                 TextureContentHelper.MemoryManager.SetAllocSize(limit);
             }
@@ -370,13 +369,13 @@ https://discord.gg/6qjaePQ");
             foreach (EverestModule mod in Everest._Modules)
                 mod.LoadContent(firstLoad);
 
-            TextureContentHelper.MemoryManager.SetAllocSize(-1);
             // There's no need to stop Ftl if it started in the first place ;)
 
             Everest._ContentLoaded = true;
         }
 
         protected override void BeginRun() {
+            TextureContentHelper.MemoryManager.SetAllocSize(-1);
             base.BeginRun();
             // This is as close as we can get to the showwindow call
             EverestSplashHandler.StopSplash();
