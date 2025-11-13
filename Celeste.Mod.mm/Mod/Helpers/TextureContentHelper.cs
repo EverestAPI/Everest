@@ -92,7 +92,8 @@ public static class TextureContentHelper {
             long unmanagedClaimed = 0;
             if (w > 0 && h > 0) {
                 unmanagedClaimed = (long)((double)w * h * 4 * inflationCoef);
-                MemoryManager.ClaimUnmanaged(unmanagedClaimed);
+                // ClaimUnmanaged gets us the amount that we managed to claim
+                unmanagedClaimed = MemoryManager.ClaimUnmanaged(unmanagedClaimed);
             }
             // If we don't know the size beforehand VirtualTexture is in charge of not multithreading loads
             IntPtr dataPtr; // assume Texture.SetData supports Ptr since we are using FNA
@@ -206,21 +207,26 @@ public static class TextureContentHelper {
 
     private interface AlphaMode;
 
-    private sealed class HasAlpha : AlphaMode;
+    private struct HasAlpha : AlphaMode {
+        // The structs need to be of different sizes in order to force the JIT to compile two different versions
+        private int _;
+    };
 
-    private sealed class NoAlpha : AlphaMode;
+    private struct NoAlpha : AlphaMode;
 
     internal class FTLMemoryManger(long initialMemUsage, bool inGC) {
         private const double SplitPercent = 1 / 4D;
         private readonly long initialMemUsage = initialMemUsage;
+        private const int MainThreadTimeout = 500;
+        private const int OtherThreadTimeout = -1;
         // Managed
-        private readonly ManualResetEventSlim waitingForSpace = new();
+        private readonly ResourceWaiter waitingForSpace = new(MainThreadTimeout, OtherThreadTimeout);
         private readonly SpanPoolPool<byte> spanPool = new(atlasSize, (long)(initialMemUsage*SplitPercent), inGC);
-        private volatile CancellationTokenSource waitingForSpaceCts = new();
         
         // Unmanaged
         private long unmanagedMemoryUsage = 0;
         private readonly object unmanagedLock = new();
+        private readonly ResourceWaiter unmanagedWaitingForSpace = new(MainThreadTimeout, OtherThreadTimeout);
         
         public long CurrMemUsage { get; private set; } = initialMemUsage;
         
@@ -234,9 +240,6 @@ public static class TextureContentHelper {
                 seg = default;
                 return false;
             }
-            const int MainThreadTimeout = 500;
-            const int OtherThreadTimeout = -1;
-            bool isMainThread = MainThreadHelper.IsMainThread;
             
             while (true) {
                 bool hasSegment = spanPool.TryRent(chunkSize, out seg);
@@ -245,22 +248,11 @@ public static class TextureContentHelper {
                     return true;
                 }
 
-                try {
-                    // TODO: this is sort of ugly, all threads should attempt to claim memory but we have no guarantee of that
-                    if (waitingForSpace.Wait(isMainThread ? MainThreadTimeout : OtherThreadTimeout, waitingForSpaceCts.Token))
-                        waitingForSpace.Reset();
-                    else // On timeout just exit and gc alloc
-                        break;
-                } catch (OperationCanceledException) { // The currently allocated memory changed, and we may be able to succeed now
-                    continue;
-                } catch (ObjectDisposedException) { 
-                    // Very rare case, the current cts is disposed, just try again since a new one will be assigned very soon
-                    continue;
-                }
-
-                // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
+                if (!waitingForSpace.Wait()) // On timeout just exit and gc alloc
+                    break;
             }
         
+            bool isMainThread = MainThreadHelper.IsMainThread;
             Logger.Log(LogLevel.Warn, nameof(TextureContentHelper), $"Allocating {chunkSize} bytes in the gc because " +
                                                                     $"{(isMainThread ? "the main-thread" : "a worker thread")} was " +
                                                                     $"blocked for more than {(isMainThread ? MainThreadTimeout : OtherThreadTimeout)}ms");
@@ -271,38 +263,61 @@ public static class TextureContentHelper {
 
         public void ReturnChunk(SpanPoolPool<byte>.SegmentIdentifier seg) {
             spanPool.Return(seg);
-            waitingForSpace.Set();
+            waitingForSpace.Pulse();
         }
 
-        public void ClaimUnmanaged(long amount) {
-            lock (unmanagedLock) {
-                while (true) {
-                    if (unmanagedMemoryUsage + amount >= CurrMemUsage * (1 - SplitPercent)) {
-                        Monitor.Wait(unmanagedLock);
-                    } else {
+        public long ClaimUnmanaged(long amount) {
+            while (true) {
+                lock (unmanagedLock) {
+                    if (unmanagedMemoryUsage + amount <= CurrMemUsage * (1 - SplitPercent)) {
                         unmanagedMemoryUsage += amount;
-                        break;
+                        Console.WriteLine($"Unmanaged usage: {unmanagedMemoryUsage}, cap: {CurrMemUsage * (1 - SplitPercent)}");
+                        return amount;
                     }
                 }
+                if (!unmanagedWaitingForSpace.Wait()) // On timeout just allocate without budget
+                    break;
             }
+            return 0;
         }
 
         public void ReturnUnmanaged(long amount) {
             lock (unmanagedLock) {
                 unmanagedMemoryUsage -= amount;
+                Console.WriteLine($"Unmanaged usage: {unmanagedMemoryUsage}, cap: {CurrMemUsage * (1 - SplitPercent)}");
                 Debug.Assert(unmanagedMemoryUsage >= 0);
-                Monitor.PulseAll(unmanagedLock);
             }
+            unmanagedWaitingForSpace.Pulse();
         }
 
         public void SetAllocSize(long limit) {
+            long prevMemUsage = CurrMemUsage;
             CurrMemUsage = limit == -1 ? initialMemUsage : limit;
             spanPool.CurrMemUsage = (long) (limit * SplitPercent);
-            // Make everyone waiting recheck
-            waitingForSpaceCts.Cancel();
-            waitingForSpaceCts.Dispose();
-            waitingForSpaceCts = new CancellationTokenSource();
-            ReturnUnmanaged(0);
+            if (prevMemUsage < CurrMemUsage) {
+                // Make everyone waiting recheck
+                waitingForSpace.Pulse();
+                unmanagedWaitingForSpace.Pulse();
+            }
+        }
+
+        private class ResourceWaiter(int MainThreadTimeout, int OtherThreadTimeout) {
+            private readonly ManualResetEventSlim mre = new();
+
+            public bool Wait() {
+                bool isMainThread = MainThreadHelper.IsMainThread;
+                // TODO: this is sort of ugly, all threads should attempt to claim memory but we have no guarantee of that
+                // What about our own impl of a better version?
+                if (mre.Wait(isMainThread ? MainThreadTimeout : OtherThreadTimeout)) {
+                    mre.Reset();
+                    return true;
+                }
+                return false;
+            }
+
+            public void Pulse() {
+                mre.Set();
+            }
         }
     }
 
