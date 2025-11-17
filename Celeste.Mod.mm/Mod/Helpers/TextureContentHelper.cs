@@ -1,3 +1,6 @@
+//#define TRACE_GC_ALLOCS
+
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
@@ -52,7 +55,11 @@ public static class TextureContentHelper {
     
                     int size = w * h * 4;
                     {
-                        hasSegment = MemoryManager.GetChunkOrGcAlloc(size, out seg, out byte[] gcArray);
+                        hasSegment = MemoryManager.GetChunkOrGcAlloc(size, out seg, out byte[] gcArray
+#if TRACE_GC_ALLOCS
+                            , $"Path texture {path}"
+#endif
+                        );
                         mem = hasSegment ? seg.SegId.Memory : gcArray;
                     }
 
@@ -91,9 +98,19 @@ public static class TextureContentHelper {
             const double inflationCoef = 1.2;
             long unmanagedClaimed = 0;
             if (w > 0 && h > 0) {
-                unmanagedClaimed = (long)((double)w * h * 4 * inflationCoef);
+                unmanagedClaimed = (long) ((double) w * h * 4 * inflationCoef);
                 // ClaimUnmanaged gets us the amount that we managed to claim
-                unmanagedClaimed = MemoryManager.ClaimUnmanaged(unmanagedClaimed);
+                unmanagedClaimed = MemoryManager.ClaimUnmanaged(unmanagedClaimed
+#if TRACE_GC_ALLOCS
+                , $"Path texture {
+                    stream switch {
+                        FileStream fs => fs.Name,
+                        SynchronizedZipEntryStream szes => szes.entry.FullName,
+                        _ => "Unknown path"
+                    }
+                }"
+#endif
+                );
             }
             // If we don't know the size beforehand VirtualTexture is in charge of not multithreading loads
             IntPtr dataPtr; // assume Texture.SetData supports Ptr since we are using FNA
@@ -116,7 +133,11 @@ public static class TextureContentHelper {
     public static Func<Texture2D> LoadFromSizeAndColor(int width, int height, Color color) {
         // Layout order for Color is unknown, but since it's guaranteed to be consistent everywhere this will work
         bool hasSegment = MemoryManager.GetChunkOrGcAlloc(width*height*Unsafe.SizeOf<Color>(), 
-            out SpanPoolPool<byte>.SegmentIdentifier seg, out byte[] gcArray);
+            out SpanPoolPool<byte>.SegmentIdentifier seg, out byte[] gcArray
+#if TRACE_GC_ALLOCS
+            , $"Sized texture {width}x{height}"
+#endif
+            );
         Memory<byte> data = hasSegment ? seg.SegId.Memory : gcArray;
         Span<Color> colorData = MemoryMarshal.Cast<byte, Color>(data.Span);
         colorData.Fill(color);
@@ -230,12 +251,20 @@ public static class TextureContentHelper {
         
         public long CurrMemUsage { get; private set; } = initialMemUsage;
         
-        public bool GetChunkOrGcAlloc(int chunkSize, out SpanPoolPool<byte>.SegmentIdentifier seg, out byte[] gcArray) {
+        public bool GetChunkOrGcAlloc(int chunkSize, out SpanPoolPool<byte>.SegmentIdentifier seg, out byte[] gcArray
+#if TRACE_GC_ALLOCS
+        , string source
+#endif
+        ) {
             // The cts may be swapped at any point, so if the available space decreases after TryRent fails and a new cts
             // is assigned before this gets to the Wait it would be waiting to never have space anyway (for now)
             if (chunkSize > atlasSize) { // It's not going to fit
                 // Just gc alloc it, TODO: what should we do here?
-                Logger.Log(LogLevel.Warn, nameof(TextureContentHelper), $"Chunk size was too big for the current allocated memory ({chunkSize} > {spanPool.CurrMemUsage})!");
+                Logger.Warn(nameof(TextureContentHelper), $"Chunk size was too big for the current allocated memory ({chunkSize} > {spanPool.CurrMemUsage})!");
+#if TRACE_GC_ALLOCS
+                Logger.Warn(nameof(TextureContentHelper), $"For texture {source}:");
+                Logger.Warn(nameof(TextureContentHelper), new StackTrace().ToString());
+#endif
                 gcArray =  new byte[chunkSize];
                 seg = default;
                 return false;
@@ -253,9 +282,13 @@ public static class TextureContentHelper {
             }
         
             bool isMainThread = MainThreadHelper.IsMainThread;
-            Logger.Log(LogLevel.Warn, nameof(TextureContentHelper), $"Allocating {chunkSize} bytes in the gc because " +
+            Logger.Warn(nameof(TextureContentHelper), $"Allocating {chunkSize} bytes in the gc because " +
                                                                     $"{(isMainThread ? "the main-thread" : "a worker thread")} was " +
                                                                     $"blocked for more than {(isMainThread ? MainThreadTimeout : OtherThreadTimeout)}ms");
+#if TRACE_GC_ALLOCS
+            Logger.Warn(nameof(TextureContentHelper), $"For texture {source}:");
+            Logger.Warn(nameof(TextureContentHelper), new StackTrace().ToString());
+#endif
             gcArray = new byte[chunkSize];
             seg = default;
             return false;
@@ -266,17 +299,29 @@ public static class TextureContentHelper {
             waitingForSpace.Pulse();
         }
 
-        public long ClaimUnmanaged(long amount) {
+        public long ClaimUnmanaged(long amount
+#if TRACE_GC_ALLOCS
+        , string source
+#endif
+        ) {
             while (true) {
                 lock (unmanagedLock) {
                     if (unmanagedMemoryUsage + amount <= CurrMemUsage * (1 - SplitPercent)) {
                         unmanagedMemoryUsage += amount;
-                        Console.WriteLine($"Unmanaged usage: {unmanagedMemoryUsage}, cap: {CurrMemUsage * (1 - SplitPercent)}");
                         return amount;
                     }
                 }
-                if (!unmanagedWaitingForSpace.Wait()) // On timeout just allocate without budget
+                if (!unmanagedWaitingForSpace.Wait()) { // On timeout just allocate without budget
+                    bool isMainThread = MainThreadHelper.IsMainThread;
+                    Logger.Warn(nameof(TextureContentHelper), $"Allocating {amount} bytes over the unmanaged budget because" +
+                                                              $"{(isMainThread ? "the main-thread" : "a worker thread")} was " +
+                                                              $"blocked for more than {(isMainThread ? MainThreadTimeout : OtherThreadTimeout)}ms");
+#if TRACE_GC_ALLOCS
+                    Logger.Warn(nameof(TextureContentHelper), $"For texture {source}:");
+                    Logger.Warn(nameof(TextureContentHelper), new StackTrace().ToString());
+#endif
                     break;
+                }
             }
             return 0;
         }
@@ -284,7 +329,6 @@ public static class TextureContentHelper {
         public void ReturnUnmanaged(long amount) {
             lock (unmanagedLock) {
                 unmanagedMemoryUsage -= amount;
-                Console.WriteLine($"Unmanaged usage: {unmanagedMemoryUsage}, cap: {CurrMemUsage * (1 - SplitPercent)}");
                 Debug.Assert(unmanagedMemoryUsage >= 0);
             }
             unmanagedWaitingForSpace.Pulse();

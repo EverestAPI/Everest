@@ -11,7 +11,7 @@ namespace Celeste.Mod.Helpers {
     /// </summary>
     public class SynchronizedZipEntryStream : Stream {
         private readonly ZipArchive archive;
-        private readonly ZipArchiveEntry entry;
+        internal readonly ZipArchiveEntry entry;
         private Stream wrappedStream;
         private long position;
 
