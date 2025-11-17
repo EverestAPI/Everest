@@ -140,11 +140,12 @@ namespace Monocle {
         private void CtorLoad() {
             if (Everest.Flags.IsHeadless) {
                 Preload();
+                Everest.Events.VirtualTexture.OnShouldForceLazyLoad((VirtualTexture) (object) this);
                 AssignTexture(new Texture2D(Engine.Graphics.GraphicsDevice, 1, 1));
                 return;
             }
             // Only skip reloads with lazyloading and successful preloads
-            if (!Preload() || !CoreModule.Settings.LazyLoading)
+            if (!Preload() || (!Everest.Events.VirtualTexture.OnShouldForceLazyLoad((VirtualTexture) (object) this) && !CoreModule.Settings.LazyLoading))
                 Reload();
         }
 

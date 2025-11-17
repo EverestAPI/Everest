@@ -382,6 +382,16 @@ namespace Celeste.Mod {
                 internal static void BeforeRender(_SubHudRenderer renderer, Scene scene)
                     => OnBeforeRender?.Invoke(renderer, scene);
             }
+
+            public static class VirtualTexture {
+                public delegate bool ForceLazyLoadHandler(Monocle.VirtualTexture self);
+
+                public static event ForceLazyLoadHandler ShouldForceLazyLoad;
+
+                internal static bool OnShouldForceLazyLoad(Monocle.VirtualTexture self) {
+                    return ShouldForceLazyLoad.InvokeWhileFalse(self);
+                }
+            }
         }
     }
 }
