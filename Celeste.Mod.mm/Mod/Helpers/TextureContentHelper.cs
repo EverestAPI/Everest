@@ -293,7 +293,7 @@ public static class TextureContentHelper {
         public void SetAllocSize(long limit) {
             long prevMemUsage = CurrMemUsage;
             CurrMemUsage = limit == -1 ? initialMemUsage : limit;
-            spanPool.CurrMemUsage = (long) (limit * SplitPercent);
+            spanPool.CurrMemUsage = (long) (CurrMemUsage * SplitPercent);
             if (prevMemUsage < CurrMemUsage) {
                 // Make everyone waiting recheck
                 waitingForSpace.Pulse();
