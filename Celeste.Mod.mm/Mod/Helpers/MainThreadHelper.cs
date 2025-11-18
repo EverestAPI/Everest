@@ -42,12 +42,13 @@ namespace Celeste.Mod {
                     return;
 
                 // Execute tasks during our allocated time slice
-                _Stopwatch.Reset();
+                _Stopwatch.Restart();
                 while (_Stopwatch.ElapsedMilliseconds < timeSlice) {
                     if (!_TasksQueue.TryDequeue(out Task task))
                         break;
                     TryExecuteTask(task);
                 }
+                _Stopwatch.Stop();
             }
 
         }
@@ -84,7 +85,7 @@ namespace Celeste.Mod {
             if (forceQueue && IsMainThread) {
                 try {
                     TaskScheduler.TaskIsForceQueued = true;
-                    return Schedule(act);
+                    return new ValueTask(TaskFactory.StartNew(act));
                 } finally {
                     TaskScheduler.TaskIsForceQueued = false;
                 }
@@ -101,7 +102,7 @@ namespace Celeste.Mod {
             if (forceQueue && IsMainThread) {
                 try {
                     TaskScheduler.TaskIsForceQueued = true;
-                    return Schedule(act);
+                    return new ValueTask<T>(TaskFactory.StartNew(act));
                 } finally {
                     TaskScheduler.TaskIsForceQueued = false;
                 }
@@ -117,7 +118,7 @@ namespace Celeste.Mod {
             if (forceQueue && IsMainThread) {
                 try {
                     TaskScheduler.TaskIsForceQueued = true;
-                    return Schedule(act);
+                    return TaskFactory.StartNew(act).Unwrap();
                 } finally {
                     TaskScheduler.TaskIsForceQueued = false;
                 }
@@ -133,7 +134,7 @@ namespace Celeste.Mod {
             if (forceQueue && IsMainThread) {
                 try {
                     TaskScheduler.TaskIsForceQueued = true;
-                    return Schedule(act);
+                    return TaskFactory.StartNew(act).Unwrap();
                 } finally {
                     TaskScheduler.TaskIsForceQueued = false;
                 }
