@@ -113,13 +113,10 @@ namespace Celeste {
             Console.WriteLine(" - LEVELS LOAD: " + timer.ElapsedMilliseconds + "ms");
             timer.Stop();
 
-            timer = Stopwatch.StartNew();
             MainThreadHelper.Boost = 50;
-            // patch_VirtualTexture.WaitFinishFastTextureLoading();
-            MainThreadHelper.Schedule(() => MainThreadHelper.Boost = 0).AsTask().Wait();
-            // FIXME: There could be ongoing tasks which add to the main thread queue right here.
-            Console.WriteLine(" - FASTTEXTURELOADING LOAD: " + timer.ElapsedMilliseconds + "ms");
-            timer.Stop();
+            // Flush the main thread queue to make sure all tasks related to FTL are completed
+            MainThreadHelper.Schedule(() => MainThreadHelper.Boost = 0, true).AsTask().Wait();
+            // There is no reason to time this since likely the queue will be empty by now
 
             Everest.Events.GameLoader.LoadThread();
 
