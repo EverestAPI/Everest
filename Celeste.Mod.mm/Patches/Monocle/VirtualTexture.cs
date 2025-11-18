@@ -224,7 +224,7 @@ namespace Monocle {
             Action act = RunAndStore;
             ValueTask vt = MainThreadHelper.Schedule(act);
             // This is somewhat pointless, IsCompleted cant be true with the current LoadImmediately criteria
-            if (vt.IsCompleted) { // TODO: What if the completion was not successful
+            if (vt.IsCompleted) {
                 return;
             }
 
