@@ -18,10 +18,45 @@ using System.Threading.Tasks;
 namespace Monocle {
     class patch_VirtualTexture : patch_VirtualAsset {
 
-        // We're effectively in VirtualAsset, but still need to "expose" private fields to our mod.
-        public string? Path { get; private set; }
+        private string? _path;
+        public string? Path {
+            [MonoModReplace] get => _path;
+            [MonoModReplace]
+            private set {
+                if (_textureKind != TextureKind.FileSystem || _path != null) 
+                    throw new InvalidOperationException("Cannot assign to path!");
+                _path = value;
+            }
+        }
         private Color color;
-        
+        private int _width;
+        private int _height;
+
+        protected override int InnerWidth {
+            get => _width;
+            set {
+                // It makes no sense to write to this on the other texture kinds since the value will get overwritten after the reload anyway
+                if (_textureKind != TextureKind.SizeDefined)
+                    throw new InvalidOperationException("Resizing a VirtualTexture is only allowed for size defined textures!");
+                lock (_reloadLock) {
+                    _width = value;
+                }
+                Reload(false);
+            }
+        }
+
+        protected override int InnerHeight {
+            get => _height;
+            set {
+                if (_textureKind != TextureKind.SizeDefined)
+                    throw new InvalidOperationException("Resizing a VirtualTexture is only allowed for size defined textures!");
+                lock (_reloadLock) {
+                    _height = value;
+                }
+                Reload(false);
+            }
+        }
+
         private static extern void orig_cctor();
         [MonoModConstructor]
         private static void cctor() {
@@ -114,6 +149,8 @@ namespace Monocle {
 
         public VirtualTexture? Fallback;
 
+        private readonly TextureKind _textureKind;
+
         private readonly object _textureLock;
         // Queued upload to gpu of the texture, assumed to always run on main thread
         private Task? _queuedLoad;
@@ -128,6 +165,7 @@ namespace Monocle {
         [MonoModConstructor]
         [MonoModReplace]
         internal patch_VirtualTexture(string path) {
+            _textureKind = TextureKind.FileSystem;
             Path = path;
             Name = path;
             _textureLock = new object();
@@ -138,9 +176,10 @@ namespace Monocle {
         [MonoModConstructor]
         [MonoModReplace]
         internal patch_VirtualTexture(string name, int width, int height, Color color) {
+            _textureKind = TextureKind.SizeDefined;
             Name = name;
-            Width = width;
-            Height = height;
+            _width = width;
+            _height = height;
             this.color = color;
             _textureLock = new object();
             _reloadLock = new object();
@@ -149,6 +188,7 @@ namespace Monocle {
 
         [MonoModConstructor]
         internal patch_VirtualTexture(ModAsset metadata) {
+            _textureKind = TextureKind.ModAsset;
             Metadata = metadata;
             Name = metadata.PathVirtual;
             _textureLock = new object();
@@ -223,8 +263,8 @@ namespace Monocle {
             int preW = -1;
             int preH = -1;
             if (isPreloaded) {
-                preW = Width;
-                preH = Height;
+                preW = _width;
+                preH = _height;
             }
         
             if (Metadata != null) {
@@ -246,7 +286,7 @@ namespace Monocle {
                     throw new InvalidOperationException();
                 }
             } else if (string.IsNullOrEmpty(Path)) {
-                RunSafely(TextureContentHelper.LoadFromSizeAndColor(Width, Height, color), block);
+                RunSafely(TextureContentHelper.LoadFromSizeAndColor(_width, _height, color), block);
             } else {
                 RunSafely(TextureContentHelper.LoadFromPath(Path, preW, preH), block);
             }
@@ -264,7 +304,6 @@ namespace Monocle {
                 // This is the main asynchronous FTL entry point
                 // isPreloaded is required to be true so we can have some knowledge of the memory usage of the load
                 Task.Run(() => {
-                    // Logger.Log(LogLevel.Info, nameof(VirtualTexture), "Offloading texture: " + (Path ?? Name ?? $"{Width}x{Height}"));
                     Reload(false);
                 });
                 // Since we are not blocking, we are free to return whenever we want
@@ -287,7 +326,7 @@ namespace Monocle {
                 // Do not wait for the main thread to finish the load, it could deadlock if a blocking Reload is called on there
                 InnerReload(false);
             } catch (Exception ex) {
-                Logger.Error(nameof(VirtualTexture), $"Failed loading texture {Name ?? $"{Width}x{Height}"}!");
+                Logger.Error(nameof(VirtualTexture), $"Failed loading texture {Name ?? $"{_width}x{_height}"}!");
                 Logger.LogDetailed(ex, nameof(VirtualTexture));
                 asyncFault = ex;
                 throw;
@@ -309,8 +348,8 @@ namespace Monocle {
                 //     throw new InvalidOperationException("Double Texture_Unsafe assignment!");
                 // }
                 Texture_Unsafe = tex;
-                Width = tex.Width;
-                Height = tex.Height;
+                _width = tex.Width;
+                _height = tex.Height;
             }
         }
         
@@ -367,8 +406,8 @@ namespace Monocle {
                     // Easy.
                     using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
                     using (BinaryReader reader = new BinaryReader(stream)) {
-                        Width = reader.ReadInt32();
-                        Height = reader.ReadInt32();
+                        _width = reader.ReadInt32();
+                        _height = reader.ReadInt32();
                     }
                     return isPreloaded = true;
 
@@ -397,7 +436,7 @@ namespace Monocle {
 
             // If we have nothing to work with but the size is already there just roll with it
             // this often happens with textures that use the width-height-color ctor
-            if (Width != 0 && Height != 0) {
+            else if (_width != 0 && _height != 0) {
                 return isPreloaded = true;
             }
 
@@ -421,8 +460,8 @@ namespace Monocle {
                     Logger.Error("vtex", $"Failed preloading PNG: Expected IHDR marker 0x52444849, got 0x{chunk.ToString("X8")} - {path}");
                     return false;
                 }
-                Width = SwapEndian(reader.ReadInt32());
-                Height = SwapEndian(reader.ReadInt32());
+                _width = SwapEndian(reader.ReadInt32());
+                _height = SwapEndian(reader.ReadInt32());
                 return true;
             }
         }
@@ -435,6 +474,11 @@ namespace Monocle {
                 ((data >> 24) & 0xFF);
         }
 
+        private enum TextureKind {
+            FileSystem,
+            ModAsset,
+            SizeDefined
+        }
     }
     public static class VirtualTextureExt {
 
