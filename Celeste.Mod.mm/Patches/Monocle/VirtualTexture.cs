@@ -50,8 +50,27 @@ namespace Monocle {
                         }
                     }
 
+                    // Check if the texture is null because failure
+                    if (asyncFault != null) {
+                        lock (_reloadLock) {
+                            if (asyncFault != null)
+                                throw new AggregateException("Exception during asynchronous texture load", asyncFault);
+                        }
+                    }
+                    // If asyncFault is null but is about to become non-null we will check after the reload
+
                     // Otherwise try queuing a reload
+                    Logger.Debug(nameof(VirtualTexture), $"Loading texture {Name ?? "(Unnamed)"} on texture access!");
                     Reload(true);
+                    
+                    // We could get a reload that sets this to null, this is an unfortunate case where we will void the error
+                    // regardless we cannot do much about it, and it will likely error again
+                    if (asyncFault != null) {
+                        lock (_reloadLock) {
+                            if (asyncFault != null)
+                                throw new AggregateException("Exception during asynchronous texture load", asyncFault);
+                        }
+                    }
 
                     Task queuedLoad;
                     Action queuedLoadAct;
@@ -73,7 +92,6 @@ namespace Monocle {
                     if (MainThreadHelper.IsMainThread) {
                         // But waiting for the load on the main thread would be disastrous (deadlock)
                         // so just run it directly, we are on the main thread anyway
-                        // queuedLoad.RunSynchronously();
                         queuedLoadAct();
                     } else {
                         queuedLoad.Wait();
@@ -83,7 +101,7 @@ namespace Monocle {
             set {
                 // TODO: Add a flag to know if the texture was overriden, so that Reload is idempotent
                 // It does not make much sense to assign to the texture, but some mods do, and vanilla allows for that to happen.
-                // Un-synchronized assignments will often lead to race conditions, but there's not much we can do.
+                // Un-synchronized assignments will often lead to race conditions, but there's not much we can do other than keep the state of this object valid.
                 if (value == null) {
                     Unload();
                 } else {
@@ -103,6 +121,7 @@ namespace Monocle {
         private readonly object _reloadLock;
         private volatile bool _reloadInProgress;
         private bool isPreloaded;
+        private Exception? asyncFault;
 
         public static bool FtlToggle { get; internal set; }
 
@@ -198,6 +217,7 @@ namespace Monocle {
 
         // This function assumes it is executing on at most one thread at a time
         private void InnerReload(bool block = false) {
+            asyncFault = null;
             Unload();
             // Important, this is the main entrypoint, and any code-path should lead to an eventual unique call to RunSafely or AssignTexture
             int preW = -1;
@@ -266,6 +286,11 @@ namespace Monocle {
             try {
                 // Do not wait for the main thread to finish the load, it could deadlock if a blocking Reload is called on there
                 InnerReload(false);
+            } catch (Exception ex) {
+                Logger.Error(nameof(VirtualTexture), $"Failed loading texture {Name ?? $"{Width}x{Height}"}!");
+                Logger.LogDetailed(ex, nameof(VirtualTexture));
+                asyncFault = ex;
+                throw;
             } finally {
                 _reloadInProgress = false;
                 Monitor.Exit(_reloadLock);
@@ -368,6 +393,12 @@ namespace Monocle {
                     // .xnb and other file formats - impossible.
                     return false;
                 }
+            }
+
+            // If we have nothing to work with but the size is already there just roll with it
+            // this often happens with textures that use the width-height-color ctor
+            if (Width != 0 && Height != 0) {
+                return isPreloaded = true;
             }
 
             return false;
