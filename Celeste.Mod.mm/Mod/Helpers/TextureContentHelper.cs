@@ -32,6 +32,39 @@ public static class TextureContentHelper {
         const int initialMemUsage = atlasSize * 4; // TODO: unhardcode
         MemoryManager = new FTLMemoryManger(initialMemUsage, inGC);
     }
+
+    public static bool TryEnableFTL() {
+        /* Vanilla calls GFX.Load and MTN.Load in LoadContent on non-Stadia platforms.
+         * Sadly we can't load them in GameLoader.LoadThread as mods rely on them in LoadContent.
+         *
+         * Loading in a new thread with texture -> GPU ops on the main thread helps barely.
+         * Spawning a new thread just to wait for it to end doesn't make much sense,
+         * BUT delaying the slow texture load ops to happen lazy-async gets the game window to appear sooner.
+         *
+         * Note that on XNA, this dies both with and without threaded GL due to OOM exceptions.
+         * -ade
+         */
+        if (patch_VirtualTexture.FtlToggle) return true;
+        if (CoreModule.Settings.FastTextureLoading ?? Environment.ProcessorCount >= 4) {
+            long limit = (long) (CoreModule.Settings.FastTextureLoadingMaxMB * 1024f * 1024f);
+
+            if (limit <= 0) {
+                limit = (long) (Everest.SystemMemoryMB * 0.2f * 1024f * 1024f);
+                // Assume that even in the worst case with 4 GB system RAM, 512 MB (= 12.5% = 1/8) are still available for texture loads.
+                if (limit <= (512L * 1024L * 1024L))
+                    limit = (512L * 1024L * 1024L);
+            }
+            // ... and even if the user forcibly lowered it below 128 MB, fall back to 128 MB as even the vanilla gameplay atlas is 64MB.
+            if (limit <= (128L * 1024L * 1024L))
+                limit = (128L * 1024L * 1024L);
+
+            Logger.Info("LoadContent", $"Enabling FTL with {limit} bytes");
+            patch_VirtualTexture.FtlToggle = true;
+            MemoryManager.SetAllocSize(limit);
+            return true;
+        }
+        return false;
+    }
     
     public static Func<Texture2D> LoadFromPath(string path, int preW = -1, int preH = -1) {
         int w, h;
