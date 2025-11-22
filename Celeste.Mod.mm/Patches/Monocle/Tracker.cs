@@ -127,7 +127,7 @@ namespace Monocle {
             }
             // do the same for subclasses
             foreach (Type subtype in subtypes) {
-                if (trackedAsType.IsAssignableFrom(subtype) && AddSpecificType(subtype, trackedAsType, tracked, knownTypes)) {
+                if (trackedAsType.IsAssignableFrom(subtype) && AddSpecificType(subtype, trackedAsType, tracked, null)) {
                     updated = true;
                 }
             }
@@ -137,14 +137,17 @@ namespace Monocle {
         }
 
         private static bool AddSpecificType(Type type, Type trackedAsType, Dictionary<Type, List<Type>> tracked, HashSet<Type> knownTypes) {
+            // Make sure the tracker knows about both the type and trackedAs type, to fix scenarios like `[TrackedAs(typeof(UntrackedType))]`
+            bool updated = false;
+            if (knownTypes is not null) {
+                updated = knownTypes.Add(type);
+                updated |= knownTypes.Add(trackedAsType);
+            }
+            // check IsAbstract later, make AddTypeToTracker(type: typeof(Celeste.CutsceneEntity), trackedAs: null, inheritAll: true) work properly
             if (type.IsAbstract) {
-                return false;
+                return updated;
             }
 
-            // Make sure the tracker knows about both the type and trackedAs type, to fix scenarios like `[TrackedAs(typeof(UntrackedType))]`
-            knownTypes.Add(type);
-            knownTypes.Add(trackedAsType);
-            
             if (!tracked.TryGetValue(type, out List<Type> value)) {
                 value = new List<Type>();
                 tracked.Add(type, value);
