@@ -9,9 +9,11 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Debug = System.Diagnostics.Debug;
 
 #nullable enable
 
@@ -52,6 +54,17 @@ namespace Monocle {
                     throw new InvalidOperationException("Resizing a VirtualTexture is only allowed for size defined textures!");
                 lock (_reloadLock) {
                     _height = value;
+                }
+                Reload(false);
+            }
+        }
+
+        public Point Size {
+            get => new(InnerWidth, InnerHeight);
+            set {
+                lock (_reloadLock) {
+                    InnerWidth = value.X;
+                    InnerHeight = value.Y;
                 }
                 Reload(false);
             }
@@ -165,6 +178,7 @@ namespace Monocle {
         [MonoModConstructor]
         [MonoModReplace]
         internal patch_VirtualTexture(string path) {
+            ArgumentException.ThrowIfNullOrEmpty(path, nameof(path));
             _textureKind = TextureKind.FileSystem;
             Path = path;
             Name = path;
@@ -176,6 +190,8 @@ namespace Monocle {
         [MonoModConstructor]
         [MonoModReplace]
         internal patch_VirtualTexture(string name, int width, int height, Color color) {
+            ArgumentOutOfRangeException.ThrowIfLessThan(width, 1, nameof(width));
+            ArgumentOutOfRangeException.ThrowIfLessThan(height, 1, nameof(height));
             _textureKind = TextureKind.SizeDefined;
             Name = name;
             _width = width;
@@ -188,6 +204,7 @@ namespace Monocle {
 
         [MonoModConstructor]
         internal patch_VirtualTexture(ModAsset metadata) {
+            ArgumentNullException.ThrowIfNull(metadata);
             _textureKind = TextureKind.ModAsset;
             Metadata = metadata;
             Name = metadata.PathVirtual;
@@ -207,7 +224,6 @@ namespace Monocle {
             if (!Preload() || (!Everest.Events.VirtualTexture.OnShouldForceLazyLoad((VirtualTexture) (object) this) && !CoreModule.Settings.LazyLoading))
                 Reload();
         }
-
 
         /// <summary>
         /// Runs a callback in the main thread.
@@ -266,29 +282,40 @@ namespace Monocle {
                 preW = _width;
                 preH = _height;
             }
-        
-            if (Metadata != null) {
-                Stream stream = Metadata.Stream;
-                if (stream != null) {
-                    bool premul = false; // Assume unpremultiplied by default.
-                    if (Metadata.TryGetMeta(out TextureMeta meta))
-                        premul = meta.Premultiplied;
-                    // If we have async streams, read async, otherwise, wrap everything in the RunSafely call and run the returned cb immediately
-                    // TODO: This is a bit wasteful, especially if we moved out of main thread to load asynchronously, maybe check asynchronousness beforehand?
-                    RunSafely(Metadata.StreamAsync ?
-                        TextureContentHelper.LoadFromStream(stream, premul, preW, preH) : 
-                        () => TextureContentHelper.LoadFromStream(stream, premul, preW, preH)(), block);
-                } else if (Fallback != null) {
-                    // ReSharper disable once SuspiciousTypeConversion.Global
-                    ((patch_VirtualTexture) (object) Fallback).Reload();
-                    AssignTexture(Fallback.Texture!);
-                } else {
-                    throw new InvalidOperationException();
+
+            switch (_textureKind) {
+                case TextureKind.ModAsset: {
+                    Debug.Assert(Metadata is not null);
+                    Stream stream = Metadata.Stream;
+                    if (stream != null) {
+                        bool premul = false; // Assume unpremultiplied by default.
+                        if (Metadata.TryGetMeta(out TextureMeta meta))
+                            premul = meta.Premultiplied;
+                        // If we have async streams, read async, otherwise, wrap everything in the RunSafely call and run the returned cb immediately
+                        // TODO: This is a bit wasteful, especially if we moved out of main thread to load asynchronously, maybe check asynchronousness beforehand?
+                        RunSafely(Metadata.StreamAsync ? TextureContentHelper.LoadFromStream(stream, premul, preW, preH) : () => TextureContentHelper.LoadFromStream(stream, premul, preW, preH)(), block);
+                        return;
+                    } else if (Fallback != null) {
+                        // ReSharper disable once SuspiciousTypeConversion.Global
+                        ((patch_VirtualTexture) (object) Fallback).Reload();
+                        AssignTexture(Fallback.Texture!);
+                        return;
+                    } else {
+                        throw new InvalidOperationException("Cannot have null ModAsset stream without Fallback texture!");
+                    }
                 }
-            } else if (string.IsNullOrEmpty(Path)) {
-                RunSafely(TextureContentHelper.LoadFromSizeAndColor(_width, _height, color), block);
-            } else {
-                RunSafely(TextureContentHelper.LoadFromPath(Path, preW, preH), block);
+                case TextureKind.FileSystem: {
+                    Debug.Assert(Path is not null);
+                    RunSafely(TextureContentHelper.LoadFromPath(Path, preW, preH), block);
+                    return;
+                }
+                case TextureKind.SizeDefined: {
+                    Debug.Assert(_width > 0 && _height > 0);
+                    RunSafely(TextureContentHelper.LoadFromSizeAndColor(_width, _height, color), block);
+                    return;
+                }
+                default:
+                    throw new UnreachableException();
             }
         }
 
@@ -372,75 +399,53 @@ namespace Monocle {
             patch_VirtualContent.Remove(this);
         }
 
-        private bool CanPreload {
-            get {
-                if (!string.IsNullOrEmpty(Path)) {
-                    string extension = System.IO.Path.GetExtension(Path);
-                    if (extension == ".data") {
-                        return true;
-                    } else if (extension == ".png") {
-                        return true;
-                    } else {
-                        return false;
-
-                    }
-
-                } else if (Metadata != null) {
-                    if (Metadata.Format == "png") {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                }
-
-                return false;
-            }
-        }
-
         private bool Preload(bool force = false) {
             // Preload the width / height, and if needed, the entire texture (not actually done currently though).
 
-            if (!string.IsNullOrEmpty(Path)) {
-                string extension = System.IO.Path.GetExtension(Path);
-                if (extension == ".data") {
-                    // Easy.
-                    using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
-                    using (BinaryReader reader = new BinaryReader(stream)) {
-                        _width = reader.ReadInt32();
-                        _height = reader.ReadInt32();
+            switch (_textureKind) {
+                case TextureKind.FileSystem: {
+                    Debug.Assert(Path is not null);
+                    string extension = System.IO.Path.GetExtension(Path);
+                    if (extension == ".data") {
+                        // Easy.
+                        using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
+                        using (BinaryReader reader = new BinaryReader(stream)) {
+                            _width = reader.ReadInt32();
+                            _height = reader.ReadInt32();
+                        }
+                        return isPreloaded = true;
+
+                    } else if (extension == ".png") {
+                        // Hard.
+                        using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
+                            return isPreloaded = PreloadSizeFromPNG(stream, Path);
+
+                    } else {
+                        // .xnb and other file formats - impossible.
+                        return false;
+
                     }
+                }
+                case TextureKind.ModAsset: {
+                    Debug.Assert(Metadata is not null);
+                    if (Metadata.Format == "png") {
+                        // Hard.
+                        using (Stream stream = Metadata.Stream)
+                            return isPreloaded = PreloadSizeFromPNG(stream, $"{Metadata.PathVirtual} (mod {Metadata.Source.Mod?.Name ?? "*unknown*"})");
+
+                    } else {
+                        // .xnb and other file formats - impossible.
+                        return false;
+                    }
+                }
+                case TextureKind.SizeDefined: {
+                    Debug.Assert(_width != 0 && _height != 0);
+                    // SizeDefined textures are already pre-loaded by definition
                     return isPreloaded = true;
-
-                } else if (extension == ".png") {
-                    // Hard.
-                    using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
-                        return isPreloaded = PreloadSizeFromPNG(stream, Path);
-
-                } else {
-                    // .xnb and other file formats - impossible.
-                    return false;
-
                 }
-
-            } else if (Metadata != null) {
-                if (Metadata.Format == "png") {
-                    // Hard.
-                    using (Stream stream = Metadata.Stream)
-                        return isPreloaded = PreloadSizeFromPNG(stream, $"{Metadata.PathVirtual} (mod {Metadata.Source.Mod?.Name ?? "*unknown*"})");
-
-                } else {
-                    // .xnb and other file formats - impossible.
-                    return false;
-                }
+                default:
+                    throw new UnreachableException();
             }
-
-            // If we have nothing to work with but the size is already there just roll with it
-            // this often happens with textures that use the width-height-color ctor
-            else if (_width != 0 && _height != 0) {
-                return isPreloaded = true;
-            }
-
-            return false;
         }
 
         private bool PreloadSizeFromPNG(Stream stream, string path) {
