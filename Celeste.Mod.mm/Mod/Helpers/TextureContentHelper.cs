@@ -63,7 +63,7 @@ public static class TextureContentHelper {
         return false;
     }
     
-    public static Func<Texture2D> LoadFromPath(string path, int preW = -1, int preH = -1) {
+    public static (Func<Texture2D>, Action?) LoadFromPath(string path, int preW = -1, int preH = -1) {
         int w, h;
         switch (Path.GetExtension(path)) {
             case ".data":
@@ -100,27 +100,34 @@ public static class TextureContentHelper {
                         ReadDataFile<NoAlpha>(stream, read, buffer);
                     }
                 }
-                return () => {
+                return (() => {
                     Texture2D tex = new(Celeste.Instance.GraphicsDevice, w, h);
                     unsafe {
                         fixed (byte* ptr = mem.Span)
                             tex.SetData((IntPtr) ptr);
                     }
+                    return tex;
+                },
+                () => {
                     if (hasSegment)
                         MemoryManager.ReturnChunk(seg);
-                    return tex;
-                };
+                });
             case ".png":
                 return LoadFromStream(File.OpenRead(Path.Combine(Engine.ContentDirectory, path)), false /* pngs are never premultiplied */, preW, preH);
             case ".xnb":
                 // TODO: Are xnbs worth accelerating?
-                return () => Engine.Instance.Content.Load<Texture2D>(path.Replace(".xnb", ""));
+                return (() => Engine.Instance.Content.Load<Texture2D>(path.Replace(".xnb", "")), null);
             default:
-                return () => LoadFromStream(File.OpenRead(Path.Combine(Engine.ContentDirectory, path)), false)();
+                return (() => { 
+                    (Func<Texture2D> main, Action? cleanup) pair = LoadFromStream(File.OpenRead(Path.Combine(Engine.ContentDirectory, path)), false);
+                    Texture2D tex = pair.main();
+                    pair.cleanup?.Invoke();
+                    return tex;
+                }, null);
         }
     }
     
-    public static Func<Texture2D> LoadFromStream(Stream stream, bool premul, int w = -1, int h = -1) {
+    public static (Func<Texture2D>, Action?) LoadFromStream(Stream stream, bool premul, int w = -1, int h = -1) {
         using (stream) {
             // This code will ultimately use stb_image to decode whatever is in stream
             // we cannot control its allocation, so estimate it based on the image size
@@ -149,18 +156,19 @@ public static class TextureContentHelper {
             else
                 ContentExtensions.LoadTextureLazyPremultiply(Celeste.Instance.GraphicsDevice, stream, out w, out h, out dataPtr);
             stream.Dispose();
-            return () => {
+            return (() => {
                 Texture2D tex = new(Celeste.Instance.GraphicsDevice, w, h);
                 tex.SetData(dataPtr);
+                return tex;
+            }, () => {
                 ContentExtensions.UnloadTextureRaw(dataPtr);
                 if (unmanagedClaimed != 0)
                     MemoryManager.ReturnUnmanaged(unmanagedClaimed);
-                return tex;
-            };
+            });
         }
     }
     
-    public static Func<Texture2D> LoadFromSizeAndColor(int width, int height, Color color) {
+    public static (Func<Texture2D>, Action?) LoadFromSizeAndColor(int width, int height, Color color) {
         // Layout order for Color is unknown, but since it's guaranteed to be consistent everywhere this will work
         bool hasSegment = MemoryManager.GetChunkOrGcAlloc(width*height*Unsafe.SizeOf<Color>(), 
             out SpanPoolPool<byte>.SegmentIdentifier seg, out byte[] gcArray
@@ -171,19 +179,18 @@ public static class TextureContentHelper {
         Memory<byte> data = hasSegment ? seg.SegId.Memory : gcArray;
         Span<Color> colorData = MemoryMarshal.Cast<byte, Color>(data.Span);
         colorData.Fill(color);
-        return () => {
+        return (() => {
             Texture2D tex = new(Engine.Instance.GraphicsDevice, width, height);
             unsafe {
                 fixed (byte* ptr = data.Span) {
                     tex.SetData((IntPtr)ptr);
                 }
             }
-            // Fall back to gc allocs
-            // TODO: Improve this to bound max mem usage
+            return tex;
+        }, () => {
             if (hasSegment)
                 MemoryManager.ReturnChunk(seg);
-            return tex;
-        };
+        });
     }
 
     // Abuse generics in order to get dead code elimination for optimal code on both cases
@@ -260,8 +267,10 @@ public static class TextureContentHelper {
 
     private struct HasAlpha : AlphaMode {
         // The structs need to be of different sizes in order to force the JIT to compile two different versions
+#pragma warning disable CS0169 // Field is never used
         private int _;
-    };
+#pragma warning restore CS0169 // Field is never used
+    }
 
     private struct NoAlpha : AlphaMode;
 
@@ -275,7 +284,7 @@ public static class TextureContentHelper {
         private readonly SpanPoolPool<byte> spanPool = new(atlasSize, (long)(initialMemUsage*SplitPercent), inGC);
         
         // Unmanaged
-        private long unmanagedMemoryUsage = 0;
+        private long unmanagedMemoryUsage;
         private readonly object unmanagedLock = new();
         private readonly ResourceWaiter unmanagedWaitingForSpace = new(MainThreadTimeout, OtherThreadTimeout);
         
@@ -401,8 +410,8 @@ public static class TextureContentHelper {
         private readonly int size;
         private long currMemUsage;
         private readonly Dictionary<int, SpanPool<T>> pools = [];
-        private int poolId = 0;
-        private long releasePending = 0;
+        private int poolId;
+        private long releasePending;
         private readonly bool _inGC;
 
         public long CurrMemUsage {
