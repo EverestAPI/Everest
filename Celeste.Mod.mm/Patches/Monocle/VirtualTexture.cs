@@ -228,9 +228,18 @@ namespace Monocle {
 
         private void CtorLoad() {
             if (Everest.Flags.IsHeadless) {
-                Preload();
+                bool preload = Preload();
                 Everest.Events.VirtualTexture.OnShouldForceLazyLoad((VirtualTexture) (object) this);
-                QueuedLoad.ImmediateAssign(this, new Texture2D(Engine.Graphics.GraphicsDevice, 1, 1), true, _reloadVersion);
+                // If a preload is not possible just load the texture, even on headless
+                // otherwise we risk having the wrong size, skipping loads entirely is just a
+                // performance optimization
+                if (!preload) {
+                    Reload();
+                    return;
+                }
+                // Big special case, this is the only other place where Texture_Unsafe gets assigned to
+                // we are in the ctor, so there's no need to do anything safely
+                Texture_Unsafe = new Texture2D(Engine.Graphics.GraphicsDevice, 1, 1);
                 return;
             }
             // Only skip reloads with lazyloading and successful preloads
