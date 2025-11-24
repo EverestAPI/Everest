@@ -309,7 +309,7 @@ namespace Monocle {
                         if (Metadata.StreamAsync) {
                             ql = new QueuedLoad(this, TextureContentHelper.LoadFromStream(stream, premul, preW, preH), reloadVersion);
                         } else {
-                            // TODO: This is a bit wasteful, especially if we moved out of main thread to load asynchronously, maybe check asynchronousness beforehand?
+                            // This is a bit wasteful, especially if we moved out of main thread to load asynchronously, it's a rare edge case though and makes the code simpler
                             ql = new QueuedLoad(this, () => {
                                 (Func<Texture2D> main, Action? cleanup) pair = TextureContentHelper.LoadFromStream(stream, premul, preW, preH);
                                 Texture2D tex = pair.main();
@@ -392,7 +392,6 @@ namespace Monocle {
             Reload(false);
         }
         
-        // TODO: Get rid of the replace and ilpatch to use Texture_Unsafe
         [MonoModReplace]
         internal override void Unload() {
             SoftUnload(true, out _);
@@ -421,7 +420,7 @@ namespace Monocle {
             }
         }
 
-        // TODO: Get rid of the replace and ilpatch to use Texture_Unsafe
+        // IL patch is possible here, is it worth it though? (IL should not change that much)
         [MonoModReplace]
         public override void Dispose() {
             Unload();

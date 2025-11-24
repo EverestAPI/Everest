@@ -22,11 +22,22 @@ public static class TextureContentHelper {
     private static byte[]? bytes;
     private const int bytesSize = 512 * 1024; // 524288
     private const int bytesCheckSize = 512 * 1024 - 32; // 524256
-    public const int atlasSize = 4096 * 4096 * 4;
+    private const int atlasSize = 4096 * 4096 * 4;
+    // The maximum texture size in bytes that is allowed, currently this 512 mb which is still unreasonably
+    // high, not all loads check it's size because not all of them have a known size before it occurs
+    private const int maxCheckedTextureSize = atlasSize * 8;
     internal static readonly FTLMemoryManger MemoryManager;
     static TextureContentHelper() {
-        const bool inGC = true; // TODO: unhardcode
-        const int initialMemUsage = atlasSize * 4; // TODO: unhardcode
+        bool inGC;
+        if (CoreModule.Instance != null) {
+            // Prefer no gc if unset, should give better performance
+            inGC = CoreModule.Settings.FastTextureLoadingPoolUseGC ?? false;
+        } else {
+            inGC = false;
+            // Looking for a cleaner way, adding an Initialize method would make ugly the other methods and fields (need to check if init-ed on each call)
+            Logger.Error(nameof(TextureContentHelper), "Static constructor called too early! FastTextureLoadingPoolUseGC config could not be read in time!");
+        }
+        const int initialMemUsage = atlasSize * 4; // hardcoded for now, should be plenty to start and a good default
         MemoryManager = new FTLMemoryManger(initialMemUsage, inGC);
     }
 
@@ -115,7 +126,7 @@ public static class TextureContentHelper {
             case ".png":
                 return LoadFromStream(File.OpenRead(Path.Combine(Engine.ContentDirectory, path)), false /* pngs are never premultiplied */, preW, preH);
             case ".xnb":
-                // TODO: Are xnbs worth accelerating?
+                // xnbs are only really present in vanilla, not mods, so they are not really worth accelerating
                 return (() => Engine.Instance.Content.Load<Texture2D>(path.Replace(".xnb", "")), null);
             default:
                 return (() => { 
@@ -279,27 +290,37 @@ public static class TextureContentHelper {
         private readonly long initialMemUsage = initialMemUsage;
         private const int MainThreadTimeout = 500;
         private const int OtherThreadTimeout = -1;
+        private const int PoolSize = atlasSize;
         // Managed
         private readonly ResourceWaiter waitingForSpace = new(MainThreadTimeout, OtherThreadTimeout);
-        private readonly SpanPoolPool<byte> spanPool = new(atlasSize, (long)(initialMemUsage*SplitPercent), inGC);
+        private readonly SpanPoolPool<byte> spanPool = new(PoolSize, (long)(initialMemUsage*SplitPercent), inGC);
         
         // Unmanaged
         private long unmanagedMemoryUsage;
         private readonly object unmanagedLock = new();
         private readonly ResourceWaiter unmanagedWaitingForSpace = new(MainThreadTimeout, OtherThreadTimeout);
-        
-        public long CurrMemUsage { get; private set; } = initialMemUsage;
+
+        private long _currMemUsage = initialMemUsage;
+        // Reads and writes to this are slightly racy, that's why it's marked as volatile, but adding sync to this would be too much effort given
+        // that it's value ever rarely changes
+        public long CurrMemUsage { get => Volatile.Read(ref _currMemUsage); private set => Volatile.Write(ref _currMemUsage, value); }
         
         public bool GetChunkOrGcAlloc(int chunkSize, out SpanPoolPool<byte>.SegmentIdentifier seg, out byte[] gcArray
 #if TRACE_GC_ALLOCS
         , string source
 #endif
         ) {
-            // The cts may be swapped at any point, so if the available space decreases after TryRent fails and a new cts
-            // is assigned before this gets to the Wait it would be waiting to never have space anyway (for now)
-            if (chunkSize > atlasSize) { // It's not going to fit
-                // Just gc alloc it, TODO: what should we do here?
-                Logger.Warn(nameof(TextureContentHelper), $"Chunk size was too big for the current allocated memory ({chunkSize} > {spanPool.CurrMemUsage})!");
+            if (chunkSize > PoolSize) { // It's not going to fit
+                if (chunkSize > maxCheckedTextureSize) { // Just no
+                    throw new InvalidOperationException($"Tried to obtain a chunk that is too large ({chunkSize})" 
+#if TRACE_GC_ALLOCS
+                                                        + $" for texture {source}:"
+#endif
+                    );
+                }
+                
+                // Just gc alloc it
+                Logger.Warn(nameof(TextureContentHelper), $"Chunk size was too big for the pool size ({chunkSize} > {PoolSize})!");
 #if TRACE_GC_ALLOCS
                 Logger.Warn(nameof(TextureContentHelper), $"For texture {source}:");
                 Logger.Warn(nameof(TextureContentHelper), new StackTrace().ToString());
@@ -343,6 +364,22 @@ public static class TextureContentHelper {
         , string source
 #endif
         ) {
+            if (amount > maxCheckedTextureSize) { // Just no
+                throw new InvalidOperationException($"Tried to obtain a chunk that is too large ({amount})" 
+#if TRACE_GC_ALLOCS
+                                                    + $" for texture {source}:"
+#endif
+                );
+            }
+            if (amount > CurrMemUsage * (1 - SplitPercent)) {
+                // Just roll with it, it is not going to fit
+                Logger.Warn(nameof(TextureContentHelper), $"Chunk size was too big for the unmanaged budget ({amount} > {CurrMemUsage * (1 - SplitPercent)})!");
+#if TRACE_GC_ALLOCS
+                Logger.Warn(nameof(TextureContentHelper), $"For texture {source}:");
+                Logger.Warn(nameof(TextureContentHelper), new StackTrace().ToString());
+#endif
+                return 0;
+            }
             while (true) {
                 lock (unmanagedLock) {
                     if (unmanagedMemoryUsage + amount <= CurrMemUsage * (1 - SplitPercent)) {
