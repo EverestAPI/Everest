@@ -1,4 +1,5 @@
-//#define TRACE_GC_ALLOCS
+//#define TRACE_GC_ALLOCS 
+//#define POOL_USAGE_LOGGING
 
 using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
@@ -358,7 +359,10 @@ public static class TextureContentHelper {
             spanPool.Return(seg);
             waitingForSpace.Pulse();
         }
-
+        
+#if POOL_USAGE_LOGGING
+        private DateTime lastLog;
+#endif
         public long ClaimUnmanaged(long amount
 #if TRACE_GC_ALLOCS
         , string source
@@ -384,6 +388,9 @@ public static class TextureContentHelper {
                 lock (unmanagedLock) {
                     if (unmanagedMemoryUsage + amount <= CurrMemUsage * (1 - SplitPercent)) {
                         unmanagedMemoryUsage += amount;
+#if POOL_USAGE_LOGGING
+                        LogStatus("++");
+#endif
                         return amount;
                     }
                 }
@@ -405,10 +412,23 @@ public static class TextureContentHelper {
         public void ReturnUnmanaged(long amount) {
             lock (unmanagedLock) {
                 unmanagedMemoryUsage -= amount;
+#if POOL_USAGE_LOGGING
+                LogStatus("--");
+#endif
                 Debug.Assert(unmanagedMemoryUsage >= 0);
             }
             unmanagedWaitingForSpace.Pulse();
         }
+
+#if POOL_USAGE_LOGGING
+        private void LogStatus(string postfix) {
+            if (DateTime.Now - lastLog > TimeSpan.FromMilliseconds(100)) {
+                long cap = (long)(CurrMemUsage * (1 - SplitPercent));
+                Logger.Info(nameof(TextureContentHelper), $"UnmanagedMemory: {{used: {unmanagedMemoryUsage} ({(double)unmanagedMemoryUsage/cap:P}), cap: {cap}}} {postfix}");
+                lastLog = DateTime.Now;
+            }
+        }
+#endif
 
         public void SetAllocSize(long limit) {
             long prevMemUsage = CurrMemUsage;
@@ -501,6 +521,9 @@ public static class TextureContentHelper {
                         if (pool.IsEmpty() == (i == 0)) continue;
                         bool hasSegment = pool.TryRent(chunkSize, out SpanPool<T>.SegmentIdentifier seg);
                         if (!hasSegment) continue;
+#if POOL_USAGE_LOGGING
+                        LogUsage("++");
+#endif
                         segment = new SegmentIdentifier(seg, id);
                         return true;
                     }
@@ -525,8 +548,24 @@ public static class TextureContentHelper {
                     pools.Remove(segment.PoolId);
                     releasePending--;
                 }
+                
+#if POOL_USAGE_LOGGING
+                LogUsage("--");
+#endif
             }
         }
+#if POOL_USAGE_LOGGING
+        private DateTime lastLog;
+        private void LogUsage(string postfix) {
+            if (DateTime.Now - lastLog > TimeSpan.FromMilliseconds(100)) {
+                Logger.Info(nameof(TextureContentHelper), $"ManagedMemory: {{cap: {currMemUsage}, releasePending: {releasePending}}} {postfix}");
+                foreach ((int pId, SpanPool<T> pool) in pools) {
+                    Logger.Info(nameof(TextureContentHelper), $"  {pId}: {pool.StatusString()}");
+                }
+                lastLog = DateTime.Now;
+            }
+        }
+#endif
 
         public readonly struct SegmentIdentifier(SpanPool<T>.SegmentIdentifier segmentIdentifier, int poolId) {
             public readonly SpanPool<T>.SegmentIdentifier SegId = segmentIdentifier;
@@ -609,6 +648,13 @@ public static class TextureContentHelper {
             // No space
             return null;
         }
+
+#if POOL_USAGE_LOGGING
+        internal string StatusString() {
+            long used = usedSegments.Select(s => s.end - s.start).Sum();
+            return $"{{Segments: {usedSegments.Count}, Used: {used} ({(double) used / size:P})}}";
+        }
+#endif
 
         public readonly struct SegmentIdentifier(Memory<T> memory, int start, int end) {
             public readonly Memory<T> Memory = memory;
