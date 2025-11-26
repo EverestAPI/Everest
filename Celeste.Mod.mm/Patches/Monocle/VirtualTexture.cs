@@ -17,6 +17,52 @@ using Debug = System.Diagnostics.Debug;
 
 #nullable enable
 
+// FTL v2:
+// This file hosts the implementation of FTL v2, Fast Texture Loading version 2.
+// 
+// Its main goal is to offload the work to other threads of reading the texture data, unpacking it 
+// and copying it to an array for upload to the GPU, so that the loading process is sped up by
+// asynchronously loading textures. Although the GPU uploads are synced back to the main thread.
+// This last detail also fixes a bug in vanilla where GPU uploads could crash the game on rare occasions
+// on Nvidia gpus.
+//
+// It is enabled via the static field FtlToggle, so while that is false all loads will happen synchronously.
+// It is important to note that only loads invoked from the main thread will be offloaded to other threads,
+// this due to the assumption that if loading happens intentionally on a separate thread it is because loads
+// are meant to happen on that separate thread only.
+//
+// You will see that most work is sent to the TextureContentHelper, a helper class whose goal is to do the
+// actual loading of the data, as well as capping the current memory usage to not freeze the system (since
+// FTL simply offloads all loads onto other threads without checking system pressure).
+//
+// FTL also implements the ability to lazy load all textures: when a texture is created only its size is read
+// and no loading actually occurs, that only when its Texture2D is accessed for the first time. This leads to
+// massive gains on the game loading speed but at the cost of constant stutters on gameplay, thus it is not recommended
+// unless there are massive memory constraints. Although some mods may use the event
+// Everest.Events.VirtualTexture.ShouldForceLazyLoad to force a lazy load for specific textures, in case it has some extra 
+// knowledge of when the texture will be used.
+// There's also an event to track when a lazily loaded texture is loaded too late (on access) and may cause a gameplay stutter:
+// Everest.Events.VirtualTexture.OnLazyLoad.
+// It is important to note that not all textures can be preloaded (have its size loaded without fully loading the texture
+// itself), for those textures lazy loading will simply not happen.
+//
+// The FTL v2 implementation also has the added benefit of making VirtualTexture completely thread-safe.
+// This does not prevent race conditions on user code though.
+//
+// For backwards-compatibility sake it is allowed to resize textures (change its Width and Height) properties if and only if 
+// those were made using the (string name, int width, int height, Color color) constructor. All resizes will implicitly call
+// a reload and consecutively erase the contents if those were somehow modified. An additional property is provided so both
+// dimensions can be changed without calling two separate reloads: VirtualTexture.Size.
+// For backwards-compatibility sake it is also allowed to override the Texture2D that this VirtualTexture owns, doing so will
+// grant ownership of the newly given Texture2D to the VirtualTexture meaning if it were to be `Unload`ed the new Texture2D 
+// would be disposed. While the texture is overriden Reloads are nullified. If a reload were to be in progress when the texture
+// is overriden, it will be canceled and have no effect. If the texture is overriden while already being overriden the
+// VirtualTexture will take ownership of the new one and leave ownership of the old one. Finally, if the texture is overriden
+// with a null texture it would have the exact same effect as an Unload call.
+// 
+// Finally, this class is also tasked with the headless mode loading optimizations, where all textures which can be preloaded
+// will have its Texture2D set to a 1x1 texture, this is purely for performance’s sake. Textures which cannot be preloaded will
+// be loaded as usual.
 namespace Monocle {
     class patch_VirtualTexture : patch_VirtualAsset {
 
@@ -34,6 +80,7 @@ namespace Monocle {
         private int _width;
         private int _height;
 
+        // Intermediary overridable property to call reloads on change
         protected override int InnerWidth {
             get => _width;
             set {
@@ -48,6 +95,7 @@ namespace Monocle {
             }
         }
 
+        // Intermediary overridable property to call reloads on change
         protected override int InnerHeight {
             get => _height;
             set {
@@ -61,6 +109,7 @@ namespace Monocle {
             }
         }
 
+        // Helper property to modify both with and height without calling reload twice
         public Point Size {
             get => new(InnerWidth, InnerHeight);
             set {
@@ -89,6 +138,10 @@ namespace Monocle {
         [MonoModRemove] 
         private Texture2D? Texture_Unsafe;
 
+        /// <summary>
+        /// Returns the current texture, and forces a reload if necessary.
+        /// </summary>
+        /// <exception cref="AggregateException">Thrown if the reload happened asynchronously and there was an exception during it.</exception>
         [MonoModLinkFrom("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture")]
         public Texture2D? Texture_Safe {
             get {
@@ -175,17 +228,26 @@ namespace Monocle {
 
         private readonly TextureKind _textureKind;
 
+        // Lock used to synchronize Texture_Unsafe reads and writes
         private readonly object _textureLock;
         // Queued upload to gpu of the texture, assumed to always run on main thread
         private Task? _queuedLoad;
+        // The action of the task above, used to "steal" it when on main thread and run it directly
         private QueuedLoad? _queuedLoadAct;
+        // Main lock used to synchronize loads and wait for them
         private readonly object _reloadLock;
+        // Flag to know whether a reload is currently happening
         private volatile bool _reloadInProgress;
+        // Whether the texture width and height could be determined ahead of time
         private bool isPreloaded;
+        // Any exceptions thrown during the asynchronous load
         private Exception? asyncFault;
+        // Whether the current Texture2D is overriden
         private bool _textureOverridden;
+        // The reload version, used to track whether any more reloads (or texture overrides) happened in the meantime
         private ulong _reloadVersion;
 
+        // The main FTL toggle, see this class header for all the details
         public static bool FtlToggle { get; internal set; }
 
         [MonoModConstructor]
@@ -226,6 +288,7 @@ namespace Monocle {
             CtorLoad();
         }
 
+        // Extra setup common in all constructors
         private void CtorLoad() {
             if (Everest.Flags.IsHeadless) {
                 bool preload = Preload();
@@ -282,7 +345,12 @@ namespace Monocle {
         // Make sure that MainThreadHelper.IsMainThread == true implies LoadImmediately == true
         private bool LoadImmediately => MainThreadHelper.IsMainThread;
 
-        // This function assumes it is executing on at most one thread at a time
+        /// <summary>
+        /// Critical part of a reload.
+        /// This function assumes it is executing on at most one thread at a time.
+        /// </summary>
+        /// <param name="block">Whether to wait for the main thread transaction to complete before returning.</param>
+        /// <exception cref="InvalidOperationException">On invalid cases.</exception>
         private void InnerReload(bool block = false) {
             asyncFault = null;
             // If the texture is overriden, reloads are pointless
@@ -343,10 +411,14 @@ namespace Monocle {
             }
         }
 
-        // Attempts to start a Reload on the current thread or returns if one is already ongoing.
-        // If block is true it guarantees that either: a texture is assigned after its load or that _queuedLoad is not null and has pending work.
-        // If block is false it only guarantees that a Reload is happening on some thread.
-        // isLazy is only used to fire an event for mods that care when a texture may be loaded on access.
+        /// <summary>
+        /// Attempts to start a Reload on the current thread or returns if one is already ongoing.
+        /// </summary>
+        /// <param name="block">
+        /// When true it guarantees that either: a texture is assigned after its load or that <see cref="patch_VirtualTexture._queuedLoad"/> is not null and has pending work.
+        /// When false it only guarantees that a Reload is happening on some thread.
+        /// </param>
+        /// <param name="isLazy">Only used to fire an event for mods that care when a texture may be loaded on access.</param>
         private void Reload(bool block, bool isLazy = false) {
             if (_reloadInProgress && !block) {
                 // Someone has the lock, and we are not going to block anyway, so return early
@@ -390,16 +462,28 @@ namespace Monocle {
             }
         }
 
+        /// <summary>
+        /// Causes a reload (or just load) of the texture, it may complete asynchronously.
+        /// </summary>
         [MonoModReplace]
         internal override sealed void Reload() {
             Reload(false);
         }
         
+        /// <summary>
+        /// Unloads the texture from video memory.
+        /// </summary>
         [MonoModReplace]
         internal override void Unload() {
             SoftUnload(true, out _);
         }
 
+        /// <summary>
+        /// Tries to unload the texture, may fail if the texture is overriden or there's a load waiting to complete.
+        /// </summary>
+        /// <param name="force">Forces the unload to succeed even if the texture is overridden or there's a pending load</param>
+        /// <param name="reloadVersion">Returns the current reload version after the reload</param>
+        /// <returns>Whether the unload was successful.</returns>
         private bool SoftUnload(bool force, out ulong reloadVersion) {
             lock (_textureLock) {
                 reloadVersion = 0;
@@ -424,6 +508,9 @@ namespace Monocle {
         }
 
         // IL patch is possible here, is it worth it though? (IL should not change that much)
+        /// <summary>
+        /// Disposes the native resources and unregisters itself.
+        /// </summary>
         [MonoModReplace]
         public override void Dispose() {
             Unload();
@@ -431,7 +518,11 @@ namespace Monocle {
             patch_VirtualContent.Remove(this);
         }
 
-        private bool Preload(bool force = false) {
+        /// <summary>
+        /// Attempts to load the width and height of the texture without loading it as a whole.
+        /// </summary>
+        /// <returns>Whether the preload was successful</returns>
+        private bool Preload() {
             // Preload the width / height, and if needed, the entire texture (not actually done currently though).
 
             switch (_textureKind) {
@@ -510,8 +601,11 @@ namespace Monocle {
                 (((data >> 16) & 0xFF) << 8) |
                 ((data >> 24) & 0xFF);
         }
-        
-        public class QueuedLoad {
+
+        /// <summary>
+        /// Helper class to assign to Texture_Unsafe in a safe manner
+        /// </summary>
+        private class QueuedLoad {
             private bool hasRun;
             private readonly patch_VirtualTexture _vtex;
             private readonly Func<Texture2D>? _main;
