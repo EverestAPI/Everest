@@ -112,7 +112,7 @@ namespace Monocle {
 
                     // Otherwise try queuing a reload
                     Logger.Debug(nameof(VirtualTexture), $"Loading texture {Name ?? "(Unnamed)"} on texture access!");
-                    Reload(true);
+                    Reload(true, true);
                     
                     // We could get a reload that sets this to null, this is an unfortunate case where we will void the error
                     // regardless we cannot do much about it, and it will likely error again
@@ -346,7 +346,8 @@ namespace Monocle {
         // Attempts to start a Reload on the current thread or returns if one is already ongoing.
         // If block is true it guarantees that either: a texture is assigned after its load or that _queuedLoad is not null and has pending work.
         // If block is false it only guarantees that a Reload is happening on some thread.
-        private void Reload(bool block) {
+        // isLazy is only used to fire an event for mods that care when a texture may be loaded on access.
+        private void Reload(bool block, bool isLazy = false) {
             if (_reloadInProgress && !block) {
                 // Someone has the lock, and we are not going to block anyway, so return early
                 return;
@@ -355,7 +356,7 @@ namespace Monocle {
                 // This is the main asynchronous FTL entry point
                 // isPreloaded is required to be true so we can have some knowledge of the memory usage of the load
                 Task.Run(() => {
-                    Reload(false);
+                    Reload(false, isLazy);
                 });
                 // Since we are not blocking, we are free to return whenever we want
                 return;
@@ -374,6 +375,8 @@ namespace Monocle {
             }
             _reloadInProgress = true;
             try {
+                if (isLazy)
+                    Everest.Events.VirtualTexture.LazyLoad((VirtualTexture)(object)this);
                 // Do not wait for the main thread to finish the load, it could deadlock if a blocking Reload is called on there
                 InnerReload(false);
             } catch (Exception ex) {

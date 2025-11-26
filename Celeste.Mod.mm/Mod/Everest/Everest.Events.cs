@@ -391,6 +391,12 @@ namespace Celeste.Mod {
                 internal static bool OnShouldForceLazyLoad(Monocle.VirtualTexture self) {
                     return ShouldForceLazyLoad.InvokeWhileFalse(self);
                 }
+
+                public delegate void LazyLoadHandler(Monocle.VirtualTexture self);
+
+                public static event LazyLoadHandler OnLazyLoad;
+                internal static void LazyLoad(Monocle.VirtualTexture tex)
+                    => OnLazyLoad?.Invoke(tex);
             }
         }
     }
