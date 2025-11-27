@@ -1,4 +1,6 @@
-//#define TRACE_GC_ALLOCS 
+// Log when last resort gc allocations happen to not lock the threads for too long
+//#define TRACE_GC_ALLOCS
+// Log the memory usage of the managed and unmanaged pools
 //#define POOL_USAGE_LOGGING
 
 using Celeste.Mod.Core;
@@ -10,6 +12,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -75,6 +78,13 @@ public static class TextureContentHelper {
         return false;
     }
     
+    /// <summary>
+    /// Loads a texture from a filesystem path.
+    /// </summary>
+    /// <param name="path">The filesystem path.</param>
+    /// <param name="preW">The preloaded width.</param>
+    /// <param name="preH">The preloaded height.</param>
+    /// <returns>A delegate which instantiates and loads the data onto a Texture2D, and a delegate which does cleanup.</returns>
     public static (Func<Texture2D>, Action?) LoadFromPath(string path, int preW = -1, int preH = -1) {
         int w, h;
         switch (Path.GetExtension(path)) {
@@ -138,7 +148,15 @@ public static class TextureContentHelper {
                 }, null);
         }
     }
-    
+
+    /// <summary>
+    /// Loads a texture from a stream.
+    /// </summary>
+    /// <param name="stream">The stream to read from.</param>
+    /// <param name="premul">Whether the texture data read from the stream is premultiplied.</param>
+    /// <param name="w">The preloaded width of the texture in the stream.</param>
+    /// <param name="h">The preloaded height of the texture in the stream.</param>
+    /// <returns>A delegate which instantiates and loads the data onto a Texture2D, and a delegate which does cleanup.</returns>
     public static (Func<Texture2D>, Action?) LoadFromStream(Stream stream, bool premul, int w = -1, int h = -1) {
         using (stream) {
             // This code will ultimately use stb_image to decode whatever is in stream
@@ -180,6 +198,13 @@ public static class TextureContentHelper {
         }
     }
     
+    /// <summary>
+    /// Creates a texture from width, height and color.
+    /// </summary>
+    /// <param name="width"></param>
+    /// <param name="height"></param>
+    /// <param name="color"></param>
+    /// <returns>A delegate which instantiates and loads the data onto a Texture2D, and a delegate which does cleanup.</returns>
     public static (Func<Texture2D>, Action?) LoadFromSizeAndColor(int width, int height, Color color) {
         // Layout order for Color is unknown, but since it's guaranteed to be consistent everywhere this will work
         bool hasSegment = MemoryManager.GetChunkOrGcAlloc(width*height*Unsafe.SizeOf<Color>(), 
@@ -286,6 +311,12 @@ public static class TextureContentHelper {
 
     private struct NoAlpha : AlphaMode;
 
+    /// <summary>
+    /// Helper class to manage memory allocations and limit those.
+    /// This class is thread-safe.
+    /// </summary>
+    /// <param name="initialMemUsage">Initial reserved memory usage.</param>
+    /// <param name="inGC">Whether the managed pool lives is a gc object or not.</param>
     internal class FTLMemoryManger(long initialMemUsage, bool inGC) {
         private const double SplitPercent = 1 / 4D;
         private readonly long initialMemUsage = initialMemUsage;
@@ -461,7 +492,11 @@ public static class TextureContentHelper {
         }
     }
 
-    // This class is thread-safe
+    /// <summary>
+    /// Pool of SpanPools, used to dynamically create and destroy span pools to adjust to the currently allowed memory usage.
+    /// This class is thread-safe
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     internal class SpanPoolPool<T> where T : unmanaged {
         private readonly object @lock = new();
         private readonly int size;
@@ -472,6 +507,7 @@ public static class TextureContentHelper {
         private readonly bool _inGC;
 
         public long CurrMemUsage {
+            // ReSharper disable once InconsistentlySynchronizedField
             get => Volatile.Read(ref currMemUsage);
             set {
                 lock (@lock) {
@@ -573,6 +609,11 @@ public static class TextureContentHelper {
         }
     }
 
+    /// <summary>
+    /// This class holds large arrays from which then hands segments of it as <see cref="Memory{T}"/> (for later to be used as a <see cref="Span{T}"/>).
+    /// This class is not thread safe.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     internal class SpanPool<T> : IDisposable where T : unmanaged {
         private readonly int size;
         // private readonly object @lock = new();
@@ -663,7 +704,12 @@ public static class TextureContentHelper {
         }
     }
 
-    private sealed class ManagedOrNotArray<T> : IDisposable where T : unmanaged {
+    /// <summary>
+    /// Helper struct to abstract the logic behind having a managed array or an unmanaged array.
+    /// The arrays are used in the span pools.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    private readonly struct ManagedOrNotArray<T> : IDisposable where T : unmanaged {
         private readonly bool Managed;
         private readonly T[]? gcBuffer;
         private readonly UnmanagedMemoryManager<T>? ptrBuffer;
