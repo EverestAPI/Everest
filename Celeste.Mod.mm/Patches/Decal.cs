@@ -206,6 +206,16 @@ namespace Celeste {
             Scene.Add(solid);
         }
 
+        public void MakeSolid(float x, float y, float w, float h, int surfaceSoundIndex, int surfaceSoundPriority, bool blockWaterfalls = true, bool safe = true) {
+            Solid solid = new Solid(Position + new Vector2(x, y), w, h, safe) {
+                BlockWaterfalls = blockWaterfalls,
+                SurfaceSoundIndex = surfaceSoundIndex,
+                SurfaceSoundPriority = surfaceSoundPriority,
+            };
+            solids.Add(solid);
+            Scene.Add(solid);
+        }
+
         [Obsolete("Use MakeFlagSwap with the cold flag instead.")]
         public void MakeCoreSwap(string coldPath, string hotPath) {
             Add(image = new patch_CoreSwapImage(GFX.Game[coldPath], GFX.Game[hotPath]));
