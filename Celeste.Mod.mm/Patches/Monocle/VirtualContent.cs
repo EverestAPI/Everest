@@ -9,9 +9,10 @@ using System.Collections.Generic;
 using System.IO;
 
 namespace Monocle {
+    // We may have concurrent usage of this class due to FTL
+    [MakeAllMethodsSynchronized]
     static class patch_VirtualContent {
 
-        // TODO: add locking around this field
         // We're effectively in VirtualContent, but still need to "expose" private fields to our mod.
         private static List<VirtualAsset> assets;
         /// <summary>
