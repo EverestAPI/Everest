@@ -113,10 +113,14 @@ namespace Celeste {
             Console.WriteLine(" - LEVELS LOAD: " + timer.ElapsedMilliseconds + "ms");
             timer.Stop();
 
+            timer = Stopwatch.StartNew();
             MainThreadHelper.Boost = 50;
             // Flush the main thread queue to make sure all tasks related to FTL are completed
+            // Note: this will often be empty already but on extreme scenarios (massive amount of textures or 
+            // very old hardware) it may not
             MainThreadHelper.Schedule(() => MainThreadHelper.Boost = 0, true).AsTask().Wait();
-            // There is no reason to time this since likely the queue will be empty by now
+            Console.WriteLine(" - MTH QUEUE FLUSH: " + timer.ElapsedMilliseconds + "ms");
+            timer.Stop();
 
             Everest.Events.GameLoader.LoadThread();
 
