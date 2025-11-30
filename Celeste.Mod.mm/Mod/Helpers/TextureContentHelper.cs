@@ -30,7 +30,7 @@ public static class TextureContentHelper {
     // The maximum texture size in bytes that is allowed, currently this 512 mb which is still unreasonably
     // high, not all loads check it's size because not all of them have a known size before it occurs
     private const int maxCheckedTextureSize = atlasSize * 8;
-    internal static readonly FTLMemoryManger MemoryManager;
+    internal static readonly FTLMemoryManager MemoryManager;
     static TextureContentHelper() {
         bool inGC;
         if (CoreModule.Instance != null) {
@@ -42,7 +42,7 @@ public static class TextureContentHelper {
             Logger.Error(nameof(TextureContentHelper), "Static constructor called too early! FastTextureLoadingPoolUseGC config could not be read in time!");
         }
         const int initialMemUsage = atlasSize * 4; // hardcoded for now, should be plenty to start and a good default
-        MemoryManager = new FTLMemoryManger(initialMemUsage, inGC);
+        MemoryManager = new FTLMemoryManager(initialMemUsage, inGC);
     }
 
     public static bool TryEnableFTL() {
@@ -317,7 +317,7 @@ public static class TextureContentHelper {
     /// </summary>
     /// <param name="initialMemUsage">Initial reserved memory usage.</param>
     /// <param name="inGC">Whether the managed pool lives is a gc object or not.</param>
-    internal class FTLMemoryManger(long initialMemUsage, bool inGC) {
+    internal class FTLMemoryManager(long initialMemUsage, bool inGC) {
         private const double SplitPercent = 1 / 4D;
         private readonly long initialMemUsage = initialMemUsage;
         private const int MainThreadTimeout = 500;

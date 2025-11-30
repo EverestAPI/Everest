@@ -48,7 +48,7 @@ namespace Celeste.Mod {
             public static bool AvoidRenderTargets { get; private set; }
             /// <summary>
             /// Does the environment (platform, ...) prefer lazy loading?
-            /// Used to be used by android platform, which are not supported currently.
+            /// Used to be used by android, which is not supported currently.
             /// </summary>
             [Obsolete("`PreferLazyLoading` is always false on Everest Core")]
             public static bool PreferLazyLoading => false;

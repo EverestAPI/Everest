@@ -11,7 +11,6 @@ namespace Monocle {
         // Making Width and Height virtual is a breaking change, so lets just add new virtual properties and make the
         // old ones just wrap the new ones :)
         protected virtual int InnerWidth { get; set; }
-        // [MonoModReplace]
         public int Width {
             [MonoModReplace]
             get => InnerWidth;
@@ -20,7 +19,6 @@ namespace Monocle {
         }
         
         protected virtual int InnerHeight { get; set; }
-        // [MonoModReplace]
         public int Height { 
             [MonoModReplace]
             get => InnerHeight;
@@ -30,7 +28,7 @@ namespace Monocle {
         
 # pragma warning restore CS0108
         // This is only required as VirtualAsset's members are internal or even private, not protected.
-        // Noel or Matt, if you see this, please change the visibility to protected. Thanks!
+        // Noel or Maddy, if you see this, please change the visibility to protected. Thanks!
         [MonoModIgnore]
         internal virtual void Unload() {
         }

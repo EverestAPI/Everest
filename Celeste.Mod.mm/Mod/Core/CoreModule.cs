@@ -58,6 +58,7 @@ namespace Celeste.Mod.Core {
             }
 
             // If we're running in an environment that prefers this flag, forcibly enable them.
+            // Used to be used by android, which is not supported currently.
             // Settings.LazyLoading |= Everest.Flags.PreferLazyLoading;
         }
 
