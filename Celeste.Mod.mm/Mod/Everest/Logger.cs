@@ -346,7 +346,7 @@ namespace Celeste.Mod {
             }
             return false;
         }
-        
+
         /// <summary>
         /// Interpolated String Handler used by the logger to avoid interpolating the string if the message won't get logged anyway.
         /// </summary>
@@ -354,9 +354,9 @@ namespace Celeste.Mod {
         public ref struct LogInterpolatedStringHandler
         {
             DefaultInterpolatedStringHandler _handler;
-            
+
             public bool ShouldLog { get; }
-            
+
             public LogInterpolatedStringHandler(int literalLength, int formattedCount, LogLevel level, string tag, out bool shouldLog)
             {
                 ShouldLog = shouldLog = Logger.shouldLog(tag, level);
@@ -367,26 +367,61 @@ namespace Celeste.Mod {
 
             internal string ToStringAndClear() => _handler.ToStringAndClear();
 
-            public void AppendLiteral(string txt) => _handler.AppendLiteral(txt);
+            public void AppendLiteral(string txt) {
+                if (ShouldLog) {
+                    _handler.AppendLiteral(txt);
+                }
+            }
 
-            public void AppendFormatted<T>(T value) => _handler.AppendFormatted(value);
-            
-            public void AppendFormatted<T>(T value, string format) => _handler.AppendFormatted(value, format);
-            
-            public void AppendFormatted<T>(T value, int alignment) => _handler.AppendFormatted(value, alignment);
-            
-            public void AppendFormatted<T>(T value, int alignment, string format) => _handler.AppendFormatted(value, alignment, format);
-            
-            public void AppendFormatted(scoped ReadOnlySpan<char> value) => _handler.AppendFormatted(value);
-            
-            public void AppendFormatted(scoped ReadOnlySpan<char> value, int alignment, string format = null) =>
-                _handler.AppendFormatted(value, alignment, format);
-            
-            public void AppendFormatted(string value) => _handler.AppendFormatted(value);
-            
-            public void AppendFormatted(string value, int alignment, string format = null) => _handler.AppendFormatted(value, alignment, format);
+            public void AppendFormatted<T>(T value) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value);
+                }
+            }
+
+            public void AppendFormatted<T>(T value, string format) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value, format);
+                }
+            }
+
+            public void AppendFormatted<T>(T value, int alignment) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value, alignment);
+                }
+            }
+
+            public void AppendFormatted<T>(T value, int alignment, string format) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value, alignment, format);
+                }
+            }
+
+            public void AppendFormatted(scoped ReadOnlySpan<char> value) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value);
+                }
+            }
+
+            public void AppendFormatted(scoped ReadOnlySpan<char> value, int alignment, string format = null) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value, alignment, format);
+                }
+            }
+
+            public void AppendFormatted(string value) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value);
+                }
+            }
+
+            public void AppendFormatted(string value, int alignment, string format = null) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value, alignment, format);
+                }
+            }
         }
-        
+
         // Unfortunately, it is impossible to pass constants as a parameter to InterpolatedStringHandlers afaik,
         // so we need a different way to pass the log level - const generics seem like the only way unfortunately.
         /// <inheritdoc cref="LogInterpolatedStringHandler"/>
@@ -394,9 +429,9 @@ namespace Celeste.Mod {
         public ref struct LogInterpolatedStringHandler<TLevel> where TLevel : struct, IConst<LogLevel>
         {
             DefaultInterpolatedStringHandler _handler;
-            
+
             public bool ShouldLog { get; }
-            
+
             public LogInterpolatedStringHandler(int literalLength, int formattedCount, string tag, out bool shouldLog)
             {
                 shouldLog = Logger.shouldLog(tag, TLevel.Value);
@@ -405,27 +440,62 @@ namespace Celeste.Mod {
                 if (shouldLog)
                     _handler = new DefaultInterpolatedStringHandler(literalLength, formattedCount);
             }
-            
+
             internal string ToStringAndClear() => _handler.ToStringAndClear();
 
-            public void AppendLiteral(string txt) => _handler.AppendLiteral(txt);
+            public void AppendLiteral(string txt) {
+                if (ShouldLog) {
+                    _handler.AppendLiteral(txt);
+                }
+            }
 
-            public void AppendFormatted<T>(T value) => _handler.AppendFormatted(value);
-            
-            public void AppendFormatted<T>(T value, string format) => _handler.AppendFormatted(value, format);
-            
-            public void AppendFormatted<T>(T value, int alignment) => _handler.AppendFormatted(value, alignment);
-            
-            public void AppendFormatted<T>(T value, int alignment, string format) => _handler.AppendFormatted(value, alignment, format);
+            public void AppendFormatted<T>(T value) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value);
+                }
+            }
 
-            public void AppendFormatted(scoped ReadOnlySpan<char> value) => _handler.AppendFormatted(value);
-            
-            public void AppendFormatted(scoped ReadOnlySpan<char> value, int alignment, string format = null) =>
-                _handler.AppendFormatted(value, alignment, format);
-            
-            public void AppendFormatted(string value) => _handler.AppendFormatted(value);
-            
-            public void AppendFormatted(string value, int alignment, string format = null) => _handler.AppendFormatted(value, alignment, format);
+            public void AppendFormatted<T>(T value, string format) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value, format);
+                }
+            }
+
+            public void AppendFormatted<T>(T value, int alignment) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value, alignment);
+                }
+            }
+
+            public void AppendFormatted<T>(T value, int alignment, string format) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value, alignment, format);
+                }
+            }
+
+            public void AppendFormatted(scoped ReadOnlySpan<char> value) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value);
+                }
+            }
+
+            public void AppendFormatted(scoped ReadOnlySpan<char> value, int alignment, string format = null) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value, alignment, format);
+                }
+            }
+
+            public void AppendFormatted(string value) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value);
+                }
+            }
+
+            public void AppendFormatted(string value, int alignment, string format = null) {
+                if (ShouldLog) {
+                    _handler.AppendFormatted(value, alignment, format);
+                }
+            }
         }
     }
     public enum LogLevel {
