@@ -238,6 +238,8 @@ namespace Monocle {
         private readonly object _reloadLock;
         // Flag to know whether a reload is currently happening
         private volatile bool _reloadInProgress;
+        // Flag to indicate when a Reload call just happened, uniquely serves to make `vTex.Reload(); vTex.Unload();` deterministic
+        private volatile bool _justReloaded;
         // Whether the texture width and height could be determined ahead of time
         private bool isPreloaded;
         // Any exceptions thrown during the asynchronous load
@@ -338,8 +340,6 @@ namespace Monocle {
             if (wait) {
                 t.Wait();
             }
-            
-            return;
         }
 
         // Make sure that MainThreadHelper.IsMainThread == true implies LoadImmediately == true
@@ -420,6 +420,7 @@ namespace Monocle {
         /// </param>
         /// <param name="isLazy">Only used to fire an event for mods that care when a texture may be loaded on access.</param>
         private void Reload(bool block, bool isLazy = false) {
+            _justReloaded = true;
             if (_reloadInProgress && !block) {
                 // Someone has the lock, and we are not going to block anyway, so return early
                 return;
@@ -460,6 +461,7 @@ namespace Monocle {
                 _reloadInProgress = false;
                 Monitor.Exit(_reloadLock);
             }
+            _justReloaded = false;
         }
 
         /// <summary>
@@ -485,6 +487,13 @@ namespace Monocle {
         /// <param name="reloadVersion">Returns the current reload version after the reload</param>
         /// <returns>Whether the unload was successful.</returns>
         private bool SoftUnload(bool force, out ulong reloadVersion) {
+            // Makes vTex.Reload(); vTex.Unload(); deterministic by just waiting for the reload to happen if we know one happened soon enough
+            // _justReloaded == true does not mean a reload is in progress, only that one was started soon enough, and likely did not complete yet
+            if (_justReloaded && force) {
+                _ = Texture_Safe;
+            }
+            // Hold the _reloadLock to prevent queuedLoads during unload
+            lock (_reloadLock)
             lock (_textureLock) {
                 reloadVersion = 0;
                 if (!force) {
