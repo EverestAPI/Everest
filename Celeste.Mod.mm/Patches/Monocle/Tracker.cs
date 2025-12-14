@@ -118,16 +118,16 @@ namespace Monocle {
                 // this is neither an entity nor a component. Help!
                 throw new Exception("Type '" + type.Name + "' cannot be Tracked" + (trackedAsType != type ? "As" : "") + " because it does not derive from Entity or Component");
             }
-            bool updated = false;
             // copy the registered types for the target type
             var knownTypes = trackedEntity ? StoredEntityTypes : StoredComponentTypes;
             Dictionary<Type, List<Type>> tracked = trackedEntity ? TrackedEntityTypes : TrackedComponentTypes;
-            if (AddSpecificType(type, trackedAsType, tracked, knownTypes)) {
+            bool updated = knownTypes.Add(trackedAsType);
+            if (AddSpecificType(type, trackedAsType, tracked)) {
                 updated = true;
             }
             // do the same for subclasses
             foreach (Type subtype in subtypes) {
-                if (trackedAsType.IsAssignableFrom(subtype) && AddSpecificType(subtype, trackedAsType, tracked, null)) {
+                if (trackedAsType.IsAssignableFrom(subtype) && AddSpecificType(subtype, trackedAsType, tracked)) {
                     updated = true;
                 }
             }
@@ -136,16 +136,9 @@ namespace Monocle {
             }
         }
 
-        private static bool AddSpecificType(Type type, Type trackedAsType, Dictionary<Type, List<Type>> tracked, HashSet<Type> knownTypes) {
-            // Make sure the tracker knows about both the type and trackedAs type, to fix scenarios like `[TrackedAs(typeof(UntrackedType))]`
-            bool updated = false;
-            if (knownTypes is not null) {
-                updated = knownTypes.Add(type);
-                updated |= knownTypes.Add(trackedAsType);
-            }
-            // check IsAbstract later, make AddTypeToTracker(type: typeof(Celeste.CutsceneEntity), trackedAs: null, inheritAll: true) work properly
+        private static bool AddSpecificType(Type type, Type trackedAsType, Dictionary<Type, List<Type>> tracked) {
             if (type.IsAbstract) {
-                return updated;
+                return false;
             }
 
             if (!tracked.TryGetValue(type, out List<Type> value)) {
