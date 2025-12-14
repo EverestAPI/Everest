@@ -118,10 +118,18 @@ namespace Monocle {
                 // this is neither an entity nor a component. Help!
                 throw new Exception("Type '" + type.Name + "' cannot be Tracked" + (trackedAsType != type ? "As" : "") + " because it does not derive from Entity or Component");
             }
-            // copy the registered types for the target type
-            var knownTypes = trackedEntity ? StoredEntityTypes : StoredComponentTypes;
+            // Make sure the tracker knows about the trackedAsType type, to fix scenarios like `[TrackedAs(typeof(UntrackedType))]`
+
+            // Note:
+            // When trackedAs is not null, the original type is not automatically added to tracker.Entities.
+            // This means that if you try to get entities by the original type,
+            //      it will throw a KeyNotFoundException unless the original type is also tracked elsewhere.
+            // Therefore, if you need both GetEntities<OriginalClass> and GetEntities<TrackedAsClass> to work,
+            //      use both [Tracked] and [TrackedAs] attributes on the class
+            bool updated = (trackedEntity ? StoredEntityTypes : StoredComponentTypes).Add(trackedAsType);
             Dictionary<Type, List<Type>> tracked = trackedEntity ? TrackedEntityTypes : TrackedComponentTypes;
-            bool updated = knownTypes.Add(trackedAsType);
+
+            // copy the registered types for the target type
             if (AddSpecificType(type, trackedAsType, tracked)) {
                 updated = true;
             }
