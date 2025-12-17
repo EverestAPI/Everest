@@ -19,6 +19,8 @@ namespace Celeste {
         private bool useInteract;
         // whether `OnEnter` was called via the `TalkComponent` callback
         private bool interactTriggered;
+        // the `TalkComponent` itself
+        private TalkComponent talkComponent;
 
         private patch_EventTrigger(EntityData data, Vector2 offset) : base(data, offset) { }
         
@@ -30,10 +32,16 @@ namespace Celeste {
 
             useInteract = data.Bool("useInteract");
             if (useInteract)
-                Add(new TalkComponent(Collider.Bounds, data.FirstNodeNullable(offset) ?? Center, player => {
-                    interactTriggered = true;
-                    OnEnter(player);
-                }));
+                Add(talkComponent = new TalkComponent(
+                        new Rectangle(0, 0, (int) Width, (int) Height),
+                        (data.FirstNodeNullable(offset) ?? Center) - Position,
+                        player => {
+                            interactTriggered = true;
+                            OnEnter(player);
+                        }
+                    ) {
+                        PlayerMustBeFacing = false
+                    });
         }
         
         // patch `Awake` so `OnSpawnHack` is ignored if `useInteract` is enabled
@@ -46,16 +54,15 @@ namespace Celeste {
         [PatchEventTriggerOnEnter]
         public override extern void OnEnter(Player player);
 
+        // loads + adds a custom cutscene with a given ID to the scene
         public static void TriggerCustomEvent(EventTrigger trigger, Player player, string eventID) {
             if (Everest.Events.EventTrigger.TriggerEvent(trigger, player, eventID))
                 return;
 
-            if (CutsceneLoaders.TryGetValue(eventID, out CutsceneLoader loader)) {
-                Entity loaded = loader(trigger, player, eventID);
-                if (loaded != null) {
-                    trigger.Scene.Add(loaded);
-                    return;
-                }
+            if (CutsceneLoaders.TryGetValue(eventID, out CutsceneLoader loader)
+                && loader(trigger, player, eventID) is { } loaded) {
+                trigger.Scene.Add(loaded);
+                return;
             }
             
             Logger.Warn("EventTrigger", $"Event '{eventID}' does not exist!");
@@ -65,16 +72,16 @@ namespace Celeste {
 
 namespace MonoMod {
     /// <summary>
-    /// Include check for custom events.
-    /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEventTriggerOnEnter))]
-    class PatchEventTriggerOnEnterAttribute : Attribute { }
-    
-    /// <summary>
     /// Make `OnSpawnHack` respect `useInteract`.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEventTriggerAwake))]
     class PatchEventTriggerAwakeAttribute : Attribute { }
+    
+    /// <summary>
+    /// Include check for custom events.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEventTriggerOnEnter))]
+    class PatchEventTriggerOnEnterAttribute : Attribute { }
 
     static partial class MonoModRules {
         public static void PatchEventTriggerAwake(MethodDefinition method, CustomAttribute _) {
@@ -102,14 +109,18 @@ namespace MonoMod {
             /*
              * we want to:
              * 1. add a `|| (this.useInteract && !this.interactTriggered)` to the check for `this.triggered`
-             * 2. replace the throw in the default case of the switch statement with a call to `TriggerCustomEvent`
+             * 2. set `this.talkComponent.Enabled = false;` when setting `this.triggered = true;`
+             * 3. replace the throw in the default case of the switch statement with a call to `TriggerCustomEvent`
              */
             
             MethodDefinition m_TriggerCustomEvent = method.DeclaringType.FindMethod("System.Void TriggerCustomEvent(Celeste.EventTrigger,Celeste.Player,System.String)")!;
 
             FieldDefinition f_useInteract = method.DeclaringType.FindField("useInteract")!;
             FieldDefinition f_interactTriggered = method.DeclaringType.FindField("interactTriggered")!;
+            FieldDefinition f_talkComponent = method.DeclaringType.FindField("talkComponent")!;
             FieldDefinition f_Event = method.DeclaringType.FindField("Event")!;
+
+            FieldDefinition f_TalkComponent_Enabled = method.Module.GetType("Celeste.TalkComponent").FindField("Enabled")!;
 
             new ILContext(method).Invoke(il => {
                 ILCursor cursor = new(il);
@@ -138,7 +149,16 @@ namespace MonoMod {
                 cursor.EmitLdfld(f_interactTriggered); // `this.interactTriggered`
                 cursor.EmitBrtrue(afterRet);
                 
-                // 2. replace the throw in the default case of the switch statement with a call to `TriggerCustomEvent`
+                // 2. set `this.talkComponent.Enabled = false;` when setting `this.triggered = true;`
+                cursor.GotoNext(MoveType.After, instr => instr.MatchStfld("Celeste.EventTrigger", "triggered"));
+
+                // emit `this.talkComponent.Enabled = false;`
+                cursor.EmitLdarg0();
+                cursor.EmitLdfld(f_talkComponent); // `this.talkComponent`
+                cursor.EmitLdcI4(0); // `false`
+                cursor.EmitStfld(f_TalkComponent_Enabled);
+                
+                // 3. replace the throw in the default case of the switch statement with a call to `TriggerCustomEvent`
                 cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("Event '"));
                 
                 // remove throw
