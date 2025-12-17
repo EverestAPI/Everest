@@ -220,7 +220,12 @@ namespace Celeste.Mod {
                 public static event CompleteHandler OnComplete;
                 internal static void Complete(_Level level)
                     => OnComplete?.Invoke(level);
-                
+
+                public delegate void EndHandler(_Level level, Scene nextScene, ref bool shouldReloadPortraits, ref bool shouldDissociateEntities);
+                public static event EndHandler OnEnd;
+                internal static void End(_Level level, Scene nextScene, ref bool shouldReloadPortraits, ref bool shouldDissociateEntities)
+                    => OnEnd?.Invoke(level, nextScene, ref shouldReloadPortraits, ref shouldDissociateEntities);
+
                 /// <summary>
                 /// Called at the very beginning of <see cref="global::Celeste.Level.Update"/>.
                 /// </summary>
