@@ -22,7 +22,7 @@ namespace Celeste {
         // the `TalkComponent` itself
         private TalkComponent talkComponent;
 
-        // a flag which, when enabled, prevents this trigger from loading
+        // a flag which prevents this trigger from loading when enabled
         private string deleteFlag;
 
         private patch_EventTrigger(EntityData data, Vector2 offset) : base(data, offset) { }
@@ -49,7 +49,7 @@ namespace Celeste {
             deleteFlag = data.Attr("deleteFlag");
         }
 
-        // remove ourselves if the flag with name `deleteFlag` is set
+        // remove this trigger if the flag with name `deleteFlag` is set
         public override void Added(Scene scene) {
             base.Added(scene);
 
@@ -68,7 +68,7 @@ namespace Celeste {
         [PatchEventTriggerOnEnter]
         public override extern void OnEnter(Player player);
 
-        // loads + adds a custom cutscene with a given ID to the scene
+        // load + add a custom cutscene with a given ID to the scene
         public static void TriggerCustomEvent(EventTrigger trigger, Player player, string eventID) {
             if (Everest.Events.EventTrigger.TriggerEvent(trigger, player, eventID))
                 return;
@@ -148,7 +148,7 @@ namespace MonoMod {
                 ret.Target = retInstr;
                 afterRet.Target = retInstr.Next!;
                 
-                // remove `brfalse.s`
+                // remove the `brfalse.s`
                 cursor.Remove();
                 
                 // emit `this.triggered || (this.useInteract && !this.interactTriggered)`
@@ -169,7 +169,7 @@ namespace MonoMod {
                 // define label to skip to
                 ILLabel afterDisable = cursor.DefineLabel();
 
-                // skip disabling `this.talkComponent` if `this.useInteract` is false
+                // skip disabling `this.talkComponent` if `this.useInteract` is `false`
                 cursor.EmitLdarg0();
                 cursor.EmitLdfld(f_useInteract); // `this.useInteract`
                 cursor.EmitBrfalse(afterDisable);
