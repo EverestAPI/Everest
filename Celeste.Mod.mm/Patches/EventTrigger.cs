@@ -22,9 +22,12 @@ namespace Celeste {
         // the `TalkComponent` itself
         private TalkComponent talkComponent;
 
+        // a flag which, when enabled, prevents this trigger from loading
+        private string deleteFlag;
+
         private patch_EventTrigger(EntityData data, Vector2 offset) : base(data, offset) { }
         
-        // patch the constructor to add the `TalkComponent` if necessary
+        // patch the constructor to set `useInteract` and `deleteFlag` and add the `TalkComponent` if necessary
         public extern void orig_ctor(EntityData data, Vector2 offset);
         [MonoModConstructor]
         public void ctor(EntityData data, Vector2 offset) {
@@ -42,6 +45,17 @@ namespace Celeste {
                     ) {
                         PlayerMustBeFacing = false
                     });
+
+            deleteFlag = data.Attr("deleteFlag");
+        }
+
+        // remove ourselves if the flag with name `deleteFlag` is set
+        public override void Added(Scene scene) {
+            base.Added(scene);
+
+            if (!string.IsNullOrEmpty(deleteFlag)
+                && SceneAs<Level>().Session.GetFlag(deleteFlag))
+                RemoveSelf();
         }
         
         // patch `Awake` so `OnSpawnHack` is ignored if `useInteract` is enabled
