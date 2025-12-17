@@ -1,6 +1,4 @@
-﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-
-using System;
+﻿using System;
 using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -9,42 +7,58 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
-using MonoMod.InlineRT;
 using MonoMod.Utils;
 
 namespace Celeste {
     class patch_EventTrigger : EventTrigger {
-
-        private static HashSet<string> _LoadStrings; // Generated in MonoModRules.PatchEventTriggerOnEnter
-
+        // cutscene loaders for custom events
         public delegate Entity CutsceneLoader(EventTrigger trigger, Player player, string eventID);
-        public static readonly Dictionary<string, CutsceneLoader> CutsceneLoaders = new Dictionary<string, CutsceneLoader>();
+        public static readonly Dictionary<string, CutsceneLoader> CutsceneLoaders = new();
 
-        private patch_EventTrigger(EntityData data, Vector2 offset) : base(data, offset) {
+        // whether to use a `TalkComponent` to trigger the cutscene instead
+        private bool useInteract;
+        // whether `OnEnter` was called via the `TalkComponent` callback
+        private bool interactTriggered;
+
+        private patch_EventTrigger(EntityData data, Vector2 offset) : base(data, offset) { }
+        
+        // patch the constructor to add the `TalkComponent` if necessary
+        public extern void orig_ctor(EntityData data, Vector2 offset);
+        [MonoModConstructor]
+        public void ctor(EntityData data, Vector2 offset) {
+            orig_ctor(data, offset);
+
+            useInteract = data.Bool("useInteract");
+            if (useInteract)
+                Add(new TalkComponent(Collider.Bounds, data.FirstNodeNullable(offset) ?? Center, player => {
+                    interactTriggered = true;
+                    OnEnter(player);
+                }));
         }
+        
+        // patch `Awake` so `OnSpawnHack` is ignored if `useInteract` is enabled
+        [MonoModIgnore]
+        [PatchEventTriggerAwake]
+        public override extern void Awake(Scene scene);
 
-        [MonoModIgnore] // We don't want to change anything about the method...
-        [PatchEventTriggerOnEnter] // ... except for manually manipulating the method via MonoModRules
+        // patch `OnEnter` to allow loading custom cutscenes
+        [MonoModIgnore]
+        [PatchEventTriggerOnEnter]
         public override extern void OnEnter(Player player);
 
-        public static bool TriggerCustomEvent(EventTrigger trigger, Player player, string eventID) {
+        public static void TriggerCustomEvent(EventTrigger trigger, Player player, string eventID) {
             if (Everest.Events.EventTrigger.TriggerEvent(trigger, player, eventID))
-                return true;
+                return;
 
             if (CutsceneLoaders.TryGetValue(eventID, out CutsceneLoader loader)) {
                 Entity loaded = loader(trigger, player, eventID);
                 if (loaded != null) {
                     trigger.Scene.Add(loaded);
-                    return true;
+                    return;
                 }
             }
-
-            if (!_LoadStrings.Contains(eventID)) {
-                Logger.Warn("EventTrigger", $"Event '{eventID}' does not exist!");
-                return true; //To a avoid hard crash on missing event
-            }
-
-            return false;
+            
+            Logger.Warn("EventTrigger", $"Event '{eventID}' does not exist!");
         }
     }
 }
@@ -55,103 +69,91 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEventTriggerOnEnter))]
     class PatchEventTriggerOnEnterAttribute : Attribute { }
+    
+    /// <summary>
+    /// Make `OnSpawnHack` respect `useInteract`.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEventTriggerAwake))]
+    class PatchEventTriggerAwakeAttribute : Attribute { }
 
     static partial class MonoModRules {
+        public static void PatchEventTriggerAwake(MethodDefinition method, CustomAttribute _) {
+            // we want to add a `&& !this.useInteract` to the check for `this.OnSpawnHack`
+            
+            FieldDefinition f_useInteract = method.DeclaringType.FindField("useInteract")!;
 
-        public static void PatchEventTriggerOnEnter(MethodDefinition method, CustomAttribute attrib) {
-            // We also need to do special work in the cctor.
-            MethodDefinition m_cctor = method.DeclaringType.FindMethod(".cctor");
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new(il);
+                
+                // add a `&& !this.useInteract` to the check for `this.OnSpawnHack`
+                ILLabel afterTrigger = null;
+                cursor.GotoNext(MoveType.After,
+                    instr => instr.MatchLdfld("Celeste.EventTrigger", "OnSpawnHack"),
+                    instr => instr.MatchBrfalse(out afterTrigger));
 
-            MethodDefinition m_TriggerCustomEvent = method.DeclaringType.FindMethod("System.Boolean TriggerCustomEvent(Celeste.EventTrigger,Celeste.Player,System.String)");
-
-            FieldDefinition f_Event = method.DeclaringType.FindField("Event");
-
-            FieldDefinition f_LoadStrings = method.DeclaringType.FindField("_LoadStrings");
-
-            Mono.Collections.Generic.Collection<Instruction> cctor_instrs = m_cctor.Body.Instructions;
-            ILProcessor cctor_il = m_cctor.Body.GetILProcessor();
-
-            // Remove cctor ret for simplicity. Re-add later.
-            cctor_instrs.RemoveAt(cctor_instrs.Count - 1);
-
-            TypeDefinition td_LoadStrings = f_LoadStrings.FieldType.Resolve();
-            MethodReference m_LoadStrings_Add = MonoModRule.Modder.Module.ImportReference(td_LoadStrings.FindMethod("Add"));
-            m_LoadStrings_Add.DeclaringType = f_LoadStrings.FieldType;
-            MethodReference m_LoadStrings_ctor = MonoModRule.Modder.Module.ImportReference(td_LoadStrings.FindMethod("System.Void .ctor()"));
-            m_LoadStrings_ctor.DeclaringType = f_LoadStrings.FieldType;
-            cctor_il.Emit(OpCodes.Newobj, m_LoadStrings_ctor);
-
-            bool eventHandlerInjectionPointFound = false;
-            bool loadStringFound = false;
-
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                /* We expect something similar enough to the following:
-                ldfld     string Celeste.EventTrigger::Event // We're here
-                stloc*
-                ldloc*
-                call      uint32 '<PrivateImplementationDetails>'::ComputeStringHash(string)
-
-                Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
-                */
-
-                if (instri > 0 &&
-                    instri < instrs.Count - 3 &&
-                    instr.MatchLdfld("Celeste.EventTrigger", "Event") &&
-                    instrs[instri + 1].MatchStloc(out int _) &&
-                    instrs[instri + 2].MatchLdloc(out int _) &&
-                    instrs[instri + 3].MatchCall("<PrivateImplementationDetails>", "ComputeStringHash")
-                ) {
-                    // Insert a call to our own event handler here.
-                    // If it returns true, return.
-
-                    // Load "this" onto stack
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
-
-                    //Load Player parameter onto stack
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_1));
-
-                    //Load Event field onto stack again
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_Event));
-
-                    // Call our static custom event handler.
-                    instrs.Insert(instri++, il.Create(OpCodes.Call, m_TriggerCustomEvent));
-
-                    // If we returned false, branch to ldfld. We still have the event ID on stack.
-                    // This basically translates to if (result) { pop; ldstr ""; }; ldfld ...
-                    instrs.Insert(instri, il.Create(OpCodes.Brfalse_S, instrs[instri]));
-                    instri++;
-                    // Otherwise, pop the event and return to skip any original event handler.
-                    instrs.Insert(instri++, il.Create(OpCodes.Pop));
-                    instrs.Insert(instri++, il.Create(OpCodes.Ret));
-
-                    eventHandlerInjectionPointFound = true;
-                }
-
-                if (instr.OpCode == OpCodes.Ldstr) {
-                    cctor_il.Emit(OpCodes.Dup);
-                    cctor_il.Emit(OpCodes.Ldstr, instr.Operand);
-                    cctor_il.Emit(OpCodes.Callvirt, m_LoadStrings_Add);
-                    cctor_il.Emit(OpCodes.Pop); // HashSet.Add returns a bool.
-
-                    loadStringFound = true;
-                }
-            }
-
-            if (!eventHandlerInjectionPointFound) {
-                throw new Exception("Event handler injection point not found in " + method.FullName + "!");
-            }
-            if (!loadStringFound) {
-                throw new Exception("ldstr not found in " + method.FullName + "!");
-            }
-
-            cctor_il.Emit(OpCodes.Stsfld, f_LoadStrings);
-            cctor_il.Emit(OpCodes.Ret);
+                // emit `&& !this.useInteract`
+                cursor.EmitLdarg0();
+                cursor.EmitLdfld(f_useInteract); // this.useInteract
+                cursor.EmitBrtrue(afterTrigger!);
+            });
         }
+        
+        public static void PatchEventTriggerOnEnter(MethodDefinition method, CustomAttribute _) {
+            /*
+             * we want to:
+             * 1. add a `|| (this.useInteract && !this.interactTriggered)` to the check for `this.triggered`
+             * 2. replace the throw in the default case of the switch statement with a call to `TriggerCustomEvent`
+             */
+            
+            MethodDefinition m_TriggerCustomEvent = method.DeclaringType.FindMethod("System.Void TriggerCustomEvent(Celeste.EventTrigger,Celeste.Player,System.String)")!;
 
+            FieldDefinition f_useInteract = method.DeclaringType.FindField("useInteract")!;
+            FieldDefinition f_interactTriggered = method.DeclaringType.FindField("interactTriggered")!;
+            FieldDefinition f_Event = method.DeclaringType.FindField("Event")!;
+
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new(il);
+                
+                // 1. add a `|| (this.useInteract && !this.interactTriggered)` to the check for `this.triggered`
+                cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.EventTrigger", "triggered"));
+                
+                // retrieve labels pointing to the `ret` and after it
+                ILLabel ret = cursor.DefineLabel(), afterRet = cursor.DefineLabel();
+                Instruction retInstr = cursor.Clone().GotoNext(instr => instr.MatchRet()).Next!;
+                ret.Target = retInstr;
+                afterRet.Target = retInstr.Next!;
+                
+                // remove `brfalse.s`
+                cursor.Remove();
+                
+                // emit `this.triggered || (this.useInteract && !this.interactTriggered)`
+                // `this.triggered` already on the stack
+                cursor.EmitBrtrue(ret);
+                
+                cursor.EmitLdarg0();
+                cursor.EmitLdfld(f_useInteract); // `this.useInteract`
+                cursor.EmitBrfalse(afterRet);
+                
+                cursor.EmitLdarg0();
+                cursor.EmitLdfld(f_interactTriggered); // `this.interactTriggered`
+                cursor.EmitBrtrue(afterRet);
+                
+                // 2. replace the throw in the default case of the switch statement with a call to `TriggerCustomEvent`
+                cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("Event '"));
+                
+                // remove throw
+                cursor.RemoveRange(7);
+                
+                // emit call to `TriggerCustomEvent`
+                cursor.EmitLdarg0(); // `this`
+                cursor.EmitLdarg1(); // `player`
+                cursor.EmitLdarg0();
+                cursor.EmitLdfld(f_Event); // `this.Event`
+                cursor.EmitCall(m_TriggerCustomEvent);
+                
+                // emit a `ret` to end the switch case
+                cursor.EmitRet();
+            });
+        }
     }
 }
