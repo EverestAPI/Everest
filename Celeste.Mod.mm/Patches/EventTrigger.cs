@@ -166,11 +166,22 @@ namespace MonoMod {
                 // 2. set `this.talkComponent.Enabled = false;` when setting `this.triggered = true;`
                 cursor.GotoNext(MoveType.After, instr => instr.MatchStfld("Celeste.EventTrigger", "triggered"));
 
+                // define label to skip to
+                ILLabel afterDisable = cursor.DefineLabel();
+
+                // skip disabling `this.talkComponent` if `this.useInteract` is false
+                cursor.EmitLdarg0();
+                cursor.EmitLdfld(f_useInteract); // `this.useInteract`
+                cursor.EmitBrfalse(afterDisable);
+                
                 // emit `this.talkComponent.Enabled = false;`
                 cursor.EmitLdarg0();
                 cursor.EmitLdfld(f_talkComponent); // `this.talkComponent`
                 cursor.EmitLdcI4(0); // `false`
                 cursor.EmitStfld(f_TalkComponent_Enabled);
+
+                // mark label to skip to
+                cursor.MarkLabel(afterDisable);
                 
                 // 3. replace the throw in the default case of the switch statement with a call to `TriggerCustomEvent`
                 cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("Event '"));
