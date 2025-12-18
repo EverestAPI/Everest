@@ -118,16 +118,24 @@ namespace Monocle {
                 // this is neither an entity nor a component. Help!
                 throw new Exception("Type '" + type.Name + "' cannot be Tracked" + (trackedAsType != type ? "As" : "") + " because it does not derive from Entity or Component");
             }
-            bool updated = false;
-            // copy the registered types for the target type
-            var knownTypes = trackedEntity ? StoredEntityTypes : StoredComponentTypes;
+            // Make sure the tracker knows about the trackedAsType type, to fix scenarios like `[TrackedAs(typeof(UntrackedType))]`
+
+            // Note:
+            // When trackedAs is not null, the original type is not automatically added to tracker.Entities.
+            // This means that if you try to get entities by the original type,
+            //      it will throw a KeyNotFoundException unless the original type is also tracked elsewhere.
+            // Therefore, if you need both GetEntities<OriginalClass> and GetEntities<TrackedAsClass> to work,
+            //      use both [Tracked] and [TrackedAs] attributes on the class
+            bool updated = (trackedEntity ? StoredEntityTypes : StoredComponentTypes).Add(trackedAsType);
             Dictionary<Type, List<Type>> tracked = trackedEntity ? TrackedEntityTypes : TrackedComponentTypes;
-            if (AddSpecificType(type, trackedAsType, tracked, knownTypes)) {
+
+            // copy the registered types for the target type
+            if (AddSpecificType(type, trackedAsType, tracked)) {
                 updated = true;
             }
             // do the same for subclasses
             foreach (Type subtype in subtypes) {
-                if (trackedAsType.IsAssignableFrom(subtype) && AddSpecificType(subtype, trackedAsType, tracked, knownTypes)) {
+                if (trackedAsType.IsAssignableFrom(subtype) && AddSpecificType(subtype, trackedAsType, tracked)) {
                     updated = true;
                 }
             }
@@ -136,15 +144,11 @@ namespace Monocle {
             }
         }
 
-        private static bool AddSpecificType(Type type, Type trackedAsType, Dictionary<Type, List<Type>> tracked, HashSet<Type> knownTypes) {
+        private static bool AddSpecificType(Type type, Type trackedAsType, Dictionary<Type, List<Type>> tracked) {
             if (type.IsAbstract) {
                 return false;
             }
 
-            // Make sure the tracker knows about both the type and trackedAs type, to fix scenarios like `[TrackedAs(typeof(UntrackedType))]`
-            knownTypes.Add(type);
-            knownTypes.Add(trackedAsType);
-            
             if (!tracked.TryGetValue(type, out List<Type> value)) {
                 value = new List<Type>();
                 tracked.Add(type, value);
