@@ -579,6 +579,8 @@ namespace Celeste {
             foreach (Entity trigger in Tracker.GetEntities<Trigger>()) {
                 if (trigger is SmoothCameraOffsetTrigger smoothCameraOffset && player.CollideCheck(trigger)) {
                     smoothCameraOffset.OnStay(player);
+                } else if (trigger is CameraAdvanceTargetTrigger cameraAdvanceTarget && player.CollideCheck(trigger)) {
+                    cameraAdvanceTarget.OnStay(player);
                 }
             }
             player.Position = originalPosition;
