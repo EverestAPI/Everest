@@ -581,6 +581,8 @@ namespace Celeste {
                     smoothCameraOffset.OnStay(player);
                 } else if (trigger is CameraAdvanceTargetTrigger cameraAdvanceTarget && player.CollideCheck(trigger)) {
                     cameraAdvanceTarget.OnStay(player);
+                } else if (trigger is ICameraTargetTrigger iCameraTarget && player.CollideCheck(trigger)) {
+                    iCameraTarget.OnStay(player);
                 }
             }
             player.Position = originalPosition;
