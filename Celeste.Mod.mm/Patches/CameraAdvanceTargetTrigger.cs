@@ -8,10 +8,6 @@ namespace Celeste {
     [PatchCameraTargetTriggerInterface]
     class patch_CameraAdvanceTargetTrigger : CameraAdvanceTargetTrigger {
         public patch_CameraAdvanceTargetTrigger(EntityData data, Vector2 offset) : base(data, offset) { }
-
-        [MonoModIgnore]
-        [PatchInterface]
-        public extern override void OnStay(Player player);
     }
 }
 
