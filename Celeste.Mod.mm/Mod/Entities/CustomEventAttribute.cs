@@ -3,7 +3,8 @@ using System;
 
 namespace Celeste.Mod.Entities {
     /// <summary>
-    /// Mark this entity as a Custom <see cref="CutsceneEntity"/> or other Event <see cref="Entity"/>.
+    /// Mark this entity as a Custom <see cref="CutsceneEntity"/> or other Event <see cref="Entity"/>,
+    /// for use with an <see cref="EventTrigger"/>.
     /// <br></br>
     /// This Entity will be added when a matching Event ID is triggered.
     /// <br></br>
@@ -18,7 +19,8 @@ namespace Celeste.Mod.Entities {
         public string[] IDs;
 
         /// <summary>
-        /// Mark this entity as a Custom <see cref="CutsceneEntity"/> or other Event <see cref="Entity"/>.
+        /// Mark this entity as a Custom <see cref="CutsceneEntity"/> or other Event <see cref="Entity"/>,
+        /// for use with an <see cref="EventTrigger"/>.
         /// </summary>
         /// <param name="ids">A list of unique identifiers for this Event.</param>
         public CustomEventAttribute(params string[] ids) {
