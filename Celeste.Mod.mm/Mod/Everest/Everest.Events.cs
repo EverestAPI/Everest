@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using _Decal = Celeste.Decal;
 using _EventTrigger = Celeste.EventTrigger;
+using _InteractTrigger = Celeste.InteractTrigger;
 using _LevelEnter = Celeste.LevelEnter;
 using _LevelLoader = Celeste.LevelLoader;
 using _Level = Celeste.Level;
@@ -357,6 +358,23 @@ namespace Celeste.Mod {
                 public static event TriggerEventHandler OnEventTrigger;
                 internal static bool TriggerEvent(_EventTrigger trigger, _Player player, string eventID)
                     => OnEventTrigger?.InvokeWhileFalse(trigger, player, eventID) ?? false;
+            }
+
+            public static class InteractTrigger {
+                public delegate bool TriggerInteractHandler(_InteractTrigger trigger, _Player player, string eventID, ref bool progressEvent);
+                public static event TriggerInteractHandler OnInteractTrigger;
+                internal static bool TriggerInteract(_InteractTrigger trigger, _Player player, string eventID, ref bool progressEvent) {
+                    if (OnInteractTrigger is null)
+                        return false;
+
+                    // the InvokeWhileFalse method won't accept ref arguments, so we replicate it
+                    foreach (TriggerInteractHandler handler in OnInteractTrigger.GetInvocationList()) {
+                        if (handler(trigger, player, eventID, ref progressEvent))
+                            return true;
+                    }
+
+                    return false;
+                }
             }
 
             public static class CustomBirdTutorial {
