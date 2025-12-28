@@ -760,6 +760,12 @@ namespace Celeste.Mod {
                                 goto RegisterCutsceneLoader;
                             }
 
+                            ctor = type.GetConstructor(new Type[] { typeof(Player) });
+                            if (ctor != null) {
+                                loader = (trigger, player, eventID) => (Entity) ctor.Invoke(new object[] { player });
+                                goto RegisterCutsceneLoader;
+                            }
+
                             ctor = type.GetConstructor(Type.EmptyTypes);
                             if (ctor != null) {
                                 loader = (trigger, player, eventID) => (Entity) ctor.Invoke(null);
