@@ -781,6 +781,105 @@ namespace Celeste.Mod {
                         }
                     }
 
+                    // Search for all Entities marked with the CustomInteractAttribute.
+                    foreach (CustomInteractAttribute attrib in type.GetCustomAttributes<CustomInteractAttribute>()) {
+                        foreach (string idFull in attrib.IDs) {
+                            string id;
+                            string genName;
+                            string[] split = idFull.Split('=');
+
+                            if (split.Length == 1) {
+                                id = split[0];
+                                genName = "Load";
+
+                            } else if (split.Length == 2) {
+                                id = split[0];
+                                genName = split[1];
+
+                            } else {
+                                Logger.Warn("core", $"Invalid number of custom interact ID elements: {idFull} ({type.FullName})");
+                                continue;
+                            }
+
+                            id = id.Trim();
+                            genName = genName.Trim();
+
+                            patch_InteractTrigger.InteractLoader loader = null;
+
+                            ConstructorInfo ctor;
+                            MethodInfo gen;
+
+                            gen = type.GetMethod(genName, new Type[] { typeof(InteractTrigger), typeof(Player), typeof(string), typeof(bool).MakeByRefType() });
+                            if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
+                                loader = (InteractTrigger trigger, Player player, string eventID, ref bool progressEvent) => {
+                                    object[] parameters = new object[] { trigger, player, eventID, progressEvent };
+                                    var entity = (Entity) gen.Invoke(null, parameters);
+                                    progressEvent = (bool) parameters[3];
+                                    return entity;
+                                };
+                                goto RegisterInteractLoader;
+                            }
+
+                            gen = type.GetMethod(genName, new Type[] { typeof(InteractTrigger), typeof(Player), typeof(string) });
+                            if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
+                                bool flag = attrib.ProgressEvent;
+                                loader = (InteractTrigger trigger, Player player, string eventID, ref bool progressEvent) => {
+                                    progressEvent = flag;
+                                    return (Entity) gen.Invoke(null, new object[] { trigger, player, eventID });
+                                };
+                                goto RegisterInteractLoader;
+                            }
+
+                            ctor = type.GetConstructor(new Type[] { typeof(InteractTrigger), typeof(Player), typeof(string), typeof(bool).MakeByRefType() });
+                            if (ctor != null) {
+                                loader = (InteractTrigger trigger, Player player, string eventID, ref bool progressEvent) => {
+                                    object[] parameters = new object[] { trigger, player, eventID, progressEvent };
+                                    var entity = (Entity) ctor.Invoke(parameters);
+                                    progressEvent = (bool) parameters[3];
+                                    return entity;
+                                };
+                                goto RegisterInteractLoader;
+                            }
+
+                            ctor = type.GetConstructor(new Type[] { typeof(InteractTrigger), typeof(Player), typeof(string) });
+                            if (ctor != null) {
+                                bool flag = attrib.ProgressEvent;
+                                loader = (InteractTrigger trigger, Player player, string eventID, ref bool progressEvent) => {
+                                    progressEvent = flag;
+                                    return (Entity) ctor.Invoke(new object[] { trigger, player, eventID });
+                                };
+                                goto RegisterInteractLoader;
+                            }
+
+                            ctor = type.GetConstructor(new Type[] { typeof(Player) });
+                            if (ctor != null) {
+                                bool flag = attrib.ProgressEvent;
+                                loader = (InteractTrigger trigger, Player player, string eventID, ref bool progressEvent) => {
+                                    progressEvent = flag;
+                                    return (Entity) ctor.Invoke(new object[] { player });
+                                };
+                                goto RegisterInteractLoader;
+                            }
+
+                            ctor = type.GetConstructor(Type.EmptyTypes);
+                            if (ctor != null) {
+                                bool flag = attrib.ProgressEvent;
+                                loader = (InteractTrigger trigger, Player player, string eventID, ref bool progressEvent) => {
+                                    progressEvent = flag;
+                                    return (Entity) ctor.Invoke(null);
+                                };
+                                goto RegisterInteractLoader;
+                            }
+
+                            RegisterInteractLoader:
+                            if (loader == null) {
+                                Logger.Warn("core", $"Found custom interact without suitable constructor / {genName}(EventTrigger, Player, string, ref bool): {id} ({type.FullName})");
+                                continue;
+                            }
+                            patch_InteractTrigger.InteractLoaders[id] = loader;
+                        }
+                    }
+
                     // Search for all Backdrops marked with the CustomBackdropAttribute.
                     foreach (CustomBackdropAttribute attrib in type.GetCustomAttributes<CustomBackdropAttribute>()) {
                         foreach (string idFull in attrib.IDs) {
