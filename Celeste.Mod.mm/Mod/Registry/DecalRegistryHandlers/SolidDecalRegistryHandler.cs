@@ -3,7 +3,7 @@
 namespace Celeste.Mod.Registry.DecalRegistryHandlers; 
 
 internal sealed class SolidDecalRegistryHandler : DecalRegistryHandler {
-    private int _x, _y, _width, _height, _index;
+    private int _x, _y, _width, _height, _index, _priority;
     private bool _blockWaterfalls, _safe;
     
     public override string Name => "solid";
@@ -15,6 +15,8 @@ internal sealed class SolidDecalRegistryHandler : DecalRegistryHandler {
         _height = Get(xml, "height", 16);
 
         _index = Get(xml, "index", SurfaceIndex.ResortRoof);
+        _priority = Get(xml, "priority", 0);
+
         _blockWaterfalls = GetBool(xml, "blockWaterfalls", true);
         _safe = GetBool(xml, "safe", true);
     }
@@ -24,6 +26,6 @@ internal sealed class SolidDecalRegistryHandler : DecalRegistryHandler {
         
         decal.ScaleRectangle(ref x, ref y, ref width, ref height);
 
-        ((patch_Decal)decal).MakeSolid(x, y, width, height, _index, _blockWaterfalls, _safe);
+        ((patch_Decal)decal).MakeSolid(x, y, width, height, _index, _priority, _blockWaterfalls, _safe);
     }
 }
