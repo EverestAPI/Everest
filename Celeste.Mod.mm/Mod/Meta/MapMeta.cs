@@ -161,10 +161,16 @@ namespace Celeste.Mod.Meta {
                 area.ColorGrade = ColorGrade;
 
             if (!string.IsNullOrEmpty(Wipe)) {
-                Type type = Assembly.GetEntryAssembly().GetType(Wipe);
-                ConstructorInfo ctor = type?.GetConstructor(new Type[] { typeof(Scene), typeof(bool), typeof(Action) });
-                if (type != null && ctor != null) {
-                    area.Wipe = (scene, wipeIn, onComplete) => ctor.Invoke(new object[] { scene, wipeIn, onComplete });
+                string wipeStr = Wipe;
+                if (Everest.Events.MapMeta.ApplyWipe(area, wipeStr) is { } wipeLoader
+                    || (patch_AreaData.WipeLoaders.TryGetValue(wipeStr, out wipeLoader) && wipeLoader is not null))
+                    area.Wipe = wipeLoader;
+                else {
+                    Type type = Assembly.GetEntryAssembly().GetType(wipeStr);
+                    ConstructorInfo ctor = type?.GetConstructor(new Type[] { typeof(Scene), typeof(bool), typeof(Action) });
+                    if (type != null && ctor != null) {
+                        area.Wipe = (scene, wipeIn, onComplete) => ctor.Invoke(new object[] { scene, wipeIn, onComplete });
+                    }
                 }
             }
 
