@@ -162,7 +162,7 @@ namespace Celeste.Mod.Meta {
 
             if (!string.IsNullOrEmpty(Wipe)) {
                 string wipeStr = Wipe;
-                if (Everest.Events.MapMeta.ApplyWipe(area, wipeStr) is { } wipeLoader
+                if (Everest.Events.MapMeta.ParseWipe(wipeStr) is { } wipeLoader
                     || (patch_AreaData.WipeLoaders.TryGetValue(wipeStr, out wipeLoader) && wipeLoader is not null))
                     area.Wipe = wipeLoader;
                 else {

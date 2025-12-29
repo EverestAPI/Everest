@@ -14,7 +14,6 @@ using _Player = Celeste.Player;
 using _Seeker = Celeste.Seeker;
 using _AngryOshiro = Celeste.AngryOshiro;
 using _SubHudRenderer = Celeste.Mod.UI.SubHudRenderer;
-using _AreaData = Celeste.AreaData;
 using Monocle;
 
 namespace Celeste.Mod {
@@ -407,14 +406,14 @@ namespace Celeste.Mod {
             }
 
             public static class MapMeta {
-                public delegate Action<Scene, bool, Action> ApplyWipeHandler(_AreaData area, string wipe);
-                public static event ApplyWipeHandler OnApplyWipe;
-                internal static Action<Scene, bool, Action> ApplyWipe(_AreaData area, string wipe) {
-                    if (OnApplyWipe is null)
+                public delegate Action<Scene, bool, Action> ParseWipeHandler(string wipe);
+                public static event ParseWipeHandler OnParseWipe;
+                internal static Action<Scene, bool, Action> ParseWipe(string wipe) {
+                    if (OnParseWipe is null)
                         return null;
 
-                    foreach (ApplyWipeHandler handler in OnApplyWipe.GetInvocationList()) {
-                        if (handler(area, wipe) is { } wipeLoader)
+                    foreach (ParseWipeHandler handler in OnParseWipe.GetInvocationList()) {
+                        if (handler(wipe) is { } wipeLoader)
                             return wipeLoader;
                     }
 
