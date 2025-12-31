@@ -262,7 +262,7 @@ namespace Celeste {
                 }
             };
             if (jumpThrus)
-                staticMover.JumpThruChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) X + y, w, h));
+                staticMover.JumpThruChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) Y + y, w, h));
             Add(staticMover);
         }
 
