@@ -249,7 +249,10 @@ namespace Celeste {
                         s.MoveV(v.Y, liftSpeed.Y);
                     });
                 },
-                OnShake = v => Position += v,
+                OnShake = v => {
+                    Position += v;
+                    solids.ForEach(s => s.OnShake(v));
+                },
                 OnAttach = p => {
                     p.Add(new EntityRemovedListener(() => {
                         RemoveSelf();
