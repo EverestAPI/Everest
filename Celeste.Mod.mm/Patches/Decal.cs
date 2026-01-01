@@ -55,6 +55,8 @@ namespace Celeste {
 
         private StaticMover staticMover;
 
+        public List<Solid> Solids => solids;
+
         public patch_Decal(string texture, Vector2 position, Vector2 scale, int depth)
             : base(texture, position, scale, depth) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
