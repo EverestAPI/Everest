@@ -233,15 +233,24 @@ namespace Celeste {
                 SolidChecker = s => !solids.Contains(s) && s.CollideRect(new Rectangle((int) X + x, (int) Y + y, w, h)),
                 OnDestroy = () => {
                     RemoveSelf();
-                    solids.ForEach(s => s.RemoveSelf());
+                    solids.ForEach(s => {
+                        s.DestroyStaticMovers();
+                        s.RemoveSelf();
+                    });
                 },
                 OnDisable = () => {
                     Active = Visible = Collidable = false;
-                    solids.ForEach(s => s.Collidable = false);
+                    solids.ForEach(s => {
+                        s.Collidable = false;
+                        s.DisableStaticMovers();
+                    });
                 },
                 OnEnable = () => {
                     Active = Visible = Collidable = true;
-                    solids.ForEach(s => s.Collidable = true);
+                    solids.ForEach(s => {
+                        s.Collidable = true;
+                        s.EnableStaticMovers();
+                    });
                 },
                 OnMove = v => {
                     Position += v;
@@ -258,7 +267,10 @@ namespace Celeste {
                 OnAttach = p => {
                     p.Add(new EntityRemovedListener(() => {
                         RemoveSelf();
-                        solids.ForEach(s => s.RemoveSelf());
+                        solids.ForEach(s => {
+                            s.DestroyStaticMovers();
+                            s.RemoveSelf();
+                        });
                     }));
                     CoreModule.Session.AttachedDecals.Add(string.Format("{0}||{1}||{2}", Name, Position.X, Position.Y));
                 }
