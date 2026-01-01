@@ -301,9 +301,12 @@ namespace Celeste {
 
         public override void Awake(Scene scene) {
             base.Awake(scene);
-            if (staticMover?.Platform == null && CoreModule.Session.AttachedDecals.Contains(string.Format("{0}||{1}||{2}", Name, Position.X, Position.Y))) {
-                RemoveSelf();
-            }
+
+            ((patch_EntityList) (object) scene.Entities).PostAwake += () => {
+                if (staticMover?.Platform == null && CoreModule.Session.AttachedDecals.Contains(string.Format("{0}||{1}||{2}", Name, Position.X, Position.Y))) {
+                    RemoveSelf();
+                }
+            };
         }
 
         public extern void orig_Added(Scene scene);
