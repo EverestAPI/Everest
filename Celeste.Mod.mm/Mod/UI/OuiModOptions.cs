@@ -78,6 +78,7 @@ namespace Celeste.Mod.UI {
 
             if (!inGame)
                 CreateCoreModuleNotInGameSection(rootMenu);
+
             bool nested = CoreModule.Settings.NestedOptions;
             if (nested) {
                 foreach (EverestModule module in orderRequired.Concat(modules)) {
@@ -131,8 +132,6 @@ namespace Celeste.Mod.UI {
                 }
             } else {
                 foreach (EverestModule module in orderRequired.Concat(modules)) {
-                    if (module == CoreModule.Instance && !inGame)
-                        CreateCoreModuleNotInGameSection(rootMenu);
                     module.CreateModMenuSection(rootMenu, inGame, snapshot);
                 }
             }
