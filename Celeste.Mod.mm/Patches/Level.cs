@@ -577,8 +577,8 @@ namespace Celeste {
             Vector2 originalPosition = player.Position;
             player.Position = at;
             foreach (Entity trigger in Tracker.GetEntities<Trigger>()) {
-                if (trigger is ICameraTargetTrigger iCameraTarget && player.CollideCheck(trigger)) {
-                    iCameraTarget.OnStay(player);
+                if (trigger is SmoothCameraOffsetTrigger smoothCameraOffset && player.CollideCheck(trigger)) {
+                    smoothCameraOffset.OnStay(player);
                 }
             }
             player.Position = originalPosition;
