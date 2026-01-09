@@ -13,7 +13,8 @@ namespace Celeste.Mod.Entities;
 public class CustomWipeAttribute : Attribute {
 
     /// <summary>
-    /// A list of unique identifiers for this Screen Wipe.
+    /// A list of unique identifiers for this Screen Wipe.<br/>
+    /// Follows the pattern "ID [= LoadMethodName]"
     /// </summary>
     public string[] IDs;
 
@@ -21,7 +22,10 @@ public class CustomWipeAttribute : Attribute {
     /// Mark this renderer as a custom <see cref="ScreenWipe"/> with an identifier.<br/>
     /// If there is no match, then the full type name of the Screen Wipe is checked for.
     /// </summary>
-    /// <param name="ids">A list of unique identifiers for this Screen Wipe.</param>
+    /// <param name="ids">
+    /// A list of unique identifiers for this Screen Wipe.<br/>
+    /// Follows the pattern "ID [= LoadMethodName]"
+    /// </param>
     public CustomWipeAttribute(params string[] ids) {
         IDs = ids;
     }
