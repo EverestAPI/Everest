@@ -14,7 +14,7 @@ public class CustomWipeAttribute : Attribute {
 
     /// <summary>
     /// A list of unique identifiers for this Screen Wipe.<br/>
-    /// Follows the pattern "ID [= LoadMethodName]"
+    /// Follows the pattern "ID [= LoadMethodName]".
     /// </summary>
     public string[] IDs;
 
@@ -24,7 +24,7 @@ public class CustomWipeAttribute : Attribute {
     /// </summary>
     /// <param name="ids">
     /// A list of unique identifiers for this Screen Wipe.<br/>
-    /// Follows the pattern "ID [= LoadMethodName]"
+    /// Follows the pattern "ID [= LoadMethodName]".
     /// </param>
     public CustomWipeAttribute(params string[] ids) {
         IDs = ids;

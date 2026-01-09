@@ -13,14 +13,18 @@ namespace Celeste.Mod.Entities {
     public class CustomEventAttribute : Attribute {
 
         /// <summary>
-        /// A list of unique identifiers for this Event.
+        /// A list of unique identifiers for this Event.<br/>
+        /// Follows the pattern "ID [= LoadMethodName]".
         /// </summary>
         public string[] IDs;
 
         /// <summary>
         /// Mark this entity as a Custom <see cref="CutsceneEntity"/> or other Event <see cref="Entity"/>.
         /// </summary>
-        /// <param name="ids">A list of unique identifiers for this Event.</param>
+        /// <param name="ids">
+        /// A list of unique identifiers for this Event.<br/>
+        /// Follows the pattern "ID [= LoadMethodName]".
+        /// </param>
         public CustomEventAttribute(params string[] ids) {
             IDs = ids;
         }
