@@ -758,6 +758,9 @@ namespace MonoMod {
             FieldReference f_currentEntityId = context.Method.DeclaringType.FindField("_currentEntityId")!;
             MethodReference m_IsInDoNotLoadIncreased = context.Method.DeclaringType.FindMethod("_IsInDoNotLoadIncreased")!;
 
+            TypeDefinition t_GFX = MonoModRule.Modder.FindType("Celeste.GFX").Resolve();
+            FieldDefinition f_GFX_SceneryTiles = t_GFX.FindField("SceneryTiles");
+
             ILCursor cursor = new ILCursor(context);
 
             // Insert our custom entity loader and use it for levelData.Entities and levelData.Triggers
@@ -881,6 +884,26 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Next.OpCode = OpCodes.Call;
             cursor.Next.Operand = m_LoadNewPlayer;
+
+            // Reset to apply patch for Scenery Tiles
+            cursor.Index = 0;
+
+            // Patch this bit of code to use GFX.SceneryTiles instead of creating the same tileset again
+            //  before: Tileset tileset = new Tileset(GFX.Game["tilesets/scenery"], 8, 8);
+            //  after:  Tileset tileset = GFX.SceneryTiles;
+            cursor.GotoNext(MoveType.AfterLabel,
+                    instr => instr.MatchLdsfld("Celeste.GFX", "Game"),
+                    instr => instr.MatchLdstr("tilesets/scenery")
+                );
+            // to remove:
+            // - ldsfld Celeste.GFX::Game
+            // - ldstr "tilesets/scenery"
+            // - callvirt Monocle.Atlas::get_Item(string)
+            // - ldc.i4.8
+            // - ldc.i4.8
+            // - newobj Monocle.Tileset::.ctor(class Monocle.MTexture, int32, int32)
+            cursor.RemoveRange(6);
+            cursor.Emit(OpCodes.Ldsfld, f_GFX_SceneryTiles);
 
             // Reset to apply static constructor patch
             cursor.Index = 0;
