@@ -327,6 +327,8 @@ namespace Celeste.Mod.UI {
         private VirtualRenderTarget playerRenderTarget;
         private bool UsePlayerSprite => !disablePlayerSprite && State != DisplayState.BlueScreen;
 
+        private static bool canColonThree;
+
         private bool playerShouldTeabag;
         private bool isCrouched;
         private float crouchTimer;
@@ -367,7 +369,8 @@ namespace Celeste.Mod.UI {
 
             Random rng = new();
             playerShouldTeabag = CoreModule.Settings.CrashHandlerAlwaysTeabag || (!(Settings.Instance?.DisableFlashes ?? true) && rng.Next(0, 10) == 0);
-            isColonThree = CoreModule.Settings.CrashHandlerAlwaysColonThree || rng.Next(0, 10) == 0;
+            isColonThree = CoreModule.Settings.CrashHandlerAlwaysColonThree || (canColonThree && rng.Next(0, 10) == 0);
+            canColonThree = true;
 
             try {
                 PopulateDialog();
