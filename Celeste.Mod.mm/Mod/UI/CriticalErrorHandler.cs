@@ -365,8 +365,9 @@ namespace Celeste.Mod.UI {
             LogFile = logFile;
             LogFileError = string.IsNullOrEmpty(logFile) ? logFileError : null;
 
-            playerShouldTeabag = CoreModule.Settings.CrashHandlerAlwaysTeabag || (!(Settings.Instance?.DisableFlashes ?? true) && new Random().Next(0, 10) == 0);
-            isColonThree = CoreModule.Settings.CrashHandlerAlwaysColonThree || new Random().Next(0, 10) == 0;
+            Random rng = new();
+            playerShouldTeabag = CoreModule.Settings.CrashHandlerAlwaysTeabag || (!(Settings.Instance?.DisableFlashes ?? true) && rng.Next(0, 10) == 0);
+            isColonThree = CoreModule.Settings.CrashHandlerAlwaysColonThree || rng.Next(0, 10) == 0;
 
             try {
                 PopulateDialog();
