@@ -332,22 +332,22 @@ namespace Celeste.Mod.UI {
         private float crouchTimer;
         private bool isColonThree;
 
-        private string textOooops;
-        private string textOooopsColonThree;
-        private string textCriticalError;
-        private string textDiscord;
-        private string textDiscordLink;
-        private string textLogFileBackedUp;
-        private string textAdditionalErrors;
-        private string textErrorDetails;
+        private string textOooops = "Ooops! :(";
+        private string textOooopsColonThree = "Ooops! :3";
+        private string textCriticalError = "Celeste/Everest encountered a critical error.";
+        private string textDiscord = "Please report this in the Celeste discord!";
+        private string textDiscordLink = "discord.gg/celeste - channel #modding_help";
+        private string textLogFileBackedUp = "Your log file has been backed up; please attach it to your bug report.";
+        private string textAdditionalErrors = "Additional errors have occurred since the initial crash!";
+        private string textErrorDetails = "Error Details";
 
-        private string textOpenLogFileFolder;
-        private string textRetryLevel;
-        private string textSaveQuit;
-        private string textSaveProgress;
-        private string textReturnToMenu;
-        private string textExitGame;
-        private string textRestartGame;
+        private string textOpenLogFileFolder = "Open log file folder";
+        private string textRetryLevel = "Retry level";
+        private string textSaveQuit = "Save & Quit";
+        private string textSaveProgress = "Save current progress";
+        private string textReturnToMenu = "Return to main menu";
+        private string textExitGame = "Exit Game";
+        private string textRestartGame = "Restart Game";
 
         private CriticalErrorHandler(ExceptionDispatchInfo error, string logFile, string logFileError) {
             Depth += 100; // Render below other overlays
@@ -368,7 +368,11 @@ namespace Celeste.Mod.UI {
             playerShouldTeabag = CoreModule.Settings.CrashHandlerAlwaysTeabag || (!(Settings.Instance?.DisableFlashes ?? true) && new Random().Next(0, 10) == 0);
             isColonThree = CoreModule.Settings.CrashHandlerAlwaysColonThree || new Random().Next(0, 10) == 0;
 
-            PopulateDialog();
+            try {
+                PopulateDialog();
+            } catch {
+                // Something is wrong with the dialog; so fall back to the hardcoded defaults.
+            }
 
             beforeRenderInterceptor = new BeforeRenderInterceptor(BeforeRender);
             Add(new Coroutine(Routine()));
