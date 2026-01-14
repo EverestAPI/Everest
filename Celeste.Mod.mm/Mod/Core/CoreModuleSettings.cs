@@ -162,6 +162,11 @@ namespace Celeste.Mod.Core {
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
+        public bool? FastLevelLoading { get; set; } = null;
+
+        [SettingNeedsRelaunch]
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
         public bool? ThreadedGL { get; set; } = null;
 
         [YamlMember(Alias = "FastTextureLoading")]

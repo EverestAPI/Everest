@@ -2,6 +2,7 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -10,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Celeste {
     public class patch_AreaData : AreaData {
@@ -365,7 +367,7 @@ namespace Celeste {
                 }
             }
 
-            for (int i = 0; i < Areas.Count; i++) {
+            static void ProcessMapData(int i) {
                 patch_AreaData area = Areas[i];
                 area.ID = i;
 
@@ -378,7 +380,9 @@ namespace Celeste {
                 }
                 Array.Resize(ref area.Mode, modei);
 
-                Logger.Verbose("AreaData", string.Format("{0}: {1} - {2} sides", i, area.SID, area.Mode.Length));
+                // Do not clutter the log if Fast Level Loading is disabled
+                LogLevel level = (CoreModule.Settings.FastLevelLoading ?? true) ? LogLevel.Info : LogLevel.Verbose;
+                Logger.Log(level, "AreaData", $"{i}: {area.SID} - {area.Mode.Length} sides");
 
                 // Update old MapData areas and load any new areas.
 
@@ -389,7 +393,7 @@ namespace Celeste {
                     area.Mode[0].MapData = new patch_MapData(area.ToKey());
 
                 if (area.IsInterludeUnsafe())
-                    continue;
+                    return;
 
                 // A and (some) B sides have PoemIDs. Can be overridden via empty PoemID.
                 if (area.Mode[0].PoemID == null)
@@ -408,6 +412,15 @@ namespace Celeste {
                         area.Mode[mode].MapData.Area = area.ToKey((AreaMode) mode);
                     else
                         area.Mode[mode].MapData = new patch_MapData(area.ToKey((AreaMode) mode));
+                }
+            }
+
+            if (CoreModule.Settings.FastLevelLoading ?? true) {
+                Logger.Info("AreaData", $"Loading map data in parallel");
+                Parallel.For(0, Areas.Count, ProcessMapData);
+            } else {
+                for (int i = 0; i < Areas.Count; i++) {
+                    ProcessMapData(i);
                 }
             }
 
