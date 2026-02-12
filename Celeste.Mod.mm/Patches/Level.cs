@@ -105,7 +105,7 @@ namespace Celeste {
 
         // ... this is gonna be fun
         [MonoModIgnore] // don't put this in `Level` when we're done
-        internal extern static void base_FreezeUpdate(); // dummy method, will be replaced with the actual `base.FreezeUpdate` call in the il patch
+        internal extern static void base_FreezeUpdate(); // dummy method, will be replaced with the actual `base.FreezeUpdate` call in the IL patch
         [PatchLevelFreezeUpdate] // add the `virtual` flag to this method so it overrides the one in `patch_Scene` properly and calls `base.FreezeUpdate`
         // todo: does there need to be anything else in here?
         public void FreezeUpdate() {
@@ -736,7 +736,7 @@ namespace MonoMod {
     class PatchLevelUpdateAttribute : Attribute { }
     
     /// <summary>
-    /// Patch our <see cref="Celeste.patch_Level.FreezeUpdate"/> to be marked as <c>virtual</c> so it actually overrides the base method.
+    /// Patch our <see cref="Celeste.patch_Level.FreezeUpdate"/> to be marked as <c>virtual</c> so it actually overrides the base method, and to actually call the base method instead of the dummy.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelFreezeUpdate))]
     class PatchLevelFreezeUpdateAttribute : Attribute { }

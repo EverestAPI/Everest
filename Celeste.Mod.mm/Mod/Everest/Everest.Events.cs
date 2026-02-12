@@ -247,7 +247,6 @@ namespace Celeste.Mod {
                 /// Called at the very end of <see cref="patch_Level.FreezeUpdate"/>.
                 /// </summary>
                 public static event Action<_Level> OnAfterFreezeUpdate;
-                
                 internal static void AfterFreezeUpdate(_Level level)
                     => OnAfterFreezeUpdate?.Invoke(level);
             }
