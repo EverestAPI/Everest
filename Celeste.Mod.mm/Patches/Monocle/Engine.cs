@@ -208,6 +208,8 @@ namespace MonoMod {
             MethodReference m_GetTimeRateComponentMultiplier = t_Engine.FindMethod("GetTimeRateComponentMultiplier");
             VariableDefinition v_componentTimeRate = new(context.Import(typeof(float)));
             context.Method.Body.Variables.Add(v_componentTimeRate);
+            TypeDefinition t_Scene = f_scene.FieldType.Resolve();
+            MethodReference m_Scene_FreezeUpdate = t_Scene.FindMethod("FreezeUpdate");
 
             ILCursor cursor = new ILCursor(context);
             cursor.GotoNext(
@@ -234,6 +236,17 @@ namespace MonoMod {
                 instr => instr.MatchMul());
             cursor.EmitLdloc(v_componentTimeRate);
             cursor.EmitMul();
+
+            cursor.GotoNext(MoveType.Before,
+                instr => instr.MatchLdsfld("Monocle.Engine", "FreezeTimer"),
+                instr => instr.MatchCall("Monocle.Engine", "get_RawDeltaTime"),
+                instr => instr.MatchSub(),
+                instr => instr.MatchLdcR4(0f),
+                instr => instr.MatchCall("System.Math", "Max"),
+                instr => instr.MatchStsfld("Monocle.Engine", "FreezeTimer"));
+            cursor.EmitLdarg0();
+            cursor.EmitLdfld(f_scene);
+            cursor.EmitCallvirt(m_Scene_FreezeUpdate);
         }
         
         public static void PatchEngineCctor(ILContext context, CustomAttribute attrib) {

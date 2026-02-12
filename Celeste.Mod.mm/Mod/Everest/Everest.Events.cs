@@ -235,6 +235,21 @@ namespace Celeste.Mod {
                 
                 internal static void AfterUpdate(_Level level)
                     => OnAfterUpdate?.Invoke(level);
+                
+                /// <summary>
+                /// Called at the very beginning of <see cref="patch_Level.FreezeUpdate"/>.
+                /// </summary>
+                public static event Action<_Level> OnBeforeFreezeUpdate;
+                internal static void BeforeFreezeUpdate(_Level level)
+                    => OnBeforeFreezeUpdate?.Invoke(level);
+                
+                /// <summary>
+                /// Called at the very end of <see cref="patch_Level.FreezeUpdate"/>.
+                /// </summary>
+                public static event Action<_Level> OnAfterFreezeUpdate;
+                
+                internal static void AfterFreezeUpdate(_Level level)
+                    => OnAfterFreezeUpdate?.Invoke(level);
             }
 
             public static class Session {

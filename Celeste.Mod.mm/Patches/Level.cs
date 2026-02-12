@@ -103,6 +103,24 @@ namespace Celeste {
         [PatchLevelUpdate] // ... except for manually manipulating the method via MonoModRules
         public extern new void Update();
 
+        // ... this is gonna be fun
+        [MonoModIgnore] // don't put this in `Level` when we're done
+        internal extern static void base_FreezeUpdate(); // dummy method, will be replaced with the actual `base.FreezeUpdate` call in the il patch
+        [PatchLevelFreezeUpdate] // add the `virtual` flag to this method so it overrides the one in `patch_Scene` properly and calls `base.FreezeUpdate`
+        // todo: does there need to be anything else in here?
+        public void FreezeUpdate() {
+            Everest.Events.Level.BeforeFreezeUpdate(this);
+            
+            base_FreezeUpdate();
+            
+            foreach (PostUpdateHook component in Tracker.GetComponents<PostUpdateHook>()) {
+                if (component.Entity.Active && component.Entity.TagCheck(TagsExt.FreezeUpdate)) {
+                    component.OnPostUpdate();
+                }
+            }
+            Everest.Events.Level.AfterFreezeUpdate(this);
+        }
+
         /// <summary>
         /// Flash the screen a solid color. Respects the user's advanced photosensitivity settings.
         /// </summary>
@@ -716,6 +734,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelUpdate))]
     class PatchLevelUpdateAttribute : Attribute { }
+    
+    /// <summary>
+    /// Patch our <see cref="Celeste.patch_Level.FreezeUpdate"/> to be marked as <c>virtual</c> so it actually overrides the base method.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelFreezeUpdate))]
+    class PatchLevelFreezeUpdateAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level rendering method instead of reimplementing it in Everest.
@@ -1039,6 +1063,22 @@ namespace MonoMod {
                 cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_Everest_Events_Level_AfterUpdate);
                 cursor.Index++;
             }
+        }
+
+        public static void PatchLevelFreezeUpdate(ILContext context, CustomAttribute attrib) {
+            // mark the method as `virtual` so it registers as an override
+            context.Method.IsVirtual = true;
+            
+            TypeDefinition t_Scene = context.Method.DeclaringType.BaseType.Resolve();
+            MethodReference m_Scene_FreezeUpdate = t_Scene.FindMethod("FreezeUpdate");
+
+            ILCursor cursor = new ILCursor(context);
+            
+            // replace the dummy method with the actual call to `base.FreezeUpdate`
+            cursor.GotoNext(MoveType.Before, instr => instr.MatchCall("Celeste.Level", "base_FreezeUpdate"));
+            cursor.Remove();
+            cursor.EmitLdarg0();
+            cursor.EmitCall(m_Scene_FreezeUpdate);
         }
 
         public static void PatchLevelRender(ILContext context, CustomAttribute attrib) {

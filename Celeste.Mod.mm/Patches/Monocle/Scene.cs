@@ -1,4 +1,5 @@
-﻿using Celeste.Mod.Registry;
+﻿using Celeste;
+using Celeste.Mod.Registry;
 using MonoMod;
 using System;
 using System.Collections.Generic;
@@ -47,6 +48,23 @@ namespace Monocle {
         [MethodImpl(MethodImplOptions.NoInlining)]
         public new virtual void AfterUpdate() {
             Interlocked.Exchange(ref OnEndOfFrame, null)?.Invoke();
+        }
+
+        /// <summary>
+        /// Called during freeze frames instead of the normal <see cref="Scene.Update"/>.
+        /// </summary>
+        // todo: allow some renderers to update?
+        public virtual void FreezeUpdate() {
+            if (!Paused) {
+                foreach (patch_Entity entity in this[TagsExt.FreezeUpdate]) {
+                    entity._PreUpdate();
+                    if (entity.Active)
+                    {
+                        entity.Update();
+                    }
+                    entity._PostUpdate();
+                }
+            }
         }
     }
 }
