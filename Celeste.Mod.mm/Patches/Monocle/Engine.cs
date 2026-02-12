@@ -209,7 +209,7 @@ namespace MonoMod {
             VariableDefinition v_componentTimeRate = new(context.Import(typeof(float)));
             context.Method.Body.Variables.Add(v_componentTimeRate);
             TypeDefinition t_Scene = f_scene.FieldType.Resolve();
-            MethodReference m_Scene_FreezeUpdate = t_Scene.FindMethod("FreezeUpdate");
+            MethodReference m_Scene_FreezeFrameUpdate = t_Scene.FindMethod("FreezeFrameUpdate");
 
             ILCursor cursor = new ILCursor(context);
             cursor.GotoNext(
@@ -246,7 +246,7 @@ namespace MonoMod {
                 instr => instr.MatchStsfld("Monocle.Engine", "FreezeTimer"));
             cursor.EmitLdarg0();
             cursor.EmitLdfld(f_scene);
-            cursor.EmitCallvirt(m_Scene_FreezeUpdate);
+            cursor.EmitCallvirt(m_Scene_FreezeFrameUpdate);
         }
         
         public static void PatchEngineCctor(ILContext context, CustomAttribute attrib) {

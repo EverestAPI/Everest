@@ -10,7 +10,7 @@ namespace Celeste {
         public static void Initialize() {
             orig_Initialize();
             TagsExt.SubHUD = new BitTag("subHUD");
-            TagsExt.FreezeUpdate = new BitTag("freezeUpdate");
+            TagsExt.FreezeFrameUpdate = new BitTag("freezeFrameUpdate");
         }
 
     }
@@ -24,6 +24,6 @@ namespace Celeste {
         /// <summary>
         /// Tag to be used for entities that should update during freeze frames.
         /// </summary>
-        public static BitTag FreezeUpdate;
+        public static BitTag FreezeFrameUpdate;
     }
 }

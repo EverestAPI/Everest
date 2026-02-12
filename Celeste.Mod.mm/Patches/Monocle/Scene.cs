@@ -54,9 +54,9 @@ namespace Monocle {
         /// Called during freeze frames instead of the normal <see cref="Scene.Update"/>.
         /// </summary>
         // todo: allow some renderers to update?
-        public virtual void FreezeUpdate() {
+        public virtual void FreezeFrameUpdate() {
             if (!Paused) {
-                foreach (patch_Entity entity in this[TagsExt.FreezeUpdate]) {
+                foreach (patch_Entity entity in this[TagsExt.FreezeFrameUpdate]) {
                     entity._PreUpdate();
                     if (entity.Active)
                     {

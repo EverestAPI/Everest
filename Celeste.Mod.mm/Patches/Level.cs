@@ -105,20 +105,20 @@ namespace Celeste {
 
         // ... this is gonna be fun
         [MonoModIgnore] // don't put this in `Level` when we're done
-        internal extern static void base_FreezeUpdate(); // dummy method, will be replaced with the actual `base.FreezeUpdate` call in the IL patch
-        [PatchLevelFreezeUpdate] // add the `virtual` flag to this method so it overrides the one in `patch_Scene` properly and calls `base.FreezeUpdate`
+        internal extern static void base_FreezeFrameUpdate(); // dummy method, will be replaced with the actual `base.FreezeFrameUpdate` call in the IL patch
+        [PatchLevelFreezeFrameUpdate] // add the `virtual` flag to this method so it overrides the one in `patch_Scene` properly and calls `base.FreezeFrameUpdate`
         // todo: does there need to be anything else in here?
-        public void FreezeUpdate() {
-            Everest.Events.Level.BeforeFreezeUpdate(this);
+        public void FreezeFrameUpdate() {
+            Everest.Events.Level.BeforeFreezeFrameUpdate(this);
             
-            base_FreezeUpdate();
+            base_FreezeFrameUpdate();
             
             foreach (PostUpdateHook component in Tracker.GetComponents<PostUpdateHook>()) {
-                if (component.Entity.Active && component.Entity.TagCheck(TagsExt.FreezeUpdate)) {
+                if (component.Entity.Active && component.Entity.TagCheck(TagsExt.FreezeFrameUpdate)) {
                     component.OnPostUpdate();
                 }
             }
-            Everest.Events.Level.AfterFreezeUpdate(this);
+            Everest.Events.Level.AfterFreezeFrameUpdate(this);
         }
 
         /// <summary>
@@ -736,10 +736,10 @@ namespace MonoMod {
     class PatchLevelUpdateAttribute : Attribute { }
     
     /// <summary>
-    /// Patch our <see cref="Celeste.patch_Level.FreezeUpdate"/> to be marked as <c>virtual</c> so it actually overrides the base method, and to actually call the base method instead of the dummy.
+    /// Patch our <see cref="Celeste.patch_Level.FreezeFrameUpdate"/> to be marked as <c>virtual</c> so it actually overrides the base method, and to actually call the base method instead of the dummy.
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelFreezeUpdate))]
-    class PatchLevelFreezeUpdateAttribute : Attribute { }
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelFreezeFrameUpdate))]
+    class PatchLevelFreezeFrameUpdateAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level rendering method instead of reimplementing it in Everest.
@@ -1065,20 +1065,20 @@ namespace MonoMod {
             }
         }
 
-        public static void PatchLevelFreezeUpdate(ILContext context, CustomAttribute attrib) {
+        public static void PatchLevelFreezeFrameUpdate(ILContext context, CustomAttribute attrib) {
             // mark the method as `virtual` so it registers as an override
             context.Method.IsVirtual = true;
             
             TypeDefinition t_Scene = context.Method.DeclaringType.BaseType.Resolve();
-            MethodReference m_Scene_FreezeUpdate = t_Scene.FindMethod("FreezeUpdate");
+            MethodReference m_Scene_FreezeFrameUpdate = t_Scene.FindMethod("FreezeFrameUpdate");
 
             ILCursor cursor = new ILCursor(context);
             
-            // replace the dummy method with the actual call to `base.FreezeUpdate`
-            cursor.GotoNext(MoveType.Before, instr => instr.MatchCall("Celeste.Level", "base_FreezeUpdate"));
+            // replace the dummy method with the actual call to `base.FreezeFrameUpdate`
+            cursor.GotoNext(MoveType.Before, instr => instr.MatchCall("Celeste.Level", "base_FreezeFrameUpdate"));
             cursor.Remove();
             cursor.EmitLdarg0();
-            cursor.EmitCall(m_Scene_FreezeUpdate);
+            cursor.EmitCall(m_Scene_FreezeFrameUpdate);
         }
 
         public static void PatchLevelRender(ILContext context, CustomAttribute attrib) {
