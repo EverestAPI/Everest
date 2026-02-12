@@ -22,7 +22,7 @@ namespace Celeste {
         public static BitTag SubHUD;
 
         /// <summary>
-        /// Tag to be used for entities and renderers that should update during freeze frames.
+        /// Tag to be used for entities that should update during freeze frames.
         /// </summary>
         public static BitTag FreezeUpdate;
     }
