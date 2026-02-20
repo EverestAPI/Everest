@@ -9,6 +9,7 @@ using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Xml;
 using Logger = Celeste.Mod.Logger;
 
@@ -24,9 +25,9 @@ namespace Monocle {
         /// The internal string-MTexture dictionary.
         /// </summary>
         public Dictionary<string, MTexture> Textures => textures;
-        private Dictionary<string, string> links = new Dictionary<string, string>();
+        private Dictionary<string, string> links;
         private Dictionary<string, List<MTexture>> orderedTexturesCache;
-        private Stack<MTexture> FallbackStack;
+        private ThreadLocal<Stack<MTexture>> FallbackStack;
 
         public MTexture DefaultFallback;
 
@@ -35,6 +36,15 @@ namespace Monocle {
         public string RelativeDataPath;
         public string[] DataPaths;
         public AtlasDataFormat? DataFormat;
+
+        public extern void orig_ctor();
+
+        [MonoModConstructor]
+        public void ctor() {
+            links = new Dictionary<string, string>();
+            FallbackStack = new(() => new());
+            orig_ctor();
+        }
 
         [MonoModReplace]
         private static void ReadAtlasData(Atlas _atlas, string path, AtlasDataFormat format) {
@@ -332,9 +342,14 @@ namespace Monocle {
         }
 
         public MTexture GetFallback() {
-            if (FallbackStack != null && FallbackStack.Count > 0)
-                return FallbackStack.Peek();
+            if (FallbackStack.IsValueCreated) {
+                Stack<MTexture> stack = FallbackStack.Value;
+                if (stack.Count > 0)
+                    return stack.Peek();
+            }
 
+            // we may encounter concurrent issue here but it's safe
+            // since the worst result is making multiple lookups
             if (DefaultFallback != null || textures.TryGetValue("__fallback", out DefaultFallback))
                 return DefaultFallback;
 
@@ -342,13 +357,11 @@ namespace Monocle {
         }
 
         public void PushFallback(MTexture fallback) {
-            if (FallbackStack == null)
-                FallbackStack = new Stack<MTexture>();
-            FallbackStack.Push(fallback);
+            FallbackStack.Value.Push(fallback);
         }
 
         public MTexture PopFallback() {
-            return FallbackStack.Pop();
+            return FallbackStack.Value.Pop();
         }
 
         /// <summary>
