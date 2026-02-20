@@ -18,6 +18,8 @@ using _Atlas = Monocle.Atlas;
 
 namespace Monocle {
     class patch_Atlas : Atlas {
+        private const string MessageFallbackStackObsolete = "Fallback stack is obsolete, use overloads with fallback parameter instead.";
+        private const string MessageGetFallbackObsolete = "Fallback stack is obsolete, use GetDefaultFallback if you are getting the default one.";
 
         // We're effectively in Atlas, but still need to "expose" private fields to our mod.
         private Dictionary<string, MTexture> textures;
@@ -341,13 +343,20 @@ namespace Monocle {
                 orderedTexturesCache = new Dictionary<string, List<MTexture>>();
         }
 
-        public MTexture GetFallback() {
+        private MTexture GetFallbackInternal() {
             if (FallbackStack.IsValueCreated) {
                 Stack<MTexture> stack = FallbackStack.Value;
                 if (stack.Count > 0)
                     return stack.Peek();
             }
+            return GetDefaultFallback();
+        }
 
+        [Obsolete(MessageGetFallbackObsolete)]
+        public MTexture GetFallback()
+            => GetFallbackInternal();
+
+        public MTexture GetDefaultFallback() {
             // we may encounter concurrent issue here but it's safe
             // since the worst result is making multiple lookups
             if (DefaultFallback != null || textures.TryGetValue("__fallback", out DefaultFallback))
@@ -356,10 +365,12 @@ namespace Monocle {
             return null;
         }
 
+        [Obsolete(MessageFallbackStackObsolete)]
         public void PushFallback(MTexture fallback) {
             FallbackStack.Value.Push(fallback);
         }
 
+        [Obsolete(MessageFallbackStackObsolete)]
         public MTexture PopFallback() {
             return FallbackStack.Value.Pop();
         }
@@ -439,12 +450,14 @@ namespace Monocle {
         // log missing subtextures when getting an animation (for example, decals)
         public extern List<MTexture> orig_GetAtlasSubtextures(string key);
         public new List<MTexture> GetAtlasSubtextures(string key) {
-            PushFallback(null);
+            return GetAtlasSubtextures(key, GetFallbackInternal());
+        }
+
+        public List<MTexture> GetAtlasSubtextures(string key, MTexture fallback) {
             List<MTexture> result = orig_GetAtlasSubtextures(key);
-            PopFallback();
+
             if (result == null || result.Count == 0) {
                 Logger.Warn("Atlas", $"Requested atlas subtextures but none were found: {RelativeDataPath}{key}");
-                MTexture fallback = GetFallback();
                 if (fallback != null)
                     return new List<MTexture>() { fallback };
             }
@@ -456,17 +469,21 @@ namespace Monocle {
 
         [MonoModReplace]
         public new MTexture GetAtlasSubtexturesAt(string key, int index) {
+            MTexture fallback = GetFallbackInternal();
+            return GetAtlasSubtexturesAt(key, index, fallback);
+        }
+
+        public MTexture GetAtlasSubtexturesAt(string key, int index, MTexture fallback) {
             if (orderedTexturesCache.TryGetValue(key, out List<MTexture> list)) {
                 if (index < 0 || index >= list.Count) {
                     Logger.Warn("Atlas", $"Requested atlas subtexture that falls out of range: {RelativeDataPath}{key} {index}");
-                    return GetFallback();
+                    return fallback;
                 }
                 return list[index];
             }
 
             MTexture result = GetAtlasSubtextureFromAtlasAt(key, index);
             if (result == null) {
-                MTexture fallback = GetFallback();
                 if (fallback != null) {
                     // SpriteData and other places use GetAtlasSubtextureAt to check if textures exist.
                     // Logging this verbosely when no fallback exists doesn't make sense in those cases.
@@ -487,7 +504,7 @@ namespace Monocle {
                         return customFallback;
 
                     Logger.Warn("Atlas", $"Requested texture that does not exist: {RelativeDataPath}{id}");
-                    return GetFallback();
+                    return GetFallbackInternal();
                 }
                 return result;
             }
@@ -495,6 +512,13 @@ namespace Monocle {
             // we don't want to modify the setter, but want it to exist in the patch class so that we can call it from within our patches.
             [MonoModIgnore]
             set { }
+        }
+
+        public MTexture GetWithFallback(string id, MTexture fallback) {
+            if (!textures.TryGetValue(id, out MTexture result)) {
+                return fallback;
+            }
+            return result;
         }
     }
     public static class AtlasExt {
