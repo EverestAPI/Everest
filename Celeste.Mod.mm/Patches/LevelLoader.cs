@@ -207,6 +207,12 @@ namespace Celeste {
                 if (string.IsNullOrEmpty(path))
                     path = Path.Combine("Graphics", "Portraits.xml");
                 GFX.PortraitsSpriteBank = new SpriteBank(GFX.Portraits, path);
+
+                path = meta?.SceneryTiles;
+                if (string.IsNullOrEmpty(path))
+                    path = "tilesets/scenery";
+                GFX.SceneryTiles = new Tileset(GFX.Game[path], 8, 8);
+
             } catch (Exception e) {
                 if (patch_LevelEnter.ErrorMessage == null) {
                     if (e is XmlException) {

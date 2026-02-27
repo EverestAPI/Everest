@@ -61,6 +61,8 @@ namespace Celeste.Mod.Meta {
         public string Sprites { get; set; }
         public string Portraits { get; set; }
 
+        public string SceneryTiles { get; set; }
+
         public bool? OverrideASideMeta { get; set; }
 
         public MapMetaModeProperties[] Modes { get; set; }
@@ -116,6 +118,9 @@ namespace Celeste.Mod.Meta {
             meta.AttrIf("AnimatedTiles", v => AnimatedTiles = v);
             meta.AttrIf("Sprites", v => Sprites = v);
             meta.AttrIf("Portraits", v => Portraits = v);
+
+            meta.AttrIf("SceneryTiles", v => SceneryTiles = v);
+
             meta.AttrIfBool("OverrideASideMeta", v => OverrideASideMeta = v);
 
             BinaryPacker.Element child;
@@ -225,6 +230,9 @@ namespace Celeste.Mod.Meta {
 
                 if (!string.IsNullOrEmpty(Portraits))
                     meta.Portraits = Portraits;
+
+                if (!string.IsNullOrEmpty(SceneryTiles))
+                    meta.SceneryTiles = SceneryTiles;
 
                 if (OverrideASideMeta != null)
                     meta.OverrideASideMeta = OverrideASideMeta;
