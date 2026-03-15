@@ -35,8 +35,7 @@ For information about mod development, check out the [Everest Wiki](https://gith
 ### macOS / Linux
 - [Install the mono runtime](https://www.mono-project.com/download/stable/)
 - Publish all projects
-    - _With MonoDevelop:_ Open the .sln in the repo with MonoDevelop
-    - _Manually:_ Open the terminal in the Everest directory and run `msbuild` or `dotnet publish`
+    - _Manually:_ Open the terminal in the Everest directory and run `dotnet publish`
     - **NOTE:** It is very important that you *publish* the project instead of simply building it, as otherwise required dependency DLLs won't be copied!
 - Copy everything in `MiniInstaller/bin/Release/net8.0/publish` and `Celeste.Mod.mm/bin/Release/net8.0/publish` to your Celeste directory
     - macOS: `Celeste.app/Contents/Resources`

@@ -758,6 +758,8 @@ namespace MonoMod {
             FieldReference f_currentEntityId = context.Method.DeclaringType.FindField("_currentEntityId")!;
             MethodReference m_IsInDoNotLoadIncreased = context.Method.DeclaringType.FindMethod("_IsInDoNotLoadIncreased")!;
 
+            MethodReference f_get_Transitioning = context.Method.DeclaringType.FindMethod("get_Transitioning");
+
             ILCursor cursor = new ILCursor(context);
 
             // Insert our custom entity loader and use it for levelData.Entities and levelData.Triggers
@@ -905,6 +907,24 @@ namespace MonoMod {
                 );
                 cctorCursor.Emit(OpCodes.Stsfld, f_LoadStrings);
             });
+
+            // Reset to apply other patches
+            cursor.Index = 0;
+
+            // Patch DelayAltMusic check
+            //  before: if (!levelData.DelayAltMusic) { ... }
+            //  after:  if (!levelData.DelayAltMusic || !Transitioning) { ... }
+            ILLabel setAltMusicLabel = cursor.DefineLabel();
+
+            cursor.GotoNext(MoveType.After,
+                    instr => instr.MatchLdfld("Celeste.LevelData", "DelayAltMusic")
+                );
+            cursor.EmitBrfalse(setAltMusicLabel);
+            cursor.EmitLdarg0();
+            cursor.EmitCallvirt(f_get_Transitioning);
+
+            cursor.Index++; // after the brtrue
+            cursor.MarkLabel(setAltMusicLabel);
         }
 
         public static void PatchLevelLoaderDecalCreation(ILContext context, CustomAttribute attrib) {

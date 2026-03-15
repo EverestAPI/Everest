@@ -187,7 +187,6 @@
 	UPDATER_SRC_BUILDBOT= 			自动构建
 
 # Everest Updater
-	EVERESTUPDATER_NOTSUPPORTED=        本平台不支持更新，取消。
 	EVERESTUPDATER_NOUPDATE=	    	没有更新，取消。
     EVERESTUPDATER_CREATINGLEGACYREF=	正在进行安装 legacyRef 的基础工作
 	EVERESTUPDATER_NOTAVAILABLE=	    请求的 Everest 构建版本不可用！

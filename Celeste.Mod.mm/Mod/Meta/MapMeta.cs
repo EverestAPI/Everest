@@ -75,6 +75,8 @@ namespace Celeste.Mod.Meta {
 
         public MapMetaCassetteModifier CassetteModifier { get; set; }
 
+        public MapMetaPostcard Postcard { get; set; }
+
         public void Parse(BinaryPacker.Element meta) {
             meta.AttrIf("Parent", v => Parent = v);
 
@@ -244,6 +246,9 @@ namespace Celeste.Mod.Meta {
 
                 if (CassetteModifier != null)
                     meta.CassetteModifier = CassetteModifier;
+
+                if (Postcard != null)
+                    meta.Postcard = Postcard;
             }
         }
 
@@ -547,5 +552,9 @@ namespace Celeste.Mod.Meta {
             meta.AttrIfBool("ActiveDuringTransitions", v => ActiveDuringTransitions = v);
             meta.AttrIfBool("OldBehavior", v => OldBehavior = v);
         }
+    }
+
+    public class MapMetaPostcard {
+        public string Texture { get; set; }
     }
 }

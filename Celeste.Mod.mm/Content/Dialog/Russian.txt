@@ -167,7 +167,6 @@
 	UPDATER_SRC_BUILDBOT= 			Автоматические сборки
 
 # Everest Updater
-	EVERESTUPDATER_NOTSUPPORTED=	Обновление не поддерживается данной платформой - отменяю.
 	EVERESTUPDATER_NOUPDATE=		Нет обновлений - отменяю.
 	EVERESTUPDATER_UPDATING=		Обновление на {0} (branch: {1}) @ {2}
 	EVERESTUPDATER_DOWNLOADING=		Загрузка

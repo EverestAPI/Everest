@@ -56,9 +56,6 @@ namespace Celeste.Mod.Core {
             if (Settings.DiscordRichPresence && !Everest.Flags.IsHeadless) {
                 Everest.DiscordSDK.CreateInstance();
             }
-
-            // If we're running in an environment that prefers this flag, forcibly enable them.
-            Settings.LazyLoading |= Everest.Flags.PreferLazyLoading;
         }
 
         public override void SaveSettings() {
@@ -137,12 +134,8 @@ namespace Celeste.Mod.Core {
                 }
             }
 
-            if (firstLoad && !Everest.Flags.AvoidRenderTargets) {
+            if (firstLoad) {
                 SubHudRenderer.Buffer = VirtualContent.CreateRenderTarget("subhud-target", 1922, 1082);
-            }
-            if (Everest.Flags.AvoidRenderTargets && Celeste.HudTarget != null) {
-                Celeste.HudTarget.Dispose();
-                Celeste.HudTarget = null;
             }
         }
 

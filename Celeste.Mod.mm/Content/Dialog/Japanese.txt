@@ -187,7 +187,6 @@
 	UPDATER_SRC_BUILDBOT= 			自動ビルド
 
 # Everest Updater
-	EVERESTUPDATER_NOTSUPPORTED=	このプラットフォームではサポートされていません - キャンセルします
 	EVERESTUPDATER_NOUPDATE=		アップデートが見つかりません - キャンセルします
 	EVERESTUPDATER_CREATINGLEGACYREF=	ベースのlegacyRefインストールを作成します
 	EVERESTUPDATER_NOTAVAILABLE=	必要なEverestビルドが見つかりません！

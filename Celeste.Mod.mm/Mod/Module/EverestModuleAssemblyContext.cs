@@ -344,7 +344,7 @@ namespace Celeste.Mod {
             /// <returns>Whether this is compatible with <paramref name="other"/></returns>
             public bool IsValidWith(AsmChecksums other) {
                 if (other == null) return false;
-                if (GameChecksum != other.GameChecksum) return false;
+                if (GameChecksum != other.GameChecksum && !Everest.Relinker.SkipGameChecksum) return false;
                 if (FileChecksum != other.FileChecksum) return false;
                 if (SymFileChecksum != other.SymFileChecksum) return false;
 

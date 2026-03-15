@@ -140,10 +140,17 @@ namespace Celeste {
             Engine.Scene = new OverworldLoader(Overworld.StartMode.AreaQuit);
         }
 
-        private IEnumerator EnterWithPostcardRoutine(string message, string soundId) {
+        private IEnumerator EnterWithPostcardRoutine(string message, string soundId)
+            => EnterWithPostcardRoutine(message, soundId, patch_AreaData.Get(session)?.Meta?.Postcard?.Texture);
+
+        private IEnumerator EnterWithPostcardRoutine(string message, string soundId, string postcardTexture) {
             yield return 1f;
 
-            Add(postcard = new patch_Postcard(message, soundId));
+            patch_Postcard localPostcard = new patch_Postcard(message, soundId);
+            if (postcardTexture is not null)
+                localPostcard.Postcard = GFX.Gui[postcardTexture];
+
+            Add(postcard = localPostcard);
             yield return postcard.DisplayRoutine();
 
             IEnumerator inner = orig_Routine();

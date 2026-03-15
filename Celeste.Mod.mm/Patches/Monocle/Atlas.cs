@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
@@ -23,7 +24,7 @@ namespace Monocle {
         public Dictionary<string, MTexture> Textures => textures;
         private Dictionary<string, string> links = new Dictionary<string, string>();
         private Dictionary<string, List<MTexture>> orderedTexturesCache;
-        private Stack<MTexture> FallbackStack;
+        private ConcurrentStack<MTexture> FallbackStack;
 
         public MTexture DefaultFallback;
 
@@ -329,8 +330,8 @@ namespace Monocle {
         }
 
         public MTexture GetFallback() {
-            if (FallbackStack != null && FallbackStack.Count > 0)
-                return FallbackStack.Peek();
+            if (FallbackStack?.TryPeek(out MTexture texture) ?? false)
+                return texture;
 
             if (DefaultFallback != null || textures.TryGetValue("__fallback", out DefaultFallback))
                 return DefaultFallback;
@@ -339,13 +340,14 @@ namespace Monocle {
         }
 
         public void PushFallback(MTexture fallback) {
-            if (FallbackStack == null)
-                FallbackStack = new Stack<MTexture>();
+            FallbackStack ??= new ConcurrentStack<MTexture>();
             FallbackStack.Push(fallback);
         }
 
         public MTexture PopFallback() {
-            return FallbackStack.Pop();
+            if (FallbackStack?.TryPop(out MTexture texture) ?? false)
+                return texture;
+            throw new InvalidOperationException("Fallback stack is empty or has not been created.");
         }
 
         /// <summary>

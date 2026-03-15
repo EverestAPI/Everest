@@ -127,7 +127,6 @@
 	UPDATER_SRC_BUILDBOT= 			Versões automáticas
     
 # Everest Updater
-	EVERESTUPDATER_NOTSUPPORTED=	Atualização não suportada nesta plataforma - cancelando.
 	EVERESTUPDATER_NOUPDATE=		Sem atualizações - cancelando.
 	EVERESTUPDATER_UPDATING=		Atualizando para {0} (branch: {1}) @ {2}
 	EVERESTUPDATER_DOWNLOADING=		Instalando
