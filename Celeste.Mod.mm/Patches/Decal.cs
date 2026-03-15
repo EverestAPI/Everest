@@ -316,7 +316,7 @@ namespace Celeste {
         public override void Awake(Scene scene) {
             base.Awake(scene);
 
-            ((patch_EntityList) (object) scene.Entities).PostAwake += () => {
+            ((patch_EntityList) (object) scene.Entities).OnEndOfAwake += () => {
                 if (staticMover?.Platform == null && CoreModule.Session.AttachedDecals.Contains(string.Format("{0}||{1}||{2}", Name, Position.X, Position.Y))) {
                     RemoveSelf();
                 }

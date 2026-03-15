@@ -26,7 +26,7 @@ namespace Monocle {
         /// </summary>
         public List<Entity> ToAdd => toAdd;
 
-        public event Action PostAwake;
+        public event Action OnEndOfAwake;
 
         internal void ClearEntities() {
             entities.Clear();
@@ -57,7 +57,7 @@ namespace Monocle {
             }
         }
 
-        private void _PostAwake() => Interlocked.Exchange(ref PostAwake, null)?.Invoke();
+        private void _PostAwake() => Interlocked.Exchange(ref OnEndOfAwake, null)?.Invoke();
     }
 
     public static class EntityListExt {
