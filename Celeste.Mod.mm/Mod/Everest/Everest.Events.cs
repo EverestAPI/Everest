@@ -1,6 +1,7 @@
 ﻿using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using _Decal = Celeste.Decal;
 using _EventTrigger = Celeste.EventTrigger;
@@ -14,6 +15,8 @@ using _Player = Celeste.Player;
 using _Seeker = Celeste.Seeker;
 using _AngryOshiro = Celeste.AngryOshiro;
 using _SubHudRenderer = Celeste.Mod.UI.SubHudRenderer;
+using _FancyText = Celeste.FancyText;
+using _Textbox = Celeste.Textbox;
 using Monocle;
 
 namespace Celeste.Mod {
@@ -154,6 +157,13 @@ namespace Celeste.Mod {
                 /// </summary>
                 public static event UnpauseHandler OnUnpause;
                 internal static void Unpause(_Level level) => OnUnpause?.Invoke(level);
+
+                public delegate void SkipCutsceneHandler(_Level level);
+                /// <summary>
+                /// Called before skipping a cutscene.
+                /// </summary>
+                public static SkipCutsceneHandler OnSkipCutscene;
+                internal static void SkipCutscene(_Level level) => OnSkipCutscene?.Invoke(level);
 
                 public delegate void CreatePauseMenuButtonsHandler(_Level level, patch_TextMenu menu, bool minimal);
                 /// <summary>
@@ -403,6 +413,57 @@ namespace Celeste.Mod {
                 public static event BeforeRenderHandler OnBeforeRender;
                 internal static void BeforeRender(_SubHudRenderer renderer, Scene scene)
                     => OnBeforeRender?.Invoke(renderer, scene);
+            }
+
+            public static class FancyText {
+                public delegate bool ParseCustomCommandHandler(_FancyText fancyText, string command, List<string> args, Stack<Color> colorStack, _FancyText.Portrait[] lastPortrait);
+                public static event ParseCustomCommandHandler OnParseCustomCommand;
+                internal static bool ParseCustomCommand(_FancyText fancyText, string command, List<string> args, Stack<Color> colorStack, _FancyText.Portrait[] lastPortrait)
+                    => OnParseCustomCommand?.InvokeWhileFalse(fancyText, command, args, colorStack, lastPortrait) ?? false;
+
+                public delegate void BeforeParseHandler(_FancyText fancyText);
+                public static event BeforeParseHandler OnBeforeParse;
+                internal static void BeforeParse(_FancyText fancyText)
+                    => OnBeforeParse?.Invoke(fancyText);
+
+                public delegate void AfterParseHandler(_FancyText fancyText);
+                public static event AfterParseHandler OnAfterParse;
+                internal static void AfterParse(_FancyText fancyText)
+                    => OnAfterParse?.Invoke(fancyText);
+
+                public delegate void WordAddedHandler(_FancyText fancyText, string word, int[] codepoints, List<_FancyText.Char> chars);
+                public static event WordAddedHandler OnWordAdded;
+                internal static void WordAdded(_FancyText fancyText, string word, int[] codepoints, List<_FancyText.Char> chars)
+                    => OnWordAdded?.Invoke(fancyText, word, codepoints, chars);
+
+                public delegate void BeforeDrawHandler(_FancyText fancyText, Vector2 position, Vector2 justify, Vector2 scale, float alpha, int start, int end);
+                public static event BeforeDrawHandler OnBeforeDraw;
+                internal static void BeforeDraw(_FancyText fancyText, Vector2 position, Vector2 justify, Vector2 scale, float alpha, int start, int end)
+                    => OnBeforeDraw?.Invoke(fancyText, position, justify, scale, alpha, start, end);
+
+                public delegate void AfterDrawHandler(_FancyText fancyText, Vector2 position, Vector2 justify, Vector2 scale, float alpha, int start, int end);
+                public static event AfterDrawHandler OnAfterDraw;
+                internal static void AfterDraw(_FancyText fancyText, Vector2 position, Vector2 justify, Vector2 scale, float alpha, int start, int end)
+                    => OnAfterDraw?.Invoke(fancyText, position, justify, scale, alpha, start, end);
+            }
+
+            public static class Textbox {
+                public delegate IEnumerable<Func<IEnumerator>> AddCustomEventsHandler(_Textbox textbox, string dialog, Language language);
+                public static event AddCustomEventsHandler OnAddCustomEvents;
+                internal static List<Func<IEnumerator>> AddCustomEvents(_Textbox textbox, string dialog, Language language) {
+                    List<Func<IEnumerator>> extraEvents = new();
+
+                    if (OnAddCustomEvents is null)
+                        return extraEvents;
+
+                    foreach (Delegate del in OnAddCustomEvents.GetInvocationList()) {
+                        var res = del.DynamicInvoke(new object[] {textbox, dialog, language});
+                        if (res is IEnumerable<Func<IEnumerator>> events)
+                            extraEvents.AddRange(events);
+                    }
+
+                    return extraEvents;
+                }
             }
         }
     }
