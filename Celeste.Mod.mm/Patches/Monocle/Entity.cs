@@ -3,7 +3,6 @@ using System;
 using MonoMod;
 using Celeste.Mod.Registry;
 using System.ComponentModel;
-using Celeste.Mod.Entities;
 
 namespace Monocle {
     class patch_Entity : Entity {
@@ -49,17 +48,8 @@ namespace Monocle {
         internal void _PostUpdate() => PostUpdate?.Invoke(this);
 
         /// <summary>
-        /// Allows setting the awake priority for an entity (similar to Depth, but decides the order of Awake instead of Update).
+        /// Allows changing the awake priority for an entity (similar to Depth, but decides the order of Awake instead of Update).
         /// </summary>
-        public int AwakePriority {
-            get => Get<AwakePriority>()?.Priority ?? 0;
-            set {
-                if (Get<AwakePriority>() is {} awakePriority) {
-                    awakePriority.Priority = value;
-                } else if (value != 0) {
-                    Add(new AwakePriority(value));
-                }
-            }
-        }
+        public virtual int AwakePriority => 0;
     }
 }

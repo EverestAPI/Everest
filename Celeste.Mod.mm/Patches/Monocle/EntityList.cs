@@ -67,6 +67,9 @@ namespace Monocle {
                 }
             }
 
+            if (counted.TryGetValue(0, out var zeroPriority) && zeroPriority.Count == toAwake.Count)
+                return;
+
             int i = 0;
             foreach (var slice in counted.Values) {
                 for (int j = 0; j < slice.Count; j++) {
