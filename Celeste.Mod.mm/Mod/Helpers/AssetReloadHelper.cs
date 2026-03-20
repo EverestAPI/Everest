@@ -669,3 +669,54 @@ namespace Celeste.Mod {
 
     }
 }
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class AssetReload {
+                public delegate void ReloadHandler(bool silent);
+                /// <summary>
+                /// Called before/after reloading assets.
+                /// </summary>
+                public static event ReloadHandler OnBeforeReload, OnAfterReload;
+
+                /// <summary>
+                /// Called before/after reloading assets.
+                /// Any subscriptions to this event will be cleared after being called once.
+                /// </summary>
+                public static event ReloadHandler OnBeforeNextReload, OnAfterNextReload;
+
+                internal static void BeforeReload(bool silent) {
+                    OnBeforeReload?.Invoke(silent);
+
+                    var beforeNextReload = OnBeforeNextReload;
+                    OnBeforeNextReload = null;
+                    beforeNextReload?.Invoke(silent);
+                }
+
+                internal static void AfterReload(bool silent) {
+                    OnAfterReload?.Invoke(silent);
+
+                    var afterNextReload = OnAfterNextReload;
+                    OnAfterNextReload = null;
+                    afterNextReload?.Invoke(silent);
+                }
+
+                public delegate void ReloadLevelHandler(global::Celeste.Level level);
+                /// <summary>
+                /// Called right at the start of reloading a level.
+                /// </summary>
+                public static ReloadLevelHandler OnReloadLevel;
+                internal static void ReloadLevel(global::Celeste.Level level)
+                    => OnReloadLevel?.Invoke(level);
+
+                /// <summary>
+                /// Called right at the start of reloading all maps.
+                /// </summary>
+                public static Action OnReloadAllMaps;
+                internal static void ReloadAllMaps()
+                    => OnReloadAllMaps?.Invoke();
+            }
+        }
+    }
+}

@@ -15,6 +15,9 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.Utils;
 
+using _Level = Celeste.Level;
+using _Session = Celeste.Session;
+
 namespace Celeste {
     class patch_LevelExit : LevelExit {
 
@@ -71,6 +74,22 @@ namespace Celeste {
                 return true;
             }
             return false;
+        }
+    }
+}
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static partial class Level {
+                public delegate void ExitHandler(_Level level, LevelExit exit, LevelExit.Mode mode, _Session session, HiresSnow snow);
+                /// <summary>
+                /// Called at the end of <see cref="patch_LevelExit.ctor"/>.
+                /// </summary>
+                public static event ExitHandler OnExit;
+                internal static void Exit(_Level level, LevelExit exit, LevelExit.Mode mode, _Session session, HiresSnow snow)
+                    => OnExit?.Invoke(level, exit, mode, session, snow);
+            }
         }
     }
 }

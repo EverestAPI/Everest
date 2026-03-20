@@ -956,3 +956,27 @@ namespace Celeste.Mod {
 
     }
 }
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class Everest {
+                public delegate void ModLoadedHandler(EverestModuleMetadata meta);
+                /// <summary>
+                /// Called when a mod finishes loading.
+                /// </summary>
+                public static event ModLoadedHandler OnLoadMod;
+                internal static void LoadMod(EverestModuleMetadata meta)
+                    => OnLoadMod?.Invoke(meta);
+
+                public delegate void RegisterModuleHandler(EverestModule module);
+                /// <summary>
+                /// Called when a mod is registered.
+                /// </summary>
+                public static event RegisterModuleHandler OnRegisterModule;
+                internal static void RegisterModule(EverestModule module)
+                    => OnRegisterModule?.Invoke(module);
+            }
+        }
+    }
+}

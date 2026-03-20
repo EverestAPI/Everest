@@ -45,11 +45,14 @@ namespace Celeste.Mod {
             /// <summary>
             /// Should the game avoid creating render targets if possible?
             /// </summary>
-            public static bool AvoidRenderTargets { get; private set; }
+            [Obsolete("`AvoidRenderTargets` is always false on Everest Core")]
+            public static bool AvoidRenderTargets => false;
+
             /// <summary>
             /// Does the environment (platform, ...) prefer lazy loading?
             /// </summary>
-            public static bool PreferLazyLoading { get; private set; }
+            [Obsolete("`PreferLazyLoading` is always false on Everest Core")]
+            public static bool PreferLazyLoading => false;
 
             /// <summary>
             /// Does the environment (renderer, framework ,...) prefer threaded GL?
@@ -60,12 +63,14 @@ namespace Celeste.Mod {
             /// <summary>
             /// Does the environment (platform, ...) support loading runtime mods?
             /// </summary>
-            public static bool SupportRuntimeMods { get; private set; }
+            [Obsolete("`SupportRuntimeMods` is always true on Everest Core")]
+            public static bool SupportRuntimeMods => true;
 
             /// <summary>
             /// Does the environment (platform, ...) support updating Everest?
             /// </summary>
-            public static bool SupportUpdatingEverest { get; private set; }
+            [Obsolete("`SupportUpdatingEverest` is always true on Everest Core")]
+            public static bool SupportUpdatingEverest => true;
 
             internal static void Initialize() {
                 // Determine vanilla install type
@@ -78,14 +83,7 @@ namespace Celeste.Mod {
                     VanillaIsFNA = metaReader.AssemblyReferences.Any(handle => metaReader.GetString(metaReader.GetAssemblyReference(handle).Name) == "FNA");
                     VanillaIsXNA = !VanillaIsFNA;
                 }
-
-                AvoidRenderTargets = Environment.GetEnvironmentVariable("EVEREST_NO_RT") == "1";
-                PreferLazyLoading = false;
-
-                SupportRuntimeMods = true;
-                SupportUpdatingEverest = true;
             }
-
         }
     }
 }

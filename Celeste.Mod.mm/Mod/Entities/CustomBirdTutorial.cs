@@ -185,3 +185,45 @@ namespace Celeste.Mod.Entities {
         }
     }
 }
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class CustomBirdTutorial {
+                public delegate object ParseCommandHandler(string command);
+                /// <summary>
+                /// Allows you to convert commands into arbitrary textures, arrows, bindings, and text.
+                /// <example>
+                /// Usage example:
+                /// <code>
+                /// Everest.Events.CustomBirdTutorial.OnParseCommand += (string command) => {
+                ///     // this method can return:
+                ///     // - a MTexture => displays that texture
+                ///     if (command == "StrawberryIcon") {
+                ///         return GFX.Gui["collectables/strawberry"];
+                ///     }
+                ///     // - a Vector2 representing a direction (x, y) => displays an arrow
+                ///     if (command == "DownLeft") {
+                ///         return new Vector2(-1, 1);
+                ///     }
+                ///     // - a ButtonBinding or VirtualButton => displays the button it is set to (useful for custom bindings)
+                ///     if (command == "RandomBinding") {
+                ///         return (_Settings as MaxHelpingHandModuleSettings).RandomBinding;
+                ///     }
+                ///     // - a string => displays that text
+                ///     if (command == "SayHi") {
+                ///         return "Hi!";
+                ///     }
+                ///     // if your mod doesn't recognize the command, return null to let other mods / Everest handle it instead.
+                ///     return null;
+                /// }
+                /// </code>
+                /// </example>
+                /// </summary>
+                public static event ParseCommandHandler OnParseCommand;
+                internal static object ParseCommand(string command)
+                    => OnParseCommand?.InvokeWhileNull<object>(command);
+            }
+        }
+    }
+}

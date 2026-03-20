@@ -10,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using _OuiMainMenu = Celeste.OuiMainMenu;
+
 namespace Celeste {
     class patch_OuiMainMenu : OuiMainMenu {
 
@@ -292,5 +294,34 @@ namespace Celeste {
         public static List<MenuButton> GetButtons(this OuiMainMenu self)
             => ((patch_OuiMainMenu) self).Buttons;
 
+    }
+}
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            [Obsolete("Use MainMenu instead.")]
+            public static class OuiMainMenu {
+                public delegate void CreateButtonsHandler(_OuiMainMenu menu, List<MenuButton> buttons);
+                public static event CreateButtonsHandler OnCreateButtons {
+                    add {
+                        MainMenu.OnCreateButtons += (MainMenu.CreateButtonsHandler) value.CastDelegate(typeof(MainMenu.CreateButtonsHandler));
+                    }
+                    remove {
+                        MainMenu.OnCreateButtons -= (MainMenu.CreateButtonsHandler) value.CastDelegate(typeof(MainMenu.CreateButtonsHandler));
+                    }
+                }
+            }
+
+            public static class MainMenu {
+                public delegate void CreateButtonsHandler(_OuiMainMenu menu, List<MenuButton> buttons);
+                /// <summary>
+                /// Called after <see cref="_OuiMainMenu.CreateButtons"/>.
+                /// </summary>
+                public static event CreateButtonsHandler OnCreateButtons;
+                internal static void CreateButtons(_OuiMainMenu menu, List<MenuButton> buttons)
+                    => OnCreateButtons?.Invoke(menu, buttons);
+            }
+        }
     }
 }

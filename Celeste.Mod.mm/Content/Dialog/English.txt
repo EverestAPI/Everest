@@ -218,7 +218,6 @@
 	UPDATER_SRC_BUILDBOT= 			Automatic builds
 
 # Everest Updater
-	EVERESTUPDATER_NOTSUPPORTED=	Updating not supported on this platform - cancelling.
 	EVERESTUPDATER_NOUPDATE=		No update - cancelling.
 	EVERESTUPDATER_CREATINGLEGACYREF=	Creating base legacyRef install
 	EVERESTUPDATER_NOTAVAILABLE=	Required Everest build not available!

@@ -20,6 +20,9 @@ using System.IO;
 using System.Threading;
 using System.Xml;
 
+using _Level = Celeste.Level;
+using _LevelLoader = Celeste.LevelLoader;
+
 namespace Celeste {
     class patch_LevelLoader : LevelLoader {
 
@@ -322,6 +325,24 @@ namespace Celeste {
             }
         }
 
+    }
+}
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class LevelLoader {
+                public delegate void LoadingThreadHandler(_Level level);
+                /// <summary>
+                /// Called at the end of the map loading thread, <see cref="_LevelLoader.LoadingThread()"/>.<br/>
+                /// This event is invoked <b>only once</b>, when entering a map from the chapter select screen or from Save and Quit.
+                /// </summary>
+                /// <seealso cref="Level.OnLoadLevel"/>
+                public static event LoadingThreadHandler OnLoadingThread;
+                internal static void LoadingThread(_Level level)
+                    => OnLoadingThread?.Invoke(level);
+            }
+        }
     }
 }
 

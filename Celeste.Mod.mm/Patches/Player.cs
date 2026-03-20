@@ -16,6 +16,9 @@ using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
 
+using _Level = Celeste.Level;
+using _Player = Celeste.Player;
+
 namespace Celeste {
     class patch_Player : Player {
 
@@ -181,7 +184,8 @@ namespace Celeste {
                 if (framesAlive < 6 && level != null) {
                     diedInGBJ++;
                     if (diedInGBJ != 0 && (diedInGBJ % 2) == 0 && level.Session.Area.GetLevelSet() != "Celeste" && !CoreModule.Settings.DisableAntiSoftlock) {
-                        level.Pause();
+                        if (!Everest.Events.Player.PauseInGBJ(this))
+                            level.Pause();
                         return null;
                     }
                 }
@@ -352,6 +356,60 @@ namespace Celeste {
         public static bool IsIntroState(this Player self)
             => ((patch_Player) self).IsIntroState;
 
+    }
+}
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class Player {
+                /// <summary>
+                /// Called at the end of <see cref="_Player.Added"/>.
+                /// </summary>
+                public static event Action<_Player> OnSpawn;
+                internal static void Spawn(_Player player)
+                    => OnSpawn?.Invoke(player);
+
+                /// <summary>
+                /// Called in <see cref="_Player.Die"/>, only if a PlayerDeadBody will be returned from the method.
+                /// </summary>
+                public static event Action<_Player> OnDie;
+                internal static void Die(_Player player)
+                    => OnDie?.Invoke(player);
+
+                /// <summary>
+                /// Called in <see cref="_Player.Die"/>, just before pausing the game as a softlock prevention measure.
+                /// By returning <c>true</c> you can prevent the pause (and cancel invocation of this event).
+                ///
+                /// Intended to be used when <see cref="_Level.PauseLock"/> is enabled during normal gameplay where the player might die.
+                /// </summary>
+                public static event Func<_Player, bool> OnPauseInGBJ;
+                internal static bool PauseInGBJ(_Player player)
+                    => OnPauseInGBJ.InvokeWhileFalse(player);
+
+                /// <summary>
+                /// Called in the Player constructor during <see cref="StateMachine"/> initialisation, to be used to register custom Player states.
+                /// </summary>
+                public static event Action<_Player> OnRegisterStates;
+                internal static void RegisterStates(_Player player)
+                    => OnRegisterStates?.Invoke(player);
+
+                /// <summary>
+                /// Called at the very beginning of <see cref="_Player.Update"/>.
+                /// </summary>
+                public static event Action<_Player> OnBeforeUpdate;
+                internal static void BeforeUpdate(_Player player)
+                    => OnBeforeUpdate?.Invoke(player);
+
+                /// <summary>
+                /// Called at the very end of <see cref="_Player.Update"/>.
+                /// </summary>
+                public static event Action<_Player> OnAfterUpdate;
+
+                internal static void AfterUpdate(_Player player)
+                    => OnAfterUpdate?.Invoke(player);
+            }
+        }
     }
 }
 

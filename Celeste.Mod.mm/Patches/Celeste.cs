@@ -383,6 +383,12 @@ https://discord.gg/6qjaePQ");
             Everest.Events.Celeste.Exiting();
         }
 
+        protected extern void orig_OnSceneTransition(Scene last, Scene next);
+        protected override void OnSceneTransition(Scene last, Scene next) {
+            orig_OnSceneTransition(last, next);
+            Everest.Events.Celeste.SceneTransition(last, next);
+        }
+
     }
 }
 
@@ -464,5 +470,35 @@ namespace MonoMod {
             cursor.EmitCall(context.Module.ImportReference(logger.FindMethod("System.Void LogDetailed(System.Exception,System.String)")));
         }
 
+    }
+}
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class Celeste {
+                /// <summary>
+                /// Called after the main gameloop has finished running.
+                /// </summary>
+                public static event Action OnExiting;
+                internal static void Exiting()
+                    => OnExiting?.Invoke();
+
+                /// <summary>
+                /// Called just before the Main method exits.
+                /// </summary>
+                public static event Action OnShutdown;
+                internal static void Shutdown()
+                    => OnShutdown?.Invoke();
+
+                /// <summary>
+                /// Called when the current <see cref="Scene"/> (<c>Engine.Scene</c>) is changed.
+                /// </summary>
+                public static event SceneTransitionHandler OnSceneTransition;
+                public delegate void SceneTransitionHandler(Scene last, Scene next);
+                internal static void SceneTransition(Scene last, Scene next)
+                    => OnSceneTransition?.Invoke(last, next);
+            }
+        }
     }
 }

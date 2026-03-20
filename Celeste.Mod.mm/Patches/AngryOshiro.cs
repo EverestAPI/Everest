@@ -8,6 +8,8 @@ using MonoMod;
 using System;
 using System.Collections;
 
+using _AngryOshiro = Celeste.AngryOshiro;
+
 namespace Celeste {
     public class patch_AngryOshiro : AngryOshiro {
 
@@ -48,6 +50,21 @@ namespace Celeste {
         /// <returns>The index of the new state.</returns>
         public int AddState(string name, Func<AngryOshiro, int> onUpdate, Func<AngryOshiro, IEnumerator> coroutine = null, Action<AngryOshiro> begin = null, Action<AngryOshiro> end = null){
             return ((patch_StateMachine)state).AddState(name, onUpdate, coroutine, begin, end);
+        }
+    }
+}
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class AngryOshiro {
+                /// <summary>
+                /// Called in the AngryOshiro constructor during <see cref="StateMachine"/> initialisation, to be used to register custom AngryOshiro states.
+                /// </summary>
+                public static event Action<_AngryOshiro> OnRegisterStates;
+                internal static void RegisterStates(_AngryOshiro oshiro)
+                    => OnRegisterStates?.Invoke(oshiro);
+            }
         }
     }
 }
