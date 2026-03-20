@@ -815,6 +815,20 @@ namespace Celeste.Mod {
                 public static event Action<_Level> OnAfterUpdate;
                 internal static void AfterUpdate(_Level level)
                     => OnAfterUpdate?.Invoke(level);
+                
+                // <summary>
+                /// Called at the very beginning of <see cref="patch_Level.FreezeFrameUpdate"/>.
+                /// </summary>
+                public static event Action<_Level> OnBeforeFreezeFrameUpdate;
+                internal static void BeforeFreezeFrameUpdate(_Level level)
+                    => OnBeforeFreezeFrameUpdate?.Invoke(level);
+                
+                /// <summary>
+                /// Called at the very end of <see cref="patch_Level.FreezeFrameUpdate"/>.
+                /// </summary>
+                public static event Action<_Level> OnAfterFreezeFrameUpdate;
+                internal static void AfterFreezeFrameUpdate(_Level level)
+                    => OnAfterFreezeFrameUpdate?.Invoke(level);
             }
         }
     }
