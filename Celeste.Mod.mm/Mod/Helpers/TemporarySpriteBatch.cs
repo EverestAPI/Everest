@@ -1,9 +1,10 @@
-﻿using Microsoft.Xna.Framework;
+﻿#nullable enable
+
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
 using MonoMod.Utils;
 using System.Buffers;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Celeste.Mod.Helpers;
 
@@ -38,32 +39,27 @@ public ref struct TemporarySpriteBatch
     /// <summary>
     ///   The <see cref="BlendState"/> of this <see cref="TemporarySpriteBatch"/>.
     /// </summary>
-    [NotNull]
     public readonly BlendState CurrentBlendState;
 
     /// <summary>
     ///   The <see cref="SamplerState"/> of this <see cref="TemporarySpriteBatch"/>.
     /// </summary>
-    [NotNull]
     public readonly SamplerState CurrentSamplerState;
 
     /// <summary>
     ///   The <see cref="DepthStencilState"/> of this <see cref="TemporarySpriteBatch"/>.
     /// </summary>
-    [NotNull]
     public readonly DepthStencilState CurrentDepthStencilState;
 
     /// <summary>
     ///   The <see cref="RasterizerState"/> of this <see cref="TemporarySpriteBatch"/>.
     /// </summary>
-    [NotNull]
     public readonly RasterizerState CurrentRasterizerState;
 
     /// <summary>
     ///   The custom <see cref="Effect"/> of this <see cref="TemporarySpriteBatch"/>.
     /// </summary>
-    [MaybeNull]
-    public readonly Effect CurrentCustomEffect;
+    public readonly Effect? CurrentCustomEffect;
 
     /// <summary>
     ///   The transformation <see cref="Matrix"/> of this <see cref="TemporarySpriteBatch"/>.
@@ -74,8 +70,7 @@ public ref struct TemporarySpriteBatch
     ///   The <see cref="RenderTarget2D"/> swapped in for the duration of this <see cref="TemporarySpriteBatch"/>
     ///   or <c>null</c> to draw to the screen if <see cref="HasRenderTarget"/> is <c>true</c>; else always <c>null</c>.
     /// </summary>
-    [MaybeNull]
-    public readonly RenderTarget2D CurrentRenderTarget;
+    public readonly RenderTarget2D? CurrentRenderTarget;
 
 
     /// <summary>
@@ -88,36 +83,31 @@ public ref struct TemporarySpriteBatch
     ///   The <see cref="BlendState"/> that was used prior to the start of this
     ///   <see cref="TemporarySpriteBatch"/>.
     /// </summary>
-    [NotNull]
     public readonly BlendState PreviousBlendState;
 
     /// <summary>
     ///   The <see cref="SamplerState"/> that was used prior to the start of this
     ///   <see cref="TemporarySpriteBatch"/>.
     /// </summary>
-    [NotNull]
     public readonly SamplerState PreviousSamplerState;
 
     /// <summary>
     ///   The <see cref="DepthStencilState"/> that was used prior to the start of this
     ///   <see cref="TemporarySpriteBatch"/>.
     /// </summary>
-    [NotNull]
     public readonly DepthStencilState PreviousDepthStencilState;
 
     /// <summary>
     ///   The <see cref="RasterizerState"/> that was used prior to the start of this
     ///   <see cref="TemporarySpriteBatch"/>.
     /// </summary>
-    [NotNull]
     public readonly RasterizerState PreviousRasterizerState;
 
     /// <summary>
     ///   The custom <see cref="Effect"/> that was used prior to the start of this
     ///   <see cref="TemporarySpriteBatch"/>.
     /// </summary>
-    [MaybeNull]
-    public readonly Effect PreviousCustomEffect;
+    public readonly Effect? PreviousCustomEffect;
 
     /// <summary>
     ///   The transformation <see cref="Matrix"/> that was used prior to the start of this
@@ -129,8 +119,7 @@ public ref struct TemporarySpriteBatch
     ///   The <see cref="RenderTargetBinding"/>s that were used prior to the start of this <see cref="TemporarySpriteBatch"/>
     ///   or <c>null</c> to draw to the screen if <see cref="HasRenderTarget"/> is <c>true</c>; else always <c>null</c>.
     /// </summary>
-    [MaybeNull]
-    public readonly RenderTargetBinding[] PreviousRenderTargets;
+    public readonly RenderTargetBinding[]? PreviousRenderTargets;
 
 
     /// <summary>
@@ -151,13 +140,13 @@ public ref struct TemporarySpriteBatch
     /// <seealso cref="TemporarySpriteBatchBuilder"/>
     internal TemporarySpriteBatch(
         SpriteSortMode? sortMode,
-        [MaybeNull] BlendState blendState,
-        [MaybeNull] SamplerState samplerState,
-        [MaybeNull] DepthStencilState depthStencilState,
-        [MaybeNull] RasterizerState rasterizerState,
-        [MaybeNull] Effect customEffect,
+        BlendState? blendState,
+        SamplerState? samplerState,
+        DepthStencilState? depthStencilState,
+        RasterizerState? rasterizerState,
+        Effect? customEffect,
         Matrix? transformMatrix,
-        [MaybeNull] RenderTarget2D renderTarget,
+        RenderTarget2D? renderTarget,
         bool hasCustomEffect,
         bool hasRenderTarget)
     {
@@ -233,21 +222,21 @@ public ref struct TemporarySpriteBatch
 
     private static void GetSpriteBatchFields(
         out SpriteSortMode sortMode,
-        [NotNull] out BlendState blendState,
-        [NotNull] out SamplerState samplerState,
-        [NotNull] out DepthStencilState depthStencilState,
-        [NotNull] out RasterizerState rasterizerState,
-        [MaybeNull] out Effect customEffect,
+        out BlendState blendState,
+        out SamplerState samplerState,
+        out DepthStencilState depthStencilState,
+        out RasterizerState rasterizerState,
+        out Effect? customEffect,
         out Matrix transformMatrix)
     {
         // life would be good if we could just access these directly...
 
         DynamicData dynData = DynamicData.For(Draw.SpriteBatch);
         sortMode = dynData.Get<SpriteSortMode>("sortMode");
-        blendState = dynData.Get<BlendState>("blendState");
-        samplerState = dynData.Get<SamplerState>("samplerState");
-        depthStencilState = dynData.Get<DepthStencilState>("depthStencilState");
-        rasterizerState = dynData.Get<RasterizerState>("rasterizerState");
+        blendState = dynData.Get<BlendState>("blendState")!;
+        samplerState = dynData.Get<SamplerState>("samplerState")!;
+        depthStencilState = dynData.Get<DepthStencilState>("depthStencilState")!;
+        rasterizerState = dynData.Get<RasterizerState>("rasterizerState")!;
         customEffect = dynData.Get<Effect>("customEffect");
         transformMatrix = dynData.Get<Matrix>("transformMatrix");
     }

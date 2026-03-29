@@ -1,6 +1,7 @@
-﻿using Microsoft.Xna.Framework;
+﻿#nullable enable
+
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Celeste.Mod.Helpers;
 
@@ -43,29 +44,25 @@ public sealed class TemporarySpriteBatchBuilder
     ///   The <see cref="Microsoft.Xna.Framework.Graphics.BlendState"/> that the new
     ///   <see cref="SpriteBatch"/> should use, or <c>null</c> if the old value should be preserved.
     /// </summary>
-    [MaybeNull]
-    public BlendState BlendState { get; private set; }
+    public BlendState? BlendState { get; private set; }
 
     /// <summary>
     ///   The <see cref="Microsoft.Xna.Framework.Graphics.SamplerState"/> that the new
     ///   <see cref="SpriteBatch"/> should use, or <c>null</c> if the old value should be preserved.
     /// </summary>
-    [MaybeNull]
-    public SamplerState SamplerState { get; private set; }
+    public SamplerState? SamplerState { get; private set; }
 
     /// <summary>
     ///   The <see cref="Microsoft.Xna.Framework.Graphics.DepthStencilState"/> that the new
     ///   <see cref="SpriteBatch"/> should use, or <c>null</c> if the old value should be preserved.
     /// </summary>
-    [MaybeNull]
-    public DepthStencilState DepthStencilState { get; private set; }
+    public DepthStencilState? DepthStencilState { get; private set; }
 
     /// <summary>
     ///   The <see cref="Microsoft.Xna.Framework.Graphics.RasterizerState"/> that the new
     ///   <see cref="SpriteBatch"/> should use, or <c>null</c> if the old value should be preserved.
     /// </summary>
-    [MaybeNull]
-    public RasterizerState RasterizerState { get; private set; }
+    public RasterizerState? RasterizerState { get; private set; }
 
     /// <summary>
     ///   The custom <see cref="Microsoft.Xna.Framework.Graphics.Effect"/> that the new
@@ -75,8 +72,7 @@ public sealed class TemporarySpriteBatchBuilder
     ///    When <see cref="HasCustomEffect"/> is <c>false</c>, the old value will be preserved
     ///    and this property will always be <c>null</c>.
     /// </remarks>
-    [MaybeNull]
-    public Effect CustomEffect { get; private set; }
+    public Effect? CustomEffect { get; private set; }
 
     /// <summary>
     ///   The transformation <see cref="Microsoft.Xna.Framework.Matrix"/> that the new
@@ -92,8 +88,7 @@ public sealed class TemporarySpriteBatchBuilder
     ///    When <see cref="HasRenderTarget"/> is <c>false</c>, no render target changes will be done
     ///    and this property will always be <c>null</c>.
     /// </remarks>
-    [MaybeNull]
-    public RenderTarget2D RenderTarget { get; private set; }
+    public RenderTarget2D? RenderTarget { get; private set; }
 
 
     // the defaults are the same as the ones in SpriteBatch.Begin
@@ -116,7 +111,7 @@ public sealed class TemporarySpriteBatchBuilder
     /// <param name="blendState">
     ///   The new blend state. If <c>null</c>, defaults to <see cref="Microsoft.Xna.Framework.Graphics.BlendState.AlphaBlend"/>.
     /// </param>
-    public TemporarySpriteBatchBuilder WithBlendState([MaybeNull] BlendState blendState)
+    public TemporarySpriteBatchBuilder WithBlendState(BlendState? blendState)
     {
         BlendState = blendState ?? BlendState.AlphaBlend;
         return this;
@@ -128,7 +123,7 @@ public sealed class TemporarySpriteBatchBuilder
     /// <param name="samplerState">
     ///   The new sampler state. If <c>null</c>, defaults to <see cref="Microsoft.Xna.Framework.Graphics.SamplerState.LinearClamp"/>.
     /// </param>
-    public TemporarySpriteBatchBuilder WithSamplerState([MaybeNull] SamplerState samplerState)
+    public TemporarySpriteBatchBuilder WithSamplerState(SamplerState? samplerState)
     {
         SamplerState = samplerState ?? SamplerState.LinearClamp;
         return this;
@@ -140,7 +135,7 @@ public sealed class TemporarySpriteBatchBuilder
     /// <param name="depthStencilState">
     ///   The new depth stencil state. If <c>null</c>, defaults to <see cref="Microsoft.Xna.Framework.Graphics.DepthStencilState.None"/>.
     /// </param>
-    public TemporarySpriteBatchBuilder WithDepthStencilState([MaybeNull] DepthStencilState depthStencilState)
+    public TemporarySpriteBatchBuilder WithDepthStencilState(DepthStencilState? depthStencilState)
     {
         DepthStencilState = depthStencilState ?? DepthStencilState.None;
         return this;
@@ -152,7 +147,7 @@ public sealed class TemporarySpriteBatchBuilder
     /// <param name="rasterizerState">
     ///   The new rasterizer state. If <c>null</c>, defaults to <see cref="Microsoft.Xna.Framework.Graphics.RasterizerState.CullCounterClockwise"/>.
     /// </param>
-    public TemporarySpriteBatchBuilder WithRasterizerState([MaybeNull] RasterizerState rasterizerState)
+    public TemporarySpriteBatchBuilder WithRasterizerState(RasterizerState? rasterizerState)
     {
         RasterizerState = rasterizerState ?? RasterizerState.CullCounterClockwise;
         return this;
@@ -164,7 +159,7 @@ public sealed class TemporarySpriteBatchBuilder
     /// <param name="customEffect">
     ///   The new custom effect or <c>null</c> if none should be used.
     /// </param>
-    public TemporarySpriteBatchBuilder WithCustomEffect([MaybeNull] Effect customEffect)
+    public TemporarySpriteBatchBuilder WithCustomEffect(Effect? customEffect)
     {
         HasCustomEffect = true;
         CustomEffect = customEffect;
@@ -189,7 +184,7 @@ public sealed class TemporarySpriteBatchBuilder
     /// <param name="renderTarget">
     ///   The new render target or <c>null</c> to refer to the screen.
     /// </param>
-    public TemporarySpriteBatchBuilder WithRenderTarget([MaybeNull] RenderTarget2D renderTarget)
+    public TemporarySpriteBatchBuilder WithRenderTarget(RenderTarget2D? renderTarget)
     {
         HasRenderTarget = true;
         RenderTarget = renderTarget;
