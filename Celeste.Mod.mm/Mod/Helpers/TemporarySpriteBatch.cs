@@ -19,8 +19,8 @@ namespace Celeste.Mod.Helpers;
 ///   Useful when interrupting a <see cref="SpriteBatch"/> mid-render to, for example, render a specific entity to a
 ///   temporary <see cref="RenderTarget2D"/> while applying a custom shader, all while preserving the previous
 ///   configuration.<br/>
-///   <br/>
-///   Note: Restarting a spritebatch flushes it to the GPU, which is costly.
+///   <b>Note: Restarting a spritebatch flushes it to the GPU.</b>
+///   While the cost is not that significant, it's best to avoid restarting the spritebatch too often per frame.
 /// </remarks>
 /// <seealso cref="TemporarySpriteBatchBuilder"/>
 public ref struct TemporarySpriteBatch : IDisposable

@@ -13,8 +13,8 @@ namespace Celeste.Mod.Helpers;
 ///   and restart the <see cref="SpriteBatch"/> with custom properties.<br/>
 ///   When done, the <see cref="SpriteBatch"/> is ended, the previous <see cref="RenderTarget2D"/> is restored and the
 ///   old <see cref="SpriteBatch"/> is resumed.<br/>
-///   <br/>
-///   Note: Restarting a spritebatch flushes it to the GPU, which is costly.
+///   <b>Note: Restarting a spritebatch flushes it to the GPU.</b>
+///   While the cost is not that significant, it's best to avoid restarting the spritebatch too often per frame.
 /// </remarks>
 public sealed class TemporarySpriteBatchBuilder
 {
