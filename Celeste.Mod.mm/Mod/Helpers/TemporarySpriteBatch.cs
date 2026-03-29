@@ -1,8 +1,8 @@
-﻿using System;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
 using MonoMod.Utils;
+using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Celeste.Mod.Helpers;
@@ -25,6 +25,11 @@ namespace Celeste.Mod.Helpers;
 /// <seealso cref="TemporarySpriteBatchBuilder"/>
 public ref struct TemporarySpriteBatch
 {
+    // we don't really expect the RenderTargetBinding[] array size to exceed 1,
+    // so a max of 16 seems reasonable
+    private static readonly ArrayPool<RenderTargetBinding> _renderTargetPool
+        = ArrayPool<RenderTargetBinding>.Create(0x10, 50);
+
     /// <summary>
     ///   The <see cref="SpriteSortMode"/> of this <see cref="TemporarySpriteBatch"/>.
     /// </summary>
@@ -179,7 +184,7 @@ public ref struct TemporarySpriteBatch
             int renderTargetCount = graphicsDevice.GetRenderTargetsNoAllocEXT(null);
             if (renderTargetCount > 0)
             {
-                PreviousRenderTargets = new RenderTargetBinding[renderTargetCount];
+                PreviousRenderTargets = _renderTargetPool.Rent(renderTargetCount);
                 graphicsDevice.GetRenderTargetsNoAllocEXT(PreviousRenderTargets);
             }
             CurrentRenderTarget = renderTarget;
@@ -220,6 +225,8 @@ public ref struct TemporarySpriteBatch
             PreviousRasterizerState,
             PreviousCustomEffect,
             PreviousTransformMatrix);
+
+        _renderTargetPool.Return(PreviousRenderTargets, clearArray: true);
     }
 
     private static void GetSpriteBatchFields(
