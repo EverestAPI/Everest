@@ -207,7 +207,10 @@ public ref struct TemporarySpriteBatch
         Active = false;
         Draw.SpriteBatch.End();
         if (HasRenderTarget)
+        {
             Engine.Graphics.GraphicsDevice.SetRenderTargets(PreviousRenderTargets);
+            _renderTargetPool.Return(PreviousRenderTargets!, clearArray: true);
+        }
         Draw.SpriteBatch.Begin(
             PreviousSortMode,
             PreviousBlendState,
@@ -216,8 +219,6 @@ public ref struct TemporarySpriteBatch
             PreviousRasterizerState,
             PreviousCustomEffect,
             PreviousTransformMatrix);
-
-        _renderTargetPool.Return(PreviousRenderTargets, clearArray: true);
     }
 
     private static void GetSpriteBatchFields(
