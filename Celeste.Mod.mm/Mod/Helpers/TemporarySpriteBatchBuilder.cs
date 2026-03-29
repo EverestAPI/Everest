@@ -19,53 +19,11 @@ namespace Celeste.Mod.Helpers;
 public sealed class TemporarySpriteBatchBuilder
 {
     /// <summary>
-    ///   Whether the <see cref="SpriteBatch"/>'s
-    ///   <see cref="Microsoft.Xna.Framework.Graphics.SpriteSortMode"/> should be overridden.
-    /// </summary>
-    /// <seealso cref="SortMode"/>
-    public bool HasSortMode { get; private set; }
-
-    /// <summary>
-    ///   Whether the <see cref="SpriteBatch"/>'s
-    ///   <see cref="Microsoft.Xna.Framework.Graphics.BlendState"/> should be overridden.
-    /// </summary>
-    /// <seealso cref="BlendState"/>
-    public bool HasBlendState { get; private set; }
-
-    /// <summary>
-    ///   Whether the <see cref="SpriteBatch"/>'s
-    ///   <see cref="Microsoft.Xna.Framework.Graphics.SamplerState"/> should be overridden.
-    /// </summary>
-    /// <seealso cref="SamplerState"/>
-    public bool HasSamplerState { get; private set; }
-
-    /// <summary>
-    ///   Whether the <see cref="SpriteBatch"/>'s
-    ///   <see cref="Microsoft.Xna.Framework.Graphics.DepthStencilState"/> should be overridden.
-    /// </summary>
-    /// <seealso cref="DepthStencilState"/>
-    public bool HasDepthStencilState { get; private set; }
-
-    /// <summary>
-    ///   Whether the <see cref="SpriteBatch"/>'s
-    ///   <see cref="Microsoft.Xna.Framework.Graphics.RasterizerState"/> should be overridden.
-    /// </summary>
-    /// <seealso cref="RasterizerState"/>
-    public bool HasRasterizerState { get; private set; }
-
-    /// <summary>
     ///   Whether the <see cref="SpriteBatch"/>'s custom
     ///   <see cref="Microsoft.Xna.Framework.Graphics.Effect"/> should be overridden.
     /// </summary>
     /// <seealso cref="CustomEffect"/>
     public bool HasCustomEffect { get; private set; }
-
-    /// <summary>
-    ///   Whether the <see cref="SpriteBatch"/>'s transformation
-    ///   <see cref="Microsoft.Xna.Framework.Matrix"/> should be overridden.
-    /// </summary>
-    /// <seealso cref="TransformMatrix"/>
-    public bool HasTransformMatrix { get; private set; }
 
     /// <summary>
     ///   Whether to swap the current <see cref="Microsoft.Xna.Framework.Graphics.RenderTarget2D"/>
@@ -77,78 +35,62 @@ public sealed class TemporarySpriteBatchBuilder
 
     /// <summary>
     ///   The <see cref="Microsoft.Xna.Framework.Graphics.SpriteSortMode"/> that the new
-    ///   <see cref="SpriteBatch"/> should use.
+    ///   <see cref="SpriteBatch"/> should use, or <c>null</c> if the old value should be preserved.
     /// </summary>
-    /// <remarks>
-    ///    Contains a value when <see cref="HasSortMode"/> is <c>true</c>; <c>null</c> otherwise.
-    /// </remarks>
     public SpriteSortMode? SortMode { get; private set; }
 
     /// <summary>
     ///   The <see cref="Microsoft.Xna.Framework.Graphics.BlendState"/> that the new
-    ///   <see cref="SpriteBatch"/> should use.
+    ///   <see cref="SpriteBatch"/> should use, or <c>null</c> if the old value should be preserved.
     /// </summary>
-    /// <remarks>
-    ///    Contains a value when <see cref="HasBlendState"/> is <c>true</c>; <c>null</c> otherwise.
-    /// </remarks>
     [MaybeNull]
     public BlendState BlendState { get; private set; }
 
     /// <summary>
     ///   The <see cref="Microsoft.Xna.Framework.Graphics.SamplerState"/> that the new
-    ///   <see cref="SpriteBatch"/> should use.
+    ///   <see cref="SpriteBatch"/> should use, or <c>null</c> if the old value should be preserved.
     /// </summary>
-    /// <remarks>
-    ///    Contains a value when <see cref="HasSamplerState"/> is <c>true</c>; <c>null</c> otherwise.
-    /// </remarks>
     [MaybeNull]
     public SamplerState SamplerState { get; private set; }
 
     /// <summary>
     ///   The <see cref="Microsoft.Xna.Framework.Graphics.DepthStencilState"/> that the new
-    ///   <see cref="SpriteBatch"/> should use.
+    ///   <see cref="SpriteBatch"/> should use, or <c>null</c> if the old value should be preserved.
     /// </summary>
-    /// <remarks>
-    ///    Contains a value when <see cref="HasDepthStencilState"/> is <c>true</c>; <c>null</c> otherwise.
-    /// </remarks>
     [MaybeNull]
     public DepthStencilState DepthStencilState { get; private set; }
 
     /// <summary>
     ///   The <see cref="Microsoft.Xna.Framework.Graphics.RasterizerState"/> that the new
-    ///   <see cref="SpriteBatch"/> should use.
+    ///   <see cref="SpriteBatch"/> should use, or <c>null</c> if the old value should be preserved.
     /// </summary>
-    /// <remarks>
-    ///    Contains a value when <see cref="HasRasterizerState"/> is <c>true</c>; <c>null</c> otherwise.
-    /// </remarks>
     [MaybeNull]
     public RasterizerState RasterizerState { get; private set; }
 
     /// <summary>
     ///   The custom <see cref="Microsoft.Xna.Framework.Graphics.Effect"/> that the new
-    ///   <see cref="SpriteBatch"/> should use.
+    ///   <see cref="SpriteBatch"/> should use, or <c>null</c> if no shader should be used.
     /// </summary>
     /// <remarks>
-    ///    Contains a value when <see cref="HasCustomEffect"/> is <c>true</c>; <c>null</c> otherwise.
+    ///    When <see cref="HasCustomEffect"/> is <c>false</c>, the old value will be preserved
+    ///    and this property will always be <c>null</c>.
     /// </remarks>
     [MaybeNull]
     public Effect CustomEffect { get; private set; }
 
     /// <summary>
     ///   The transformation <see cref="Microsoft.Xna.Framework.Matrix"/> that the new
-    ///   <see cref="SpriteBatch"/> should use.
+    ///   <see cref="SpriteBatch"/> should use, or <c>null</c> if the old value should be preserved.
     /// </summary>
-    /// <remarks>
-    ///    Contains a value when <see cref="HasTransformMatrix"/> is <c>true</c>; <c>null</c> otherwise.
-    /// </remarks>
     public Matrix? TransformMatrix { get; private set; }
 
     /// <summary>
     ///   The <see cref="Microsoft.Xna.Framework.Graphics.RenderTarget2D"/> that should be swapped to
-    ///   in-between <see cref="SpriteBatch"/>es.
+    ///   in-between <see cref="SpriteBatch"/>es, or <c>null</c> to render to the screen.
     /// </summary>
     /// <remarks>
-    ///    Contains a value when <see cref="HasRenderTarget"/> is <c>true</c>; <c>null</c> otherwise.
+    ///    When <see cref="HasRenderTarget"/> is <c>false</c>, no render target changes will be done
+    ///    and this property will always be <c>null</c>.
     /// </remarks>
     [MaybeNull]
     public RenderTarget2D RenderTarget { get; private set; }
@@ -164,7 +106,6 @@ public sealed class TemporarySpriteBatchBuilder
     /// </param>
     public TemporarySpriteBatchBuilder WithSortMode(SpriteSortMode sortMode)
     {
-        HasSortMode = true;
         SortMode = sortMode;
         return this;
     }
@@ -177,7 +118,6 @@ public sealed class TemporarySpriteBatchBuilder
     /// </param>
     public TemporarySpriteBatchBuilder WithBlendState([MaybeNull] BlendState blendState)
     {
-        HasBlendState = true;
         BlendState = blendState ?? BlendState.AlphaBlend;
         return this;
     }
@@ -190,7 +130,6 @@ public sealed class TemporarySpriteBatchBuilder
     /// </param>
     public TemporarySpriteBatchBuilder WithSamplerState([MaybeNull] SamplerState samplerState)
     {
-        HasSamplerState = true;
         SamplerState = samplerState ?? SamplerState.LinearClamp;
         return this;
     }
@@ -203,7 +142,6 @@ public sealed class TemporarySpriteBatchBuilder
     /// </param>
     public TemporarySpriteBatchBuilder WithDepthStencilState([MaybeNull] DepthStencilState depthStencilState)
     {
-        HasDepthStencilState = true;
         DepthStencilState = depthStencilState ?? DepthStencilState.None;
         return this;
     }
@@ -216,7 +154,6 @@ public sealed class TemporarySpriteBatchBuilder
     /// </param>
     public TemporarySpriteBatchBuilder WithRasterizerState([MaybeNull] RasterizerState rasterizerState)
     {
-        HasRasterizerState = true;
         RasterizerState = rasterizerState ?? RasterizerState.CullCounterClockwise;
         return this;
     }
@@ -242,7 +179,6 @@ public sealed class TemporarySpriteBatchBuilder
     /// </param>
     public TemporarySpriteBatchBuilder WithTransformMatrix(Matrix transformMatrix)
     {
-        HasTransformMatrix = true;
         TransformMatrix = transformMatrix;
         return this;
     }
@@ -269,13 +205,14 @@ public sealed class TemporarySpriteBatchBuilder
     /// </returns>
     public TemporarySpriteBatch Use()
         => new(
-            HasSortMode, SortMode,
-            HasBlendState, BlendState,
-            HasSamplerState, SamplerState,
-            HasDepthStencilState, DepthStencilState,
-            HasRasterizerState, RasterizerState,
-            HasCustomEffect, CustomEffect,
-            HasTransformMatrix, TransformMatrix,
-            HasRenderTarget, RenderTarget
+            SortMode,
+            BlendState,
+            SamplerState,
+            DepthStencilState,
+            RasterizerState,
+            CustomEffect,
+            TransformMatrix,
+            RenderTarget,
+            HasCustomEffect, HasRenderTarget
         );
 }

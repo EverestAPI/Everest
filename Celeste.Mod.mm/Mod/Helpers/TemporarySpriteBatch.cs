@@ -150,14 +150,16 @@ public ref struct TemporarySpriteBatch
     /// </summary>
     /// <seealso cref="TemporarySpriteBatchBuilder"/>
     internal TemporarySpriteBatch(
-        bool hasSortMode, SpriteSortMode? sortMode,
-        bool hasBlendState, [MaybeNull] BlendState blendState,
-        bool hasSamplerState, [MaybeNull] SamplerState samplerState,
-        bool hasDepthStencilState, [MaybeNull] DepthStencilState depthStencilState,
-        bool hasRasterizerState, [MaybeNull] RasterizerState rasterizerState,
-        bool hasCustomEffect, [MaybeNull] Effect customEffect,
-        bool hasTransformMatrix, Matrix? transformMatrix,
-        bool hasRenderTarget, [MaybeNull] RenderTarget2D renderTarget)
+        SpriteSortMode? sortMode,
+        [MaybeNull] BlendState blendState,
+        [MaybeNull] SamplerState samplerState,
+        [MaybeNull] DepthStencilState depthStencilState,
+        [MaybeNull] RasterizerState rasterizerState,
+        [MaybeNull] Effect customEffect,
+        Matrix? transformMatrix,
+        [MaybeNull] RenderTarget2D renderTarget,
+        bool hasCustomEffect,
+        bool hasRenderTarget)
     {
         GetSpriteBatchFields(
             out PreviousSortMode,
@@ -168,13 +170,13 @@ public ref struct TemporarySpriteBatch
             out PreviousCustomEffect,
             out PreviousTransformMatrix);
 
-        CurrentSortMode = hasSortMode ? sortMode!.Value : PreviousSortMode;
-        CurrentBlendState = hasBlendState ? blendState : PreviousBlendState;
-        CurrentSamplerState = hasSamplerState ? samplerState : PreviousSamplerState;
-        CurrentDepthStencilState = hasDepthStencilState ? depthStencilState : PreviousDepthStencilState;
-        CurrentRasterizerState = hasRasterizerState ? rasterizerState : PreviousRasterizerState;
+        CurrentSortMode = sortMode ?? PreviousSortMode;
+        CurrentBlendState = blendState ?? PreviousBlendState;
+        CurrentSamplerState = samplerState ?? PreviousSamplerState;
+        CurrentDepthStencilState = depthStencilState ?? PreviousDepthStencilState;
+        CurrentRasterizerState = rasterizerState ?? PreviousRasterizerState;
         CurrentCustomEffect = hasCustomEffect ? customEffect : PreviousCustomEffect;
-        CurrentTransformMatrix = hasTransformMatrix ? transformMatrix!.Value : PreviousTransformMatrix;
+        CurrentTransformMatrix = transformMatrix ?? PreviousTransformMatrix;
 
         HasRenderTarget = hasRenderTarget;
 
