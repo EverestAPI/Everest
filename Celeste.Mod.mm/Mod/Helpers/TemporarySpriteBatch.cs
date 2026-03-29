@@ -205,7 +205,8 @@ public ref struct TemporarySpriteBatch : IDisposable
     /// </summary>
     public void Dispose()
     {
-        ObjectDisposedException.ThrowIf(!Active, typeof(TemporarySpriteBatch));
+        if (!Active)
+            return;
 
         Active = false;
         Draw.SpriteBatch.End();
