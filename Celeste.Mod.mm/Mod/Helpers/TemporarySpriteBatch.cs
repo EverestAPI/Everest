@@ -23,7 +23,7 @@ namespace Celeste.Mod.Helpers;
 ///   While the cost is not that significant, it's best to avoid restarting the spritebatch too often per frame.
 /// </remarks>
 /// <seealso cref="TemporarySpriteBatchBuilder"/>
-public ref struct TemporarySpriteBatch : IDisposable
+public ref struct TemporarySpriteBatch
 {
     /// <summary>
     ///   The <see cref="SpriteSortMode"/> of this <see cref="TemporarySpriteBatch"/>.
