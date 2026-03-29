@@ -5,8 +5,6 @@
     <AssemblyName>Celeste.Mod.mm</AssemblyName>
     <RootNamespace>Celeste</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <!-- C# 13 was introduced with the .NET 9 SDK, and we need .NET 9 to compile MonoMod anyway -->
-    <LangVersion>13</LangVersion>
     <ShouldIncludeNativeLua>false</ShouldIncludeNativeLua>
   </PropertyGroup>
 
