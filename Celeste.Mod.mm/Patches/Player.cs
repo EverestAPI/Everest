@@ -20,7 +20,7 @@ using _Level = Celeste.Level;
 using _Player = Celeste.Player;
 
 namespace Celeste {
-    class patch_Player : Player {
+    class patch_Player : Player, ISpeed {
 
         // We're effectively in Player, but still need to "expose" private fields to our mod.
         private bool wasDashB;
@@ -43,13 +43,14 @@ namespace Celeste {
             }
         }
 
-
         public bool IsIntroState {
             get {
                 int state = StateMachine.State;
                 return state is >= StIntroWalk and <= StIntroWakeUp or StIntroMoonJump or StIntroThinkForABit;
             }
         }
+
+        Vector2 ISpeed.Speed { get => Speed; set => Speed = value; }
 
         public patch_Player(Vector2 position, PlayerSpriteMode spriteMode)
             : base(position, spriteMode) {

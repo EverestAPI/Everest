@@ -3,10 +3,12 @@
 using Microsoft.Xna.Framework;
 using MonoMod;
 using System;
+using Celeste.Mod;
 
 namespace Celeste {
-    class patch_Holdable : Holdable {
+    class patch_Holdable : Holdable, ISpeed {
         public Action<Vector2> SpeedSetter;
+        public Vector2 Speed { get => GetSpeed(); set => SetSpeed(value); }
 
         [MonoModLinkTo("Celeste.Holdable", "System.Void .ctor(System.Single)")]
         [MonoModForceCall]

@@ -11,10 +11,12 @@ using System.Collections;
 using _Seeker = Celeste.Seeker;
 
 namespace Celeste {
-    public class patch_Seeker : Seeker {
+    public class patch_Seeker : Seeker, ISpeed {
 
         // We're effectively in Seeker, but still need to "expose" private fields to our mod.
         private StateMachine State;
+
+        Vector2 ISpeed.Speed { get => Speed; set => Speed = value; }
 
         // no-op - only here to make
         public patch_Seeker(EntityData data, Vector2 offset)

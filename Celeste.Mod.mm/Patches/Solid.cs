@@ -1,4 +1,6 @@
-﻿using Mono.Cecil;
+﻿using Celeste.Mod;
+using Microsoft.Xna.Framework;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod;
@@ -8,22 +10,29 @@ using MonoMod.Utils;
 using System;
 
 namespace Celeste {
-    internal class patch_Solid {
+    internal class patch_Solid : Solid, ISpeed {
+
+        Vector2 ISpeed.Speed { get => Speed; set => Speed = value; }
+        
+        public patch_Solid(Vector2 position, float width, float height, bool safe) : base(position, width, height, safe) {
+            // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+        }
+
         [MonoModIgnore]
         [PatchSolidAwake]
-        public extern void Awake(Scene scene);
+        public extern new void Awake(Scene scene);
         
         [MonoModIgnore]
         [ForceNoInlining]
-        public extern bool HasPlayerClimbing();
+        public extern new bool HasPlayerClimbing();
         
         [MonoModIgnore]
         [ForceNoInlining]
-        public extern bool HasPlayerOnTop();
+        public extern new bool HasPlayerOnTop();
         
         [MonoModIgnore]
         [ForceNoInlining]
-        public extern bool HasPlayerRider();
+        public extern new bool HasPlayerRider();
     }
 }
 
