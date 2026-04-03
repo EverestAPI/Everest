@@ -1,7 +1,11 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Mono.Cecil;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,6 +26,7 @@ namespace Monocle {
         }
 
         // Patching constructors is ugly.
+        [PatchSpriteBankCtor]
         public extern void orig_ctor(Atlas atlas, XmlDocument xml);
         [MonoModConstructor]
         public void ctor(Atlas atlas, XmlDocument xml) {
@@ -205,5 +210,77 @@ namespace Monocle {
         public static string GetXMLPath(this SpriteBank self)
             => ((patch_SpriteBank) self).XMLPath;
 
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch SpriteBank's orig_ctor to throw a more descriptive error in the case of a sprite having `copy` but no `path`
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSpriteBankCtor))]
+    class PatchSpriteBankCtorAttribute : Attribute { }
+
+    static partial class MonoModRules {
+        public static void PatchSpriteBankCtor(ILContext il, CustomAttribute attrib) {
+            TypeDefinition t_Calc = MonoModRule.Modder.Module.GetType("Monocle.Calc");
+            MethodReference m_Calc_HasAttr = t_Calc.FindMethod("HasAttr");
+
+            TypeDefinition t_XmlNode = MonoModRule.Modder.FindType("System.Xml.XmlNode").Resolve();
+            MethodReference m_XmlNode_get_Name = MonoModRule.Modder.Module.ImportReference(
+                t_XmlNode.FindMethod("get_Name")
+            );
+
+            TypeDefinition t_String = MonoModRule.Modder.FindType("System.String").Resolve();
+            MethodReference m_String_Concat_string_string_string = MonoModRule.Modder.Module.ImportReference(
+                t_String.FindMethod("System.String Concat(System.String,System.String,System.String)")
+            );
+
+            TypeDefinition t_Exception = MonoModRule.Modder.FindType("System.Exception").Resolve();
+            MethodReference m_Exception_ctor_string = MonoModRule.Modder.Module.ImportReference(
+                t_Exception.FindMethod("System.Void .ctor(System.String)")
+            );
+
+            var cursor = new ILCursor(il);
+
+            /*
+             foreach (object child in XML["Sprites"].ChildNodes) {
+                 if (child is XmlElement) {
+                     var xmlElement = child as XmlElement;
+                     [...]
+                     
+                     if (xmlElement.HasAttr("copy")) {
+                         // Insert...
+                          <-- if (!xmlElement.HasAttr("path"))
+                          <--     throw new Exception("Sprite '" + xmlElement.Name + "': 'path' is missing!");
+                         
+                         spriteData.Add(dictionary[xmlElement.Attr("copy")], xmlElement.Attr("path"));
+                     }
+                     
+                     [...]
+                 }
+             }
+             */
+
+            cursor.GotoNext(instr => instr.MatchLdstr("copy"));
+            cursor.GotoNext(MoveType.After, instr => instr.MatchBrfalse(out _));
+            cursor.MoveAfterLabels();
+
+            ILLabel hasPathLabel = cursor.DefineLabel();
+
+            cursor.EmitLdloc3(); // local 3 is the current XmlElement
+            cursor.EmitLdstr("path");
+            cursor.EmitCall(m_Calc_HasAttr);
+            cursor.EmitBrtrue(hasPathLabel);
+
+            cursor.EmitLdstr("Sprite '");
+            cursor.EmitLdloc3();
+            cursor.EmitCallvirt(m_XmlNode_get_Name);
+            cursor.EmitLdstr("': 'path' is missing!");
+            cursor.EmitCall(m_String_Concat_string_string_string);
+            cursor.EmitNewobj(m_Exception_ctor_string);
+            cursor.EmitThrow();
+
+            cursor.MarkLabel(hasPathLabel);
+        }
     }
 }
