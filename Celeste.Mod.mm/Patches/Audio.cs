@@ -170,7 +170,9 @@ namespace Celeste {
                         additionalBanksMapping.RemoveAt(i);
                     } else if (loadingState != LOADING_STATE.LOADING) {
                         // assume loading was done correctly
-                        PostProcessBank(bank, asset);
+                        lock (Everest.Content.Map) {
+                            PostProcessBank(bank, asset);
+                        }
                         additionalBanksMapping.RemoveAt(i);
                     }
                 }
