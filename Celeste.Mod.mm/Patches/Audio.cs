@@ -58,7 +58,7 @@ namespace Celeste {
 
             bool fmodLiveUpdate = Settings.Instance.LaunchWithFMODLiveUpdate;
             Settings.Instance.LaunchWithFMODLiveUpdate |= CoreModule.Settings.LaunchWithFMODLiveUpdateInEverest;
-        
+
             // Original initialization code
             {
                 FMOD.Studio.INITFLAGS flags = FMOD.Studio.INITFLAGS.NORMAL;
@@ -116,26 +116,26 @@ namespace Celeste {
                 return;
             }
 
-            lock (Everest.Content.Map) {
-                bool nonBlockingLoad = CoreModule.Settings.FastFMODBankLoading ?? true;
+            List<(ModAsset, Bank)> additionalBanksMapping = new List<(ModAsset, Bank)>();
+            bool nonBlockingLoad = CoreModule.Settings.FastFMODBankLoading ?? true;
 
+            lock (Everest.Content.Map) {
                 if (nonBlockingLoad) {
                     Logger.Info("Audio", "Loading FMOD banks in parallel");
                 }
 
-                List<(ModAsset, Bank)> additionalBanksMapping = new List<(ModAsset, Bank)>();
                 foreach (ModAsset asset in Everest.Content.Map.Values.Where(asset => asset.Type == typeof(AssetTypeBank))) {
                     if (!ingestedModBankPaths.Contains(asset.PathVirtual)) {
                         additionalBanksMapping.Add((asset, IngestBank(asset, nonBlockingLoad)));
                     }
                 }
-
-                if (nonBlockingLoad) {
-                    PoolAndLoadBanksAndEvents(additionalBanksMapping);
-                }
-
-                Logger.Info("Audio", $"Loaded {cachedBankPaths.Count} banks and {cachedModEvents.Count} events");
             }
+
+            if (nonBlockingLoad) {
+                PoolAndLoadBanksAndEvents(additionalBanksMapping);
+            }
+
+            Logger.Info("Audio", $"Loaded {cachedBankPaths.Count} banks and {cachedModEvents.Count} events");
         }
 
         [MonoModReplace]
