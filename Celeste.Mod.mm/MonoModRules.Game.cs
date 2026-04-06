@@ -170,6 +170,8 @@ namespace MonoMod {
                     if ((field.Attributes & FieldAttributes.Static) != 0)
                         field.Attributes &= ~FieldAttributes.InitOnly;
 
+                PatchAllEntity(type);
+
                 // Stub out extern FMOD methods in headless mode
                 if (MonoModRule.Flag.Get("Headless") && type.Namespace.StartsWith("FMOD")) {
                     foreach (MethodDefinition method in type.Methods) {

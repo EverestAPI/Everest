@@ -30,6 +30,18 @@ namespace MonoMod {
                 }
             }
 
+            static void VisitType(TypeDefinition type) {
+                PatchAllEntity(type);
+
+                // Visit nested types
+                foreach (TypeDefinition nestedType in type.NestedTypes)
+                    VisitType(nestedType);
+            }
+
+            foreach (TypeDefinition type in modder.Module.Types)
+                VisitType(type);
+
+
             // If this is legacy MonoMod, relink against modern MonoMod
             if (isMonoMod && isLegacyMonoMod) {
                 SetupLegacyMonoModRelinking(modder);
