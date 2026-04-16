@@ -7,9 +7,11 @@ using Microsoft.Xna.Framework;
 using MonoMod;
 
 namespace Celeste {
+    [PatchSpeedInterface]
     class patch_Glider : Glider, ISpeed {
         public patch_Holdable Hold; // avoids extra cast
 
+        [PatchInterfaceProperty]
         Vector2 ISpeed.Speed { get => Speed; set => Speed = value; }
 
         public patch_Glider(Vector2 position, bool bubble, bool tutorial)

@@ -6,8 +6,11 @@ using System;
 using Celeste.Mod;
 
 namespace Celeste {
+    [PatchSpeedInterface]
     class patch_Holdable : Holdable, ISpeed {
         public Action<Vector2> SpeedSetter;
+
+        [PatchInterfaceProperty]
         public Vector2 Speed { get => GetSpeed(); set => SetSpeed(value); }
 
         [MonoModLinkTo("Celeste.Holdable", "System.Void .ctor(System.Single)")]

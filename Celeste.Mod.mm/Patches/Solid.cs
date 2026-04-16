@@ -10,10 +10,11 @@ using MonoMod.Utils;
 using System;
 
 namespace Celeste {
+    [PatchSpeedInterface]
     internal class patch_Solid : Solid, ISpeed {
-
+        [PatchInterfaceProperty]
         Vector2 ISpeed.Speed { get => Speed; set => Speed = value; }
-        
+
         public patch_Solid(Vector2 position, float width, float height, bool safe) : base(position, width, height, safe) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }

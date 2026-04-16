@@ -7,9 +7,11 @@ using Microsoft.Xna.Framework;
 using MonoMod;
 
 namespace Celeste {
+    [PatchSpeedInterface]
     class patch_TheoCrystal : TheoCrystal, ISpeed {
         public patch_Holdable Hold; // avoids extra cast
 
+        [PatchInterfaceProperty]
         Vector2 ISpeed.Speed { get => Speed; set => Speed = value; }
 
         public patch_TheoCrystal(EntityData data, Vector2 offset) 

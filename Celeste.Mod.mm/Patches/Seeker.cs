@@ -11,11 +11,13 @@ using System.Collections;
 using _Seeker = Celeste.Seeker;
 
 namespace Celeste {
+    [PatchSpeedInterface]
     public class patch_Seeker : Seeker, ISpeed {
 
         // We're effectively in Seeker, but still need to "expose" private fields to our mod.
         private StateMachine State;
 
+        [PatchInterfaceProperty]
         Vector2 ISpeed.Speed { get => Speed; set => Speed = value; }
 
         // no-op - only here to make

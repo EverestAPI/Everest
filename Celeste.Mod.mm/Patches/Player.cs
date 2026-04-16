@@ -20,6 +20,7 @@ using _Level = Celeste.Level;
 using _Player = Celeste.Player;
 
 namespace Celeste {
+    [PatchSpeedInterface]
     class patch_Player : Player, ISpeed {
 
         // We're effectively in Player, but still need to "expose" private fields to our mod.
@@ -50,6 +51,7 @@ namespace Celeste {
             }
         }
 
+        [PatchInterfaceProperty]
         Vector2 ISpeed.Speed { get => Speed; set => Speed = value; }
 
         public patch_Player(Vector2 position, PlayerSpriteMode spriteMode)
