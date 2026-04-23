@@ -16,6 +16,9 @@ using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
 
+using _Level = Celeste.Level;
+using _Player = Celeste.Player;
+
 namespace Celeste {
     class patch_Player : Player {
 
