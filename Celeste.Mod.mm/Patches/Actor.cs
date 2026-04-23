@@ -1,12 +1,6 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
-using Celeste.Mod;
 using Microsoft.Xna.Framework;
-using Monocle;
-using MonoMod;
-using System;
-using System.Collections.Generic;
-using System.Xml;
 
 namespace Celeste {
     class patch_Actor : Actor {
