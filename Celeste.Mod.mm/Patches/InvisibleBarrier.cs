@@ -13,6 +13,8 @@ namespace Celeste {
                 Remove(Get<ClimbBlocker>());
 
             SurfaceSoundIndex = data.Int("surfaceIndex", SurfaceSoundIndex);
+
+            AllowStaticMovers = data.Bool("allowStaticMovers", true);
         }
 
     }
