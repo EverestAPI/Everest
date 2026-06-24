@@ -340,6 +340,10 @@ namespace Celeste {
         [MonoModIgnore]
         [ForceNoInlining]
         private extern ParticleType DustParticleFromSurfaceIndex(int index);
+
+        [MonoModIgnore]
+        [ForceNoInlining]
+        private new extern void RefillStamina();
     }
 
     public static class PlayerExt {

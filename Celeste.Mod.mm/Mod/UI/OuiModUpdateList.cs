@@ -360,7 +360,7 @@ namespace Celeste.Mod.UI {
 
                     ModUpdaterHelper.VerifyChecksum(update, zipPath);
                     break; // out of the loop
-                } catch (Exception e) when (e is WebException or TimeoutException) {
+                } catch (Exception e) {
                     downloadException = e;
                     Logger.Warn("OuiModUpdateList", $"Download from {url} failed, trying another mirror.");
                     Logger.LogDetailed(e);

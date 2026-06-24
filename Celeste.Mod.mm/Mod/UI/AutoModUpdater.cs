@@ -142,7 +142,7 @@ namespace Celeste.Mod.UI {
                             ModUpdaterHelper.VerifyChecksum(update, zipPath);
 
                             break; // out of the loop
-                        } catch (Exception e) when (e is WebException or TimeoutException or IOException) {
+                        } catch (Exception e) {
                             downloadException = e;
                             Logger.Warn("AutoModUpdater", $"Download from {url} failed, trying another mirror");
                             Logger.LogDetailed(e);

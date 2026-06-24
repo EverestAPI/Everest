@@ -336,6 +336,7 @@ namespace Celeste.Mod.Meta {
         public bool? HeartIsEnd { get; set; }
         public bool? SeekerSlowdown { get; set; }
         public bool? TheoInBubble { get; set; }
+        public bool? CoreModeIceTileOverlay { get; set; }
 
         public patch_ModeProperties Convert()
             => new patch_ModeProperties() {
@@ -356,6 +357,7 @@ namespace Celeste.Mod.Meta {
             meta.AttrIfBool("HeartIsEnd", v => HeartIsEnd = v);
             meta.AttrIfBool("SeekerSlowdown", v => SeekerSlowdown = v);
             meta.AttrIfBool("TheoInBubble", v => TheoInBubble = v);
+            meta.AttrIfBool("CoreModeIceTileOverlay", v => CoreModeIceTileOverlay = v);
 
             BinaryPacker.Element child;
 
