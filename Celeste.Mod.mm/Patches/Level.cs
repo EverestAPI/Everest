@@ -816,7 +816,7 @@ namespace Celeste.Mod {
                 internal static void AfterUpdate(_Level level)
                     => OnAfterUpdate?.Invoke(level);
                 
-                // <summary>
+                /// <summary>
                 /// Called at the very beginning of <see cref="patch_Level.FreezeFrameUpdate"/>.
                 /// </summary>
                 public static event Action<_Level> OnBeforeFreezeFrameUpdate;
