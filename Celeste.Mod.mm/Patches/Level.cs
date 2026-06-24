@@ -888,7 +888,7 @@ namespace MonoMod {
     class PatchLevelUpdateAttribute : Attribute { }
     
     /// <summary>
-    /// Patch our <see cref="Celeste.patch_Level.FreezeFrameUpdate"/> to be marked as <c>virtual</c> so it actually overrides the base method, and to actually call the base method instead of the dummy.
+    /// Patch our <see cref="Celeste.patch_Level.FreezeFrameUpdate"/> to be marked as <c>virtual</c> so it overrides the base method, and to call the base method instead of the dummy.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelFreezeFrameUpdate))]
     class PatchLevelFreezeFrameUpdateAttribute : Attribute { }
