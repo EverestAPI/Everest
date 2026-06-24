@@ -24,8 +24,7 @@ namespace Monocle {
         public new bool OnInterval(float interval, float offset) {
             return Math.Floor(((double) TimeActive - offset - Engine.DeltaTime) / interval) < Math.Floor(((double) TimeActive - offset) / interval);
         }
-
-                
+        
         /// <summary>
         /// Finds all entities created from an EntityData with the specified SID, using the Tracker if possible.
         /// </summary>
@@ -53,16 +52,12 @@ namespace Monocle {
         /// <summary>
         /// Called during freeze frames instead of the normal <see cref="Scene.Update"/>.
         /// </summary>
-        // todo: allow some renderers to update?
         public virtual void FreezeFrameUpdate() {
             if (!Paused) {
                 foreach (patch_Entity entity in this[TagsExt.FreezeFrameUpdate]) {
-                    entity._PreUpdate();
-                    if (entity.Active)
-                    {
+                    if (entity.Active) {
                         entity.Update();
                     }
-                    entity._PostUpdate();
                 }
             }
         }

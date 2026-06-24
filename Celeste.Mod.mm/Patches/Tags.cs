@@ -22,8 +22,11 @@ namespace Celeste {
         public static BitTag SubHUD;
 
         /// <summary>
-        /// Tag to be used for entities that should update during freeze frames.
+        /// Tag to be used for entities that should update during freeze frames.<br/>
+        /// If in a <see cref="Level"/>, <see cref="Tags.PauseUpdate"/> is also required for this entity to update during freeze frames when the level is <c>Paused</c>,
+        /// <see cref="Tags.TransitionUpdate"/> is required to update during a transition, and <see cref="Tags.FrozenUpdate"/> is required to update when the level is <c>Frozen</c>.
         /// </summary>
         public static BitTag FreezeFrameUpdate;
+        
     }
 }

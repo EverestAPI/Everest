@@ -6,6 +6,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod;
 using MonoMod.Cil;
+using MonoMod.InlineRT;
 using MonoMod.Utils;
 using System;
 using System.Linq;
@@ -201,15 +202,15 @@ namespace MonoMod {
     static partial class MonoModRules {
         public static void PatchEngineUpdate(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_Engine = context.Method.DeclaringType;
+            TypeDefinition t_Scene = MonoModRule.Modder.FindType("Monocle.Scene").Resolve();
             FieldReference f_scene = t_Engine.FindField("scene");
             FieldReference sf_TimeRate = t_Engine.FindField("TimeRate");
             FieldReference sf_TimeRateB = t_Engine.FindField("TimeRateB");
             FieldReference sf_EffectiveTimeRate = t_Engine.FindField("EffectiveTimeRate");
             MethodReference m_GetTimeRateComponentMultiplier = t_Engine.FindMethod("GetTimeRateComponentMultiplier");
+            MethodReference m_Scene_FreezeFrameUpdate = t_Scene.FindMethod("FreezeFrameUpdate");
             VariableDefinition v_componentTimeRate = new(context.Import(typeof(float)));
             context.Method.Body.Variables.Add(v_componentTimeRate);
-            TypeDefinition t_Scene = f_scene.FieldType.Resolve();
-            MethodReference m_Scene_FreezeFrameUpdate = t_Scene.FindMethod("FreezeFrameUpdate");
 
             ILCursor cursor = new ILCursor(context);
             cursor.GotoNext(
@@ -237,6 +238,7 @@ namespace MonoMod {
             cursor.EmitLdloc(v_componentTimeRate);
             cursor.EmitMul();
 
+            // call the current scene's `FreezeFrameUpdate` before `FreezeTimer` is updated
             cursor.GotoNext(MoveType.Before,
                 instr => instr.MatchLdsfld("Monocle.Engine", "FreezeTimer"),
                 instr => instr.MatchCall("Monocle.Engine", "get_RawDeltaTime"),

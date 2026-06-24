@@ -106,21 +106,55 @@ namespace Celeste {
         [PatchLevelUpdate] // ... except for manually manipulating the method via MonoModRules
         public extern new void Update();
 
-        // ... this is gonna be fun
         [MonoModIgnore] // don't put this in `Level` when we're done
-        internal extern static void base_FreezeFrameUpdate(); // dummy method, will be replaced with the actual `base.FreezeFrameUpdate` call in the IL patch
+        internal static extern void base_FreezeFrameUpdate(); // dummy method, will be replaced with the actual `base.FreezeFrameUpdate` call in the IL patch
         [PatchLevelFreezeFrameUpdate] // add the `virtual` flag to this method so it overrides the one in `patch_Scene` properly and calls `base.FreezeFrameUpdate`
-        // todo: does there need to be anything else in here?
         public void FreezeFrameUpdate() {
             Everest.Events.Level.BeforeFreezeFrameUpdate(this);
-            
-            base_FreezeFrameUpdate();
-            
+
+            // same logic as in `Level.Update` so entities with `TagsExt.FreezeFrameUpdate` and other "special update tags" are handled correctly
+            if (FrozenOrPaused) {
+                bool disabled = MInput.Disabled;
+                MInput.Disabled = false;
+
+                if (!Paused) {
+                    foreach (Entity entity in base[Tags.FrozenUpdate]) {
+                        if (entity.Active && entity.TagCheck(TagsExt.FreezeFrameUpdate)) {
+                            entity.Update();
+                        }
+                    }
+                }
+                foreach (Entity entity in base[Tags.PauseUpdate]) {
+                    if (entity.Active && entity.TagCheck(TagsExt.FreezeFrameUpdate)) {
+                        entity.Update();
+                    }
+                }
+
+                MInput.Disabled = disabled;
+            } else if (!Transitioning) {
+                if (RetryPlayerCorpse == null) {
+                    base_FreezeFrameUpdate();
+                } else {
+                    foreach (Entity entity in base[Tags.PauseUpdate]) {
+                        if (entity.Active && entity.TagCheck(TagsExt.FreezeFrameUpdate)) {
+                            entity.Update();
+                        }
+                    }
+                }
+            } else {
+                foreach (Entity entity in base[Tags.TransitionUpdate]) {
+                    if (entity.TagCheck(TagsExt.FreezeFrameUpdate)) {
+                        entity.Update();
+                    }
+                }
+            }
+
             foreach (PostUpdateHook component in Tracker.GetComponents<PostUpdateHook>()) {
                 if (component.Entity.Active && component.Entity.TagCheck(TagsExt.FreezeFrameUpdate)) {
                     component.OnPostUpdate();
                 }
             }
+
             Everest.Events.Level.AfterFreezeFrameUpdate(this);
         }
 
