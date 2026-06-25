@@ -159,9 +159,8 @@ namespace Celeste.Mod.Core {
         [SettingIgnore]
         public int LogHistoryCountToKeep { get; set; } = 3;
 
-        [SettingNeedsRelaunch]
-        [SettingInGame(false)]
-        public bool FastLevelLoading { get; set; } = false;
+        // Rendering handled in CreateFastLevelLoadingEntry
+        public bool? FastLevelLoading { get; set; } = null;
 
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
@@ -707,6 +706,40 @@ namespace Celeste.Mod.Core {
                     value: mirrorPreferences.IndexOf(MirrorPreferences)
                 ).Change(value => MirrorPreferences = mirrorPreferences[value])
             );
+        }
+
+        public void CreateFastLevelLoadingEntry(TextMenu menu, bool inGame) {
+            if (inGame) return;
+
+            Dictionary<string, bool?> fastLevelLoadingPreferences = new() {
+                {"MODOPTIONS_DEFAULT", null},
+                {"OPTIONS_ON", true},
+                {"OPTIONS_OFF", false},
+            };
+
+            List<string> dialogKeys = fastLevelLoadingPreferences.Keys
+                .Select(setting => setting)
+                .ToList();
+
+            TextMenu.Slider slider = new TextMenu.Slider(
+                label: Dialog.Clean("MODOPTIONS_COREMODULE_FASTLEVELLOADING"),
+                values: index => Dialog.Clean(dialogKeys[index]),
+                min: 0,
+                max: fastLevelLoadingPreferences.Count - 1,
+                value: fastLevelLoadingPreferences.Values.ToList().IndexOf(FastLevelLoading)
+            );
+
+            menu.Add(slider.Change(value => FastLevelLoading = fastLevelLoadingPreferences.Values.ToList()[value]));
+            slider.NeedsRelaunch((patch_TextMenu) menu);
+
+            TextMenuExt.EaseInSubHeaderExt description = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean("MODOPTIONS_COREMODULE_FASTLEVELLOADING_DESC"), false, menu) {
+                TextColor = Color.OrangeRed,
+                HeightExtra = 0f
+            };
+            slider.OnEnter += () => description.FadeVisible = true;
+            slider.OnLeave += () => description.FadeVisible = false;
+
+            menu.Add(description);
         }
 
         public enum VanillaTristate {

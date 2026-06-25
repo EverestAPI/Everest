@@ -380,7 +380,7 @@ namespace Celeste {
                 }
                 Array.Resize(ref area.Mode, modei);
                 // Do not clutter the log if Fast Level Loading is disabled
-                LogLevel level = CoreModule.Settings.FastLevelLoading ? LogLevel.Info : LogLevel.Verbose;
+                LogLevel level = (CoreModule.Settings.FastLevelLoading ?? false) ? LogLevel.Info : LogLevel.Verbose;
                 Logger.Log(level, "AreaData", $"{i}: {area.SID} - {area.Mode.Length} sides");
 
                 // Update old MapData areas and load any new areas.
@@ -414,7 +414,7 @@ namespace Celeste {
                 }
             }
 
-            if (CoreModule.Settings.FastLevelLoading) {
+            if (CoreModule.Settings.FastLevelLoading ?? false) {
                 Logger.Info("AreaData", $"Loading map data in parallel");
                 Parallel.For(0, Areas.Count, ProcessMapData);
             } else {
