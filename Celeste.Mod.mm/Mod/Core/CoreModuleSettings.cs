@@ -161,8 +161,7 @@ namespace Celeste.Mod.Core {
 
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
-        [SettingIgnore] // TODO: Show as advanced setting.
-        public bool? FastLevelLoading { get; set; } = null;
+        public bool FastLevelLoading { get; set; } = false;
 
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
