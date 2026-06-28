@@ -10,23 +10,23 @@ jobs:
       matrix:
         tas:
           - name: Celeste 100%
-            url: "https://github.com/VampireFlower/CelesteTAS/archive/e6dfa34b8782c3dc88118d1fc14d29ceb73d036d.zip"
-            path: "CelesteTAS-e6dfa34b8782c3dc88118d1fc14d29ceb73d036d/0 - 100%.tas"
+            url: "https://github.com/VampireFlower/CelesteTAS/archive/b1a9aa21c51835df9a1be44f18929d97ffac375e.zip"
+            path: "CelesteTAS-b1a9aa21c51835df9a1be44f18929d97ffac375e/0 - 100%.tas"
 
           - name: Strawberry Jam All Levels
-            url: "https://github.com/VampireFlower/StrawberryJamTAS/archive/495dd485b4e94f4d23d4fb5aa1350f24ff066d29.zip"
-            path: "StrawberryJamTAS-495dd485b4e94f4d23d4fb5aa1350f24ff066d29/0-SJ All Levels.tas"
-            bundle: "https://celestemodupdater.0x0a.de/pinned-mods/StrawberryJam2021-Bundle-46cc7e85.zip"
+            url: "https://github.com/VampireFlower/StrawberryJamTAS/archive/47591b2d1fa217f8d0eabe9172cd5b829ace0fb7.zip"
+            path: "StrawberryJamTAS-47591b2d1fa217f8d0eabe9172cd5b829ace0fb7/0-SJ All Levels.tas"
+            bundle: "https://celestemodupdater.0x0a.de/pinned-mods/StrawberryJam2021-Bundle-86e25e7c.zip"
 
     runs-on: ubuntu-latest
     timeout-minutes: 60
     name: ${{ matrix.tas.name }}
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@v4
 
     - name: Wait for Azure build on commit ${{ github.sha }}
       run: cd .github/tas-check && ./1-get-build-url.sh "${{ github.sha }}"

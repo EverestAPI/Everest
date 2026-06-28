@@ -212,7 +212,6 @@
 	UPDATER_SRC_BUILDBOT= 			자동 빌드
 
 # Everest Updater
-	EVERESTUPDATER_NOTSUPPORTED=	이 플랫폼에서 업데이트가 지원되지 않습니다. - 업데이트 취소
 	EVERESTUPDATER_NOUPDATE=		업데이트가 없습니다. - 업데이트 취소
 	EVERESTUPDATER_CREATINGLEGACYREF=	legacyRef 설치 준비 중
 	EVERESTUPDATER_NOTAVAILABLE=	요구하는 에베레스트 빌드를 사용할 수 없습니다!

@@ -142,6 +142,21 @@ namespace Celeste {
     }
 }
 
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class Session {
+                /// <summary>
+                /// Called whenever a <see cref="patch_Session.Slider"/>'s value changes'.
+                /// </summary>
+                public static event Action<patch_Session, patch_Session.Slider, float?> OnSliderChanged;
+                internal static void SliderChanged(patch_Session session, patch_Session.Slider slider, float? previous)
+                    => OnSliderChanged?.Invoke(session, slider, previous);
+            }
+        }
+    }
+}
+
 namespace MonoMod {
 
     /// <summary>

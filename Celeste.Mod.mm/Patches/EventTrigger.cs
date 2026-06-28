@@ -12,6 +12,9 @@ using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
 
+using _EventTrigger = Celeste.EventTrigger;
+using _Player = Celeste.Player;
+
 namespace Celeste {
     class patch_EventTrigger : EventTrigger {
 
@@ -45,6 +48,23 @@ namespace Celeste {
             }
 
             return false;
+        }
+    }
+}
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class EventTrigger {
+                public delegate bool TriggerEventHandler(_EventTrigger trigger, _Player player, string eventID);
+                /// <summary>
+                /// Allows registering custom events without needing to predefine their IDs.
+                /// Return <c>true</c> to indicate that you will handle this event trigger activation, and <c>false</c> otherwise.
+                /// </summary>
+                public static event TriggerEventHandler OnEventTrigger;
+                internal static bool TriggerEvent(_EventTrigger trigger, _Player player, string eventID)
+                    => OnEventTrigger?.InvokeWhileFalse(trigger, player, eventID) ?? false;
+            }
         }
     }
 }

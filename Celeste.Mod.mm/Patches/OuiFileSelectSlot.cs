@@ -335,6 +335,81 @@ namespace Celeste {
     }
 }
 
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class FileSelectSlot {
+                public delegate void CreateButtonsHandler(List<patch_OuiFileSelectSlot.Button> buttons, OuiFileSelectSlot slot, EverestModuleSaveData modSaveData, bool fileExists);
+                /// <summary>
+                /// Allows creating additional buttons for a file select slot.<br/>
+                /// If a mod subscribes to this event, its savedata for the given slot will be loaded and provided to the delegate.
+                /// <example>
+                /// Usage example:
+                /// <code>
+                /// Everest.Events.FileSelectSlot.OnCreateButtons += (buttons, slot, saveData, fileExists) => {
+                ///   // add a simple toggle button for an option in mod save data (SilhouetteEnabled)
+                ///   OuiFileSelectSlot.Button button = new OuiFileSelectSlot.Button {
+                ///     Label = $"Silhouette Mode: {(saveData as MyModuleSaveData).SilhouetteEnabled}",
+                ///     Scale = 0.7f
+                ///   };
+                ///   button.Action = () => {
+                ///     (saveData as MyModuleSaveData).SilhouetteEnabled = !(saveData as MyModuleSaveData).SilhouetteEnabled;
+                ///     button.Label = $"Silhouette Mode: {(saveData as MyModuleSaveData).SilhouetteEnabled}";
+                ///   };
+                ///   buttons.Add(button);
+                ///
+                ///   // add a button opening a OuiFileSelectSlotSubmenu
+                ///   buttons.Add(new OuiFileSelectSlot.Button {
+                ///     Label = $"Silhouette Mode Options",
+                ///     Scale = 0.7f,
+                ///     Action = () => OuiFileSelectSlotSubmenu.Goto&lt;OuiSilhouetteModeOptions&gt;(slot, saveData, fileExists)
+                ///   });
+                /// }
+                /// </code>
+                /// </example>
+                /// <example>
+                /// Submenu implementation example:
+                /// <code>
+                /// using Celeste.Mod.UI;
+                ///
+                /// namespace Celeste.Mod.MyMod {
+                ///   class OuiSilhouetteModeOptions : OuiFileSelectSlotSubmenu {
+                ///     public override string MenuName => "SILHOUETTE MODE OPTIONS";
+                ///
+                ///     protected override void addOptionsToMenu(TextMenu menu, OuiFileSelectSlot slot, EverestModuleSaveData modSaveData, bool fileExists) {
+                ///       MyModuleSaveDatacastSaveData = (modSaveData as MyModuleSaveData);
+                ///
+                ///       menu.Add(new TextMenu.SubHeader("Toggle"));
+                ///       menu.Add(new TextMenu.OnOff("Enabled", castSaveData.SilhouetteEnabled).Change(newValue => castSaveData.SilhouetteEnabled = newValue));
+                ///     }
+                ///   }
+                /// }
+                /// </code>
+                /// </example>
+                /// </summary>
+                public static event CreateButtonsHandler OnCreateButtons;
+                internal static void HandleCreateButtons(List<patch_OuiFileSelectSlot.Button> buttons, OuiFileSelectSlot slot, bool fileExists) {
+                    if (OnCreateButtons == null) {
+                        return;
+                    }
+
+                    foreach (Delegate del in OnCreateButtons.GetInvocationList()) {
+                        // find the Everest module this delegate belongs to, and load the mod save data from it for the current slot.
+                        EverestModule matchingModule = _Modules.Find(module => module.GetType().Assembly == del.Method.DeclaringType.Assembly);
+                        EverestModuleSaveData modSaveData = null;
+                        if (matchingModule != null) {
+                            modSaveData = matchingModule._SaveData;
+                        }
+
+                        // call the delegate.
+                        del.DynamicInvoke(new object[] { buttons, slot, modSaveData, fileExists });
+                    }
+                }
+            }
+        }
+    }
+}
+
 namespace MonoMod {
     /// <summary>
     /// Patches the method to make its manually-implemented screen flashing respect advanced photosensitivity settings.

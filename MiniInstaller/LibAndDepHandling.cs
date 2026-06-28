@@ -85,7 +85,7 @@ public static class LibAndDepHandling {
                     dst = Path.Combine(Path.GetDirectoryName(dst), mappedName);
                 }
 
-                File.Copy(src, dst, true);
+                File.Copy(src, dst, overwrite: true);
 
                 if (symlinkPath != null && symlinkPath != dst) {
                     File.Delete(symlinkPath);
@@ -106,8 +106,7 @@ public static class LibAndDepHandling {
 
         // Copy our Steamworks.NET.dll
         string steamworksLibDst = Path.Combine(Globals.PathGame, "Steamworks.NET.dll");
-        File.Delete(steamworksLibDst);
-        File.Copy(steamworksLibSrc, steamworksLibDst);
+        File.Copy(steamworksLibSrc, steamworksLibDst, overwrite: true);
 
         // Delete old libraries
         foreach (string libFile in Globals.WindowsNativeLibFileNames)
@@ -115,11 +114,11 @@ public static class LibAndDepHandling {
 
         foreach (string libDir in new string[] { "lib", "lib64", "everest-lib64", "runtimes" }) {
             if (Directory.Exists(Path.Combine(Globals.PathGame, libDir)))
-                Directory.Delete(Path.Combine(Globals.PathGame, libDir), true);
+                Directory.Delete(Path.Combine(Globals.PathGame, libDir), recursive: true);
         }
 
         if (Globals.PathOSXExecDir != null && Path.Exists(Path.Combine(Globals.PathOSXExecDir, "osx")))
-            Directory.Delete(Path.Combine(Globals.PathOSXExecDir, "osx"), true);
+            Directory.Delete(Path.Combine(Globals.PathOSXExecDir, "osx"), recursive: true);
         
         // Finally make EverestSplash executable
         if (Globals.Platform is Globals.InstallPlatform.Linux or Globals.InstallPlatform.MacOS) {
@@ -138,7 +137,7 @@ public static class LibAndDepHandling {
     }
 
     public static void CopyControllerDB() {
-        File.Copy(Path.Combine(Globals.PathEverestLib, "gamecontrollerdb.txt"), Path.Combine(Globals.PathGame, "gamecontrollerdb.txt"), true);
+        File.Copy(Path.Combine(Globals.PathEverestLib, "gamecontrollerdb.txt"), Path.Combine(Globals.PathGame, "gamecontrollerdb.txt"), overwrite: true);
         Logger.LogLine("Copied gamecontrollerdb.txt");
     }
 
@@ -268,6 +267,7 @@ public static class LibAndDepHandling {
                 // Bind Linux apphost
                 Logger.LogLine($"Binding Linux apphost {Path.ChangeExtension(appExe, null)}");
                 HostWriter.CreateAppHost(Path.Combine(hostsDir, "linux"), Path.ChangeExtension(appExe, null), Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll));
+                File.Delete(Globals.PathCelesteExe);
             } break;
             case Globals.InstallPlatform.MacOS: {
                 // Bind OS X apphost
@@ -277,6 +277,7 @@ public static class LibAndDepHandling {
                 File.Delete(Path.Combine(Globals.PathOSXExecDir, Path.GetFileNameWithoutExtension(appExe)));
                 File.CreateSymbolicLink(Path.Combine(Globals.PathOSXExecDir, Path.GetFileNameWithoutExtension(appExe)),
                                         Path.GetRelativePath(Globals.PathOSXExecDir, Path.ChangeExtension(appExe, null)));
+                File.Delete(Globals.PathCelesteExe);
             } break;
         }
     }

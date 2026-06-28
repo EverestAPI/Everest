@@ -121,3 +121,25 @@ namespace Celeste {
 
     }
 }
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class Input {
+                /// <summary>
+                /// Called by <see cref="patch_Input.Initialize"/>.
+                /// </summary>
+                public static event Action OnInitialize;
+                internal static void Initialize()
+                    => OnInitialize?.Invoke();
+
+                /// <summary>
+                /// Called by <see cref="patch_Input.Deregister"/>.
+                /// </summary>
+                public static event Action OnDeregister;
+                internal static void Deregister()
+                    => OnDeregister?.Invoke();
+            }
+        }
+    }
+}

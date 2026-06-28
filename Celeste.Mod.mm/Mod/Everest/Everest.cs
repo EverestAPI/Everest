@@ -291,12 +291,6 @@ namespace Celeste.Mod {
                 else if (arg == "--dump-all")
                     Content._DumpAll = true;
 
-                else if (arg == "--headless")
-                    Environment.SetEnvironmentVariable("EVEREST_HEADLESS", "1");
-
-                else if (arg == "--everest-disabled")
-                    Environment.SetEnvironmentVariable("EVEREST_DISABLED", "1");
-
                 else if (arg == "--whitelist" && queue.Count >= 1)
                     Loader.NameWhitelist = queue.Dequeue();
 
@@ -311,6 +305,9 @@ namespace Celeste.Mod {
                 else if (arg == "--use-scancodes") {
                     Environment.SetEnvironmentVariable("FNA_KEYBOARD_USE_SCANCODES", "1");
                 }
+                
+                else if (arg == "--no-game-checksum")
+                    Relinker.SkipGameChecksum = true;
             }
         }
 
@@ -957,5 +954,29 @@ namespace Celeste.Mod {
             LegacyFNA  // Artificial input latency
         }
 
+    }
+}
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class Everest {
+                public delegate void ModLoadedHandler(EverestModuleMetadata meta);
+                /// <summary>
+                /// Called when a mod finishes loading.
+                /// </summary>
+                public static event ModLoadedHandler OnLoadMod;
+                internal static void LoadMod(EverestModuleMetadata meta)
+                    => OnLoadMod?.Invoke(meta);
+
+                public delegate void RegisterModuleHandler(EverestModule module);
+                /// <summary>
+                /// Called when a mod is registered.
+                /// </summary>
+                public static event RegisterModuleHandler OnRegisterModule;
+                internal static void RegisterModule(EverestModule module)
+                    => OnRegisterModule?.Invoke(module);
+            }
+        }
     }
 }

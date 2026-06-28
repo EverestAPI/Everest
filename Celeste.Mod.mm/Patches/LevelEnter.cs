@@ -9,6 +9,9 @@ using MonoMod;
 using System;
 using System.Collections;
 
+using _LevelEnter = Celeste.LevelEnter;
+using _Session = Celeste.Session;
+
 namespace Celeste {
     // LevelEnter has a private .ctor
     class patch_LevelEnter : Scene {
@@ -140,10 +143,17 @@ namespace Celeste {
             Engine.Scene = new OverworldLoader(Overworld.StartMode.AreaQuit);
         }
 
-        private IEnumerator EnterWithPostcardRoutine(string message, string soundId) {
+        private IEnumerator EnterWithPostcardRoutine(string message, string soundId)
+            => EnterWithPostcardRoutine(message, soundId, patch_AreaData.Get(session)?.Meta?.Postcard?.Texture);
+
+        private IEnumerator EnterWithPostcardRoutine(string message, string soundId, string postcardTexture) {
             yield return 1f;
 
-            Add(postcard = new patch_Postcard(message, soundId));
+            patch_Postcard localPostcard = new patch_Postcard(message, soundId);
+            if (postcardTexture is not null)
+                localPostcard.Postcard = GFX.Gui[postcardTexture];
+
+            Add(postcard = localPostcard);
             yield return postcard.DisplayRoutine();
 
             IEnumerator inner = orig_Routine();
@@ -184,5 +194,41 @@ namespace Celeste {
             }
         }
 
+    }
+}
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static partial class Level {
+                public delegate void EnterHandler(_Session session, bool fromSaveData);
+                /// <summary>
+                /// Called at the end of <see cref="patch_LevelEnter.Go"/>, provided no error occurred.
+                /// </summary>
+                public static event EnterHandler OnEnter;
+                internal static void Enter(_Session session, bool fromSaveData)
+                    => OnEnter?.Invoke(session, fromSaveData);
+            }
+            public static class LevelEnter {
+                public delegate Scene CustomVignetteHandler(_Session session, bool fromSaveData);
+                /// <summary>
+                /// Called at the beginning of <see cref="_LevelEnter.PlayCustomVignette()"/>.<br/>
+                /// Invoked when entering a map, before instantiating and setting the next scene.<br/>
+                /// Should return the next scene to set if some conditions are met, or null otherwise.
+                /// </summary>
+                public static event CustomVignetteHandler OnPlayVignette;
+                internal static Scene PlayVignette(_Session session, bool fromSaveData) {
+                    if (OnPlayVignette is null)
+                        return null;
+
+                    foreach (CustomVignetteHandler handler in OnPlayVignette.GetInvocationList()) {
+                        if (handler(session, fromSaveData) is { } nextScene)
+                            return nextScene;
+                    }
+
+                    return null;
+                }
+            }
+        }
     }
 }

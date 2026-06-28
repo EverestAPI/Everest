@@ -24,6 +24,9 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
+using _Level = Celeste.Level;
+using _Player = Celeste.Player;
+
 namespace Celeste {
     class patch_Level : Level {
 
@@ -592,23 +595,28 @@ namespace Celeste {
 
             Scene nextScene = patch_Engine.NextScene;
 
-            // reload the vanilla Portraits.xml when exiting; if a map overrides the Portraits.xml
-            // and doesn't have portrait_madeline defined, the game would crash when trying to load a save file
-            // (since it shows madeline's portrait)
+            // whether to reload the vanilla Portraits.xml when exiting.
+            // if a map overrides the Portraits.xml and doesn't have portrait_madeline defined, the game would
+            // crash when trying to load a save file (since it shows madeline's portrait)
             //
             // however we need to pay attention to the new scene, else we'll reload vanilla portraits too soon
             // and make custom portraits stop working. therefore, we ignore these scenes as they don't actually
             // exit the map
-            if (nextScene is not (LevelLoader or Pico8.Emulator or OverworldReflectionsFall)) {
-                GFX.PortraitsSpriteBank = new SpriteBank(GFX.Portraits, Path.Combine("Graphics", "Portraits.xml"));
-            }
+            bool shouldReloadPortraits = nextScene is not (LevelLoader or Pico8.Emulator or OverworldReflectionsFall);
 
-            // if we are not entering PICO-8 or the Reflection Fall cutscene...
-            if (nextScene is not (Pico8.Emulator or OverworldReflectionsFall)) {
-                // break all links between this level and its entities.
-                foreach (Entity entity in Entities) {
+            // whether to break all links between this level and its entities.
+            // similarly, if the scene we're entering shouldn't count as exiting the map, then ignore this.
+            bool shouldDissociateEntities = nextScene is not (Pico8.Emulator or OverworldReflectionsFall);
+
+            Everest.Events.Level.End(this, nextScene, ref shouldReloadPortraits, ref shouldDissociateEntities);
+
+            if (shouldReloadPortraits)
+                GFX.PortraitsSpriteBank = new SpriteBank(GFX.Portraits, Path.Combine("Graphics", "Portraits.xml"));
+
+            if (shouldDissociateEntities) {
+                foreach (Entity entity in Entities)
                     ((patch_Entity) entity).DissociateFromScene();
-                }
+
                 ((patch_EntityList) (object) Entities).ClearEntities();
             }
         }
@@ -698,6 +706,102 @@ namespace Celeste {
     }
 }
 
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static partial class Level {
+                public delegate void PauseHandler(_Level level, int startIndex, bool minimal, bool quickReset);
+                /// <summary>
+                /// Called after <see cref="_Level.Pause(int, bool, bool)"/>.
+                /// </summary>
+                public static event PauseHandler OnPause;
+                internal static void Pause(_Level level, int startIndex, bool minimal, bool quickReset)
+                    => OnPause?.Invoke(level, startIndex, minimal, quickReset);
+
+                public delegate void UnpauseHandler(_Level level);
+                /// <summary>
+                /// Called after unpausing the Level.
+                /// </summary>
+                public static event UnpauseHandler OnUnpause;
+                internal static void Unpause(_Level level) => OnUnpause?.Invoke(level);
+
+                public delegate void CreatePauseMenuButtonsHandler(_Level level, patch_TextMenu menu, bool minimal);
+                /// <summary>
+                /// Called when the Level's pause menu is created.
+                /// </summary>
+                public static event CreatePauseMenuButtonsHandler OnCreatePauseMenuButtons;
+                internal static void CreatePauseMenuButtons(_Level level, patch_TextMenu menu, bool minimal)
+                    => OnCreatePauseMenuButtons?.Invoke(level, menu, minimal);
+
+                public delegate void TransitionToHandler(_Level level, LevelData next, Vector2 direction);
+                /// <summary>
+                /// Called after <see cref="_Level.TransitionTo(LevelData, Vector2)"/>
+                /// </summary>
+                public static event TransitionToHandler OnTransitionTo;
+                internal static void TransitionTo(_Level level, LevelData next, Vector2 direction)
+                    => OnTransitionTo?.Invoke(level, next, direction);
+
+                public delegate bool LoadEntityHandler(_Level level, LevelData levelData, Vector2 offset, EntityData entityData);
+                /// <summary>
+                /// Called during <see cref="patch_Level.LoadCustomEntity(EntityData, _Level)"/>.
+                /// </summary>
+                public static event LoadEntityHandler OnLoadEntity;
+                internal static bool LoadEntity(_Level level, LevelData levelData, Vector2 offset, EntityData entityData) {
+                    LoadEntityHandler onLoadEntity = OnLoadEntity;
+
+                    if (onLoadEntity == null)
+                        return false;
+
+                    // replicates the InvokeWhileFalse extension method, but hardcoding the type to avoid dynamic dispatch
+                    foreach (LoadEntityHandler handler in onLoadEntity.GetInvocationList()) {
+                        if (handler(level, levelData, offset, entityData))
+                            return true;
+                    }
+
+                    return false;
+                }
+
+                public delegate void LoadLevelHandler(_Level level, _Player.IntroTypes playerIntro, bool isFromLoader);
+                /// <summary>
+                /// Called after <see cref="_Level.LoadLevel"/>.<br/>
+                /// This event is invoked <b>every time</b> a room is entered - transition, respawn, teleport, etc.
+                /// </summary>
+                /// <seealso cref="LevelLoader.OnLoadingThread"/>
+                public static event LoadLevelHandler OnLoadLevel;
+                internal static void LoadLevel(_Level level, _Player.IntroTypes playerIntro, bool isFromLoader)
+                    => OnLoadLevel?.Invoke(level, playerIntro, isFromLoader);
+
+                public delegate void CompleteHandler(_Level level);
+                /// <summary>
+                /// Called at the end of <see cref="_Level.RegisterAreaComplete"/>.
+                /// </summary>
+                public static event CompleteHandler OnComplete;
+                internal static void Complete(_Level level)
+                    => OnComplete?.Invoke(level);
+
+                public delegate void EndHandler(_Level level, Scene nextScene, ref bool shouldReloadPortraits, ref bool shouldDissociateEntities);
+                public static event EndHandler OnEnd;
+                internal static void End(_Level level, Scene nextScene, ref bool shouldReloadPortraits, ref bool shouldDissociateEntities)
+                    => OnEnd?.Invoke(level, nextScene, ref shouldReloadPortraits, ref shouldDissociateEntities);
+
+                /// <summary>
+                /// Called at the very beginning of <see cref="global::Celeste.Level.Update"/>.
+                /// </summary>
+                public static event Action<_Level> OnBeforeUpdate;
+                internal static void BeforeUpdate(_Level level)
+                    => OnBeforeUpdate?.Invoke(level);
+
+                /// <summary>
+                /// Called at the very end of <see cref="global::Celeste.Level.Update"/>.
+                /// </summary>
+                public static event Action<_Level> OnAfterUpdate;
+                internal static void AfterUpdate(_Level level)
+                    => OnAfterUpdate?.Invoke(level);
+            }
+        }
+    }
+}
+
 namespace MonoMod {
     /// <summary>
     /// Patch the Godzilla-sized level loading method instead of reimplementing it in Everest.
@@ -757,6 +861,8 @@ namespace MonoMod {
             FieldReference f_currentEntityData = context.Method.DeclaringType.FindField("_currentEntityData")!;
             FieldReference f_currentEntityId = context.Method.DeclaringType.FindField("_currentEntityId")!;
             MethodReference m_IsInDoNotLoadIncreased = context.Method.DeclaringType.FindMethod("_IsInDoNotLoadIncreased")!;
+
+            MethodReference f_get_Transitioning = context.Method.DeclaringType.FindMethod("get_Transitioning");
 
             ILCursor cursor = new ILCursor(context);
 
@@ -905,6 +1011,24 @@ namespace MonoMod {
                 );
                 cctorCursor.Emit(OpCodes.Stsfld, f_LoadStrings);
             });
+
+            // Reset to apply other patches
+            cursor.Index = 0;
+
+            // Patch DelayAltMusic check
+            //  before: if (!levelData.DelayAltMusic) { ... }
+            //  after:  if (!levelData.DelayAltMusic || !Transitioning) { ... }
+            ILLabel setAltMusicLabel = cursor.DefineLabel();
+
+            cursor.GotoNext(MoveType.After,
+                    instr => instr.MatchLdfld("Celeste.LevelData", "DelayAltMusic")
+                );
+            cursor.EmitBrfalse(setAltMusicLabel);
+            cursor.EmitLdarg0();
+            cursor.EmitCallvirt(f_get_Transitioning);
+
+            cursor.Index++; // after the brtrue
+            cursor.MarkLabel(setAltMusicLabel);
         }
 
         public static void PatchLevelLoaderDecalCreation(ILContext context, CustomAttribute attrib) {

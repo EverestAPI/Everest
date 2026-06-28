@@ -19,6 +19,8 @@ using MonoMod.Utils;
 using MonoMod.InlineRT;
 using Celeste.Mod.Helpers;
 
+using _Decal = Celeste.Decal;
+
 namespace Celeste {
     class patch_Decal : Decal {
 
@@ -367,6 +369,22 @@ namespace Celeste {
         public static void SetScale(this Decal self, Vector2 value)
             => ((patch_Decal) self).Scale = value;
 
+    }
+}
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class Decal {
+                public delegate void DecalRegistryHandler(_Decal decal, DecalRegistry.DecalInfo decalInfo);
+                /// <summary>
+                /// Called by <see cref="_Decal.Added"/>, so that custom decal registry properties can be applied.
+                /// </summary>
+                public static event DecalRegistryHandler OnHandleDecalRegistry;
+                internal static void HandleDecalRegistry(_Decal decal, DecalRegistry.DecalInfo decalInfo)
+                    => OnHandleDecalRegistry?.Invoke(decal, decalInfo);
+            }
+        }
     }
 }
 

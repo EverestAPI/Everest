@@ -13,6 +13,8 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 
+using _CriticalErrorHandler = Celeste.Mod.UI.CriticalErrorHandler;
+
 namespace Celeste.Mod.UI {
     public sealed class CriticalErrorHandler : Overlay, IDisposable {
 
@@ -764,5 +766,30 @@ namespace Celeste.Mod.UI {
             }
         }
 
+    }
+}
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            /// <summary>
+            /// Called when a critical error occurs.
+            /// Any errors thrown by subscribers to this event are handled and don't cause additional critical error handler invocations.
+            /// </summary>
+            public static event Action<_CriticalErrorHandler> OnCriticalError;
+            internal static void CriticalError(_CriticalErrorHandler handler) {
+                if (OnCriticalError == null)
+                    return;
+
+                foreach (Action<_CriticalErrorHandler> deleg in OnCriticalError.GetInvocationList()) {
+                    try {
+                        deleg(handler);
+                    } catch (Exception ex) {
+                        Logger.Error("crit-error-handler", $"Error invoking critical error event handler {deleg.Method}:");
+                        Logger.LogDetailed(ex, "crit-error-handler");
+                    }
+                }
+            }
+        }
     }
 }

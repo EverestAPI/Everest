@@ -27,6 +27,9 @@ public static class EntityRegistry {
     public static IReadOnlySet<string> GetKnownSidsFromType(Type type) => TypeToSids.GetValueOrDefault(type) ?? EmptyStringSet;
     
     internal static void RegisterSidToTypeConnection(string sid, Type type) {
+        if (sid is null || type is null)
+            return;
+
         ref var sidToTypeEntry = ref CollectionsMarshal.GetValueRefOrAddDefault(SidToTypes, sid, out _);
         sidToTypeEntry ??= new(1);
         sidToTypeEntry.Add(type);

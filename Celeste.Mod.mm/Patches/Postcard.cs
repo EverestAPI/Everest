@@ -1,7 +1,18 @@
-﻿using MonoMod;
+﻿using Monocle;
+using MonoMod;
 
 namespace Celeste {
     class patch_Postcard : Postcard {
+        // make the vanilla field accessible to our patch class
+        private MTexture postcard;
+
+        /// <summary>
+        ///   The texture of the postcard.
+        /// </summary>
+        public MTexture Postcard {
+            get => postcard;
+            set => postcard = value;
+        }
 
         public patch_Postcard(string msg, int area)
             : base(msg, area) {
@@ -50,6 +61,5 @@ namespace Celeste {
 
             ctor(msg, prefix + "_in", prefix + "_out");
         }
-
     }
 }

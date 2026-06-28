@@ -58,8 +58,8 @@ namespace Celeste.Mod.Entities {
             if (ignoreIntroState && ((patch_Player) player).IsIntroState)
                 return;
 
-            // don't activate if some dialog is already in progress
-            if (level.Tracker.GetEntity<Textbox>() is not null)
+            // don't activate if the same dialog is already in progress
+            if (DialogCutscene.IsInProgress(dialogEntry))
                 return;
 
             triggered = true;

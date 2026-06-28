@@ -319,6 +319,23 @@ namespace Celeste {
     }
 }
 
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static partial class Level {
+                public delegate Backdrop LoadBackdropHandler(MapData map, BinaryPacker.Element child, BinaryPacker.Element above);
+                /// <summary>
+                /// Allows providing custom backdrops without making use of the CustomBackdrop attribute.
+                /// </summary>
+                public static event LoadBackdropHandler OnLoadBackdrop;
+                internal static Backdrop LoadBackdrop(MapData map, BinaryPacker.Element child, BinaryPacker.Element above)
+                    => OnLoadBackdrop?.InvokeWhileNull<Backdrop>(map, child, above);
+            }
+        }
+    }
+}
+
 namespace MonoMod {
     /// <summary>
     /// Check for ldstr "Corrupted Level Data" and pop the throw after that.
@@ -327,6 +344,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMapDataLoader))]
     class PatchMapDataLoaderAttribute : Attribute { }
+
+    /// <summary>
+    /// Patch the Godzilla-sized backdrop parsing method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchBackdropParser))]
+    class PatchBackdropParserAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -386,18 +409,6 @@ namespace MonoMod {
                 throw new Exception("No call to StrawberriesByCheckpoint found in " + method.FullName + "!");
             }
         }
-
-    }
-}
-
-namespace MonoMod {
-    /// <summary>
-    /// Patch the Godzilla-sized backdrop parsing method instead of reimplementing it in Everest.
-    /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchBackdropParser))]
-    class PatchBackdropParserAttribute : Attribute { }
-
-    static partial class MonoModRules {
 
         public static void PatchBackdropParser(ILContext context, CustomAttribute attrib) {
             MethodDefinition m_LoadCustomBackdrop = context.Method.DeclaringType.FindMethod("Celeste.Backdrop LoadCustomBackdrop(Celeste.BinaryPacker/Element,Celeste.BinaryPacker/Element,Celeste.MapData)");

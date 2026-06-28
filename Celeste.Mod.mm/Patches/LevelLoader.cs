@@ -20,6 +20,9 @@ using System.IO;
 using System.Threading;
 using System.Xml;
 
+using _Level = Celeste.Level;
+using _LevelLoader = Celeste.LevelLoader;
+
 namespace Celeste {
     class patch_LevelLoader : LevelLoader {
 
@@ -247,6 +250,7 @@ namespace Celeste {
         [MonoModIgnore] // We don't want to change anything about the method...
         [PatchLoadingThreadAddEvent] // ... except for manually manipulating the method via MonoModRules
         [PatchLoadingThreadAddSubHudRenderer]
+        [PatchLoadingThreadForMapMetadata]
         private extern void LoadingThread();
 
         private void LoadingThread_Safe() {
@@ -322,6 +326,27 @@ namespace Celeste {
             }
         }
 
+        private static bool _ShouldAddIceTileOverlay(MapData mapData)
+            => ((patch_MapData) mapData).Meta?.CoreModeIceTileOverlay ?? false;
+
+    }
+}
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class LevelLoader {
+                public delegate void LoadingThreadHandler(_Level level);
+                /// <summary>
+                /// Called at the end of the map loading thread, <see cref="_LevelLoader.LoadingThread()"/>.<br/>
+                /// This event is invoked <b>only once</b>, when entering a map from the chapter select screen or from Save and Quit.
+                /// </summary>
+                /// <seealso cref="Level.OnLoadLevel"/>
+                public static event LoadingThreadHandler OnLoadingThread;
+                internal static void LoadingThread(_Level level)
+                    => OnLoadingThread?.Invoke(level);
+            }
+        }
     }
 }
 
@@ -344,6 +369,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLoadingThreadAddEvent))]
     class PatchLoadingThreadAddEventAttribute : Attribute { }
+
+    /// <summary>
+    /// Handles map metadata properties in some places throughout the loading thread.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLoadingThreadForMapMetadata))]
+    class PatchLoadingThreadForMapMetadataAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -408,6 +439,41 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Emit(OpCodes.Callvirt, m_LevelLoader_get_Level);
             cursor.Emit(OpCodes.Call, m_Everest_Events_LevelLoader_LoadingThread);
+        }
+
+        public static void PatchLoadingThreadForMapMetadata(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_shouldAddIceTileOverlay = context.Method.DeclaringType.FindMethod("_ShouldAddIceTileOverlay");
+
+            ILCursor cursor = new(context);
+
+            // first, get the local for MapData
+            int loc_mapData = -1;
+            cursor.GotoNext(
+                    instr => instr.MatchCallvirt("Celeste.Session", "get_MapData"),
+                    instr => instr.MatchStloc(out loc_mapData)
+                );
+
+            /*
+             now let's change this bit of code
+             if (session.Area.ID == 9) { ... }
+             to this
+             if (session.Area.ID == 9 || _ShouldAddIceTileOverlay(mapData)) { ... }
+             */
+            ILLabel addIceTileOverlaybel = cursor.DefineLabel();
+            ILLabel branchOutLabel = null;
+            cursor.GotoNext(instr => instr.MatchLdcI4(9));
+            cursor.GotoNext(MoveType.Before, instr => instr.MatchBneUn(out branchOutLabel));
+
+            // for simplicity, we'll remove the bne.un.s, and replace it with a different branch instruction
+            cursor.Remove();
+
+            cursor.Emit(OpCodes.Beq_S, addIceTileOverlaybel); // beq.s <=> bne.un.s
+
+            cursor.EmitLdloc(loc_mapData);
+            cursor.Emit(OpCodes.Call, m_shouldAddIceTileOverlay);
+            cursor.Emit(OpCodes.Brfalse_S, branchOutLabel);
+
+            cursor.MarkLabel(addIceTileOverlaybel);
         }
 
     }

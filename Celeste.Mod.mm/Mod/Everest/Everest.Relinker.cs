@@ -22,6 +22,11 @@ namespace Celeste.Mod {
             private static string _GameChecksum;
 
             /// <summary>
+            /// Skips checking the GameChecksum when checking if mods should be relinked.
+            /// </summary>
+            internal static bool SkipGameChecksum;
+
+            /// <summary>
             /// The lock which the relinker holds when relinking assemblies
             /// </summary>
             public static readonly object RelinkerLock = new object();

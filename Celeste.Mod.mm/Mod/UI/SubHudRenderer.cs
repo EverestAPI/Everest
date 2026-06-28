@@ -2,6 +2,8 @@
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
 
+using _SubHudRenderer = Celeste.Mod.UI.SubHudRenderer;
+
 namespace Celeste.Mod.UI {
     // Don't inherit from HiresRenderer, as we need our own buffer.
     public class SubHudRenderer : Renderer {
@@ -68,5 +70,22 @@ namespace Celeste.Mod.UI {
             EndRender();
         }
 
+    }
+}
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class SubHudRenderer {
+                public delegate void BeforeRenderHandler(_SubHudRenderer renderer, Scene scene);
+                /// <summary>
+                /// Called at the beginning of <see cref="_SubHudRenderer.BeforeRender"/>.
+                /// Note that this happens before clearing and drawing to the buffer, if applicable.
+                /// </summary>
+                public static event BeforeRenderHandler OnBeforeRender;
+                internal static void BeforeRender(_SubHudRenderer renderer, Scene scene)
+                    => OnBeforeRender?.Invoke(renderer, scene);
+            }
+        }
     }
 }

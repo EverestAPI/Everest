@@ -195,6 +195,23 @@ namespace Celeste {
     }
 }
 
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class GameLoader {
+                /// <summary>
+                /// Called at the end of the game loading thread, <see cref="GameLoader.LoadThread()"/>.<br/>
+                /// In particular, it is called just before stopping the load timer and setting <c>loaded = true</c>.
+                /// This event is invoked <b>only once</b>, when starting the game.
+                /// </summary>
+                public static event Action OnLoadThread;
+                internal static void LoadThread()
+                    => OnLoadThread?.Invoke();
+            }
+        }
+    }
+}
+
 namespace MonoMod {
     /// <summary>
     /// Patch the GameLoader.IntroRoutine method instead of reimplementing it in Everest.

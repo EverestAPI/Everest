@@ -8,6 +8,8 @@ using MonoMod;
 using System;
 using System.Collections;
 
+using _Seeker = Celeste.Seeker;
+
 namespace Celeste {
     public class patch_Seeker : Seeker {
 
@@ -51,6 +53,21 @@ namespace Celeste {
         /// <returns>The index of the new state.</returns>
         public int AddState(string name, Func<Seeker, int> onUpdate, Func<Seeker, IEnumerator> coroutine = null, Action<Seeker> begin = null, Action<Seeker> end = null){
             return ((patch_StateMachine)State).AddState(name, onUpdate, coroutine, begin, end);
+        }
+    }
+}
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class Seeker {
+                /// <summary>
+                /// Called in the Seeker constructor during <see cref="StateMachine"/> initialisation, to be used to register custom Seeker states.
+                /// </summary>
+                public static event Action<_Seeker> OnRegisterStates;
+                internal static void RegisterStates(_Seeker seeker)
+                    => OnRegisterStates?.Invoke(seeker);
+            }
         }
     }
 }
