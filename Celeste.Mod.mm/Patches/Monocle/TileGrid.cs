@@ -50,5 +50,15 @@ namespace Monocle {
                 renderPos.Y = position.Y + clippedRenderTiles.Top * tileHeight;
             }
         }
+
+        public char TilesetIdAt(Vector2 readPosition) {
+            Vector2 position = Entity.Position + Position;
+            int num = (int) ((readPosition.X - position.X) / 8f);
+            int num2 = (int) ((readPosition.Y - position.Y) / 8f);
+            if (num >= 0 && num2 >= 0 && num < TilesX && num2 < TilesY) {
+                return TileIds[num, num2];
+            }
+            return default;
+        }
     }
 }
