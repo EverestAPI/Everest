@@ -543,7 +543,7 @@ namespace MonoMod {
             FieldReference f_tileGridTiles = null;
             FieldReference f_tilesTextures = null;
             MethodReference m_virtualMapset_Item = null;
-            // tileGrid.Tiles[{x} - startX, {y} - startY] = Calc.Random...({tiles}.Textures);
+            // tileGrid.Tiles[{x} - startX, {y} - startY] = ...({tiles}.Textures);
             while (cursor.TryGotoNext(
                 instr => instr.MatchLdloc0(),
                 instr => instr.MatchLdfld(out f_tileGridTiles),
@@ -553,7 +553,7 @@ namespace MonoMod {
                 instr => instr.MatchLdloc(out y),
                 instr => instr.MatchLdarg3(),
                 instr => instr.MatchSub(),
-                instr => instr.MatchLdsfld(typeof(Calc), nameof(Calc.Random)),
+                instr => instr.MatchLdsfld(out _),
                 instr => instr.MatchLdloc(out tiles),
                 instr => instr.MatchLdfld(out f_tilesTextures),
                 instr => instr.MatchCall(out _),
@@ -563,7 +563,7 @@ namespace MonoMod {
 
                 // tileGrid.TileIds
                 cursor.EmitLdloc0();
-                cursor.EmitLdfld(f_tileGridTiles.DeclaringType.Resolve().FindField(nameof(patch_TileGrid.TileIds)));
+                cursor.EmitLdfld(f_tileGridTiles.DeclaringType.Resolve().FindField("TileIds"));
                 // x - startX
                 cursor.EmitLdloc(x);
                 cursor.EmitLdarg2();
