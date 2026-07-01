@@ -542,7 +542,24 @@ namespace MonoMod {
             int loc_tiles = 0;
             FieldReference f_tileGridTiles = null;
             FieldReference f_tilesTextures = null;
-            MethodReference m_virtualMapset_Item = null;
+
+            // cecil my beloved
+            // (i wasted like 3 hours figuring this out, only to find out i was like 1 step away from getting it right)
+
+            // Monocle.VirtualMap`1
+            TypeDefinition t_VirtualMap = context.Module.GetType("Monocle.VirtualMap`1");
+
+            // Monocle.VirtualMap`1<char>
+            GenericInstanceType t_VirtualMap_Char = new(t_VirtualMap);
+            t_VirtualMap_Char.GenericArguments.Add(context.Module.TypeSystem.Char);
+
+            // Monocle.VirtualMap`1<char>::set_Item(int32, int32, !0)
+            MethodReference m_VirtualMap_Char_set_Item = new MethodReference("set_Item", context.Module.TypeSystem.Void, t_VirtualMap_Char);
+            m_VirtualMap_Char_set_Item.Parameters.Add(new ParameterDefinition(context.Module.TypeSystem.Int32));
+            m_VirtualMap_Char_set_Item.Parameters.Add(new ParameterDefinition(context.Module.TypeSystem.Int32));
+            m_VirtualMap_Char_set_Item.Parameters.Add(new ParameterDefinition(t_VirtualMap.GenericParameters[0]));
+            m_VirtualMap_Char_set_Item.HasThis = true;
+
             // tileGrid.Tiles[{x} - startX, {y} - startY] = ...({tiles}.Textures);
             while (cursor.TryGotoNext(
                 instr => instr.MatchLdloc0(),
@@ -553,11 +570,11 @@ namespace MonoMod {
                 instr => instr.MatchLdloc(out loc_y),
                 instr => instr.MatchLdarg3(),
                 instr => instr.MatchSub(),
-                instr => instr.MatchLdsfld(out _),
+                instr => instr.MatchLdsfld("Monocle.Calc", "Random"),
                 instr => instr.MatchLdloc(out loc_tiles),
                 instr => instr.MatchLdfld(out f_tilesTextures),
-                instr => instr.MatchCall(out _),
-                instr => instr.MatchCallvirt(out m_virtualMapset_Item))) 
+                instr => instr.MatchCall("Monocle.Calc", "Choose"),
+                instr => instr.MatchCallvirt("Monocle.VirtualMap`1<Monocle.MTexture>", "set_Item")))
             {
                 // tileGrid.TileIds[{x} - startX, {y} - startY] = {tiles}.ID;
 
@@ -576,7 +593,7 @@ namespace MonoMod {
                 cursor.EmitLdloc(loc_tiles);
                 cursor.EmitLdfld(f_tilesTextures.DeclaringType.Resolve().FindField("ID"));
                 // [,] = ...
-                cursor.EmitCallvirt(m_virtualMapset_Item);
+                cursor.EmitCallvirt(m_VirtualMap_Char_set_Item);
 
                 // advance past the current match
                 cursor.Index++;
