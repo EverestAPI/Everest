@@ -41,6 +41,49 @@ namespace Celeste {
             return orig_GenerateOverlay(id, x, y, tilesX, tilesY, mapData);
         }
 
+        private extern Generated orig_Generate(VirtualMap<char> mapData, int startX, int startY, int tilesX, int tilesY, bool forceSolid, char forceID, Behaviour behaviour);
+        private Generated Generate(VirtualMap<char> mapData, int startX, int startY, int tilesX, int tilesY, bool forceSolid, char forceID, Behaviour behaviour) {
+            Generated result = orig_Generate(mapData, startX, startY, tilesX, tilesY, forceSolid, forceID, behaviour);
+
+            patch_TileGrid tileGrid = result.TileGrid as patch_TileGrid;
+            tileGrid.TileIds = new VirtualMap<char>(tilesX, tilesY);
+            Rectangle forceFill = Rectangle.Empty;
+            if (forceSolid) {
+                forceFill = new Rectangle(startX, startY, tilesX, tilesY);
+            }
+            if (mapData != null) {
+                for (int i = startX; i < startX + tilesX; i += 50) {
+                    for (int j = startY; j < startY + tilesY; j += 50) {
+                        if (!mapData.AnyInSegmentAtTile(i, j)) {
+                            j = j / 50 * 50;
+                            continue;
+                        }
+                        int k = i;
+                        for (int num = Math.Min(i + 50, startX + tilesX); k < num; k++) {
+                            int l = j;
+                            for (int num2 = Math.Min(j + 50, startY + tilesY); l < num2; l++) {
+                                char tile = TileIdHandler(mapData, k, l, forceFill, forceID, behaviour);
+                                tileGrid.TileIds[k - startX, l - startY] = tile;
+                            }
+                        }
+                    }
+                }
+            } else {
+                for (int m = startX; m < startX + tilesX; m++) {
+                    for (int n = startY; n < startY + tilesY; n++) {
+                        char tile2 = TileIdHandler(null, m, n, forceFill, forceID, behaviour);
+                        tileGrid.TileIds[m - startX, n - startY] = tile2;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private char TileIdHandler(VirtualMap<char> mapData, int x, int y, Rectangle forceFill, char forceID, Behaviour behaviour) {
+            return GetTile(mapData, x, y, forceFill, forceID, behaviour);
+        }
+
         private extern void orig_ReadInto(patch_TerrainType data, Tileset tileset, XmlElement xml);
         private void ReadInto(patch_TerrainType data, Tileset tileset, XmlElement xml) {
             if (xml.HasAttr("scanWidth")) {

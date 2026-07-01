@@ -4,6 +4,8 @@ using Microsoft.Xna.Framework;
 namespace Monocle {
     class patch_TileGrid : TileGrid {
 
+        public VirtualMap<char> TileIds;
+
         public patch_TileGrid() : base(0, 0, 0, 0) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
