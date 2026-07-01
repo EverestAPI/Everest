@@ -11,6 +11,7 @@ using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Xml;
 
 namespace Celeste {
@@ -42,43 +43,9 @@ namespace Celeste {
             return orig_GenerateOverlay(id, x, y, tilesX, tilesY, mapData);
         }
 
-        private extern Generated orig_Generate(VirtualMap<char> mapData, int startX, int startY, int tilesX, int tilesY, bool forceSolid, char forceID, Behaviour behaviour);
-        private Generated Generate(VirtualMap<char> mapData, int startX, int startY, int tilesX, int tilesY, bool forceSolid, char forceID, Behaviour behaviour) {
-            Generated result = orig_Generate(mapData, startX, startY, tilesX, tilesY, forceSolid, forceID, behaviour);
-
-            patch_TileGrid tileGrid = result.TileGrid as patch_TileGrid;
-            Rectangle forceFill = Rectangle.Empty;
-            if (forceSolid) {
-                forceFill = new Rectangle(startX, startY, tilesX, tilesY);
-            }
-            if (mapData != null) {
-                for (int i = startX; i < startX + tilesX; i += 50) {
-                    for (int j = startY; j < startY + tilesY; j += 50) {
-                        if (!mapData.AnyInSegmentAtTile(i, j)) {
-                            j = j / 50 * 50;
-                            continue;
-                        }
-                        int k = i;
-                        for (int num = Math.Min(i + 50, startX + tilesX); k < num; k++) {
-                            int l = j;
-                            for (int num2 = Math.Min(j + 50, startY + tilesY); l < num2; l++) {
-                                char tile = TileHandler(mapData, k, l, forceFill, forceID, behaviour).ID;
-                                tileGrid.TileIds[k - startX, l - startY] = tile;
-                            }
-                        }
-                    }
-                }
-            } else {
-                for (int m = startX; m < startX + tilesX; m++) {
-                    for (int n = startY; n < startY + tilesY; n++) {
-                        char tile2 = TileHandler(null, m, n, forceFill, forceID, behaviour).ID;
-                        tileGrid.TileIds[m - startX, n - startY] = tile2;
-                    }
-                }
-            }
-
-            return result;
-        }
+        [MonoModIgnore]
+        [PatchAutotilerGenerate]
+        private extern Generated Generate(VirtualMap<char> mapData, int startX, int startY, int tilesX, int tilesY, bool forceSolid, char forceID, Behaviour behaviour);
 
         [PatchAutotilerReadInto]
         private extern void orig_ReadInto(patch_TerrainType data, Tileset tileset, XmlElement xml);
@@ -545,6 +512,9 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAutotilerCtor))]
     class PatchAutotilerCtorAttribute : Attribute { }
 
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAutotilerGenerate))]
+    class PatchAutotilerGenerateAttribute : Attribute { }
+
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAutotilerReadInto))]
     class PatchAutotilerReadIntoAttribute : Attribute { }
 
@@ -563,6 +533,52 @@ namespace MonoMod {
             cursor.EmitLdloc3(); // char c (the tileset id)
             cursor.EmitLdarg1(); // string filename (the xml path)
             cursor.EmitCallvirt(m_throwOnDuplicateId);
+        }
+
+        public static void PatchAutotilerGenerate(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new(context);
+
+            int x = 0;
+            int y = 0;
+            int tiles = 0;
+            FieldReference f_tileGridTiles = null;
+            FieldReference f_tilesTextures = null;
+            MethodReference m_virtualMapset_Item = null;
+            // tileGrid.Tiles[{x} - startX, {y} - startY] = Calc.Random...({tiles}.Textures);
+            while (cursor.TryGotoNext(
+                instr => instr.MatchLdloc0(),
+                instr => instr.MatchLdfld(out f_tileGridTiles),
+                instr => instr.MatchLdloc(out x),
+                instr => instr.MatchLdarg2(),
+                instr => instr.MatchSub(),
+                instr => instr.MatchLdloc(out y),
+                instr => instr.MatchLdarg3(),
+                instr => instr.MatchSub(),
+                instr => instr.MatchLdsfld(typeof(Calc), nameof(Calc.Random)),
+                instr => instr.MatchLdloc(out tiles),
+                instr => instr.MatchLdfld(out f_tilesTextures),
+                instr => instr.MatchCall(out _),
+                instr => instr.MatchCallvirt(out m_virtualMapset_Item))) 
+            {
+                // tileGrid.TileIds[{x} - startX, {y} - startY] = {tiles}.ID;
+
+                // tileGrid.TileIds
+                cursor.EmitLdloc0();
+                cursor.EmitLdfld(f_tileGridTiles.DeclaringType.Resolve().FindField(nameof(patch_TileGrid.TileIds)));
+                // x - startX
+                cursor.EmitLdloc(x);
+                cursor.EmitLdarg2();
+                cursor.EmitSub();
+                // y - startY
+                cursor.EmitLdloc(y);
+                cursor.EmitLdarg3();
+                cursor.EmitSub();
+                // tiles.ID;
+                cursor.EmitLdloc(tiles);
+                cursor.EmitLdfld(f_tilesTextures.DeclaringType.Resolve().FindField("ID"));
+                // [,] = ...
+                cursor.EmitCallvirt(m_virtualMapset_Item);
+            }
         }
 
         public static void PatchAutotilerReadInto(ILContext context, CustomAttribute attrib) {
