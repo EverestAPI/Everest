@@ -537,9 +537,9 @@ namespace MonoMod {
         public static void PatchAutotilerGenerate(ILContext context, CustomAttribute attrib) {
             ILCursor cursor = new(context);
 
-            int x = 0;
-            int y = 0;
-            int tiles = 0;
+            int loc_x = 0;
+            int loc_y = 0;
+            int loc_tiles = 0;
             FieldReference f_tileGridTiles = null;
             FieldReference f_tilesTextures = null;
             MethodReference m_virtualMapset_Item = null;
@@ -547,14 +547,14 @@ namespace MonoMod {
             while (cursor.TryGotoNext(
                 instr => instr.MatchLdloc0(),
                 instr => instr.MatchLdfld(out f_tileGridTiles),
-                instr => instr.MatchLdloc(out x),
+                instr => instr.MatchLdloc(out loc_x),
                 instr => instr.MatchLdarg2(),
                 instr => instr.MatchSub(),
-                instr => instr.MatchLdloc(out y),
+                instr => instr.MatchLdloc(out loc_y),
                 instr => instr.MatchLdarg3(),
                 instr => instr.MatchSub(),
                 instr => instr.MatchLdsfld(out _),
-                instr => instr.MatchLdloc(out tiles),
+                instr => instr.MatchLdloc(out loc_tiles),
                 instr => instr.MatchLdfld(out f_tilesTextures),
                 instr => instr.MatchCall(out _),
                 instr => instr.MatchCallvirt(out m_virtualMapset_Item))) 
@@ -565,15 +565,15 @@ namespace MonoMod {
                 cursor.EmitLdloc0();
                 cursor.EmitLdfld(f_tileGridTiles.DeclaringType.Resolve().FindField("TileIds"));
                 // x - startX
-                cursor.EmitLdloc(x);
+                cursor.EmitLdloc(loc_x);
                 cursor.EmitLdarg2();
                 cursor.EmitSub();
                 // y - startY
-                cursor.EmitLdloc(y);
+                cursor.EmitLdloc(loc_y);
                 cursor.EmitLdarg3();
                 cursor.EmitSub();
                 // tiles.ID;
-                cursor.EmitLdloc(tiles);
+                cursor.EmitLdloc(loc_tiles);
                 cursor.EmitLdfld(f_tilesTextures.DeclaringType.Resolve().FindField("ID"));
                 // [,] = ...
                 cursor.EmitCallvirt(m_virtualMapset_Item);
