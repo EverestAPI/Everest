@@ -47,7 +47,6 @@ namespace Celeste {
             Generated result = orig_Generate(mapData, startX, startY, tilesX, tilesY, forceSolid, forceID, behaviour);
 
             patch_TileGrid tileGrid = result.TileGrid as patch_TileGrid;
-            tileGrid.TileIds = new VirtualMap<char>(tilesX, tilesY);
             Rectangle forceFill = Rectangle.Empty;
             if (forceSolid) {
                 forceFill = new Rectangle(startX, startY, tilesX, tilesY);

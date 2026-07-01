@@ -1,5 +1,8 @@
-﻿using Celeste;
+﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+
+using Celeste;
 using Microsoft.Xna.Framework;
+using MonoMod;
 
 namespace Monocle {
     class patch_TileGrid : TileGrid {
@@ -8,6 +11,13 @@ namespace Monocle {
 
         public patch_TileGrid() : base(0, 0, 0, 0) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+        }
+
+        public extern void orig_ctor(int tileWidth, int tileHeight, int tilesX, int tilesY);
+        [MonoModConstructor]
+        public void ctor(int tileWidth, int tileHeight, int tilesX, int tilesY) {
+            orig_ctor(tileWidth, tileHeight, tilesX, tilesY);
+            TileIds = new VirtualMap<char>(tilesX, tilesY);
         }
 
         // improve tile grid rendering performance
