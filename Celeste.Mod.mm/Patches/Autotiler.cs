@@ -10,6 +10,7 @@ using MonoMod.Cil;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 
 namespace Celeste {
@@ -84,6 +85,7 @@ namespace Celeste {
             return GetTile(mapData, x, y, forceFill, forceID, behaviour);
         }
 
+        [PatchAutotilerReadInto]
         private extern void orig_ReadInto(patch_TerrainType data, Tileset tileset, XmlElement xml);
         private void ReadInto(patch_TerrainType data, Tileset tileset, XmlElement xml) {
             if (xml.HasAttr("scanWidth")) {
@@ -110,7 +112,7 @@ namespace Celeste {
 
                 data.CustomFills = new List<patch_Tiles>();
                 for (int i = 0; i < fills.Count; i++)
-                    data.CustomFills.Add(new patch_Tiles());
+                    data.CustomFills.Add(new patch_Tiles() { ID = data.ID });
             }
 
             if (data.CustomFills == null && data.ScanWidth == 3 && data.ScanHeight == 3 && !xml.HasChild("define")) // ReadIntoCustomTemplate can handle vanilla templates but meh
@@ -169,6 +171,7 @@ namespace Celeste {
                             patch_Masked masked = new patch_Masked();
                             masked.Mask = new byte[data.ScanWidth * data.ScanHeight];
                             tiles = masked.Tiles;
+                            tiles.ID = data.ID;
 
                             try {
                                 // Allows for spacer characters like '-' in the xml
@@ -311,6 +314,7 @@ namespace Celeste {
             if (!lookup.TryGetValue(tile, out patch_TerrainType terrainType)) {
                 Logger.Error("Autotiler", $"Undefined tile id '{tile}' at ({x}, {y})");
                 return new patch_Tiles {
+                    ID = tile,
                     Textures = { ((patch_Atlas) GFX.Game).GetFallback() },
                 };
             }
@@ -498,6 +502,9 @@ namespace Celeste {
             public void ctor(char id) {
                 orig_ctor(id);
 
+                Center.ID = id;
+                Padded.ID = id;
+
                 IgnoreExceptions = new HashSet<char>();
 
                 whitelists = new Dictionary<byte, string>();
@@ -514,8 +521,9 @@ namespace Celeste {
         }
 
         // Required because Tiles is private.
-        [MonoModIgnore]
         private class patch_Tiles {
+            public char ID;
+
             public List<MTexture> Textures;
             public List<string> OverlapSprites;
             public bool HasOverlays;
@@ -542,6 +550,9 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAutotilerCtor))]
     class PatchAutotilerCtorAttribute : Attribute { }
 
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAutotilerReadInto))]
+    class PatchAutotilerReadIntoAttribute : Attribute { }
+
     static partial class MonoModRules {
         public static void PatchAutotilerCtor(ILContext context, CustomAttribute attrib) {
             ILCursor cursor = new(context);
@@ -557,6 +568,27 @@ namespace MonoMod {
             cursor.EmitLdloc3(); // char c (the tileset id)
             cursor.EmitLdarg1(); // string filename (the xml path)
             cursor.EmitCallvirt(m_throwOnDuplicateId);
+        }
+
+        public static void PatchAutotilerReadInto(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new(context);
+
+            TypeDefinition autotiler = context.Method.DeclaringType;
+
+            // char Celeste.Autotiler/TerrainType::ID
+            FieldReference f_terrainTypeID = autotiler.NestedTypes.First(t => t.Name == "TerrainType").FindField("ID");
+            // char Celeste.Autotiler/Tiles::ID
+            FieldReference f_tilesID = autotiler.NestedTypes.First(t => t.Name == "Tiles").FindField("ID");
+
+            cursor.GotoNext(MoveType.After, instr => instr.MatchStloc(5));
+            cursor.GotoNext(MoveType.After, instr => instr.MatchStloc(4));
+
+            // tiles.ID = data.ID;
+
+            cursor.EmitLdloc(4); // tiles (Celeste.Autotiler/Tiles)
+            cursor.EmitLdarg1(); // data (Celeste.Autotiler/TerrainType)
+            cursor.EmitLdfld(f_terrainTypeID); // data.ID (char)
+            cursor.EmitStfld(f_tilesID);
         }
     }
 }
