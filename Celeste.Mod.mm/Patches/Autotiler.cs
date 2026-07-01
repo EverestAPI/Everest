@@ -62,7 +62,7 @@ namespace Celeste {
                         for (int num = Math.Min(i + 50, startX + tilesX); k < num; k++) {
                             int l = j;
                             for (int num2 = Math.Min(j + 50, startY + tilesY); l < num2; l++) {
-                                char tile = TileIdHandler(mapData, k, l, forceFill, forceID, behaviour);
+                                char tile = TileHandler(mapData, k, l, forceFill, forceID, behaviour).ID;
                                 tileGrid.TileIds[k - startX, l - startY] = tile;
                             }
                         }
@@ -71,17 +71,13 @@ namespace Celeste {
             } else {
                 for (int m = startX; m < startX + tilesX; m++) {
                     for (int n = startY; n < startY + tilesY; n++) {
-                        char tile2 = TileIdHandler(null, m, n, forceFill, forceID, behaviour);
+                        char tile2 = TileHandler(null, m, n, forceFill, forceID, behaviour).ID;
                         tileGrid.TileIds[m - startX, n - startY] = tile2;
                     }
                 }
             }
 
             return result;
-        }
-
-        private char TileIdHandler(VirtualMap<char> mapData, int x, int y, Rectangle forceFill, char forceID, Behaviour behaviour) {
-            return GetTile(mapData, x, y, forceFill, forceID, behaviour);
         }
 
         [PatchAutotilerReadInto]
