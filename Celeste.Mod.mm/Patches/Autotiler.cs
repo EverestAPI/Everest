@@ -577,6 +577,9 @@ namespace MonoMod {
                 cursor.EmitLdfld(f_tilesTextures.DeclaringType.Resolve().FindField("ID"));
                 // [,] = ...
                 cursor.EmitCallvirt(m_virtualMapset_Item);
+
+                // advance past the current match
+                cursor.Index++;
             }
         }
 
