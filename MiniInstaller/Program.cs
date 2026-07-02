@@ -91,7 +91,7 @@ namespace MiniInstaller {
 
                 DepCalls.LoadModders();
 
-                File.Copy(Path.Combine(Globals.PathGame, "FNA.dll"), moddedFNA, overwrite: true);
+                File.Copy(Path.Combine(Globals.PathGame, "everest-lib/FNA.dll"), moddedFNA, overwrite: true);
 
                 // DepCalls.ConvertToNETCore also converts dependencies, so FNA will also be copied to the workspace
                 DepCalls.ConvertToNETCore(Path.Combine(Globals.PathOrig, "Celeste.exe"), moddedCeleste);
