@@ -57,6 +57,7 @@
 	MODOPTIONS_TITLE= 										EVEREST
 	MODOPTIONS_NEEDSRELAUNCH=								Requires a restart to take effect
 	MODOPTIONS_DEFAULT=										DEFAULT
+	MODOPTIONS_ISEXPERIMENTAL=								Experimental (default OFF), please report issues if turning ON!
 
 # Core Module Options
 	MODOPTIONS_COREMODULE_UPDATE= 							Update Everest to ((version))
@@ -166,7 +167,6 @@
 	MODOPTIONS_COREMODULE_SEARCHBOX_PLACEHOLDER=			Press 'Tab' or 'Enter' to scroll to the next match
 
 	MODOPTIONS_COREMODULE_FASTLEVELLOADING=					Fast Level Loading
-	MODOPTIONS_COREMODULE_FASTLEVELLOADING_DESC=			Experimental (default OFF), please report issues if turning ON!
 
 	MODOPTIONS_VANILLATRISTATE_NEVER=						OFF
 	MODOPTIONS_VANILLATRISTATE_EVEREST=						EVEREST
