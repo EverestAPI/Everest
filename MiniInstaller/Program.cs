@@ -93,11 +93,13 @@ namespace MiniInstaller {
 
                 string libFNA = Path.Combine(Globals.PathGame, Path.Combine("everest-lib", "FNA.dll"));
 
-                // DepCalls.ConvertToNETCore also converts dependencies, so FNA will also be copied to the workspace
+                // DepCalls.ConvertToNETCore also converts dependencies; if vanilla is FNA, then the FNA.dll in "orig"
+                // will also be copied to the workspace
+                // (as Backup.Backup applies patch libraries, the FNA.dll in orig will be the copy from "lib-vanilla")
                 DepCalls.ConvertToNETCore(Path.Combine(Globals.PathOrig, "Celeste.exe"), moddedCeleste);
 
-                // Always bring FNA from "everest-lib"                                                                
-                // XNA Celeste does not ship with FNA.dll, and the version we need may differ from the version shipped
+                // Always bring FNA from "everest-lib"
+                // XNA Celeste does not ship with FNA.dll, and the "lib-vanilla" version may differ from the one in "everest-lib"
                 DepCalls.ConvertToNETCore(libFNA, moddedFNA);
 
                 string everestModDLL = Path.ChangeExtension(Globals.PathCelesteExe, ".Mod.mm.dll");
