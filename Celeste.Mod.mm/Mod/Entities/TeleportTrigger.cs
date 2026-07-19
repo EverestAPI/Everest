@@ -36,10 +36,8 @@ public class TeleportTrigger : Trigger {
     public override void OnEnter(Player player) {
         base.OnEnter(player);
 
-        if (
-            string.IsNullOrEmpty(_nextLevel) ||
-            !Flag
-            ) return;
+        if (string.IsNullOrEmpty(_nextLevel) || !Flag)
+            return;
         
         Scene.OnEndOfFrame += () => {
             SceneAs<Level>().TeleportTo(
