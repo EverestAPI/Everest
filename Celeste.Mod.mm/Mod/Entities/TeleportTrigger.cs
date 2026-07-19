@@ -30,7 +30,8 @@ public class TeleportTrigger : Trigger {
 
     public override void Added(Scene scene) {
         base.Added(scene);
-        if (OnlyOnceFlag) RemoveSelf();
+        if (Scene is not Level level || (_onlyOnce && level.Session.GetFlag(_onlyOnceFlag)))
+            RemoveSelf();
     }
 
     public override void OnEnter(Player player) {
