@@ -10,8 +10,8 @@ jobs:
       matrix:
         tas:
           - name: Celeste 100%
-            url: "https://github.com/VampireFlower/CelesteTAS/archive/1d69edcbbd86fe1bad9a524b86cffd0c4a0945d7.zip"
-            path: "CelesteTAS-1d69edcbbd86fe1bad9a524b86cffd0c4a0945d7/0 - 100%.tas"
+            url: "https://github.com/VampireFlower/CelesteTAS/archive/5c9e67096767e494f66f39b587478de354e90bcf.zip"
+            path: "CelesteTAS-5c9e67096767e494f66f39b587478de354e90bcf/0 - 100%.tas"
 
           - name: Strawberry Jam All Levels
             url: "https://github.com/VampireFlower/StrawberryJamTAS/archive/7e10cceb0ca812461f2bc81ec994871f0c2749f3.zip"
