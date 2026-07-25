@@ -11,8 +11,8 @@ set -xeo pipefail
 
 case "$1" in
     "Celeste")
-        TAS_URL="https://github.com/VampireFlower/CelesteTAS/archive/1d69edcbbd86fe1bad9a524b86cffd0c4a0945d7.zip"
-        TAS_PATH="CelesteTAS-1d69edcbbd86fe1bad9a524b86cffd0c4a0945d7/0 - 100%.tas"
+        TAS_URL="https://github.com/VampireFlower/CelesteTAS/archive/5c9e67096767e494f66f39b587478de354e90bcf.zip"
+        TAS_PATH="CelesteTAS-5c9e67096767e494f66f39b587478de354e90bcf/0 - 100%.tas"
         ;;
 
     "StrawberryJam2021")
