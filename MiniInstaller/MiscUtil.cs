@@ -72,15 +72,18 @@ public static class MiscUtil {
     }
     // This is not "pure" but I guess it also somewhat fits here
     public static void MoveExecutable(string srcPath, string dstPath) {
-        File.Move(srcPath, dstPath, overwrite: true);
+        File.Delete(dstPath);
+        File.Move(srcPath, dstPath);
 
         if (Path.GetFullPath(Path.ChangeExtension(srcPath, null)) != Path.GetFullPath(Path.ChangeExtension(dstPath, null))) {
             if (File.Exists(Path.ChangeExtension(srcPath, ".pdb"))) {
-                File.Move(Path.ChangeExtension(srcPath, ".pdb"), Path.ChangeExtension(dstPath, ".pdb"), overwrite: true);
+                File.Delete(Path.ChangeExtension(dstPath, ".pdb"));
+                File.Move(Path.ChangeExtension(srcPath, ".pdb"), Path.ChangeExtension(dstPath, ".pdb"));
             }
 
             if (File.Exists(Path.ChangeExtension(srcPath, ".mdb"))) {
-                File.Move(Path.ChangeExtension(srcPath, ".mdb"), Path.ChangeExtension(dstPath, ".mdb"), overwrite: true);
+                File.Delete(Path.ChangeExtension(dstPath, ".mdb"));
+                File.Move(Path.ChangeExtension(srcPath, ".mdb"), Path.ChangeExtension(dstPath, ".mdb"));
             }
         }
     }

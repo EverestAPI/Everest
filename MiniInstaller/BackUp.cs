@@ -65,7 +65,7 @@ public static class BackUp {
 
             Logger.LogLine("Applying patch vanilla libraries");
             ApplyVanillaPatchLibs(patchLibsDir, Globals.PathOrig);
-            Directory.Delete(patchLibsDir, recursive: true);
+            Directory.Delete(patchLibsDir, true);
         }
 
         //Create symlinks
