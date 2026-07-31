@@ -667,7 +667,7 @@ namespace Celeste.Mod {
                 if (format.Length < 1)
                     return file;
 
-                format = format[1..];
+                format = string.Intern(format[1..]);
 
                 ReadOnlySpan<char> fileSpan = file.AsSpan();
                 int fileSeparator = fileSpan.LastIndexOf('/') + 1;
