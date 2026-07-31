@@ -667,6 +667,7 @@ namespace Celeste.Mod {
                 if (format.Length < 1)
                     return file;
 
+                // Slicing "format" creates a new unique instance, which creates a lot duplicated strings of the same file ending if we have a lot of assets loaded. Better to intern it here
                 format = string.Intern(format[1..]);
 
                 ReadOnlySpan<char> fileSpan = file.AsSpan();
