@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Celeste.Mod.Helpers;
@@ -51,9 +51,9 @@ public static class InternHelper {
 }
 
 internal static class InternHelper<T> {
-    private static readonly Dictionary<T, object> Cache = new();
+    private static readonly ConcurrentDictionary<T, object> Cache = new();
     
     public static object Intern(T value) {
-        return Cache.TryGetValue(value, out object result) ? result : Cache[value] = value;
+        return Cache.GetOrAdd(value, static x => x);
     }
 }
