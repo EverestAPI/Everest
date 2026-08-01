@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
+using Celeste.Mod.Helpers;
 using MonoMod;
 using System.Collections.Generic;
 using System.IO;
@@ -16,6 +17,28 @@ namespace Celeste {
         [ProxyFileCalls] // ... except for proxying all System.IO.File.* calls to Celeste.Mod.FileProxy.*
         public static extern BinaryPacker.Element FromBinary(string filename);
 
+        /// <remarks>
+        /// EntityData will unbox some objects stored in BinaryPacker.Element and store them in a dedicated field.
+        /// We should only intern values that this will not happen to, otherwise we'll keep around a ton of unused ints interned.
+        /// From testing, not doing this causes ~31k ints to get interned but not used beyond loading in Strawberry Jam.
+        /// Delaying interning until EntityData is also not great, as stylegrounds use BinaryPacker.Element directly,
+        /// and as such would not get interned. In SJ, that amounts to ~27k uninterned ints.
+        ///
+        /// This compromise provided the best memory usage from testing, leading to ~11k ints allocated after game load,
+        /// most coming from unrelated sources.
+        /// </remarks>
+        private static bool IsKeyLikelyToGetUnboxedByEntityData(string key) {
+            return key is "x" or "y" or "id" or "width" or "height";
+        }
+
+        private static object InternIfUnlikelyToUnbox<T>(string key, T value) where T : struct {
+            if (IsKeyLikelyToGetUnboxedByEntityData(key)) {
+                return value;
+            }
+
+            return InternHelper<T>.Intern(value);
+        }
+        
         // optimise the method
         [MonoModReplace]
         private static BinaryPacker.Element ReadElement(BinaryReader reader) {
@@ -30,12 +53,16 @@ namespace Celeste {
                 string key = stringLookup[reader.ReadInt16()];
                 byte type = reader.ReadByte();
 
+                // We'll intern boxed values for booleans, integers and floats.
+                // Most values repeat very frequently inside maps (for example from copy-pasted spinners),
+                // so we benefit greatly even if some values might be cached unnecessarily.
+                // Since map data is loaded globally and almost never unloaded, the cost of unnecessary caching is very low.
                 object obj = type switch {
-                    0 => reader.ReadBoolean(),
-                    1 => Convert.ToInt32(reader.ReadByte(), CultureInfo.InvariantCulture),
-                    2 => Convert.ToInt32(reader.ReadInt16(), CultureInfo.InvariantCulture),
-                    3 => reader.ReadInt32(),
-                    4 => reader.ReadSingle(),
+                    0 => InternHelper.Intern(reader.ReadBoolean()),
+                    1 => InternIfUnlikelyToUnbox(key, Convert.ToInt32(reader.ReadByte(), CultureInfo.InvariantCulture)),
+                    2 => InternIfUnlikelyToUnbox(key, Convert.ToInt32(reader.ReadInt16(), CultureInfo.InvariantCulture)),
+                    3 => InternIfUnlikelyToUnbox(key, reader.ReadInt32()),
+                    4 => InternIfUnlikelyToUnbox(key, reader.ReadSingle()),
                     5 => stringLookup[reader.ReadInt16()],
                     6 => reader.ReadString(),
                     7 => ReadRunLengthEncoded(reader),
