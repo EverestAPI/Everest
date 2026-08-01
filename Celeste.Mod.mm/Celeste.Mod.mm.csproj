@@ -1,11 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>Celeste.Mod.mm</AssemblyName>
     <RootNamespace>Celeste</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <LangVersion>11</LangVersion>
     <ShouldIncludeNativeLua>false</ShouldIncludeNativeLua>
   </PropertyGroup>
 
@@ -38,11 +37,11 @@
     <ProjectReference Include="..\external\MonoMod\src\MonoMod.Utils\MonoMod.Utils.csproj" />
     <ProjectReference Include="..\external\MonoMod\src\MonoMod.RuntimeDetour\MonoMod.RuntimeDetour.csproj" />
     <ProjectReference Include="..\external\MonoMod\src\MonoMod.RuntimeDetour.HookGen\MonoMod.RuntimeDetour.HookGen.csproj" />
-    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-    <PackageReference Include="YamlDotNet" Version="16.1.3" />
+    <PackageReference Include="YamlDotNet" Version="18.1.0" />
     <PackageReference Include="Jdenticon-net" Version="3.1.2" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <ProjectReference Include="..\external\NLua\build\net8.0\NLua.net8.0.csproj" />
     <PackageReference Include="MAB.DotIgnore" Version="3.0.2" />
 
