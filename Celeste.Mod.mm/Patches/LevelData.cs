@@ -88,15 +88,9 @@ namespace Celeste {
                             // but auto-resizing from passing a capacity too small would probably make it too big anyway.
                             entityData.Values ??= new Dictionary<string, object>(entity.Attributes.Count - 3);
                             
-                            // We'll intern boxed values here.
-                            // Most values repeat very frequently inside maps (for example from copy-pasted custom entities),
-                            // so we benefit greatly even if some values might be cached unnecessarily.
-                            // Since map data is loaded globally and almost never unloaded, the cost of unnecessary caching is very low.
-                            // While BinaryPacker already interned most values, those which come from MapDataProcessors
-                            // would be left uninterned, wasting memory.
-                            // We'll also intern keys, which, while they come from a lookup table already,
+                            // We'll intern keys, which, while they come from a lookup table already,
                             // still get duplicated between different .bin files.
-                            entityData.Values.Add(string.Intern(key), InternHelper.TryIntern(value));
+                            entityData.Values.Add(string.Intern(key), value);
                             break;
                         }
                     }
