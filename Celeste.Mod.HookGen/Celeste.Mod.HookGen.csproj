@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>Celeste.Mod.HookGen</AssemblyName>
+    <RootNamespace>Celeste.Mod.HookGen</RootNamespace>
+    <LangVersion>11</LangVersion>
+  </PropertyGroup>
+    
+  <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+  </ItemGroup>
+
+  <!-- Anonymize paths -->
+  <PropertyGroup>
+    <PathMap>$(MSBuildProjectDirectory)=Celeste.Mod.HookGen/</PathMap>
+  </PropertyGroup>
+
+</Project>

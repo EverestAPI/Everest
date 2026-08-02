@@ -84,6 +84,7 @@ namespace MiniInstaller {
 
                 Directory.CreateDirectory(Globals.PathMiniInstallerWorkspace);
 
+                string vanillaCeleste = Path.Combine(Globals.PathOrig, "Celeste.exe");
                 string moddedCeleste = Path.Combine(Globals.PathMiniInstallerWorkspace, "Celeste.dll");
                 string moddedFNA = Path.Combine(Globals.PathMiniInstallerWorkspace, "FNA.dll");
                 string hookGenTempOutput = Path.Combine(Globals.PathMiniInstallerWorkspace, "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(Globals.PathCelesteExe), ".dll"));
@@ -96,7 +97,7 @@ namespace MiniInstaller {
                 // DepCalls.ConvertToNETCore also converts dependencies; if vanilla is FNA, then the FNA.dll in "orig"
                 // will also be copied to the workspace
                 // (as Backup.Backup applies patch libraries, the FNA.dll in orig will be the copy from "lib-vanilla")
-                DepCalls.ConvertToNETCore(Path.Combine(Globals.PathOrig, "Celeste.exe"), moddedCeleste);
+                DepCalls.ConvertToNETCore(vanillaCeleste, moddedCeleste);
 
                 // Always bring FNA from "everest-lib"
                 // XNA Celeste does not ship with FNA.dll, and the "lib-vanilla" version may differ from the one in "everest-lib"
@@ -108,8 +109,7 @@ namespace MiniInstaller {
                 DepCalls.RunMonoMod(moddedFNA, dllPaths: mods); // We need to patch some methods in FNA as well
                 DepCalls.RunMonoMod(moddedCeleste, dllPaths: mods);
 
-                DepCalls.RunHookGen(moddedCeleste, moddedCeleste);
-                DepCalls.RunMonoMod(hookGenTempOutput, dllPaths: mods); // We need to fix some MonoMod crimes, so relink it against the legacy MonoMod layer
+                DepCalls.RunHookGen(vanillaCeleste, moddedCeleste, hookGenTempOutput);
 
                 string tempEverestXml = Path.Combine(Globals.PathMiniInstallerWorkspace, "Celeste.Mod.mm.xml");
                 string tempCelesteXml = Path.Combine(Globals.PathMiniInstallerWorkspace, "Celeste.xml");
@@ -205,6 +205,7 @@ namespace MiniInstaller {
 
                 DepCalls.LoadModders();
 
+                string vanillaCeleste = Path.Combine(Globals.PathOrig, "Celeste.exe");
                 string everestModDLL = Path.ChangeExtension(Globals.PathCelesteExe, ".Mod.mm.dll");
                 string[] mods = new string[] { Globals.PathEverestLib, everestModDLL };
 
@@ -218,7 +219,7 @@ namespace MiniInstaller {
 
                 if (coreGameCacheRegen) {
                     // We really only need to coreify celeste
-                    DepCalls.ConvertToNETCoreSingle(Path.Combine(Globals.PathOrig, "Celeste.exe"), coreGameCacheFile);
+                    DepCalls.ConvertToNETCoreSingle(vanillaCeleste, coreGameCacheFile);
                 }
 
                 if (doFNA) {
@@ -232,8 +233,7 @@ namespace MiniInstaller {
                 // This should never change no matter the current settings
                 string hookGenOutput = Path.Combine(Globals.PathGame, "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(Globals.PathCelesteExe), ".dll"));
                 if (doHookGen) {
-                    DepCalls.RunHookGen(Globals.PathEverestDLL, Globals.PathCelesteExe);
-                    DepCalls.RunMonoMod(hookGenOutput, dllPaths: mods); // We need to fix some MonoMod crimes, so relink it against the legacy MonoMod layer
+                    DepCalls.RunHookGen(vanillaCeleste, Globals.PathEverestDLL, hookGenOutput);
                 }
 
                 if (doMainGame) {

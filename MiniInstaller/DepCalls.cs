@@ -12,7 +12,7 @@ public static class DepCalls {
     public static Assembly AsmNETCoreifier;
     
     public static void LoadModders() {
-        if (AsmMonoMod != null && AsmNETCoreifier != null) return;
+        if (AsmMonoMod != null && AsmHookGen != null && AsmNETCoreifier != null) return;
         // We can't add MonoMod as a reference to MiniInstaller, as we don't want to accidentally lock the file.
         // Instead, load it dynamically and invoke the entry point.
         // We also need to lazily load any dependencies.
@@ -28,8 +28,8 @@ public static class DepCalls {
         AsmMonoMod ??= LazyLoadAssembly(Path.Combine(Globals.PathGame, "MonoMod.Patcher.dll"));
         Logger.LogLine("Loading MonoMod.RuntimeDetour.dll");
         LazyLoadAssembly(Path.Combine(Globals.PathGame, "MonoMod.RuntimeDetour.dll"));
-        Logger.LogLine("Loading MonoMod.RuntimeDetour.HookGen");
-        AsmHookGen ??= LazyLoadAssembly(Path.Combine(Globals.PathGame, "MonoMod.RuntimeDetour.HookGen.dll"));
+        Logger.LogLine("Loading Celeste.Mod.HookGen");
+        AsmHookGen ??= LazyLoadAssembly(Path.Combine(Globals.PathGame, "Celeste.Mod.HookGen.dll"));
         Logger.LogLine("Loading NETCoreifier");
         AsmNETCoreifier ??= LazyLoadAssembly(Path.Combine(Globals.PathGame, "NETCoreifier.dll"));
     }
@@ -81,12 +81,20 @@ public static class DepCalls {
         }
     }
     
-    public static void RunHookGen(string asm, string targetName) {
-        Logger.LogLine($"Running MonoMod.RuntimeDetour.HookGen for {asm}");
-        // We're lazy.
-        Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", $"{Globals.PathMiniInstallerWorkspace}{Path.PathSeparator}{Globals.PathGame}"); // Prioritize workspace
-        Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
-        AsmHookGen.EntryPoint.Invoke(null, new object[] { new string[] { "--private", asm, Path.Combine(Path.GetDirectoryName(targetName), "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(targetName), "dll")) } });
+    public static void RunHookGen(string vanillaAsm, string moddedAsm, string outputAsm) {
+        Logger.LogLine($"Running HookGen for {moddedAsm}");
+        
+        string asmTmp = Path.Combine(Globals.PathTmp, Path.GetFileName(outputAsm));
+        try {
+            AsmHookGen.GetType("Celeste.Mod.HookGen.Generator")
+                .GetMethod("Generate", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(string), typeof(string), typeof(string) }, null)
+                .Invoke(null, new object[] { vanillaAsm, moddedAsm, asmTmp });
+
+            MiscUtil.MoveExecutable(asmTmp, outputAsm);
+        } finally {
+            File.Delete(asmTmp);
+            File.Delete(Path.ChangeExtension(asmTmp, "pdb"));
+        }
     }
     
     public static void ConvertToNETCore(string asmFrom, string asmTo = null, HashSet<string> convertedAsms = null) {
