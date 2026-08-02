@@ -13,7 +13,6 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
     //This exists for two reasons:
     // - to give all hooks an (empty) config to bypass some hook ordering jank
     // - to "fix" the MonoMod crime of double hooks
-    [ExternalGameDependencyPatchAttribute("MMHOOK_Celeste")]
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.HookGen.HookEndpointManager")]
     public static class LegacyHookEndpointManager {
 
@@ -33,7 +32,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
                 if (frame.HasMethod() && frame.GetMethod()?.DeclaringType?.Assembly is Assembly asm && AssemblyLoadContext.GetLoadContext(asm) is EverestModuleAssemblyContext ctx)
                     // Check if the mod was relinked from legacy MonoMod
                     return !ctx.ModuleMeta.IsNetCoreOnlyMod || asm.CustomAttributes.Any(attr => attr.AttributeType == typeof(RelinkedMonoModLegacyAttribute));
-                    
+
             return false;
         }
 
@@ -41,7 +40,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
             foreach (StackFrame frame in new StackTrace().GetFrames())
                 if (frame.HasMethod() && frame.GetMethod()?.DeclaringType?.Assembly is Assembly asm && AssemblyLoadContext.GetLoadContext(asm) is EverestModuleAssemblyContext ctx)
                     return ctx.ModuleMeta.IsNetCoreOnlyMod;
-                    
+
             return false;
         }
 
