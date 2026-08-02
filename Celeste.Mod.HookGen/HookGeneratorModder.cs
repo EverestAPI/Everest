@@ -169,8 +169,8 @@ public sealed class HookGeneratorModder : MonoModder {
     }
 
     private bool GenerateMethod(MethodDefinition method, TypeDefinition? vanillaType, TypeDefinition onHookType, TypeDefinition ilHookType) {
-        if (method.HasGenericParameters || method.IsAbstract || (method.IsSpecialName && !method.IsConstructor))
-            return false; // TODO
+        if (method.HasGenericParameters || method.IsAbstract || method is { IsSpecialName: true, IsConstructor: false })
+            return false;
 
         if (method.Name.StartsWith("orig_", StringComparison.Ordinal))
             return false;
@@ -178,12 +178,26 @@ public sealed class HookGeneratorModder : MonoModder {
         // Check if this method is part of the vanilla assembly
         bool isVanilla = vanillaType != null && vanillaType.Methods
             .Any(other => {
-                if (method == other) return false;
-                if (method.Name != other.Name) return false;
-                if (method.Parameters.Count != other.Parameters.Count) return false;
+                if (other == method) return false;
+                if (other.Name != method.Name) return false;
+                if (other.Parameters.Count != method.Parameters.Count) return false;
 
                 for (int i = 0; i < method.Parameters.Count; i++) {
-                    if (method.Parameters[i].ParameterType.FullName != other.Parameters[i].ParameterType.FullName) return false;
+                    if (other.Parameters[i].ParameterType.FullName != method.Parameters[i].ParameterType.FullName) return false;
+                }
+
+                return true;
+            });
+
+        // Check if the declaring type has an 'orig_' method of the current one
+        var origMethod = method.DeclaringType.Methods
+            .FirstOrDefault(other => {
+                if (other == method) return false;
+                if (other.Name != $"orig_{method.Name}") return false;
+                if (other.Parameters.Count != method.Parameters.Count) return false;
+
+                for (int i = 0; i < method.Parameters.Count; i++) {
+                    if (other.Parameters[i].ParameterType.FullName != method.Parameters[i].ParameterType.FullName) return false;
                 }
 
                 return true;
@@ -238,9 +252,9 @@ public sealed class HookGeneratorModder : MonoModder {
         ILCursor cur;
         GenericInstanceMethod endpointMethod;
 
-        var methodRef = outputModule.ImportReference(method);
-
         #region On-Hook
+
+        var methodRef = outputModule.ImportReference(method);
 
         var addOnHook = new MethodDefinition(
             "add_" + name,
@@ -289,6 +303,13 @@ public sealed class HookGeneratorModder : MonoModder {
 
         #region IL-Hook
 
+        // If available, the IL-hook will target the 'orig_' method,
+        // since it's the one containing the vanilla IL instructions.
+        var origMethodRef = origMethod == null ? null : outputModule.ImportReference(origMethod);
+        if (origMethod != null) {
+            Log($"Orig: {method} // {origMethod}");
+        }
+
         var addIlHook = new MethodDefinition(
             "add_" + name,
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.Static,
@@ -299,7 +320,7 @@ public sealed class HookGeneratorModder : MonoModder {
         ilHookType.Methods.Add(addIlHook);
 
         cur = new ILCursor(new ILContext(addIlHook));
-        cur.EmitLdtoken(methodRef);
+        cur.EmitLdtoken(origMethodRef ?? methodRef);
         cur.EmitCall(m_GetMethodFromHandle);
         cur.EmitLdarg0();
         endpointMethod = new GenericInstanceMethod(m_Modify);
@@ -317,7 +338,7 @@ public sealed class HookGeneratorModder : MonoModder {
         ilHookType.Methods.Add(removeIlHook);
 
         cur = new ILCursor(new ILContext(removeIlHook));
-        cur.EmitLdtoken(methodRef);
+        cur.EmitLdtoken(origMethodRef ?? methodRef);
         cur.EmitCall(m_GetMethodFromHandle);
         cur.EmitLdarg0();
         endpointMethod = new GenericInstanceMethod(m_Unmodify);
