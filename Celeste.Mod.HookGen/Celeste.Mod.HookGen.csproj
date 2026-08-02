@@ -4,11 +4,14 @@
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>Celeste.Mod.HookGen</AssemblyName>
     <RootNamespace>Celeste.Mod.HookGen</RootNamespace>
-    <LangVersion>11</LangVersion>
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
-    
+
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+    <ProjectReference Include="..\external\MonoMod\src\MonoMod.Patcher\MonoMod.Patcher.csproj" />
+    <ProjectReference Include="..\external\MonoMod\src\MonoMod.Utils\MonoMod.Utils.csproj" />
   </ItemGroup>
 
   <!-- Anonymize paths -->

@@ -86,8 +86,12 @@ public static class DepCalls {
         
         string asmTmp = Path.Combine(Globals.PathTmp, Path.GetFileName(outputAsm));
         try {
+            // We're lazy.
+            Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", $"{Globals.PathMiniInstallerWorkspace}{Path.PathSeparator}{Globals.PathGame}"); // Prioritize workspace
+            Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
+            
             AsmHookGen.GetType("Celeste.Mod.HookGen.Generator")
-                .GetMethod("Generate", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(string), typeof(string), typeof(string) }, null)
+                .GetMethod("Run", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(string), typeof(string), typeof(string) }, null)
                 .Invoke(null, new object[] { vanillaAsm, moddedAsm, asmTmp });
 
             MiscUtil.MoveExecutable(asmTmp, outputAsm);
