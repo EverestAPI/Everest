@@ -31,16 +31,12 @@ public sealed class HookGeneratorModder : MonoModder {
         { "System.UInt32", "uint" },
         { "System.UInt64", "ulong" },
     };
-    
+
     private const string OnHookNamespace = "On";
     private const string ILHookNamespace = "IL";
-    
+
     private readonly ModuleDefinition outputModule;
-    
-    private readonly ModuleDefinition module_Utils;
-    
-    private readonly TypeReference t_MethodBase;
-    private readonly TypeReference t_RuntimeMethodHandle;
+
     private readonly TypeReference t_MulticastDelegate;
     private readonly TypeReference t_AsyncCallback;
     private readonly TypeReference t_IAsyncResult;
@@ -50,52 +46,67 @@ public sealed class HookGeneratorModder : MonoModder {
 
     private readonly MethodReference m_ObsoleteAttribute_ctor;
     private readonly MethodReference m_EditorBrowsableAttribute_ctor;
-    
+    private readonly MethodReference m_IgnoresAccessChecksToAttribute_ctor;
+
     private readonly MethodReference m_GetMethodFromHandle;
     private readonly MethodReference m_Add;
     private readonly MethodReference m_Remove;
     private readonly MethodReference m_Modify;
     private readonly MethodReference m_Unmodify;
 
+    private static readonly string ObsoleteMessage =
+        """
+        Hooks on Everest-internal types/methods (=not part of the vanilla assembly) are deprecated and unsupported.
+        If you have a legitimate need for creating them, please reach out so that it can be added to the official API!
+        Attempting to uses On. / IL. HookGen helpers to create such hooks will fail for Core mods.
+        """.Replace('\n', ' ');
+
     public HookGeneratorModder(ModuleDefinition inputModule, ModuleDefinition outputModule) {
         Module = inputModule;
         this.outputModule = outputModule;
-        
+
         // Copy all assembly references from the input module.
         MapDependencies();
         outputModule.AssemblyReferences.AddRange(Module.AssemblyReferences);
         DependencyMap[outputModule] = new List<ModuleDefinition>(DependencyMap[Module]);
-        
+
         MapDependency(Module, "MonoMod.Utils");
-        if (!DependencyCache.TryGetValue("MonoMod.Utils", out module_Utils!)) {
+        if (!DependencyCache.TryGetValue("MonoMod.Utils", out var module_Utils)) {
             throw new FileNotFoundException("MonoMod.Utils not found!");
         }
-        
-        t_MethodBase = outputModule.ImportReference(FindType("System.Reflection.MethodBase"));
-        t_RuntimeMethodHandle = outputModule.ImportReference(FindType("System.RuntimeMethodHandle"));
+
         t_MulticastDelegate = outputModule.ImportReference(FindType("System.MulticastDelegate"));
         t_AsyncCallback = outputModule.ImportReference(FindType("System.AsyncCallback"));
         t_IAsyncResult = outputModule.ImportReference(FindType("System.IAsyncResult"));
         t_EditorBrowsableState = outputModule.ImportReference(FindType("System.ComponentModel.EditorBrowsableState"));
-        
+
         t_ILManipulator = outputModule.ImportReference(module_Utils.GetType("MonoMod.Cil.ILContext/Manipulator"));
-        
-        var td_HookEndpointManager = Module.GetType("MonoMod.RuntimeDetour.HookGen.HookEndpointManager");
-        
-        m_ObsoleteAttribute_ctor = outputModule.ImportReference(FindType("System.ObsoleteAttribute").Resolve().FindMethod("System.Void .ctor(System.String,System.Boolean)"));
-        m_EditorBrowsableAttribute_ctor = outputModule.ImportReference(FindType("System.ComponentModel.EditorBrowsableAttribute").Resolve().FindMethod("System.Void .ctor(System.ComponentModel.EditorBrowsableState)"));
-        
+
+        // Directly target Everest's endpoint manager, instead of relinking from MonoMod's manager
+        var td_LegacyHookEndpointManager = Module.GetType("Celeste.Mod.Helpers.LegacyMonoMod.LegacyHookEndpointManager");
+
+        m_ObsoleteAttribute_ctor = outputModule.ImportReference(FindType("System.ObsoleteAttribute").Resolve()
+            .FindMethod("System.Void .ctor(System.String,System.Boolean)"));
+        m_EditorBrowsableAttribute_ctor = outputModule.ImportReference(FindType("System.ComponentModel.EditorBrowsableAttribute").Resolve()
+            .FindMethod("System.Void .ctor(System.ComponentModel.EditorBrowsableState)"));
+
+        m_IgnoresAccessChecksToAttribute_ctor = outputModule.ImportReference(module_Utils.GetType("System.Runtime.CompilerServices.IgnoresAccessChecksToAttribute")
+            .FindMethod("System.Void .ctor(System.String)"));
+
+        var t_MethodBase = outputModule.ImportReference(FindType("System.Reflection.MethodBase"));
+        var t_RuntimeMethodHandle = outputModule.ImportReference(FindType("System.RuntimeMethodHandle"));
         m_GetMethodFromHandle = outputModule.ImportReference(
             new MethodReference("GetMethodFromHandle", t_MethodBase, t_MethodBase) {
-                Parameters = { new ParameterDefinition(t_RuntimeMethodHandle) }
+                Parameters = { new ParameterDefinition(t_RuntimeMethodHandle) },
             }
         );
-        m_Add = outputModule.ImportReference(td_HookEndpointManager.FindMethod("Add"));
-        m_Remove = outputModule.ImportReference(td_HookEndpointManager.FindMethod("Remove"));
-        m_Modify = outputModule.ImportReference(td_HookEndpointManager.FindMethod("Modify"));
-        m_Unmodify = outputModule.ImportReference(td_HookEndpointManager.FindMethod("Unmodify"));
+
+        m_Add = outputModule.ImportReference(td_LegacyHookEndpointManager.FindMethod("Add"));
+        m_Remove = outputModule.ImportReference(td_LegacyHookEndpointManager.FindMethod("Remove"));
+        m_Modify = outputModule.ImportReference(td_LegacyHookEndpointManager.FindMethod("Modify"));
+        m_Unmodify = outputModule.ImportReference(td_LegacyHookEndpointManager.FindMethod("Unmodify"));
     }
-    
+
     public void Generate(ModuleDefinition vanillaModule) {
         foreach (var type in Module.Types) {
             GenerateType(type, vanillaModule, out var hookType, out var hookILType);
@@ -105,13 +116,21 @@ public sealed class HookGeneratorModder : MonoModder {
             outputModule.Types.Add(hookType);
             outputModule.Types.Add(hookILType);
         }
+
+        // Since we are accessing private members of the Celeste assembly,
+        // add a hidden JIT attribute to disable access checks.
+        var ignoresAccessChecksAttrib = new CustomAttribute(m_IgnoresAccessChecksToAttribute_ctor);
+        ignoresAccessChecksAttrib.ConstructorArguments.Add(new CustomAttributeArgument(outputModule.TypeSystem.String, "Celeste"));
+        outputModule.Assembly.CustomAttributes.Add(ignoresAccessChecksAttrib);
     }
-    
+
     private void GenerateType(TypeDefinition type, ModuleDefinition vanillaModule, out TypeDefinition? onHookType, out TypeDefinition? ilHookType) {
         onHookType = ilHookType = null;
 
         if (type.HasGenericParameters || type.IsRuntimeSpecialName || type.Name.StartsWith("<", StringComparison.Ordinal))
             return; // TODO
+
+        var vanillaType = vanillaModule.GetType(type.FullName);
 
         onHookType = new TypeDefinition(
             type.IsNested ? null : $"{OnHookNamespace}{(string.IsNullOrEmpty(type.Namespace) ? "" : $".{type.Namespace}")}",
@@ -129,7 +148,7 @@ public sealed class HookGeneratorModder : MonoModder {
         bool add = false;
 
         foreach (var method in type.Methods) {
-            add |= GenerateMethod(method, vanillaModule, onHookType, ilHookType);
+            add |= GenerateMethod(method, vanillaType, onHookType, ilHookType);
         }
 
         foreach (var nested in type.NestedTypes) {
@@ -148,10 +167,27 @@ public sealed class HookGeneratorModder : MonoModder {
             onHookType = ilHookType = null;
         }
     }
-    private bool GenerateMethod(MethodDefinition method, ModuleDefinition vanillaModule, TypeDefinition onHookType, TypeDefinition ilHookType)
-    {
+
+    private bool GenerateMethod(MethodDefinition method, TypeDefinition? vanillaType, TypeDefinition onHookType, TypeDefinition ilHookType) {
         if (method.HasGenericParameters || method.IsAbstract || (method.IsSpecialName && !method.IsConstructor))
             return false; // TODO
+
+        if (method.Name.StartsWith("orig_", StringComparison.Ordinal))
+            return false;
+
+        // Check if this method is part of the vanilla assembly
+        bool isVanilla = vanillaType != null && vanillaType.Methods
+            .Any(other => {
+                if (method == other) return false;
+                if (method.Name != other.Name) return false;
+                if (method.Parameters.Count != other.Parameters.Count) return false;
+
+                for (int i = 0; i < method.Parameters.Count; i++) {
+                    if (method.Parameters[i].ParameterType.FullName != other.Parameters[i].ParameterType.FullName) return false;
+                }
+
+                return true;
+            });
 
         string name = GetFriendlyName(method);
         bool suffix = method.Parameters.Count != 0;
@@ -173,18 +209,19 @@ public sealed class HookGeneratorModder : MonoModder {
                 }
 
                 if (overloads.Any(other => {
-                    var otherParam = other.Parameters.ElementAtOrDefault(paramIdx);
-                    return
-                        otherParam != null &&
-                        GetFriendlyName(otherParam.ParameterType, false) == typeName &&
-                        otherParam.ParameterType.Namespace != param.ParameterType.Namespace;
-                })) {
+                        var otherParam = other.Parameters.ElementAtOrDefault(paramIdx);
+                        return
+                            otherParam != null &&
+                            GetFriendlyName(otherParam.ParameterType, false) == typeName &&
+                            otherParam.ParameterType.Namespace != param.ParameterType.Namespace;
+                    })) {
                     typeName = GetFriendlyName(param.ParameterType, true);
                 }
 
                 builder.Append('_');
                 builder.Append(typeName.Replace(".", "", StringComparison.Ordinal).Replace("`", "", StringComparison.Ordinal));
             }
+
             name += builder.ToString();
         }
 
@@ -231,7 +268,7 @@ public sealed class HookGeneratorModder : MonoModder {
         removeOnHook.Parameters.Add(new ParameterDefinition(null, ParameterAttributes.None, hookDelegate));
         removeOnHook.Body = new MethodBody(removeOnHook);
         onHookType.Methods.Add(removeOnHook);
-        
+
         cur = new ILCursor(new ILContext(removeOnHook));
         cur.EmitLdtoken(methodRef);
         cur.EmitCall(m_GetMethodFromHandle);
@@ -240,11 +277,12 @@ public sealed class HookGeneratorModder : MonoModder {
         endpointMethod.GenericArguments.Add(hookDelegate);
         cur.EmitCall(endpointMethod);
         cur.EmitRet();
-        
+
         var onHookEvent = new EventDefinition(name, EventAttributes.None, hookDelegate) {
             AddMethod = addOnHook,
             RemoveMethod = removeOnHook
         };
+
         onHookType.Events.Add(onHookEvent);
 
         #endregion
@@ -259,7 +297,7 @@ public sealed class HookGeneratorModder : MonoModder {
         addIlHook.Parameters.Add(new ParameterDefinition(null, ParameterAttributes.None, t_ILManipulator));
         addIlHook.Body = new MethodBody(addIlHook);
         ilHookType.Methods.Add(addIlHook);
-        
+
         cur = new ILCursor(new ILContext(addIlHook));
         cur.EmitLdtoken(methodRef);
         cur.EmitCall(m_GetMethodFromHandle);
@@ -268,7 +306,7 @@ public sealed class HookGeneratorModder : MonoModder {
         endpointMethod.GenericArguments.Add(hookDelegate);
         cur.EmitCall(endpointMethod);
         cur.EmitRet();
-        
+
         var removeIlHook = new MethodDefinition(
             "remove_" + name,
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.Static,
@@ -277,7 +315,7 @@ public sealed class HookGeneratorModder : MonoModder {
         removeIlHook.Parameters.Add(new ParameterDefinition(null, ParameterAttributes.None, t_ILManipulator));
         removeIlHook.Body = new MethodBody(removeIlHook);
         ilHookType.Methods.Add(removeIlHook);
-        
+
         cur = new ILCursor(new ILContext(removeIlHook));
         cur.EmitLdtoken(methodRef);
         cur.EmitCall(m_GetMethodFromHandle);
@@ -295,8 +333,16 @@ public sealed class HookGeneratorModder : MonoModder {
 
         #endregion
 
+        // Hooking Everest internals is no longer supported.
+        // The events are kept for backwards compatibility.
+        if (!isVanilla) {
+            onHookEvent.CustomAttributes.Add(GenerateObsolete(ObsoleteMessage, error: true));
+            ilHookEvent.CustomAttributes.Add(GenerateObsolete(ObsoleteMessage, error: true));
+        }
+
         return true;
     }
+
     private TypeDefinition GenerateDelegate(MethodDefinition method, ParameterDefinition[] prefixParameters) {
         var delegateType = new TypeDefinition(
             null, null,
@@ -328,6 +374,7 @@ public sealed class HookGeneratorModder : MonoModder {
         foreach (var paramDef in prefixParameters) {
             invoke.Parameters.Add(paramDef);
         }
+
         if (!method.IsStatic) {
             TypeReference selfType = outputModule.ImportReference(method.DeclaringType);
             if (method.DeclaringType.IsValueType) {
@@ -336,6 +383,7 @@ public sealed class HookGeneratorModder : MonoModder {
 
             invoke.Parameters.Add(new ParameterDefinition("self", ParameterAttributes.None, selfType));
         }
+
         foreach (var param in method.Parameters) {
             invoke.Parameters.Add(new ParameterDefinition(
                 param.Name,
@@ -359,6 +407,7 @@ public sealed class HookGeneratorModder : MonoModder {
         foreach (var param in invoke.Parameters) {
             beginInvoke.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes, param.ParameterType));
         }
+
         beginInvoke.Parameters.Add(new ParameterDefinition("callback", ParameterAttributes.None, t_AsyncCallback));
         beginInvoke.Parameters.Add(new ParameterDefinition(null, ParameterAttributes.None, outputModule.TypeSystem.Object));
         beginInvoke.Body = new MethodBody(beginInvoke);
@@ -379,7 +428,7 @@ public sealed class HookGeneratorModder : MonoModder {
 
         return delegateType;
     }
-    
+
     private CustomAttribute GenerateObsolete(string message, bool error) {
         var attrib = new CustomAttribute(m_ObsoleteAttribute_ctor);
         attrib.ConstructorArguments.Add(new CustomAttributeArgument(outputModule.TypeSystem.String, message));
@@ -392,23 +441,25 @@ public sealed class HookGeneratorModder : MonoModder {
         attrib.ConstructorArguments.Add(new CustomAttributeArgument(t_EditorBrowsableState, state));
         return attrib;
     }
-    
+
     // Generate a name which is usable inside C#
     private static string GetFriendlyName(MethodReference method) {
         string name = method.Name;
         if (name.StartsWith('.')) {
             name = name[1..];
         }
+
         name = name.Replace('.', '_');
         return name;
     }
+
     private static string GetFriendlyName(TypeReference type, bool full) {
         var builder = new StringBuilder();
         BuildFriendlyName(builder, type, full);
         return builder.ToString();
     }
-    private static void BuildFriendlyName(StringBuilder builder, TypeReference type, bool full)
-    {
+
+    private static void BuildFriendlyName(StringBuilder builder, TypeReference type, bool full) {
         if (type is not TypeSpecification typeSpec) {
             builder.Append((full ? type.FullName : type.Name).Replace("_", "", StringComparison.Ordinal));
             return;
