@@ -381,6 +381,10 @@ namespace Celeste.Mod {
         /// <param name="asmName">The assembly name, or null for the default</param>
         /// <returns></returns>
         public Assembly LoadAssemblyFromModPath(string path, string asmName = null) {
+            if (LoaderMetadataCache.TryContainsAssemblyEntry(ModuleMeta.PathArchive, path, out bool exists)
+                && !exists)
+                return null;
+
             lock (LOCK) {
                 if (isDisposed)
                     throw new ObjectDisposedException(nameof(EverestModuleAssemblyContext));

@@ -194,6 +194,7 @@ namespace Celeste.Mod {
 
                 EverestSplashHandler.SetSplashLoadingModCount(files.Length + dirs.Length);
 
+                LoaderMetadataCache.Initialize(PathCache);
                 LoaderChecksumCache.Initialize(PathCache);
                 foreach (string file in files) {
                     LoadZip(Path.Combine(PathMods, file));
@@ -201,6 +202,7 @@ namespace Celeste.Mod {
                 foreach (string dir in dirs) {
                     LoadDir(Path.Combine(PathMods, dir));
                 }
+                LoaderMetadataCache.Flush();
 
                 enforceOptionalDependencies = false;
                 Logger.Info("loader", "Loading mods with unsatisfied optional dependencies (if any)");
@@ -266,48 +268,28 @@ namespace Celeste.Mod {
                 Logger.Verbose("loader", $"Loading mod .zip: {archive}");
 
                 EverestModuleMetadata[] multimetas = null;
-
                 IgnoreList ignoreList = null;
 
-                bool metaParsed = false;
-
-                using (ZipArchive zip = ZipFile.OpenRead(archive)) {
-                    foreach (ZipArchiveEntry entry in zip.Entries) {
-                        if (entry.FullName is "everest.yaml" or "everest.yml") {
-                            if (metaParsed) {
-                                Logger.Warn("loader", $"{archive} has both everest.yaml and everest.yml. Ignoring {entry.FullName}.");
-                                continue;
-                            }
-                            using (Stream stream = entry.Open())
-                            using (StreamReader reader = new StreamReader(stream)) {
-                                try {
-                                    if (!reader.EndOfStream) {
-                                        multimetas = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata[]>(reader);
-                                        foreach (EverestModuleMetadata multimeta in multimetas) {
-                                            multimeta.PathArchive = archive;
-                                            multimeta.PostParse();
-                                        }
-                                    }
-                                } catch (Exception e) {
-                                    Logger.Warn("loader", $"Failed parsing {entry.FullName} in {archive}: {e}");
-                                    FilesWithMetadataLoadFailures.Add(archive);
-                                }
-                            }
-                            metaParsed = true;
-                            continue;
+                LoaderMetadataCache.ZipMetadata cached;
+                if (!LoaderMetadataCache.TryGet(archive, out cached)) {
+                    cached = LoaderMetadataCache.ReadArchive(archive);
+                    LoaderMetadataCache.Store(archive, cached);
+                }
+                if (cached.HasBothMetadataFiles)
+                    Logger.Warn("loader", $"{archive} has both everest.yaml and everest.yml. Ignoring the second file.");
+                if (cached.IgnoreLines != null)
+                    ignoreList = new IgnoreList(cached.IgnoreLines);
+                if (!string.IsNullOrEmpty(cached.Yaml)) {
+                    try {
+                        using StringReader reader = new StringReader(cached.Yaml);
+                        multimetas = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata[]>(reader);
+                        foreach (EverestModuleMetadata multimeta in multimetas) {
+                            multimeta.PathArchive = archive;
+                            multimeta.PostParse();
                         }
-                        
-                        if (entry.FullName == ".everestignore") {
-                            List<string> lines = new List<string>();
-                            using (Stream stream = entry.Open())
-                            using (StreamReader reader = new StreamReader(stream)) {
-                                while (!reader.EndOfStream) {
-                                    lines.Add(reader.ReadLine());
-                                }
-                            }
-                            ignoreList = new IgnoreList(lines);
-                            continue;
-                        }
+                    } catch (Exception e) {
+                        Logger.Warn("loader", $"Failed parsing everest metadata in {archive}: {e}");
+                        FilesWithMetadataLoadFailures.Add(archive);
                     }
                 }
 
