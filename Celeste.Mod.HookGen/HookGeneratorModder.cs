@@ -196,7 +196,7 @@ public sealed class HookGeneratorModder : MonoModder {
     }
 
     private bool GenerateMethod(MethodDefinition method, TypeDefinition? vanillaType, TypeDefinition onHookType, TypeDefinition ilHookType, string? name = null, bool force = false) {
-        if (!force && (method.HasGenericParameters || method.IsAbstract || method is { IsSpecialName: true, IsConstructor: false }))
+        if (!force && (method.HasGenericParameters || method.IsAbstract))
             return false;
 
         if (!force && (method.Name.StartsWith('<') || method.Name.StartsWith("orig_", StringComparison.Ordinal)))
