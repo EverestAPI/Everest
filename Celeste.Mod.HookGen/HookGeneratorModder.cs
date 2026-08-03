@@ -46,7 +46,6 @@ public sealed class HookGeneratorModder : MonoModder {
 
     private readonly MethodReference m_ObsoleteAttribute_ctor;
     private readonly MethodReference m_EditorBrowsableAttribute_ctor;
-    private readonly MethodReference m_IgnoresAccessChecksToAttribute_ctor;
 
     private readonly MethodReference m_GetMethodFromHandle;
     private readonly MethodReference m_Add;
@@ -90,9 +89,6 @@ public sealed class HookGeneratorModder : MonoModder {
         m_EditorBrowsableAttribute_ctor = outputModule.ImportReference(FindType("System.ComponentModel.EditorBrowsableAttribute").Resolve()
             .FindMethod("System.Void .ctor(System.ComponentModel.EditorBrowsableState)"));
 
-        m_IgnoresAccessChecksToAttribute_ctor = outputModule.ImportReference(module_Utils.GetType("System.Runtime.CompilerServices.IgnoresAccessChecksToAttribute")
-            .FindMethod("System.Void .ctor(System.String)"));
-
         var t_MethodBase = outputModule.ImportReference(FindType("System.Reflection.MethodBase"));
         var t_RuntimeMethodHandle = outputModule.ImportReference(FindType("System.RuntimeMethodHandle"));
         m_GetMethodFromHandle = outputModule.ImportReference(
@@ -116,12 +112,6 @@ public sealed class HookGeneratorModder : MonoModder {
             outputModule.Types.Add(hookType);
             outputModule.Types.Add(hookILType);
         }
-
-        // Since we are accessing private members of the Celeste assembly,
-        // add a hidden JIT attribute to disable access checks.
-        var ignoresAccessChecksAttrib = new CustomAttribute(m_IgnoresAccessChecksToAttribute_ctor);
-        ignoresAccessChecksAttrib.ConstructorArguments.Add(new CustomAttributeArgument(outputModule.TypeSystem.String, "Celeste"));
-        outputModule.Assembly.CustomAttributes.Add(ignoresAccessChecksAttrib);
     }
 
     private void GenerateType(TypeDefinition type, ModuleDefinition? vanillaModule, out TypeDefinition? onHookType, out TypeDefinition? ilHookType) {
@@ -478,7 +468,7 @@ public sealed class HookGeneratorModder : MonoModder {
         var invoke = new MethodDefinition(
             "Invoke",
             MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
-            outputModule.ImportReference(method.ReturnType)
+            ImportVisible(method.ReturnType)
         ) {
             ImplAttributes = MethodImplAttributes.Runtime | MethodImplAttributes.Managed,
             HasThis = true
@@ -489,45 +479,19 @@ public sealed class HookGeneratorModder : MonoModder {
         }
 
         if (!method.IsStatic) {
-            TypeReference selfType = outputModule.ImportReference(method.DeclaringType);
+            TypeReference selfType = ImportVisible(method.DeclaringType);
             if (method.DeclaringType.IsValueType) {
                 selfType = new ByReferenceType(selfType);
             }
 
-            // Iterate until type is accessible from C#
-            var currType = selfType;
-            while (currType.Name.StartsWith('<')) {
-                // Not accessible
-                var nextType = currType.SafeResolve()?.BaseType;
-                if (nextType == null) {
-                    currType = outputModule.TypeSystem.Object;
-                    break;
-                }
-
-                currType = nextType;
-            }
-
-            invoke.Parameters.Add(new ParameterDefinition("self", ParameterAttributes.None, outputModule.ImportReference(currType)));
+            invoke.Parameters.Add(new ParameterDefinition("self", ParameterAttributes.None, selfType));
         }
 
         foreach (var param in method.Parameters) {
-            // Iterate until type is accessible from C#
-            var currType = param.ParameterType;
-            while (currType.Name.StartsWith('<')) {
-                // Not accessible
-                var nextType = currType.SafeResolve()?.BaseType;
-                if (nextType == null) {
-                    currType = outputModule.TypeSystem.Object;
-                    break;
-                }
-
-                currType = nextType;
-            }
-
             invoke.Parameters.Add(new ParameterDefinition(
                 param.Name,
                 param.Attributes & ~ParameterAttributes.Optional & ~ParameterAttributes.HasDefault,
-                outputModule.ImportReference(currType)
+                ImportVisible(param.ParameterType)
             ));
         }
 
@@ -568,6 +532,50 @@ public sealed class HookGeneratorModder : MonoModder {
         return delegateType;
     }
 
+    private TypeReference ImportVisible(TypeReference? typeRef) {
+        // Check if the declaring type is accessible.
+        // If not, use its base type instead.
+        // Note: This will break down with type specifications!
+        while (true) {
+            var type = typeRef.SafeResolve();
+            if (type == null) // Unresolvable - probably private anyway.
+                return outputModule.TypeSystem.Object;
+
+            // Generic instance types are special. Try to match them exactly or baseify them.
+            if (typeRef is GenericInstanceType typeGen && !HasPublicArgs(typeGen)) {
+                typeRef = type.BaseType;
+                goto NextIter;
+            }
+
+            // Check if the type and all of its parents are public.
+            // Generic return / param types are too complicated at the moment and will be simplified.
+            for (var parent = type; parent != null; parent = parent.DeclaringType) {
+                if (IsPublic(parent) && (parent == type || !parent.HasGenericParameters))
+                    continue;
+                // If it isn't public, ...
+
+                if (type.IsEnum) {
+                    // ... try the enum's underlying type.
+                    typeRef = type.FindField("value__")!.FieldType;
+                    break;
+                }
+
+                // ... try the base type.
+                typeRef = type.BaseType;
+                goto NextIter;
+            }
+
+            try {
+                return outputModule.ImportReference(typeRef);
+            } catch {
+                // Under rare circumstances, ImportReference can fail, f.e. Private<K> : Public<K, V>
+                return outputModule.TypeSystem.Object;
+            }
+
+            NextIter:;
+        }
+    }
+
     private CustomAttribute GenerateObsolete(string message, bool error) {
         var attrib = new CustomAttribute(m_ObsoleteAttribute_ctor);
         attrib.ConstructorArguments.Add(new CustomAttributeArgument(outputModule.TypeSystem.String, message));
@@ -579,6 +587,26 @@ public sealed class HookGeneratorModder : MonoModder {
         var attrib = new CustomAttribute(m_EditorBrowsableAttribute_ctor);
         attrib.ConstructorArguments.Add(new CustomAttributeArgument(t_EditorBrowsableState, state));
         return attrib;
+    }
+
+    private static bool IsPublic(TypeDefinition? typeDef) {
+        return typeDef != null && (typeDef.IsNestedPublic || typeDef.IsPublic) && !typeDef.IsNotPublic;
+    }
+
+    private static bool HasPublicArgs(GenericInstanceType typeGen) {
+        foreach (var arg in typeGen.GenericArguments) {
+            // Generic parameter references are local.
+            if (arg.IsGenericParameter)
+                return false;
+
+            if (arg is GenericInstanceType argGen && !HasPublicArgs(argGen))
+                return false;
+
+            if (!IsPublic(arg.SafeResolve()))
+                return false;
+        }
+
+        return true;
     }
 
     // Generate a name which is usable inside C#
