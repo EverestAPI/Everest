@@ -56,10 +56,10 @@ public sealed class HookGeneratorModder : MonoModder {
 
     private static readonly string ObsoleteMessage =
         """
-        Hooks on Everest-internal types/methods (=not part of the vanilla assembly) are deprecated and unsupported.
-        If you have a legitimate need for creating them, please reach out so that it can be added to the official API!
-        Attempting to uses On. / IL. HookGen helpers to create such hooks will fail for Core mods.
-        """.Replace('\n', ' ');
+            Hooks on Everest-internal types/methods (=not part of the vanilla assembly) are deprecated and unsupported.
+            If you have a legitimate need for creating them, please reach out so that it can be added to the official API!
+            Attempting to uses On. / IL. HookGen helpers to create such hooks will fail for Core mods.
+            """.Replace('\n', ' ');
 
     public HookGeneratorModder(ModuleDefinition inputModule, ModuleDefinition outputModule) {
         Module = inputModule;
@@ -124,13 +124,14 @@ public sealed class HookGeneratorModder : MonoModder {
         outputModule.Assembly.CustomAttributes.Add(ignoresAccessChecksAttrib);
     }
 
-    private void GenerateType(TypeDefinition type, ModuleDefinition vanillaModule, out TypeDefinition? onHookType, out TypeDefinition? ilHookType) {
+    private void GenerateType(TypeDefinition type, ModuleDefinition? vanillaModule, out TypeDefinition? onHookType, out TypeDefinition? ilHookType) {
         onHookType = ilHookType = null;
 
-        if (type.HasGenericParameters || type.IsRuntimeSpecialName || type.Name.StartsWith("<", StringComparison.Ordinal))
-            return; // TODO
+        if (type.HasGenericParameters || type.IsRuntimeSpecialName || type.Name.StartsWith('<')) {
+            return;
+        }
 
-        var vanillaType = vanillaModule.GetType(type.FullName);
+        var vanillaType = vanillaModule?.GetType(type.FullName);
 
         onHookType = new TypeDefinition(
             type.IsNested ? null : $"{OnHookNamespace}{(string.IsNullOrEmpty(type.Namespace) ? "" : $".{type.Namespace}")}",
@@ -152,14 +153,14 @@ public sealed class HookGeneratorModder : MonoModder {
         }
 
         foreach (var nested in type.NestedTypes) {
-            GenerateType(nested, vanillaModule, out var hookNestedType, out var hookNestedILType);
-            if (hookNestedType == null || hookNestedILType == null) {
+            GenerateType(nested, vanillaModule, out var nestedOnHookType, out var nestedIlHookType);
+            if (nestedOnHookType == null || nestedIlHookType == null) {
                 continue;
             }
 
             add = true;
-            onHookType.NestedTypes.Add(hookNestedType);
-            ilHookType.NestedTypes.Add(hookNestedILType);
+            onHookType.NestedTypes.Add(nestedOnHookType);
+            ilHookType.NestedTypes.Add(nestedIlHookType);
         }
 
         if (!add) {
@@ -168,11 +169,38 @@ public sealed class HookGeneratorModder : MonoModder {
         }
     }
 
-    private bool GenerateMethod(MethodDefinition method, TypeDefinition? vanillaType, TypeDefinition onHookType, TypeDefinition ilHookType) {
-        if (method.HasGenericParameters || method.IsAbstract || method is { IsSpecialName: true, IsConstructor: false })
+    private void GenerateStateMachine(string name, TypeDefinition type, out TypeDefinition? onHookType, out TypeDefinition? ilHookType) {
+        onHookType = ilHookType = null;
+
+        onHookType = new TypeDefinition(
+            type.IsNested ? null : $"{OnHookNamespace}{(string.IsNullOrEmpty(type.Namespace) ? "" : $".{type.Namespace}")}",
+            name,
+            (type.IsNested ? TypeAttributes.NestedPublic : TypeAttributes.Public) | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Class,
+            outputModule.TypeSystem.Object
+        );
+        ilHookType = new TypeDefinition(
+            type.IsNested ? null : $"{ILHookNamespace}{(string.IsNullOrEmpty(type.Namespace) ? "" : $".{type.Namespace}")}",
+            name,
+            (type.IsNested ? TypeAttributes.NestedPublic : TypeAttributes.Public) | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Class,
+            outputModule.TypeSystem.Object
+        );
+
+        bool add = false;
+        foreach (var method in type.Methods) {
+            add |= GenerateMethod(method, null, onHookType, ilHookType, force: true);
+        }
+
+        if (!add) {
+            // Avoid emitting empty types
+            onHookType = ilHookType = null;
+        }
+    }
+
+    private bool GenerateMethod(MethodDefinition method, TypeDefinition? vanillaType, TypeDefinition onHookType, TypeDefinition ilHookType, bool force = false) {
+        if (!force && (method.HasGenericParameters || method.IsAbstract || method is { IsSpecialName: true, IsConstructor: false }))
             return false;
 
-        if (method.Name.StartsWith("orig_", StringComparison.Ordinal))
+        if (!force && (method.Name.StartsWith("orig_", StringComparison.Ordinal)))
             return false;
 
         // Check if this method is part of the vanilla assembly
@@ -306,9 +334,6 @@ public sealed class HookGeneratorModder : MonoModder {
         // If available, the IL-hook will target the 'orig_' method,
         // since it's the one containing the vanilla IL instructions.
         var origMethodRef = origMethod == null ? null : outputModule.ImportReference(origMethod);
-        if (origMethod != null) {
-            Log($"Orig: {method} // {origMethod}");
-        }
 
         var addIlHook = new MethodDefinition(
             "add_" + name,
@@ -356,9 +381,34 @@ public sealed class HookGeneratorModder : MonoModder {
 
         // Hooking Everest internals is no longer supported.
         // The events are kept for backwards compatibility.
-        if (!isVanilla) {
+        if (!force && !isVanilla) {
             onHookEvent.CustomAttributes.Add(GenerateObsolete(ObsoleteMessage, error: true));
             ilHookEvent.CustomAttributes.Add(GenerateObsolete(ObsoleteMessage, error: true));
+        }
+
+        foreach (var attrib in method.CustomAttributes) {
+            // Generate hook-gen for the behind-the-scenes state-machine,
+            // which contains the actual code of the iterator.
+            if (attrib.AttributeType.FullName
+                is "System.Runtime.CompilerServices.StateMachineAttribute"
+                or "System.Runtime.CompilerServices.IteratorStateMachineAttribute"
+                or "System.Runtime.CompilerServices.AsyncIteratorStateMachineAttribute"
+               ) {
+                var type = (TypeDefinition) attrib.ConstructorArguments[0].Value;
+
+                GenerateStateMachine($"{name}StateMachine", type, out var nestedOnHookType, out var nestedIlHookType);
+                if (nestedOnHookType == null || nestedIlHookType == null) {
+                    continue;
+                }
+
+                if (!force && !isVanilla) {
+                    nestedOnHookType.CustomAttributes.Add(GenerateObsolete(ObsoleteMessage, error: true));
+                    nestedIlHookType.CustomAttributes.Add(GenerateObsolete(ObsoleteMessage, error: true));
+                }
+
+                onHookType.NestedTypes.Add(nestedOnHookType);
+                ilHookType.NestedTypes.Add(nestedIlHookType);
+            }
         }
 
         return true;
@@ -470,7 +520,7 @@ public sealed class HookGeneratorModder : MonoModder {
             name = name[1..];
         }
 
-        name = name.Replace('.', '_');
+        name = name.Replace('.', '_').Replace('<', '_').Replace(">", "");
         return name;
     }
 
