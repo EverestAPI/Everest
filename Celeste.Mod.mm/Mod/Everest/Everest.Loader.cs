@@ -16,6 +16,9 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Loader;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -71,6 +74,105 @@ namespace Celeste.Mod {
             internal static List<Tuple<EverestModuleMetadata, Action>> Delayed = new List<Tuple<EverestModuleMetadata, Action>>();
             internal static int DelayedLock;
 
+            private sealed class PendingStartupMod {
+                internal EverestModuleMetadata Metadata;
+                internal Action ContentCrawl;
+                internal int DiscoveryIndex;
+                internal int ContentCommitIndex = -1;
+                internal int SchedulingPriority = int.MaxValue;
+                internal double EstimatedLoadMilliseconds;
+                internal double CriticalPathMilliseconds;
+                internal int TimingSamples;
+                internal bool PrefersReservedWorker;
+                internal bool RequiresExclusiveExecution;
+            }
+
+            private sealed class StartupLoadResult {
+                internal PendingStartupMod Pending;
+                internal bool Succeeded;
+                internal Exception Error;
+            }
+
+            private static readonly List<PendingStartupMod> PendingStartupMods = new List<PendingStartupMod>();
+            private static bool collectingStartupMods;
+            internal static bool IsBatchLoading { get; private set; }
+            internal static readonly object ModuleRegistrationFinalizeLock = new object();
+            private static readonly object ContentCrawlLock = new object();
+            private static readonly object AssemblyProcessingLock = new object();
+
+            private static bool ParallelStartupEnabled =>
+                Environment.GetEnvironmentVariable("EVEREST_PARALLEL_LOAD") != "0"
+                && !File.Exists(Path.Combine(AppContext.BaseDirectory, ".everest-disable-parallel-load"));
+
+            private static bool ILHookStartupTransactionEnabled =>
+                ParallelStartupEnabled
+                && Environment.GetEnvironmentVariable("EVEREST_ILHOOK_STARTUP_TRANSACTION") != "0"
+                && !File.Exists(Path.Combine(AppContext.BaseDirectory, ".everest-disable-ilhook-startup-transaction"));
+
+            private static bool ProfileGuidedReorderingEnabled =>
+                LoaderTimingCache.Enabled
+                && Environment.GetEnvironmentVariable("EVEREST_LOADER_PGO_REORDER") != "0"
+                && !File.Exists(Path.Combine(AppContext.BaseDirectory, ".everest-disable-loader-pgo-reorder"));
+
+            // Used by the runtime-detour safety gate. Arbitrary mods can create IL hooks
+            // from EverestModule.Load, but MonoMod only serializes hooks per target method.
+            // Parallel startup needs a process-wide gate around IL manipulator execution.
+            internal static bool IsParallelStartupLoading => IsBatchLoading && ParallelStartupEnabled;
+
+            private static int ParallelStartupDegree {
+                get {
+                    if (int.TryParse(Environment.GetEnvironmentVariable("EVEREST_PARALLEL_LOAD_DEGREE"), out int configured))
+                        return Math.Clamp(configured, 1, 32);
+                    // Warm cached loading is mostly independent assembly materialization,
+                    // type discovery and mod code. After removing the global relinker lock,
+                    // 16 workers gave the best stable result on the 24-thread reference
+                    // machine; 24-32 started losing time to runtime-loader and GC contention.
+                    return Math.Clamp(Environment.ProcessorCount * 2 / 3, 8, 16);
+                }
+            }
+
+            private static int ILHookFlushDegree {
+                get {
+                    if (int.TryParse(Environment.GetEnvironmentVariable("EVEREST_ILHOOK_FLUSH_DEGREE"), out int configured))
+                        return Math.Clamp(configured, 1, 16);
+                    // Flush targets are independent except for per-mod manipulator gates.
+                    // Twelve workers were the best measured point on the 24-thread reference
+                    // machine; sixteen added enough JIT/loader contention to regress.
+                    return Math.Clamp(Environment.ProcessorCount / 2, 4, 12);
+                }
+            }
+
+            private static object GetILHookManipulatorOwnerKey(MonoMod.Cil.ILContext.Manipulator manipulator) {
+                Assembly ownerAssembly = manipulator.Method.DeclaringType?.Assembly;
+                if (ownerAssembly != null
+                    && AssemblyLoadContext.GetLoadContext(ownerAssembly) is EverestModuleAssemblyContext context
+                    && context.ModuleMeta?.Name != null)
+                    return context.ModuleMeta.Name;
+                return ownerAssembly;
+            }
+
+            // A very small compatibility deny-list for modules which enumerate global
+            // Everest collections from Load(). Those collections can legitimately be
+            // extended by another module's assembly-content crawl at the same time.
+            // Keep the scheduler parallel for every other node, but run these modules
+            // at a quiescent point. Additional names can be supplied without rebuilding.
+            private static readonly HashSet<string> DefaultExclusiveStartupMods = new HashSet<string>(StringComparer.Ordinal) {
+                "CollabUtils2"
+            };
+
+            private static bool RequiresExclusiveStartupExecution(EverestModuleMetadata meta) {
+                if (meta?.Name == null)
+                    return false;
+                if (DefaultExclusiveStartupMods.Contains(meta.Name))
+                    return true;
+
+                string configured = Environment.GetEnvironmentVariable("EVEREST_PARALLEL_LOAD_EXCLUSIVE_MODS");
+                if (string.IsNullOrWhiteSpace(configured))
+                    return false;
+                return configured.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Any(name => string.Equals(name.Trim(), meta.Name, StringComparison.Ordinal));
+            }
+
             private static bool enforceOptionalDependencies;
 
             internal static HashSet<string> FilesWithMetadataLoadFailures = new HashSet<string>();
@@ -114,6 +216,7 @@ namespace Celeste.Mod {
             }
 
             internal static void LoadAuto() {
+                LoaderProfiler.Reset();
                 Directory.CreateDirectory(PathMods = Path.Combine(PathEverest, "Mods"));
                 Directory.CreateDirectory(PathCache = Path.Combine(PathMods, "Cache"));
 
@@ -178,36 +281,58 @@ namespace Celeste.Mod {
 
                 enforceOptionalDependencies = true;
 
-                string[] files = Directory
-                    .GetFiles(PathMods)
-                    .OrderBy(f => f) //Prevent inode loading jank
-                    .Select(Path.GetFileName)
-                    .Where(file => file.EndsWith(".zip") && ShouldLoadFile(file))
-                    .ToArray();
-                   
-                string[] dirs = Directory
-                    .GetDirectories(PathMods)
-                    .OrderBy(f => f) //Prevent inode loading jank
-                    .Select(Path.GetFileName)
-                    .Where(file => file != "Cache" && ShouldLoadFile(file))
-                    .ToArray();
+                string[] files;
+                string[] dirs;
+                using (LoaderProfiler.Measure("enumerate-containers")) {
+                    files = Directory
+                        .GetFiles(PathMods)
+                        .OrderBy(f => f) //Prevent inode loading jank
+                        .Select(Path.GetFileName)
+                        .Where(file => file.EndsWith(".zip") && ShouldLoadFile(file))
+                        .ToArray();
+
+                    dirs = Directory
+                        .GetDirectories(PathMods)
+                        .OrderBy(f => f) //Prevent inode loading jank
+                        .Select(Path.GetFileName)
+                        .Where(file => file != "Cache" && ShouldLoadFile(file))
+                        .ToArray();
+                }
 
                 EverestSplashHandler.SetSplashLoadingModCount(files.Length + dirs.Length);
 
+                LoaderMetadataCache.Initialize(PathCache);
+                LoaderTimingCache.Initialize(PathCache);
+                LoaderChecksumCache.Initialize(PathCache);
+                LoaderMetadataCache.Prefetch(files.Select(file => Path.Combine(PathMods, file)));
+
+                PendingStartupMods.Clear();
+                collectingStartupMods = true;
                 foreach (string file in files) {
                     LoadZip(Path.Combine(PathMods, file));
                 }
                 foreach (string dir in dirs) {
                     LoadDir(Path.Combine(PathMods, dir));
                 }
+                collectingStartupMods = false;
+                LoaderMetadataCache.Flush();
 
                 enforceOptionalDependencies = false;
-                Logger.Info("loader", "Loading mods with unsatisfied optional dependencies (if any)");
-                Everest.CheckDependenciesOfDelayedMods();
+                Logger.Info("loader", ParallelStartupEnabled
+                    ? $"Parallel startup scheduler enabled (dynamic DAG, max degree {ParallelStartupDegree})."
+                    : "Parallel startup scheduler disabled.");
+                try {
+                    using (LoaderProfiler.Measure("dependency-plan-load"))
+                        LoadPendingStartupMods();
+                } finally {
+                    LoaderTimingCache.Flush();
+                    LoaderChecksumCache.Flush();
+                }
 
                 EverestSplashHandler.AllModsLoaded();
 
                 watch.Stop();
+                LoaderProfiler.Report(watch.ElapsedMilliseconds);
                 Logger.Verbose("loader", $"ALL MODS LOADED IN {watch.ElapsedMilliseconds}ms");
                 Logger.Info("loader", $"Loaded {Everest._Modules.Count} modules");
 
@@ -264,48 +389,30 @@ namespace Celeste.Mod {
                 Logger.Verbose("loader", $"Loading mod .zip: {archive}");
 
                 EverestModuleMetadata[] multimetas = null;
-
                 IgnoreList ignoreList = null;
-
-                bool metaParsed = false;
-
-                using (ZipArchive zip = ZipFile.OpenRead(archive)) {
-                    foreach (ZipArchiveEntry entry in zip.Entries) {
-                        if (entry.FullName is "everest.yaml" or "everest.yml") {
-                            if (metaParsed) {
-                                Logger.Warn("loader", $"{archive} has both everest.yaml and everest.yml. Ignoring {entry.FullName}.");
-                                continue;
-                            }
-                            using (Stream stream = entry.Open())
-                            using (StreamReader reader = new StreamReader(stream)) {
-                                try {
-                                    if (!reader.EndOfStream) {
-                                        multimetas = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata[]>(reader);
-                                        foreach (EverestModuleMetadata multimeta in multimetas) {
-                                            multimeta.PathArchive = archive;
-                                            multimeta.PostParse();
-                                        }
-                                    }
-                                } catch (Exception e) {
-                                    Logger.Warn("loader", $"Failed parsing {entry.FullName} in {archive}: {e}");
-                                    FilesWithMetadataLoadFailures.Add(archive);
-                                }
-                            }
-                            metaParsed = true;
-                            continue;
+                LoaderMetadataCache.ZipMetadata cached;
+                using (LoaderProfiler.Measure("zip-metadata-io")) {
+                    if (!LoaderMetadataCache.TryGet(archive, out cached)) {
+                        cached = LoaderMetadataCache.ReadArchive(archive);
+                        LoaderMetadataCache.Store(archive, cached);
+                    }
+                }
+                if (cached.HasBothMetadataFiles)
+                    Logger.Warn("loader", $"{archive} has both everest.yaml and everest.yml. Ignoring the second file.");
+                if (cached.IgnoreLines != null)
+                    ignoreList = new IgnoreList(cached.IgnoreLines);
+                if (!string.IsNullOrEmpty(cached.Yaml)) {
+                    try {
+                        using StringReader reader = new StringReader(cached.Yaml);
+                        using (LoaderProfiler.Measure("yaml-deserialize"))
+                            multimetas = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata[]>(reader);
+                        foreach (EverestModuleMetadata multimeta in multimetas) {
+                            multimeta.PathArchive = archive;
+                            multimeta.PostParse();
                         }
-                        
-                        if (entry.FullName == ".everestignore") {
-                            List<string> lines = new List<string>();
-                            using (Stream stream = entry.Open())
-                            using (StreamReader reader = new StreamReader(stream)) {
-                                while (!reader.EndOfStream) {
-                                    lines.Add(reader.ReadLine());
-                                }
-                            }
-                            ignoreList = new IgnoreList(lines);
-                            continue;
-                        }
+                    } catch (Exception e) {
+                        Logger.Warn("loader", $"Failed parsing everest metadata in {archive}: {e}");
+                        FilesWithMetadataLoadFailures.Add(archive);
                     }
                 }
 
@@ -322,7 +429,8 @@ namespace Celeste.Mod {
                         contentMeta.Name = contentMetaParent.Name;
                     }
                     OnCrawlMod?.Invoke(archive, contentMetaParent);
-                    Content.Crawl(contentMeta);
+                    using (LoaderProfiler.Measure("content-crawl"))
+                        Content.Crawl(contentMeta);
                     contentMeta = null;
                 };
 
@@ -376,7 +484,8 @@ namespace Celeste.Mod {
                     using (StreamReader reader = new StreamReader(metaPath)) {
                         try {
                             if (!reader.EndOfStream) {
-                                multimetas = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata[]>(reader);
+                                using (LoaderProfiler.Measure("yaml-deserialize"))
+                                    multimetas = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata[]>(reader);
                                 foreach (EverestModuleMetadata multimeta in multimetas) {
                                     multimeta.PathDirectory = dir;
                                     multimeta.PostParse();
@@ -404,7 +513,8 @@ namespace Celeste.Mod {
                         contentMeta.Name = contentMetaParent.Name;
                     }
                     OnCrawlMod?.Invoke(dir, contentMetaParent);
-                    Content.Crawl(contentMeta);
+                    using (LoaderProfiler.Measure("content-crawl"))
+                        Content.Crawl(contentMeta);
                     contentMeta = null;
                 };
 
@@ -444,6 +554,15 @@ namespace Celeste.Mod {
                     return;
                 }
 
+                if (collectingStartupMods) {
+                    PendingStartupMods.Add(new PendingStartupMod {
+                        Metadata = meta,
+                        ContentCrawl = callback,
+                        DiscoveryIndex = PendingStartupMods.Count
+                    });
+                    return;
+                }
+
                 if (Modules.Any(module => module.Metadata.Name == meta.Name)) {
                     Logger.Warn("loader", $"Mod {meta.Name} already loaded!");
                     return;
@@ -474,6 +593,399 @@ namespace Celeste.Mod {
                 LoadMod(meta);
             }
 
+            private static void LoadPendingStartupMods() {
+                // The old startup loader repeatedly rescanned the delayed list after every module.
+                // Build the dependency graph once instead, preserving discovery order between
+                // otherwise independent modules.
+                Dictionary<string, PendingStartupMod> candidates = new Dictionary<string, PendingStartupMod>(StringComparer.Ordinal);
+                foreach (PendingStartupMod pending in PendingStartupMods) {
+                    if (!candidates.TryAdd(pending.Metadata.Name, pending))
+                        Logger.Warn("loader", $"Mod {pending.Metadata.Name} already discovered; keeping the first container.");
+                }
+
+                HashSet<PendingStartupMod> valid = new HashSet<PendingStartupMod>(candidates.Values);
+                bool changed;
+                do {
+                    changed = false;
+                    foreach (PendingStartupMod pending in valid.ToArray()) {
+                        foreach (EverestModuleMetadata dependency in pending.Metadata.Dependencies) {
+                            if (DependencyLoaded(dependency))
+                                continue;
+                            if (!candidates.TryGetValue(NormalizeDependencyName(dependency.Name), out PendingStartupMod candidate)
+                                || !valid.Contains(candidate)
+                                || !VersionSatisfiesDependency(dependency.Version, candidate.Metadata.Version)) {
+                                valid.Remove(pending);
+                                changed = true;
+                                Logger.Warn("loader", $"Dependency {dependency} of mod {pending.Metadata} is unavailable; skipping it.");
+                                break;
+                            }
+                        }
+                    }
+                } while (changed);
+
+                Dictionary<PendingStartupMod, List<(PendingStartupMod Target, bool Optional)>> outgoing =
+                    valid.ToDictionary(node => node, _ => new List<(PendingStartupMod, bool)>());
+                Dictionary<PendingStartupMod, int> indegree = valid.ToDictionary(node => node, _ => 0);
+
+                foreach (PendingStartupMod pending in valid) {
+                    AddDependencyEdges(pending, pending.Metadata.Dependencies, optional: false, candidates, valid, outgoing, indegree);
+                    AddDependencyEdges(pending, pending.Metadata.OptionalDependencies, optional: true, candidates, valid, outgoing, indegree);
+                }
+
+                AssignStableContentCommitIndices(valid, outgoing, indegree);
+                AssignProfileGuidedSchedulingPriorities(valid, outgoing);
+                CommitContainerContentInStableOrder(valid);
+
+                PriorityQueue<PendingStartupMod, int> ready = new PriorityQueue<PendingStartupMod, int>();
+                foreach ((PendingStartupMod node, int degree) in indegree)
+                    if (degree == 0) {
+                        ready.Enqueue(node, node.SchedulingPriority);
+                        LoaderProfiler.Mark($"startup-node-ready/{node.Metadata.Name}");
+                    }
+
+                HashSet<PendingStartupMod> loaded = new HashSet<PendingStartupMod>();
+                MonoMod.RuntimeDetour.ILHookTransaction ilHookTransaction = null;
+                if (ILHookStartupTransactionEnabled) {
+                    ilHookTransaction = MonoMod.RuntimeDetour.ILHookTransaction.Begin();
+                    Logger.Info("loader", "Experimental startup ILHook transaction enabled; hooks will be committed once per target method.");
+                }
+                IsBatchLoading = true;
+                try {
+                    DrainReadyQueue(ready, loaded, outgoing, indegree);
+
+                    if (loaded.Count < valid.Count) {
+                        // Optional dependency cycles are legal. Drop only optional edges between
+                        // remaining nodes and continue Kahn's algorithm with the hard-dependency DAG.
+                        HashSet<PendingStartupMod> remaining = valid.Where(node => !loaded.Contains(node)).ToHashSet();
+                        foreach (PendingStartupMod node in remaining)
+                            indegree[node] = 0;
+                        foreach (PendingStartupMod source in remaining)
+                            foreach ((PendingStartupMod target, bool optional) in outgoing[source])
+                                if (!optional && remaining.Contains(target))
+                                    indegree[target]++;
+                        foreach (PendingStartupMod node in remaining)
+                            if (indegree[node] == 0) {
+                                ready.Enqueue(node, node.SchedulingPriority);
+                                LoaderProfiler.Mark($"startup-node-ready/{node.Metadata.Name}");
+                            }
+                        DrainReadyQueue(ready, loaded, outgoing, indegree, ignoreOptionalEdges: true);
+                    }
+
+                    if (ilHookTransaction != null) {
+                        int pendingHooks = ilHookTransaction.PendingCount;
+                        (int hooks, int targets) result;
+                        using (LoaderProfiler.Measure("ilhook-transaction-flush"))
+                            result = ilHookTransaction.Flush(ILHookFlushDegree, GetILHookManipulatorOwnerKey);
+                        Logger.Info("loader", $"Startup ILHook transaction committed {result.hooks}/{pendingHooks} hooks across {result.targets} target methods (target degree {ILHookFlushDegree}, per-mod manipulator serialization).");
+                    }
+                } finally {
+                    ilHookTransaction?.Dispose();
+                    IsBatchLoading = false;
+                }
+
+                foreach (PendingStartupMod pending in valid.OrderBy(node => node.DiscoveryIndex))
+                    if (!loaded.Contains(pending))
+                        Logger.Warn("loader", $"Hard dependency cycle prevented loading mod {pending.Metadata}.");
+
+                PendingStartupMods.Clear();
+            }
+
+            private static void AddDependencyEdges(PendingStartupMod target, IEnumerable<EverestModuleMetadata> dependencies,
+                bool optional, Dictionary<string, PendingStartupMod> candidates, HashSet<PendingStartupMod> valid,
+                Dictionary<PendingStartupMod, List<(PendingStartupMod Target, bool Optional)>> outgoing,
+                Dictionary<PendingStartupMod, int> indegree) {
+                foreach (EverestModuleMetadata dependency in dependencies) {
+                    if (DependencyLoaded(dependency))
+                        continue;
+                    if (candidates.TryGetValue(NormalizeDependencyName(dependency.Name), out PendingStartupMod source)
+                        && valid.Contains(source)
+                        && VersionSatisfiesDependency(dependency.Version, source.Metadata.Version)) {
+                        outgoing[source].Add((target, optional));
+                        indegree[target]++;
+                    }
+                }
+            }
+
+            private static void AssignStableContentCommitIndices(HashSet<PendingStartupMod> valid,
+                Dictionary<PendingStartupMod, List<(PendingStartupMod Target, bool Optional)>> outgoing,
+                Dictionary<PendingStartupMod, int> indegree) {
+                Dictionary<PendingStartupMod, int> degree = indegree.ToDictionary(pair => pair.Key, pair => pair.Value);
+                HashSet<PendingStartupMod> remaining = new HashSet<PendingStartupMod>(valid);
+                List<PendingStartupMod> order = new List<PendingStartupMod>(valid.Count);
+                PriorityQueue<PendingStartupMod, int> queue = new PriorityQueue<PendingStartupMod, int>();
+
+                foreach (PendingStartupMod node in remaining)
+                    if (degree[node] == 0)
+                        queue.Enqueue(node, node.DiscoveryIndex);
+
+                void Drain(bool ignoreOptionalEdges) {
+                    while (queue.Count > 0) {
+                        PendingStartupMod node = queue.Dequeue();
+                        if (!remaining.Remove(node))
+                            continue;
+                        order.Add(node);
+                        foreach ((PendingStartupMod target, bool optional) in outgoing[node]) {
+                            if (!remaining.Contains(target) || ignoreOptionalEdges && optional)
+                                continue;
+                            if (--degree[target] == 0)
+                                queue.Enqueue(target, target.DiscoveryIndex);
+                        }
+                    }
+                }
+
+                Drain(ignoreOptionalEdges: false);
+                if (remaining.Count > 0) {
+                    foreach (PendingStartupMod node in remaining)
+                        degree[node] = 0;
+                    foreach (PendingStartupMod source in remaining)
+                        foreach ((PendingStartupMod target, bool optional) in outgoing[source])
+                            if (!optional && remaining.Contains(target))
+                                degree[target]++;
+                    foreach (PendingStartupMod node in remaining)
+                        if (degree[node] == 0)
+                            queue.Enqueue(node, node.DiscoveryIndex);
+                    Drain(ignoreOptionalEdges: true);
+                }
+
+                for (int index = 0; index < order.Count; index++)
+                    order[index].ContentCommitIndex = index;
+            }
+
+            private static void AssignProfileGuidedSchedulingPriorities(HashSet<PendingStartupMod> valid,
+                Dictionary<PendingStartupMod, List<(PendingStartupMod Target, bool Optional)>> outgoing) {
+                foreach (PendingStartupMod node in valid)
+                    node.EstimatedLoadMilliseconds = LoaderTimingCache.GetEstimate(node.Metadata, out node.TimingSamples);
+
+                foreach (PendingStartupMod node in valid) {
+                    // Keep the reserved lane as a hedge for older timing caches and for
+                    // configurations which disable full PGO list scheduling.
+                    node.PrefersReservedWorker = LoaderTimingCache.Enabled
+                        && node.TimingSamples > 0
+                        && node.EstimatedLoadMilliseconds >= 500d;
+                    node.RequiresExclusiveExecution = RequiresExclusiveStartupExecution(node.Metadata);
+                }
+
+                // Bottom-level / critical-path weight: own historical cost plus the most
+                // expensive reachable successor chain. This is a standard list-scheduling
+                // heuristic and makes a slow dependency start before short independent leaves.
+                foreach (PendingStartupMod node in valid
+                    .Where(node => node.ContentCommitIndex >= 0)
+                    .OrderByDescending(node => node.ContentCommitIndex)) {
+                    double successor = outgoing[node]
+                        .Where(edge => edge.Target.ContentCommitIndex > node.ContentCommitIndex)
+                        .Select(edge => edge.Target.CriticalPathMilliseconds)
+                        .DefaultIfEmpty(0d)
+                        .Max();
+                    node.CriticalPathMilliseconds = node.EstimatedLoadMilliseconds + successor;
+                }
+
+                // Container content and ILHook application retain their stable topological
+                // commit/order indices. Module Load() bodies are already globally concurrent,
+                // so start the longest dependency-ready critical paths first instead of making
+                // expensive helpers wait behind dozens of short alphabetical leaves.
+                IEnumerable<PendingStartupMod> schedulingOrder = valid
+                    .Where(node => node.ContentCommitIndex >= 0);
+                schedulingOrder = ProfileGuidedReorderingEnabled
+                    ? schedulingOrder
+                        .OrderByDescending(node => node.CriticalPathMilliseconds)
+                        .ThenBy(node => node.ContentCommitIndex)
+                    : schedulingOrder.OrderBy(node => node.ContentCommitIndex);
+                int schedulingPriority = 0;
+                foreach (PendingStartupMod node in schedulingOrder)
+                    node.SchedulingPriority = schedulingPriority++;
+
+                foreach (PendingStartupMod node in valid
+                    .Where(node => node.ContentCommitIndex >= 0)
+                    .OrderByDescending(node => node.CriticalPathMilliseconds)
+                    .Take(8))
+                    Logger.Verbose("loader", $"PGO candidate {node.Metadata.Name}: estimate={node.EstimatedLoadMilliseconds:F1}ms, samples={node.TimingSamples}, critical={node.CriticalPathMilliseconds:F1}ms, reserved={node.PrefersReservedWorker}");
+            }
+
+            private static void CommitContainerContentInStableOrder(HashSet<PendingStartupMod> valid) {
+                // Container assets define conflict/override precedence. Commit them once in
+                // stable topological order before any third-party module code runs. This
+                // avoids making worker tasks block on a content ticket while retaining
+                // deterministic asset precedence.
+                foreach (PendingStartupMod pending in valid
+                    .Where(node => node.ContentCommitIndex >= 0)
+                    .OrderBy(node => node.ContentCommitIndex)) {
+                    lock (ContentCrawlLock)
+                        pending.ContentCrawl?.Invoke();
+                }
+            }
+
+            private static void DrainReadyQueue(PriorityQueue<PendingStartupMod, int> ready, HashSet<PendingStartupMod> loaded,
+                Dictionary<PendingStartupMod, List<(PendingStartupMod Target, bool Optional)>> outgoing,
+                Dictionary<PendingStartupMod, int> indegree, bool ignoreOptionalEdges = false) {
+                int degree = ParallelStartupEnabled ? ParallelStartupDegree : 1;
+                Dictionary<Task<StartupLoadResult>, PendingStartupMod> running = new Dictionary<Task<StartupLoadResult>, PendingStartupMod>();
+                List<Exception> errors = new List<Exception>();
+                bool exclusiveTaskRunning = false;
+                Task<StartupLoadResult> reservedWorkerTask = null;
+                int regularTasksRunning = 0;
+
+                void Complete(StartupLoadResult result) {
+                    PendingStartupMod pending = result.Pending;
+                    if (result.Error != null) {
+                        errors.Add(new Exception($"Failed loading startup mod {pending.Metadata}", result.Error));
+                        return;
+                    }
+
+                    if (result.Succeeded)
+                        EverestSplashHandler.IncreaseLoadedModCount(pending.Metadata.Name);
+
+                    foreach ((PendingStartupMod target, bool optional) in outgoing[pending]) {
+                        if (ignoreOptionalEdges && optional)
+                            continue;
+                        if (--indegree[target] == 0)
+                            ready.Enqueue(target, target.SchedulingPriority);
+                        if (indegree[target] == 0)
+                            LoaderProfiler.Mark($"startup-node-ready/{target.Metadata.Name}");
+                    }
+                }
+
+                StartupLoadResult Run(PendingStartupMod pending) {
+                    try {
+                        return new StartupLoadResult {
+                            Pending = pending,
+                            Succeeded = LoadStartupNode(pending)
+                        };
+                    } catch (Exception e) {
+                        return new StartupLoadResult {
+                            Pending = pending,
+                            Error = e
+                        };
+                    }
+                }
+
+                using (LoaderProfiler.Measure("dependency-dag-load")) {
+                    while ((ready.Count > 0 && errors.Count == 0) || running.Count > 0) {
+                        while (errors.Count == 0 && ready.Count > 0) {
+                            if (exclusiveTaskRunning)
+                                break;
+
+                            PendingStartupMod pending = null;
+                            bool useReservedWorker = false;
+
+                            // The dedicated lane may look ahead among dependency-ready
+                            // nodes. Regular workers still consume the stable topological
+                            // queue, so PGO cannot reshuffle the whole startup as the first
+                            // prototype did. This is list scheduling with one bounded
+                            // speculative slot rather than a global priority rewrite.
+                            if (degree > 1 && reservedWorkerTask == null && !ready.Peek().RequiresExclusiveExecution) {
+                                pending = DequeueReservedWorkerCandidate(ready);
+                                useReservedWorker = pending != null;
+                            }
+
+                            pending ??= ready.Peek();
+                            if (pending.RequiresExclusiveExecution && running.Count > 0)
+                                break;
+                            if (!useReservedWorker && regularTasksRunning >= degree)
+                                break;
+
+                            if (!useReservedWorker)
+                                ready.Dequeue();
+                            if (!loaded.Add(pending))
+                                continue;
+
+                            if (degree == 1) {
+                                Complete(Run(pending));
+                            } else {
+                                Task<StartupLoadResult> task = useReservedWorker
+                                    ? Task.Factory.StartNew(
+                                        () => Run(pending),
+                                        CancellationToken.None,
+                                        TaskCreationOptions.LongRunning,
+                                        TaskScheduler.Default)
+                                    : Task.Run(() => Run(pending));
+                                running.Add(task, pending);
+                                if (useReservedWorker) {
+                                    reservedWorkerTask = task;
+                                    Logger.Verbose("loader", $"PGO reserved worker assigned to {pending.Metadata.Name} (estimate {pending.EstimatedLoadMilliseconds:F1}ms).");
+                                } else {
+                                    regularTasksRunning++;
+                                }
+                                if (pending.RequiresExclusiveExecution) {
+                                    exclusiveTaskRunning = true;
+                                    Logger.Verbose("loader", $"Running compatibility-sensitive module {pending.Metadata.Name} exclusively.");
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (running.Count == 0)
+                            continue;
+
+                        Task.WhenAny(running.Keys).GetAwaiter().GetResult();
+                        // Drain every task which completed in the same scheduling quantum in
+                        // stable discovery order. A dependency becomes runnable immediately;
+                        // there is no dependency-wave barrier.
+                        Task<StartupLoadResult>[] completed = running.Keys
+                            .Where(task => task.IsCompleted)
+                            .OrderBy(task => running[task].ContentCommitIndex)
+                            .ToArray();
+                        foreach (Task<StartupLoadResult> task in completed) {
+                            if (running[task].RequiresExclusiveExecution)
+                                exclusiveTaskRunning = false;
+                            if (task == reservedWorkerTask)
+                                reservedWorkerTask = null;
+                            else
+                                regularTasksRunning--;
+                            running.Remove(task);
+                            Complete(task.GetAwaiter().GetResult());
+                        }
+                    }
+                }
+
+                if (errors.Count > 0)
+                    throw new AggregateException(errors);
+            }
+
+            private static PendingStartupMod DequeueReservedWorkerCandidate(PriorityQueue<PendingStartupMod, int> ready) {
+                PendingStartupMod candidate = ready.UnorderedItems
+                    .Select(item => item.Element)
+                    .Where(node => node.PrefersReservedWorker && !node.RequiresExclusiveExecution)
+                    .OrderByDescending(node => node.CriticalPathMilliseconds)
+                    .ThenBy(node => node.ContentCommitIndex)
+                    .FirstOrDefault();
+                if (candidate == null)
+                    return null;
+
+                // PriorityQueue has no arbitrary removal API. Rebuilding this tiny ready
+                // frontier is inexpensive (well below the cost of a single assembly load)
+                // and keeps all remaining priorities unchanged.
+                List<(PendingStartupMod Node, int Priority)> retained = new List<(PendingStartupMod, int)>(ready.Count - 1);
+                while (ready.TryDequeue(out PendingStartupMod node, out int priority))
+                    if (!ReferenceEquals(node, candidate))
+                        retained.Add((node, priority));
+                foreach ((PendingStartupMod node, int priority) in retained)
+                    ready.Enqueue(node, priority);
+                return candidate;
+            }
+
+            private static bool LoadStartupNode(PendingStartupMod pending) {
+                Stopwatch watch = Stopwatch.StartNew();
+                string name = pending.Metadata?.Name ?? "unknown";
+                LoaderProfiler.Mark($"startup-node-start/{name}");
+                try {
+                    using var ilHookOrder = MonoMod.RuntimeDetour.ILHookTransaction.EnterOrder(pending.ContentCommitIndex);
+                    using var profileNode = LoaderProfiler.Measure("startup-node", name);
+                    if (pending.Metadata.Dependencies.Any(dependency => !DependencyLoaded(dependency))) {
+                        Logger.Warn("loader", $"A dependency failed while loading mod {pending.Metadata}; skipping it.");
+                        return false;
+                    }
+
+                    return LoadMod(pending.Metadata);
+                } finally {
+                    watch.Stop();
+                    LoaderTimingCache.Record(pending.Metadata, watch.Elapsed.TotalMilliseconds);
+                    LoaderProfiler.Mark($"startup-node-end/{name}");
+                }
+            }
+
+            private static string NormalizeDependencyName(string name) =>
+                name == CoreModule.NETCoreMetaName ? CoreModule.Instance.Metadata.Name : name;
+
             /// <summary>
             /// Load a mod .dll given its metadata at runtime. Doesn't load the mod content.
             /// </summary>
@@ -483,17 +995,27 @@ namespace Celeste.Mod {
                 if (meta == null)
                     return true;
 
-                using var _ = new ScopeFinalizer(() => Events.Everest.LoadMod(meta));
+                using var _ = new ScopeFinalizer(() => {
+                    lock (ModuleRegistrationFinalizeLock)
+                        Events.Everest.LoadMod(meta);
+                });
+
+                using var profileLoadMod = LoaderProfiler.Measure("load-module");
 
                 // Create an assembly context
                 meta.AssemblyContext ??= new EverestModuleAssemblyContext(meta);
 
                 // Try to load a module from a DLL
                 if (!string.IsNullOrEmpty(meta.DLL)) {
-                    if (meta.AssemblyContext.LoadAssemblyFromModPath(meta.DLL) is not Assembly asm) {
+                    Assembly asm;
+                    using (LoaderProfiler.Measure("assembly-load"))
+                    using (LoaderProfiler.Measure("assembly-load", meta.Name))
+                        asm = meta.AssemblyContext.LoadAssemblyFromModPath(meta.DLL);
+                    if (asm is null) {
                         // Don't register a module - this will cause dependencies to not load
                         Logger.Error("loader", $"Could not load DLL {meta.DLL} for mod {meta.Name}");
-                        ModsWithAssemblyLoadFailures.Add(meta);
+                        lock (ModsWithAssemblyLoadFailures)
+                            ModsWithAssemblyLoadFailures.Add(meta);
                         return false;
                     }
 
@@ -517,16 +1039,19 @@ namespace Celeste.Mod {
                 // Apply hackfixes
                 ApplyModHackfixes(meta, asm);
 
-                // Crawl assembly manifest content
-                Content.Crawl(new AssemblyModContent(asm) {
-                    Mod = meta,
-                    Name = meta.Name
-                });
+                using (LoaderProfiler.Measure("assembly-content-crawl"))
+                lock (ContentCrawlLock)
+                        Content.Crawl(new AssemblyModContent(asm) {
+                            Mod = meta,
+                            Name = meta.Name
+                        });
 
                 // Find and register all EverestModule subtypes in the assembly
                 Type[] types;
                 try {
-                    types = asm.GetTypesSafe();
+                    using (LoaderProfiler.Measure("assembly-get-types"))
+                    using (LoaderProfiler.Measure("assembly-get-types", meta.Name))
+                        types = asm.GetTypesSafe();
                 } catch (Exception e) {
                     Logger.Warn("loader", $"Failed reading assembly: {e}");
                     Logger.LogDetailed(e);
@@ -534,13 +1059,15 @@ namespace Celeste.Mod {
                 }
 
                 bool foundModule = false;
+                using (LoaderProfiler.Measure("module-discovery-register"))
                 foreach (Type type in types) {
                     EverestModule mod = null;
                     try {
                         if (typeof(EverestModule).IsAssignableFrom(type) && !type.IsAbstract) {
                             foundModule = true;
                             if (!typeof(NullModule).IsAssignableFrom(type)) {
-                                mod = (EverestModule) type.GetConstructor(Type.EmptyTypes).Invoke(null);
+                                using (LoaderProfiler.Measure("module-constructor"))
+                                    mod = (EverestModule) type.GetConstructor(Type.EmptyTypes).Invoke(null);
                             }
                         }
                     } catch (TypeLoadException e) {
@@ -558,7 +1085,9 @@ namespace Celeste.Mod {
                 if (!foundModule)
                     Logger.Warn("loader", "Assembly doesn't contain an EverestModule!");
 
-                ProcessAssembly(meta, asm, types);
+                using (LoaderProfiler.Measure("assembly-attribute-scan"))
+                lock (AssemblyProcessingLock)
+                    ProcessAssembly(meta, asm, types);
             }
 
             internal static void ProcessAssembly(EverestModuleMetadata meta, Assembly asm, Type[] types) {

@@ -18,7 +18,7 @@ namespace Celeste.Mod {
             /// <summary>
             /// The current Celeste.exe's checksum.
             /// </summary>
-            public static string GameChecksum => _GameChecksum = (_GameChecksum ?? Everest.GetChecksum(Assembly.GetAssembly(typeof(Relinker)).Location).ToHexadecimalString());
+            public static string GameChecksum => _GameChecksum = (_GameChecksum ?? Everest.GetCachedChecksum(Assembly.GetAssembly(typeof(Relinker)).Location).ToHexadecimalString());
             private static string _GameChecksum;
 
             /// <summary>
@@ -148,6 +148,17 @@ namespace Celeste.Mod {
                     Logger.Verbose("relinker", $"Loading assembly for {meta} - {asmname} - {asm.FullName}");
                     return asm;
                 }
+            }
+
+            /// <summary>
+            /// Load an already valid relink cache entry without taking the global relinker
+            /// lock. Callers must serialize mutations of the destination assembly context.
+            /// Cache misses remain on the normal globally serialized relink path.
+            /// </summary>
+            internal static Assembly TryGetCachedAssembly(EverestModuleMetadata meta, string asmname, string path, string symPath) {
+                string cachePath = GetCachedPath(meta, asmname);
+                string cacheChecksumPath = Path.ChangeExtension(cachePath, ".sum");
+                return TryLoadCachedAssembly(meta, asmname, path, symPath, cachePath, cacheChecksumPath, out _);
             }
 
             private static Assembly TryLoadCachedAssembly(EverestModuleMetadata meta, string asmName, string inPath, string inSymPath, string cachePath, string cacheChecksumsPath, out EverestModuleAssemblyContext.AsmChecksums curChecksums) {

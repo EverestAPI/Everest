@@ -134,7 +134,8 @@ namespace Celeste.Mod {
                 patch_Audio.IngestNewBanks();
             }
             
-            Everest.CheckDependenciesOfDelayedMods();
+            if (!Everest.Loader.IsBatchLoading)
+                Everest.CheckDependenciesOfDelayedMods();
         }
 
         internal void InvalidateHash() {

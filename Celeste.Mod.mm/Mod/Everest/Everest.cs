@@ -25,6 +25,97 @@ using System.Threading;
 namespace Celeste.Mod {
     public static partial class Everest {
 
+        private static readonly object ParallelILHookApplicationLock = new object();
+        private static readonly object ParallelModInteropLock = new object();
+        private static readonly HashSet<string> ParallelUnsafeILManipulatorAssemblies = new HashSet<string>(StringComparer.Ordinal) {
+            // GooberHelper's HookHelper uses process-wide temporary Lists while an IL
+            // manipulator is running. MonoMod's per-target lock is therefore insufficient
+            // when two different methods are patched concurrently.
+            "GooberHelper"
+        };
+        private static readonly ConcurrentDictionary<MethodBase, byte> ParallelUnsafeILHookTargets = new ConcurrentDictionary<MethodBase, byte>();
+        private static Hook ParallelILHookApplyGate;
+        private static Hook ParallelModInteropGate;
+
+        private static void InstallParallelLoaderSafetyHooks() {
+            MethodInfo apply = typeof(MonoMod.RuntimeDetour.ILHook).GetMethod(
+                nameof(MonoMod.RuntimeDetour.ILHook.Apply),
+                BindingFlags.Public | BindingFlags.Instance,
+                null,
+                Type.EmptyTypes,
+                null);
+            MethodInfo replacement = typeof(Everest).GetMethod(
+                nameof(ApplyILHookSerializedDuringParallelStartup),
+                BindingFlags.NonPublic | BindingFlags.Static);
+            ParallelILHookApplyGate = new Hook(apply, replacement);
+
+            MethodInfo modInterop = typeof(MonoMod.ModInterop.ModInteropManager).GetMethod(
+                nameof(MonoMod.ModInterop.ModInteropManager.ModInterop),
+                BindingFlags.Public | BindingFlags.Static,
+                null,
+                new Type[] { typeof(Type) },
+                null);
+            MethodInfo modInteropReplacement = typeof(Everest).GetMethod(
+                nameof(ModInteropSerializedDuringParallelStartup),
+                BindingFlags.NonPublic | BindingFlags.Static);
+            ParallelModInteropGate = new Hook(modInterop, modInteropReplacement);
+        }
+
+        private static void ApplyILHookSerializedDuringParallelStartup(
+            Action<MonoMod.RuntimeDetour.ILHook> orig,
+            MonoMod.RuntimeDetour.ILHook hook) {
+            if (!Loader.IsParallelStartupLoading) {
+                orig(hook);
+                return;
+            }
+
+            // MonoMod already protects each target method independently, which is enough
+            // for normal manipulators and permits useful parallel IL generation. A small
+            // number of compatibility helpers keep process-wide temporary state, so only
+            // those known-unsafe manipulators need the wider transaction lock.
+            string manipulatorAssembly = hook.Manipulator.Method.DeclaringType?.Assembly.GetName().Name;
+            string owner = manipulatorAssembly ?? "unknown";
+            string target = $"{hook.Method.DeclaringType?.FullName ?? "unknown"}::{hook.Method.Name}";
+            if (manipulatorAssembly != null && ParallelUnsafeILManipulatorAssemblies.Contains(manipulatorAssembly))
+                ParallelUnsafeILHookTargets.TryAdd(hook.Method, 0);
+
+            // Adding any later hook rebuilds the complete IL chain and invokes all
+            // manipulators already installed on that target. Once a target contains an
+            // unsafe helper, every subsequent update of that target must use the same
+            // global gate, even when the newly-added manipulator itself is ordinary.
+            if (ParallelUnsafeILHookTargets.ContainsKey(hook.Method)) {
+                using (LoaderProfiler.Measure("ilhook-unsafe-gate-wait"))
+                using (LoaderProfiler.Measure("ilhook-unsafe-gate-wait", owner))
+                    Monitor.Enter(ParallelILHookApplicationLock);
+                try {
+                    using (LoaderProfiler.Measure("ilhook-apply"))
+                    using (LoaderProfiler.Measure("ilhook-apply-owner", owner))
+                    using (LoaderProfiler.Measure("ilhook-apply-target", target))
+                        orig(hook);
+                } finally {
+                    Monitor.Exit(ParallelILHookApplicationLock);
+                }
+            } else {
+                using (LoaderProfiler.Measure("ilhook-apply"))
+                using (LoaderProfiler.Measure("ilhook-apply-owner", owner))
+                using (LoaderProfiler.Measure("ilhook-apply-target", target))
+                    orig(hook);
+            }
+        }
+
+        private static void ModInteropSerializedDuringParallelStartup(Action<Type> orig, Type type) {
+            if (!Loader.IsParallelStartupLoading) {
+                orig(type);
+                return;
+            }
+
+            // MonoMod's legacy ModInterop registry uses process-wide HashSet/List/Dictionary
+            // instances. Independent mods commonly register exports from Load(), so protect
+            // the complete refresh transaction rather than trying to lock individual fields.
+            lock (ParallelModInteropLock)
+                orig(type);
+        }
+
         /// <summary>
         /// The currently installed Everest version in string form.
         /// </summary>
@@ -77,7 +168,14 @@ namespace Celeste.Mod {
         /// <summary>
         /// A collection of all currently loaded EverestModules (mods).
         /// </summary>
-        public static ReadOnlyCollection<EverestModule> Modules => _Modules.AsReadOnly();
+        public static ReadOnlyCollection<EverestModule> Modules {
+            get {
+                // During dependency-wave startup, independent modules can register in
+                // parallel. Never expose an enumerator backed by the mutable list.
+                lock (_Modules)
+                    return Array.AsReadOnly(_Modules.ToArray());
+            }
+        }
         internal static List<EverestModule> _Modules = new List<EverestModule>();
 
         /// <summary>
@@ -147,15 +245,21 @@ namespace Celeste.Mod {
         }
 
         /// <summary>
+        /// Get a checksum through the startup loader's persistent stat-validated cache.
+        /// Falls back to a direct calculation before the loader cache is initialized.
+        /// </summary>
+        internal static byte[] GetCachedChecksum(string path) => LoaderChecksumCache.GetChecksum(path);
+
+        /// <summary>
         /// Get the checksum for a given mod. Might not be determined by the entire mod content.
         /// </summary>
         /// <param name="meta">The mod.</param>
         /// <returns>A checksum.</returns>
         public static byte[] GetChecksum(EverestModuleMetadata meta) {
             if (!string.IsNullOrEmpty(meta.PathArchive))
-                return GetChecksum(meta.PathArchive);
+                return GetCachedChecksum(meta.PathArchive);
             if (!string.IsNullOrEmpty(meta.DLL))
-                return GetChecksum(meta.DLL);
+                return GetCachedChecksum(meta.DLL);
             return new byte[0];
         }
 
@@ -343,12 +447,14 @@ namespace Celeste.Mod {
             };
 
             // Preload some basic dependencies.
-            Assembly.Load("MonoMod.RuntimeDetour");
-            Assembly.Load("MonoMod.Utils");
-            Assembly.Load("Mono.Cecil");
-            Assembly.Load("YamlDotNet");
-            Assembly.Load("Newtonsoft.Json");
-            Assembly.Load("Jdenticon");
+            using (StartupProfiler.Measure("boot/dependency-preload")) {
+                Assembly.Load("MonoMod.RuntimeDetour");
+                Assembly.Load("MonoMod.Utils");
+                Assembly.Load("Mono.Cecil");
+                Assembly.Load("YamlDotNet");
+                Assembly.Load("Newtonsoft.Json");
+                Assembly.Load("Jdenticon");
+            }
 
             if (!File.Exists(Path.Combine(PathGame, "EverestXDGFlag"))) {
                 XDGPaths = false;
@@ -420,100 +526,118 @@ namespace Celeste.Mod {
             };
             DetourManager.NativeDetourUndone += UnregisterModDetour;
 
-            LegacyMonoModCompatLayer.Initialize();
+            using (StartupProfiler.Measure("boot/runtime-infrastructure")) {
+                LegacyMonoModCompatLayer.Initialize();
+                InstallParallelLoaderSafetyHooks();
 
-            // Before even initializing anything else, make sure to prepare any static flags.
-            Flags.Initialize();
+                // Before even initializing anything else, make sure to prepare any static flags.
+                Flags.Initialize();
 
-            // Initialize the content helper.
-            Content.Initialize();
+                // Initialize the content helper.
+                Content.Initialize();
 
-            MainThreadHelper.Instance = new MainThreadHelper(Celeste.Instance);
-            STAThreadHelper.Instance = new STAThreadHelper(Celeste.Instance);
+                MainThreadHelper.Instance = new MainThreadHelper(Celeste.Instance);
+                STAThreadHelper.Instance = new STAThreadHelper(Celeste.Instance);
+            }
 
             // Register our core module and load any other modules.
-            CoreModule core = new CoreModule();
-            core.Register();
-            Assembly asm = typeof(CoreModule).Assembly;
-            Type[] types = asm.GetTypesSafe();
-            Loader.ProcessAssembly(core.Metadata, asm, types);
-            core.Metadata.RegisterMod();
+            using (StartupProfiler.Measure("boot/core-module")) {
+                CoreModule core = new CoreModule();
+                core.Register();
+                Assembly asm = typeof(CoreModule).Assembly;
+                Type[] types = asm.GetTypesSafe();
+                Loader.ProcessAssembly(core.Metadata, asm, types);
+                core.Metadata.RegisterMod();
+            }
 
             if (CoreModule.Settings.ColorizedLogging && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Logger.TryEnableWindowsVTSupport()) {
                 Logger.Error("core", "Failed to enable Windows VT support!");
             }
 
             // Note: Everest fulfills some mod dependencies by itself.
-            NullModule vanilla = new NullModule(new EverestModuleMetadata {
-                Name = "Celeste",
-                VersionString = $"{Celeste.Instance.Version.ToString()}-fna"
-            });
-            vanilla.Register();
-            vanilla.Metadata.RegisterMod();
+            using (StartupProfiler.Measure("boot/vanilla-module-and-lua")) {
+                NullModule vanilla = new NullModule(new EverestModuleMetadata {
+                    Name = "Celeste",
+                    VersionString = $"{Celeste.Instance.Version.ToString()}-fna"
+                });
+                vanilla.Register();
+                vanilla.Metadata.RegisterMod();
 
-            LuaLoader.Initialize();
+                LuaLoader.Initialize();
+            }
 
-            Loader.LoadAuto();
+            using (StartupProfiler.Measure("boot/mod-loader"))
+                Loader.LoadAuto();
 
             // Load stray .bins afterwards.
-            Content.Crawl(new MapBinsInModsModContent(Path.Combine(PathEverest, "Mods")));
+            using (StartupProfiler.Measure("boot/stray-map-bin-crawl"))
+                Content.Crawl(new MapBinsInModsModContent(Path.Combine(PathEverest, "Mods")));
 
             // Also let all mods parse the arguments.
-            Queue<string> args = new Queue<string>(Args);
-            while (args.Count > 0) {
-                string arg = args.Dequeue();
-                foreach (EverestModule mod in _Modules) {
-                    if (mod.ParseArg(arg, args))
-                        break;
+            using (StartupProfiler.Measure("boot/post-loader")) {
+                Queue<string> args = new Queue<string>(Args);
+                while (args.Count > 0) {
+                    string arg = args.Dequeue();
+                    foreach (EverestModule mod in _Modules) {
+                        if (mod.ParseArg(arg, args))
+                            break;
+                    }
                 }
+
+                // Start requesting the version list ASAP.
+                Updater._VersionListRequestTask = Updater.RequestAll();
+
+                // Check if an update failed
+                Updater.CheckForUpdateFailure();
+
+                // Request the mod update list as well.
+                ModUpdaterHelper.RunAsyncCheckForModUpdates(excludeBlacklist: true);
+
+                // Cleanup mod ALCs
+                EverestModuleAssemblyContext._AllContextsLock.EnterReadLock();
+                try {
+                    foreach (EverestModuleAssemblyContext alc in EverestModuleAssemblyContext._AllContexts)
+                        alc.PostBootCleanup();
+                } finally {
+                    EverestModuleAssemblyContext._AllContextsLock.ExitReadLock();
+                }
+
+                DiscordSDK.LoadRichPresenceIcons();
             }
-
-            // Start requesting the version list ASAP.
-            Updater._VersionListRequestTask = Updater.RequestAll();
-
-            // Check if an update failed
-            Updater.CheckForUpdateFailure();
-
-            // Request the mod update list as well.
-            ModUpdaterHelper.RunAsyncCheckForModUpdates(excludeBlacklist: true);
-
-            // Cleanup mod ALCs
-            EverestModuleAssemblyContext._AllContextsLock.EnterReadLock();
-            try {
-                foreach (EverestModuleAssemblyContext alc in EverestModuleAssemblyContext._AllContexts)
-                    alc.PostBootCleanup();
-            } finally {
-                EverestModuleAssemblyContext._AllContextsLock.ExitReadLock();
-            }
-
-            DiscordSDK.LoadRichPresenceIcons();
         }
 
         internal static bool _Initialized;
         internal static void Initialize() {
             // Initialize misc stuff.
-            if (Content._DumpAll)
-                Content.DumpAll();
+            using (StartupProfiler.Measure("initialize/infrastructure")) {
+                if (Content._DumpAll)
+                    Content.DumpAll();
 
-            TextInput.Initialize(Celeste.Instance);
+                TextInput.Initialize(Celeste.Instance);
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                DirectoryInfo vanillaSavesDir = new DirectoryInfo(Path.Combine(PathGame, "orig", "Saves"));
-                ShareVanillaSaveFiles = vanillaSavesDir.Exists && vanillaSavesDir.LinkTarget != null;
-            } else
-                ShareVanillaSaveFiles = true;
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                    DirectoryInfo vanillaSavesDir = new DirectoryInfo(Path.Combine(PathGame, "orig", "Saves"));
+                    ShareVanillaSaveFiles = vanillaSavesDir.Exists && vanillaSavesDir.LinkTarget != null;
+                } else
+                    ShareVanillaSaveFiles = true;
 
-            AutoSplitter.Init();
+                AutoSplitter.Init();
 
-            // Add the previously created managers.
-            Celeste.Instance.Components.Add(MainThreadHelper.Instance);
-            Celeste.Instance.Components.Add(STAThreadHelper.Instance);
+                // Add the previously created managers.
+                Celeste.Instance.Components.Add(MainThreadHelper.Instance);
+                Celeste.Instance.Components.Add(STAThreadHelper.Instance);
+            }
 
-            foreach (EverestModule mod in _Modules)
-                mod.Initialize();
+            foreach (EverestModule mod in _Modules) {
+                string name = mod.Metadata?.Name ?? mod.GetType().FullName;
+                using (StartupProfiler.Measure("initialize/module"))
+                using (StartupProfiler.Measure("initialize/module", name))
+                    mod.Initialize();
+            }
             _Initialized = true;
 
-            DecalRegistry.LoadDecalRegistry();
+            using (StartupProfiler.Measure("initialize/decal-registry"))
+                DecalRegistry.LoadDecalRegistry();
 
 
             Celeste.Instance.Disposed += Dispose;
@@ -544,8 +668,12 @@ namespace Celeste.Mod {
             lock (_Modules)
                 _Modules.Add(module);
 
-            module.LoadSettings();
-            module.Load();
+            using (LoaderProfiler.Measure("module-load-settings"))
+            using (LoaderProfiler.Measure("module-load-settings", module.Metadata?.Name ?? module.GetType().FullName))
+                module.LoadSettings();
+            using (LoaderProfiler.Measure("module-load-code"))
+            using (LoaderProfiler.Measure("module-load-code", module.Metadata?.Name ?? module.GetType().FullName))
+                module.Load();
             if (_ContentLoaded) {
                 module.LoadContent(true);
             }
@@ -556,8 +684,14 @@ namespace Celeste.Mod {
                     LateInitializeModules(Enumerable.Repeat(module, 1));
             }
 
-            module.LogRegistration();
-            Events.Everest.RegisterModule(module);
+            // LoadSettings and Load may execute in parallel for independent dependency-wave
+            // modules during startup. Event subscribers and log registration are a shared
+            // commit boundary and therefore remain serialized.
+            using (LoaderProfiler.Measure("module-registration-finalize"))
+            lock (Loader.ModuleRegistrationFinalizeLock) {
+                module.LogRegistration();
+                Events.Everest.RegisterModule(module);
+            }
         }
 
         internal static void LateInitializeModules(IEnumerable<EverestModule> modules) {

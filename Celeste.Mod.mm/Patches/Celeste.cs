@@ -200,6 +200,7 @@ namespace Celeste {
         }
 
         private static void MainInner(string[] args) {
+            StartupProfiler.Mark("celeste-main-inner");
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
 
             // Get the splash up and running asap
@@ -212,6 +213,7 @@ namespace Celeste {
                 }
 
                 EverestSplashHandler.RunSplash(targetRenderer);
+                StartupProfiler.Mark("splash-start-requested");
             }
 
             try {
@@ -304,12 +306,14 @@ https://discord.gg/6qjaePQ");
         [MonoModConstructor]
         [MonoModOriginalName("orig_ctor_Celeste")] // For Everest.Installer
         public void ctor() {
-            orig_ctor_Celeste();
+            using (StartupProfiler.Measure("celeste-constructor/original"))
+                orig_ctor_Celeste();
 
             Logger.Info("boot", $"Active compatibility mode: {Everest.CompatibilityMode}");
 
             try {
-                Everest.Boot();
+                using (StartupProfiler.Measure("everest-boot"))
+                    Everest.Boot();
             } catch (Exception e) {
                 Logger.LogDetailed(e);
                 /*
@@ -324,13 +328,17 @@ https://discord.gg/6qjaePQ");
         protected override void Initialize() {
             // Note: You may instinctually call base.Initialize();
             // DON'T! The original method is orig_Initialize
-            orig_Initialize();
+            using (StartupProfiler.Measure("celeste-initialize/original"))
+                orig_Initialize();
 
-            Everest.Initialize();
+            using (StartupProfiler.Measure("everest-initialize"))
+                Everest.Initialize();
         }
 
         protected extern void orig_LoadContent();
         protected override void LoadContent() {
+            using var profileLoadContent = StartupProfiler.Measure("celeste-load-content");
+            StartupProfiler.Mark("load-content-start");
             // Note: You may instinctually call base.LoadContent();
             // DON'T! The original method is orig_LoadContent
             bool firstLoad = this.firstLoad;
@@ -359,23 +367,36 @@ https://discord.gg/6qjaePQ");
                 if (limit <= (128L * 1024L * 1024L))
                     limit = (128L * 1024L * 1024L);
 
-                patch_VirtualTexture.StartFastTextureLoading(limit);
+                using (StartupProfiler.Measure("content/fast-texture-start"))
+                    patch_VirtualTexture.StartFastTextureLoading(limit);
             }
 
-            orig_LoadContent();
+            using (StartupProfiler.Measure("content/vanilla-and-atlases"))
+                orig_LoadContent();
 
-            foreach (EverestModule mod in Everest._Modules)
-                mod.LoadContent(firstLoad);
+            foreach (EverestModule mod in Everest._Modules) {
+                string name = mod.Metadata?.Name ?? mod.GetType().FullName;
+                using (StartupProfiler.Measure("content/module-load-content"))
+                using (StartupProfiler.Measure("content/module-load-content", name))
+                    mod.LoadContent(firstLoad);
+            }
 
-            patch_VirtualTexture.StopFastTextureLoading();
+            using (StartupProfiler.Measure("content/fast-texture-stop"))
+                patch_VirtualTexture.StopFastTextureLoading();
 
             Everest._ContentLoaded = true;
+            StartupProfiler.Mark("load-content-end");
         }
 
         protected override void BeginRun() {
-            base.BeginRun();
+            using (StartupProfiler.Measure("begin-run/base"))
+                base.BeginRun();
+            StartupProfiler.Mark("begin-run");
             // This is as close as we can get to the showwindow call
-            EverestSplashHandler.StopSplash();
+            using (StartupProfiler.Measure("splash-stop-wait"))
+                EverestSplashHandler.StopSplash();
+            StartupProfiler.Mark("splash-stopped");
+            StartupProfiler.Report();
         }
 
         protected override void OnExiting(object sender, EventArgs args) {

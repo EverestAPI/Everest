@@ -81,7 +81,8 @@ namespace Celeste.Mod {
             }
 
             // Resolve dependencies
-            lock (Everest._Modules) {
+            _AllContextsLock.EnterReadLock();
+            try {
                 foreach (EverestModuleMetadata dep in meta.Dependencies)
                     if (_ContextsByName.TryGetValue(dep.Name, out EverestModuleAssemblyContext alc))
                         DependencyContexts.Add(alc);
@@ -89,6 +90,8 @@ namespace Celeste.Mod {
                 foreach (EverestModuleMetadata dep in meta.OptionalDependencies)
                     if (_ContextsByName.TryGetValue(dep.Name, out EverestModuleAssemblyContext alc))
                         DependencyContexts.Add(alc);
+            } finally {
+                _AllContextsLock.ExitReadLock();
             }
 
             // Add to mod ALC list
@@ -191,10 +194,10 @@ namespace Celeste.Mod {
                 checksums.Add(ModuleMeta.Hash.ToHexadecimalString());
             } else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory)) {
                 // There's no overhead for accessing the files of directory mods, so just calculate the checksum directly
-                checksums.Add(Everest.GetChecksum(path).ToHexadecimalString());
+                checksums.Add(Everest.GetCachedChecksum(path).ToHexadecimalString());
 
                 if (symPath != null)
-                    checksums.Add(Everest.GetChecksum(symPath).ToHexadecimalString());
+                    checksums.Add(Everest.GetCachedChecksum(symPath).ToHexadecimalString());
             } else
                 throw new UnreachableException();
         }
@@ -203,7 +206,7 @@ namespace Celeste.Mod {
             if (!string.IsNullOrEmpty(ModuleMeta.PathArchive)) {
                 return ModuleMeta.Hash.ToHexadecimalString();
             } else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory)) {
-                return Everest.GetChecksum(path).ToHexadecimalString();
+                return Everest.GetCachedChecksum(path).ToHexadecimalString();
             } else throw new UnreachableException();
         }
 
@@ -231,7 +234,9 @@ namespace Celeste.Mod {
             static void FillChecksums(Dictionary<string, string> dict, List<EverestModuleMetadata> deps) {
                 foreach (EverestModuleMetadata depMeta in deps) {
                     if (depMeta.Name == CoreModule.NETCoreMetaName || depMeta.Name == "Everest") continue;
-                    EverestModule actualModule = Everest.Modules.FirstOrDefault(m => m.Metadata.Name == depMeta.Name, null);
+                    EverestModule actualModule;
+                    lock (Everest._Modules)
+                        actualModule = Everest._Modules.FirstOrDefault(m => m.Metadata.Name == depMeta.Name, null);
                     if (actualModule == null) continue;
                     dict[depMeta.Name] = actualModule.Metadata.Hash.ToHexadecimalString();
                 }
@@ -381,17 +386,69 @@ namespace Celeste.Mod {
         /// <param name="asmName">The assembly name, or null for the default</param>
         /// <returns></returns>
         public Assembly LoadAssemblyFromModPath(string path, string asmName = null) {
+            string osSepPath = path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
+            if (asmName == null)
+                asmName = Path.GetFileNameWithoutExtension(osSepPath);
+            string asmPath = path.Replace('\\', '/');
+
+            // Dependency probing asks many contexts whether they contain a given assembly.
+            // Metadata crawling has already visited every ZIP central directory, so use its
+            // compact DLL/PDB index instead of reopening ZIPs for paths which do not exist.
+            if (!string.IsNullOrEmpty(ModuleMeta.PathArchive)) {
+                if (LoaderMetadataCache.TryContainsAssemblyEntry(ModuleMeta.PathArchive, asmPath, out bool exists) && !exists) {
+                    using (LoaderProfiler.Measure("assembly-path-index-miss")) { }
+                    return null;
+                }
+            } else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory) && !File.Exists(osSepPath)) {
+                return null;
+            }
+
+            // The common warm-start path only validates checksums and loads an existing
+            // relinked DLL. It doesn't touch MonoMod's shared relinker state, so it can run
+            // concurrently across mod contexts. Keep each individual context serialized.
             lock (LOCK) {
+                if (isDisposed)
+                    throw new ObjectDisposedException(nameof(EverestModuleAssemblyContext));
+                if (_LoadedAssemblies.TryGetValue(asmPath, out Assembly cachedAssembly))
+                    return cachedAssembly;
+
+                string symPath = null;
+                if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory)) {
+                    symPath = Path.ChangeExtension(path, ".pdb");
+                    if (!File.Exists(symPath))
+                        symPath = null;
+                }
+
+                using (LoaderProfiler.Measure("assembly-relink-cache-fast-path", ModuleMeta.Name)) {
+                    if (Everest.Relinker.TryGetCachedAssembly(ModuleMeta, asmName, asmPath, symPath) is Assembly fastAssembly) {
+                        _LoadedAssemblies[asmPath] = fastAssembly;
+
+                        if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory) && ModuleMeta.SupportsCodeReload && CoreModule.Settings.CodeReload)
+                            RegisterCodeReloadWatcher(Path.GetFullPath(Path.GetDirectoryName(path)));
+
+                        Logger.Info("modasmctx", $"Loaded assembly {fastAssembly.FullName} from module '{ModuleMeta.Name}' path '{path}'");
+                        return fastAssembly;
+                    }
+                }
+            }
+
+            // Assembly loading can recursively resolve assemblies from another mod context.
+            // Keep the lock order consistent with Relinker.GetRelinkedAssembly:
+            // RelinkerLock -> context LOCK.  Without this outer lock, two parallel mod
+            // loads can deadlock as follows:
+            //
+            //   worker A: context A LOCK -> waits for RelinkerLock
+            //   worker B: RelinkerLock -> resolves through context A -> waits for A LOCK
+            //
+            // Relinking was already globally serialized, so extending that lock over the
+            // context bookkeeping does not remove useful parallel work; module setup and
+            // EverestModule.Load still run concurrently once their assemblies are ready.
+            lock (Everest.Relinker.RelinkerLock) lock (LOCK) {
                 if (isDisposed)
                     throw new ObjectDisposedException(nameof(EverestModuleAssemblyContext));
 
                 // Determine the default assembly name
-                string osSepPath = path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
-                if (asmName == null)
-                    asmName = Path.GetFileNameWithoutExtension(osSepPath);
-
                 // Check if the assembly has already been loaded
-                string asmPath = path.Replace('\\', '/');
                 if (_LoadedAssemblies.TryGetValue(asmPath, out Assembly asm))
                     return asm;
 
@@ -676,7 +733,10 @@ namespace Celeste.Mod {
 
             // Check if we can load this assembly from another module
             // If yes add its context as a dependency
-            foreach (EverestModule module in Everest.Modules)
+            EverestModule[] modules;
+            lock (Everest._Modules)
+                modules = Everest._Modules.ToArray();
+            foreach (EverestModule module in modules)
                 if (module.Metadata.AssemblyContext?.LoadFromThisMod(asmName) is Assembly moduleAsm) {
                     Logger.Info("modasmctx", $"Loading assembly '{asmName.FullName}' from non-dependency '{module.Metadata.Name}' for module '{ModuleMeta.Name}'");
                     DependencyContexts.Add(module.Metadata.AssemblyContext);
@@ -689,7 +749,9 @@ namespace Celeste.Mod {
 
         private AssemblyDefinition ResolveGlobal(AssemblyNameReference asmName) {
             // Try to resolve a global assembly definition
-            if (!_GlobalAssemblyResolveCache.TryGetValue(asmName.Name, out AssemblyDefinition globalAsmDef)) {
+            AssemblyDefinition globalAsmDef;
+            lock (_GlobalAssemblyResolveCache) {
+            if (!_GlobalAssemblyResolveCache.TryGetValue(asmName.Name, out globalAsmDef)) {
                 // Try to load the global assembly
                 Assembly globalAsm = null;
                 try {
@@ -710,21 +772,27 @@ namespace Celeste.Mod {
                 // Add to cache
                 _GlobalAssemblyResolveCache.Add(asmName.Name, globalAsmDef);
             }
+            }
 
             // Check if we can resolve this assembly in another module
             // If yes add its context as a dependency
+            EverestModuleAssemblyContext[] contexts;
             _AllContextsLock.EnterReadLock();
             try {
-                foreach (EverestModuleAssemblyContext alc in _AllContexts)
-                    if (alc.ResolveFromThisMod(asmName) is AssemblyDefinition moduleAsm) {
-                        Logger.Info("modasmctx", $"Resolving assembly '{asmName.FullName}' in non-dependency '{alc.ModuleMeta.Name}' for module '{ModuleMeta.Name}'");
-                        DependencyContexts.Add(alc);
-                        ActiveDependencyContexts.Add(alc);
-                        return moduleAsm;
-                    }
+                contexts = _AllContexts.ToArray();
             } finally {
                 _AllContextsLock.ExitReadLock();
             }
+            // Never hold the registry lock while asking a context to resolve. Cecil can
+            // recursively call this resolver while reading custom attributes; retaining a
+            // ReaderWriterLockSlim read lock would then throw LockRecursionException.
+            foreach (EverestModuleAssemblyContext alc in contexts)
+                if (alc.ResolveFromThisMod(asmName) is AssemblyDefinition moduleAsm) {
+                    Logger.Info("modasmctx", $"Resolving assembly '{asmName.FullName}' in non-dependency '{alc.ModuleMeta.Name}' for module '{ModuleMeta.Name}'");
+                    DependencyContexts.Add(alc);
+                    ActiveDependencyContexts.Add(alc);
+                    return moduleAsm;
+                }
 
             return globalAsmDef;
         }

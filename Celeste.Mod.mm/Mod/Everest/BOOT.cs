@@ -26,6 +26,7 @@ namespace Celeste.Mod {
 
         [MakeEntryPoint]
         private static void Main(string[] args) {
+            StartupProfiler.Initialize();
             try {
                 // 0.1 parses into 1 in regions using ,
                 // This also somehow sets the exception message language to English.
