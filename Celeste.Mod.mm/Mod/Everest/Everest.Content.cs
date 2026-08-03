@@ -1105,8 +1105,16 @@ namespace Celeste.Mod {
             /// Crawl through the content mod and automatically fill the mod asset map.
             /// </summary>
             /// <param name="meta">The content mod to crawl through.</param>
-            public static void Crawl(ModContent meta) {
-                if (!Mods.Contains(meta))
+            public static void Crawl(ModContent meta) => Crawl(meta, registerInMods: true);
+
+            /// <summary>
+            /// Crawl through the content mod and fill the mod asset map. When
+            /// <paramref name="registerInMods"/> is false, assets are registered but the
+            /// mod is not appended to <see cref="Mods"/> yet; publish it later with
+            /// <see cref="RegisterMod"/> from a quiescent point.
+            /// </summary>
+            internal static void Crawl(ModContent meta, bool registerInMods) {
+                if (registerInMods && !Mods.Contains(meta))
                     Mods.Add(meta);
                 meta._Crawl();
 
@@ -1126,6 +1134,16 @@ namespace Celeste.Mod {
                         Celeste.LoadTimer = loadTimerPrev;
                     }
                 }
+            }
+
+            /// <summary>
+            /// Append a previously crawled content mod to <see cref="Mods"/> without
+            /// re-crawling its assets. Must only be called when no module Load() can be
+            /// enumerating the collection (e.g. after the parallel startup batch).
+            /// </summary>
+            internal static void RegisterMod(ModContent meta) {
+                if (!Mods.Contains(meta))
+                    Mods.Add(meta);
             }
 
             /// <summary>

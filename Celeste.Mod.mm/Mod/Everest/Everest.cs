@@ -27,13 +27,6 @@ namespace Celeste.Mod {
 
         private static readonly object ParallelILHookApplicationLock = new object();
         private static readonly object ParallelModInteropLock = new object();
-        private static readonly HashSet<string> ParallelUnsafeILManipulatorAssemblies = new HashSet<string>(StringComparer.Ordinal) {
-            // GooberHelper's HookHelper uses process-wide temporary Lists while an IL
-            // manipulator is running. MonoMod's per-target lock is therefore insufficient
-            // when two different methods are patched concurrently.
-            "GooberHelper"
-        };
-        private static readonly ConcurrentDictionary<MethodBase, byte> ParallelUnsafeILHookTargets = new ConcurrentDictionary<MethodBase, byte>();
         private static Hook ParallelILHookApplyGate;
         private static Hook ParallelModInteropGate;
 
@@ -69,38 +62,20 @@ namespace Celeste.Mod {
                 return;
             }
 
-            // MonoMod already protects each target method independently, which is enough
-            // for normal manipulators and permits useful parallel IL generation. A small
-            // number of compatibility helpers keep process-wide temporary state, so only
-            // those known-unsafe manipulators need the wider transaction lock.
-            string manipulatorAssembly = hook.Manipulator.Method.DeclaringType?.Assembly.GetName().Name;
-            string owner = manipulatorAssembly ?? "unknown";
+            // During parallel startup every ILHook application goes through one gate.
+            // With the startup ILHook transaction active, Apply only queues, so the gate
+            // is nearly free; without it MonoMod rebuilds the whole chain immediately,
+            // and the single gate keeps manipulators that hold process-wide temporary
+            // state (previously hardcoded as "GooberHelper") from running concurrently
+            // on different target methods. MonoMod's per-target lock alone is not enough
+            // for that class of manipulator.
+            string owner = hook.Manipulator.Method.DeclaringType?.Assembly.GetName().Name ?? "unknown";
             string target = $"{hook.Method.DeclaringType?.FullName ?? "unknown"}::{hook.Method.Name}";
-            if (manipulatorAssembly != null && ParallelUnsafeILManipulatorAssemblies.Contains(manipulatorAssembly))
-                ParallelUnsafeILHookTargets.TryAdd(hook.Method, 0);
-
-            // Adding any later hook rebuilds the complete IL chain and invokes all
-            // manipulators already installed on that target. Once a target contains an
-            // unsafe helper, every subsequent update of that target must use the same
-            // global gate, even when the newly-added manipulator itself is ordinary.
-            if (ParallelUnsafeILHookTargets.ContainsKey(hook.Method)) {
-                using (LoaderProfiler.Measure("ilhook-unsafe-gate-wait"))
-                using (LoaderProfiler.Measure("ilhook-unsafe-gate-wait", owner))
-                    Monitor.Enter(ParallelILHookApplicationLock);
-                try {
-                    using (LoaderProfiler.Measure("ilhook-apply"))
-                    using (LoaderProfiler.Measure("ilhook-apply-owner", owner))
-                    using (LoaderProfiler.Measure("ilhook-apply-target", target))
-                        orig(hook);
-                } finally {
-                    Monitor.Exit(ParallelILHookApplicationLock);
-                }
-            } else {
-                using (LoaderProfiler.Measure("ilhook-apply"))
-                using (LoaderProfiler.Measure("ilhook-apply-owner", owner))
-                using (LoaderProfiler.Measure("ilhook-apply-target", target))
-                    orig(hook);
-            }
+            using (LoaderProfiler.Measure("ilhook-apply"))
+            using (LoaderProfiler.Measure("ilhook-apply-owner", owner))
+            using (LoaderProfiler.Measure("ilhook-apply-target", target))
+            lock (ParallelILHookApplicationLock)
+                orig(hook);
         }
 
         private static void ModInteropSerializedDuringParallelStartup(Action<Type> orig, Type type) {

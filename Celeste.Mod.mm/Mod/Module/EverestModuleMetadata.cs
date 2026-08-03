@@ -34,6 +34,14 @@ namespace Celeste.Mod {
         public EverestModuleAssemblyContext AssemblyContext { get; internal set; }
 
         /// <summary>
+        /// The assembly content crawled for this mod during parallel startup. Set while
+        /// the startup loader is batching so the mod can be published in Content.Mods at a
+        /// quiescent point after all modules have loaded.
+        /// </summary>
+        [YamlIgnore]
+        internal ModContent AssemblyContent { get; set; }
+
+        /// <summary>
         /// The name of the mod.
         /// </summary>
         public string Name { get; set; }

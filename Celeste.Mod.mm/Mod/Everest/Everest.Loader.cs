@@ -151,20 +151,15 @@ namespace Celeste.Mod {
                 return ownerAssembly;
             }
 
-            // A very small compatibility deny-list for modules which enumerate global
-            // Everest collections from Load(). Those collections can legitimately be
-            // extended by another module's assembly-content crawl at the same time.
-            // Keep the scheduler parallel for every other node, but run these modules
-            // at a quiescent point. Additional names can be supplied without rebuilding.
-            private static readonly HashSet<string> DefaultExclusiveStartupMods = new HashSet<string>(StringComparer.Ordinal) {
-                "CollabUtils2"
-            };
-
+            // Modules listed via EVEREST_PARALLEL_LOAD_EXCLUSIVE_MODS run alone at a
+            // quiescent point. This is a manual escape hatch for mods that are unsafe in
+            // parallel for reasons Everest cannot fix (process-wide state, unguarded
+            // global collections, ...). Known races such as enumerating Content.Mods while
+            // assembly content is crawled are fixed at the source, so no built-in
+            // deny-list is needed.
             private static bool RequiresExclusiveStartupExecution(EverestModuleMetadata meta) {
                 if (meta?.Name == null)
                     return false;
-                if (DefaultExclusiveStartupMods.Contains(meta.Name))
-                    return true;
 
                 string configured = Environment.GetEnvironmentVariable("EVEREST_PARALLEL_LOAD_EXCLUSIVE_MODS");
                 if (string.IsNullOrWhiteSpace(configured))
@@ -671,6 +666,16 @@ namespace Celeste.Mod {
                         DrainReadyQueue(ready, loaded, outgoing, indegree, ignoreOptionalEdges: true);
                     }
 
+                    // Assembly content was crawled on workers but intentionally kept out of
+                    // Content.Mods during the parallel phase. Publish it now that no module
+                    // Load() is running, in the same stable topological order used for
+                    // container content and ILHook application.
+                    using (LoaderProfiler.Measure("content-assembly-register"))
+                    foreach (PendingStartupMod pending in valid
+                        .Where(node => node.Metadata.AssemblyContent != null)
+                        .OrderBy(node => node.ContentCommitIndex))
+                        Content.RegisterMod(pending.Metadata.AssemblyContent);
+
                     if (ilHookTransaction != null) {
                         int pendingHooks = ilHookTransaction.PendingCount;
                         (int hooks, int targets) result;
@@ -1039,12 +1044,20 @@ namespace Celeste.Mod {
                 // Apply hackfixes
                 ApplyModHackfixes(meta, asm);
 
+                // Crawl assembly manifest content. During parallel startup the assets are
+                // registered here (the global asset map is lock-protected), but the mod is
+                // NOT appended to Content.Mods until a quiescent post-load point: appending
+                // from a worker would race with another module's Load() enumerating
+                // Content.Mods.
+                ModContent content = new AssemblyModContent(asm) {
+                    Mod = meta,
+                    Name = meta.Name
+                };
                 using (LoaderProfiler.Measure("assembly-content-crawl"))
                 lock (ContentCrawlLock)
-                        Content.Crawl(new AssemblyModContent(asm) {
-                            Mod = meta,
-                            Name = meta.Name
-                        });
+                    Content.Crawl(content, registerInMods: !IsBatchLoading);
+                if (IsBatchLoading)
+                    meta.AssemblyContent = content;
 
                 // Find and register all EverestModule subtypes in the assembly
                 Type[] types;
