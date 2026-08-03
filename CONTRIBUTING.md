@@ -1,5 +1,5 @@
 # Contributing
-Contributions are very welcome and greatly appreciated! Make sure to join the [Celeste Community Discord](discord.gg/Celeste) for any help you need.
+Contributions are very welcome and greatly appreciated! Make sure to join the [Celeste Community Discord](discord.gg/Celeste) for any help you need. The #modding_dev channel there is the best place to discuss contributions to Everest.
 
 ## Table of Contents
 - [Contributing](#contributing)
@@ -32,14 +32,14 @@ Once you have a fork, clone it to your machine and follow the instructions [here
 These are guidelines for some of the different types of contributions you can make to Everest.
 
 ## Bug Reports
-Make sure bug reports have enough information to be reproduced easily!  
+Make sure bug reports have enough information to be reproduced easily!
 That means:
 - **Steps to reproduce.**
 - Description of the bug (expected behaviour vs actual behaviour).
 - `log.txt` file from the session where the bug was encountered (located in your Celeste install folder, with previous sessions stored in the `LogHistory` subfolder).
 
 ## Ideas or Feature Requests
-When submitting ideas or feature requests, consider carefully whether the feature would be more suited for a code mod.  
+When submitting ideas or feature requests, consider carefully whether the feature would be more suited for a code mod.
 Features for Everest should match at least one of the following criteria:
 - Adds features for code mods.
 - Specific to the Everest project.
@@ -50,21 +50,42 @@ When making a pull request, please note the following guidelines:
 - **Branch name:** use a descriptive name for your branch, following the format of `action-target-details` where possible.
 - **Description:** explain what your pull request changes and _why_.
 - **Credits:** if your modifications are in response to a request or issue, link to it or otherwise provide a "paper trail".
-- **Testing:** if you are submitting a bugfix, describe the issue thouroughly and provide recreation steps, *especially* if it is not an existing [issue](https://github.com/EverestAPI/Everest/issues).
-- **Response:** when you submit a pull request, you are responsible for making sure any questions and change requests on it are answered in a timely manner.
+- **Testing:** if you are submitting a bugfix, describe the issue thoroughly and provide recreation steps, *especially* if it is not an existing [issue](https://github.com/EverestAPI/Everest/issues).
+- **State:** Submit the pull request as a draft if it is still work in progress or you want to share your code for the purposes of gathering feedback before considering it ready to merge. If the pull request is not marked as a draft, this indicates that to the best of your knowledge, you believe the feature is ready to be merged as-is.
 
-Once everything is ready, for it to get merged it will need to get reviewed by at least **2 members** of the Everest team. Once that has happened, there is a **3 day** last-call window in which any concerns can be brought up before it is merged. If nothing is blocking the pull request, it'll get merged once the 3 day window is over.  
+### Testing
+If you are submitting a bugfix, describe the issue thoroughly and provide recreation steps, *especially* if it is not an existing [issue](https://github.com/EverestAPI/Everest/issues).
 
-If a pull request would be merged within 3 days of a planned release, it will have to be merged **after** it, to ensure it has enough time to be tested before being released. The date of the next release can be found [in the Milestones section](https://github.com/EverestAPI/Everest/milestones).
+In general, you should thoroughly test your changes. Submitting the pull request will trigger a CI run that automatically tests that Everest builds and the [TASes](https://en.wikipedia.org/wiki/Tool-assisted_speedrun) for Celeste 100% and [Strawberry Jam](https://gamebanana.com/mods/424541) Any% still work. This is necessary, but not sufficient for your PR to be merged. Test any situations (vanilla or modded) that may be affected by your changes. You can also ask for help figuring out situations worth testing.
+
+### Response
+When you submit a pull request, you are responsible for making sure any questions and change requests on it are answered in a timely manner. If you don't, your pull request will eventually be closed. This isn't personal; if you don't have time to work on a pull request at the moment, you can simply reopen it once you do.
+
+### Communication
+While simply submitting a finished pull request is acceptable, especially for smaller features, larger changes should ideally be discussed in advance (in the #modding_dev channel on the Celeste Discord). This way, you can avoid putting a lot of effort into a feature that ends up not being mergeable for unforeseen reasons. Experienced Everest contributors can also point you towards the best ways to implement the feature or point out pitfalls to avoid.
+
+### Scope
+Try to keep the scope of individual pull requests manageable. If you're working on a larger feature, consider whether it can be split into subfeatures that can stand on their own. This makes the review and testing process much easier.
+
+### Merging Process
+Once everything is ready, for it to get merged, it will need to get reviewed by at least **2 members** of the Everest team. Once that has happened, there is a **3 day** last-call window in which any concerns can be brought up before it is merged. If nothing is blocking the pull request, it will get merged once the 3 day window is over.
+
+If a pull request would be merged within 3 days of a planned release, it will have to be merged **after** it to ensure it has enough time to be tested before being released. The date of the next release can be found [in the Milestones section](https://github.com/EverestAPI/Everest/milestones).
+
+### Code Style
+Everest does not have a clearly defined style guide at the moment. For the sake of consistency, try to match the style of adjacent or related code.
+
+### AI-generated Code
+Code generated by LLMs or other forms of generative AI will be treated with strong suspicion, especially for larger changes. You are expected to understand the purpose of every single line of code you submit as well as the reasoning behind larger architectural decisions, since other Everest contributors will have to do the same if they want to build on your code. Your code will likely be met with more grace by reviewers if it is clear that you wrote it yourself and can justify your decisions.
 
 # Making Changes
 These are explanations and guidelines for how to make changes to the Everest source code.
 
 ## Adding Content
-Content added *must not* change the functionality of the base game, or change any public facing API.  
-While many mods also make use of non-public code it is not as important to maintain backwards compatibility for it.
+Content added *must not* change the functionality of the base game, or change any public facing API.
+While many mods also make use of non-public code, it is not as important to maintain backwards compatibility for it.
 
-New features should only be added to improve or un-hardcode vanilla features, especially for general use in code mods (f.e. [StrawberryRegistry](https://github.com/EverestAPI/Everest/blob/dev/Celeste.Mod.mm/Mod/Registry/StrawberryRegistry.cs), [CustomNPC](https://github.com/EverestAPI/Everest/blob/dev/Celeste.Mod.mm/Mod/Entities/CustomNPC.cs), [Custom Events](https://github.com/EverestAPI/Everest/blob/dev/Celeste.Mod.mm/Patches/EventTrigger.cs)).  
+New features should only be added to improve or un-hardcode vanilla features, especially for general use in code mods (f.e. [StrawberryRegistry](https://github.com/EverestAPI/Everest/blob/dev/Celeste.Mod.mm/Mod/Registry/StrawberryRegistry.cs), [CustomNPC](https://github.com/EverestAPI/Everest/blob/dev/Celeste.Mod.mm/Mod/Entities/CustomNPC.cs), [Custom Events](https://github.com/EverestAPI/Everest/blob/dev/Celeste.Mod.mm/Patches/EventTrigger.cs)).
 Gameplay mechanics, entities, and other features not present in the base game are usually better suited for a mod, although some exceptions will be made on a case by case basis.
 
 ## Patching
@@ -91,7 +112,7 @@ public void DoThing(int val) {
 
 There are a few attributes that can be applied to members of the class with different effects:
 - `[MonoModIgnore]` ignore this member, do not patch it except for MonoMod custom attributes.
-- `[MonoModConstructor]` treat this method as a constructor - [why this is needed](https://github.com/MonoMod/MonoMod/issues/51#issuecomment-496115932). 
+- `[MonoModConstructor]` treat this method as a constructor - [why this is needed](https://github.com/MonoMod/MonoMod/issues/51#issuecomment-496115932).
 - `[MonoModReplace]` replace this method entirely, do not generate an `orig_` method.
 
 ### `Ext` classes
@@ -110,7 +131,7 @@ Existing `Ext` classes will also be kept in the following cases:
 ### MonoModRules
 :information_source: **The recommended practices for MonoModRules have recently been changed as described in [this PR](https://github.com/EverestAPI/Everest/pull/351).**
 
-Everest uses MonoModRules to directly modify the IL code of vanilla methods.  
+Everest uses MonoModRules to directly modify the IL code of vanilla methods.
 Some guidelines for using them are as follows:
 
 - Patches and Attribute definitions should be located in the `Celeste.Mod.mm/Patches/` folder alongside their associated [`patch_`](#patch_-classes) class.
@@ -118,7 +139,7 @@ Some guidelines for using them are as follows:
 
 - When using types or methods in an IL patch, they must be imported as a reference through `MonoModRule.Modder` or by association with an already imported type.
 
-- While in code mods it is often preferred to fail safe when patching, if an Everest patch does not work it should fail hard to prevent broken builds from reaching end-users.  
+- While in code mods it is often preferred to fail safe when patching, if an Everest patch does not work it should fail hard to prevent broken builds from reaching end-users.
 This means using `ILCursor.GotoNext` instead of `TryGotoNext` where possible, and implementing additional checks when `TryGotoNext` is necessary.
 
 - Primitive arrays and switch statements with more than 6 cases are not usable due to compiler optimizations.
