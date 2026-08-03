@@ -127,9 +127,8 @@ public sealed class HookGeneratorModder : MonoModder {
     private void GenerateType(TypeDefinition type, ModuleDefinition? vanillaModule, out TypeDefinition? onHookType, out TypeDefinition? ilHookType) {
         onHookType = ilHookType = null;
 
-        if (type.HasGenericParameters || type.IsRuntimeSpecialName || type.Name.StartsWith('<')) {
+        if (type.HasGenericParameters || type.IsRuntimeSpecialName || type.Name.StartsWith('<'))
             return;
-        }
 
         var vanillaType = vanillaModule?.GetType(type.FullName);
 
@@ -196,11 +195,11 @@ public sealed class HookGeneratorModder : MonoModder {
         }
     }
 
-    private bool GenerateMethod(MethodDefinition method, TypeDefinition? vanillaType, TypeDefinition onHookType, TypeDefinition ilHookType, bool force = false) {
+    private bool GenerateMethod(MethodDefinition method, TypeDefinition? vanillaType, TypeDefinition onHookType, TypeDefinition ilHookType, string? name = null, bool force = false) {
         if (!force && (method.HasGenericParameters || method.IsAbstract || method is { IsSpecialName: true, IsConstructor: false }))
             return false;
 
-        if (!force && (method.Name.StartsWith("orig_", StringComparison.Ordinal)))
+        if (!force && (method.Name.StartsWith('<') || method.Name.StartsWith("orig_", StringComparison.Ordinal)))
             return false;
 
         // Check if this method is part of the vanilla assembly
@@ -231,40 +230,42 @@ public sealed class HookGeneratorModder : MonoModder {
                 return true;
             });
 
-        string name = GetFriendlyName(method);
-        bool suffix = method.Parameters.Count != 0;
+        if (name == null) {
+            name = GetFriendlyName(method);
+            bool suffix = method.Parameters.Count != 0;
 
-        MethodDefinition[] overloads = [];
-        if (suffix) {
-            overloads = method.DeclaringType.Methods.Where(other => !other.HasGenericParameters && GetFriendlyName(other) == name && other != method).ToArray();
-            if (overloads.Length == 0) {
-                suffix = false;
-            }
-        }
-
-        if (suffix) {
-            var builder = new StringBuilder();
-            for (int paramIdx = 0; paramIdx < method.Parameters.Count; paramIdx++) {
-                var param = method.Parameters[paramIdx];
-                if (!PrimitiveTypeNameMap.TryGetValue(param.ParameterType.FullName, out string? typeName)) {
-                    typeName = GetFriendlyName(param.ParameterType, full: false);
+            MethodDefinition[] overloads = [];
+            if (suffix) {
+                overloads = method.DeclaringType.Methods.Where(other => !other.HasGenericParameters && GetFriendlyName(other) == name && other != method).ToArray();
+                if (overloads.Length == 0) {
+                    suffix = false;
                 }
-
-                if (overloads.Any(other => {
-                        var otherParam = other.Parameters.ElementAtOrDefault(paramIdx);
-                        return
-                            otherParam != null &&
-                            GetFriendlyName(otherParam.ParameterType, false) == typeName &&
-                            otherParam.ParameterType.Namespace != param.ParameterType.Namespace;
-                    })) {
-                    typeName = GetFriendlyName(param.ParameterType, true);
-                }
-
-                builder.Append('_');
-                builder.Append(typeName.Replace(".", "", StringComparison.Ordinal).Replace("`", "", StringComparison.Ordinal));
             }
 
-            name += builder.ToString();
+            if (suffix) {
+                var builder = new StringBuilder();
+                for (int paramIdx = 0; paramIdx < method.Parameters.Count; paramIdx++) {
+                    var param = method.Parameters[paramIdx];
+                    if (!PrimitiveTypeNameMap.TryGetValue(param.ParameterType.FullName, out string? typeName)) {
+                        typeName = GetFriendlyName(param.ParameterType, full: false);
+                    }
+
+                    if (overloads.Any(other => {
+                            var otherParam = other.Parameters.ElementAtOrDefault(paramIdx);
+                            return
+                                otherParam != null &&
+                                GetFriendlyName(otherParam.ParameterType, false) == typeName &&
+                                otherParam.ParameterType.Namespace != param.ParameterType.Namespace;
+                        })) {
+                        typeName = GetFriendlyName(param.ParameterType, true);
+                    }
+
+                    builder.Append('_');
+                    builder.Append(typeName.Replace(".", "", StringComparison.Ordinal).Replace("`", "", StringComparison.Ordinal));
+                }
+
+                name += builder.ToString();
+            }
         }
 
         var origDelegate = GenerateDelegate(method, []);
@@ -386,28 +387,69 @@ public sealed class HookGeneratorModder : MonoModder {
             ilHookEvent.CustomAttributes.Add(GenerateObsolete(ObsoleteMessage, error: true));
         }
 
-        foreach (var attrib in method.CustomAttributes) {
-            // Generate hook-gen for the behind-the-scenes state-machine,
-            // which contains the actual code of the iterator.
-            if (attrib.AttributeType.FullName
-                is "System.Runtime.CompilerServices.StateMachineAttribute"
-                or "System.Runtime.CompilerServices.IteratorStateMachineAttribute"
-                or "System.Runtime.CompilerServices.AsyncIteratorStateMachineAttribute"
-               ) {
-                var type = (TypeDefinition) attrib.ConstructorArguments[0].Value;
+        if (isVanilla) {
+            foreach (var attrib in method.CustomAttributes) {
+                // Generate hook-gen for the behind-the-scenes state-machine,
+                // which contains the actual code of the iterator.
+                if (attrib.AttributeType.FullName
+                    is "System.Runtime.CompilerServices.StateMachineAttribute"
+                    or "System.Runtime.CompilerServices.IteratorStateMachineAttribute"
+                    or "System.Runtime.CompilerServices.AsyncIteratorStateMachineAttribute"
+                   ) {
+                    var type = (TypeDefinition) attrib.ConstructorArguments[0].Value;
 
-                GenerateStateMachine($"{name}StateMachine", type, out var nestedOnHookType, out var nestedIlHookType);
-                if (nestedOnHookType == null || nestedIlHookType == null) {
-                    continue;
+                    GenerateStateMachine($"{name}StateMachine", type, out var nestedOnHookType, out var nestedIlHookType);
+                    if (nestedOnHookType == null || nestedIlHookType == null) {
+                        continue;
+                    }
+
+                    onHookType.NestedTypes.Add(nestedOnHookType);
+                    ilHookType.NestedTypes.Add(nestedIlHookType);
+
+                    // When MonoMod patches an iterator, it'll place the attribute for the state-machine type
+                    // **after** the vanilla one, so it's important to stop checking for further attributes.
+                    break;
+                }
+            }
+
+            var targetMethod = origMethod ?? method;
+            if (targetMethod.HasBody) {
+                // Generate hook-gen events for delegate functions
+                cur = new ILCursor(new ILContext(origMethod ?? method));
+
+                string lambdaPrefix = $"<{method.Name}>b__";
+                string delegatePrefix = lambdaPrefix;
+                string displayClassPrefix = "<>c__DisplayClass";
+
+                MethodReference? delegateFunc = null;
+                cur.Index = 0;
+                while (cur.TryGotoNext(instr => instr.MatchLdftn(out delegateFunc))) {
+                    if (delegateFunc!.DeclaringType != method.DeclaringType) continue;
+                    if (!delegateFunc.Name.StartsWith(delegatePrefix)) continue;
+
+                    string ordinal = delegateFunc.Name[delegatePrefix.Length..];
+                    int underscoreIdx = ordinal.IndexOf('_');
+                    if (underscoreIdx >= 0) {
+                        delegatePrefix = delegateFunc.Name[0..(delegatePrefix.Length + underscoreIdx + 1)];
+                        ordinal = ordinal[(underscoreIdx + 1)..];
+                    }
+
+                    GenerateMethod(delegateFunc.Resolve(), vanillaType: null, onHookType, ilHookType, name: $"{name}_Lambda{ordinal}", force: true);
                 }
 
-                if (!force && !isVanilla) {
-                    nestedOnHookType.CustomAttributes.Add(GenerateObsolete(ObsoleteMessage, error: true));
-                    nestedIlHookType.CustomAttributes.Add(GenerateObsolete(ObsoleteMessage, error: true));
-                }
+                MethodReference? displayClassCtor = null;
+                cur.Index = 0;
+                while (cur.TryGotoNext(instr => instr.MatchNewobj(out displayClassCtor))) {
+                    var displayClassType = displayClassCtor!.DeclaringType;
+                    if (!displayClassType.Name.StartsWith(displayClassPrefix)) continue;
 
-                onHookType.NestedTypes.Add(nestedOnHookType);
-                ilHookType.NestedTypes.Add(nestedIlHookType);
+                    foreach (var lambdaMethod in displayClassType.Resolve().Methods) {
+                        if (!lambdaMethod.Name.StartsWith(lambdaPrefix)) continue;
+                        string ordinal = lambdaMethod.Name[lambdaPrefix.Length..];
+
+                        GenerateMethod(lambdaMethod, vanillaType: null, onHookType, ilHookType, name: $"{name}_Lambda{ordinal}", force: true);
+                    }
+                }
             }
         }
 
@@ -452,14 +494,40 @@ public sealed class HookGeneratorModder : MonoModder {
                 selfType = new ByReferenceType(selfType);
             }
 
-            invoke.Parameters.Add(new ParameterDefinition("self", ParameterAttributes.None, selfType));
+            // Iterate until type is accessible from C#
+            var currType = selfType;
+            while (currType.Name.StartsWith('<')) {
+                // Not accessible
+                var nextType = currType.SafeResolve()?.BaseType;
+                if (nextType == null) {
+                    currType = outputModule.TypeSystem.Object;
+                    break;
+                }
+
+                currType = nextType;
+            }
+
+            invoke.Parameters.Add(new ParameterDefinition("self", ParameterAttributes.None, outputModule.ImportReference(currType)));
         }
 
         foreach (var param in method.Parameters) {
+            // Iterate until type is accessible from C#
+            var currType = param.ParameterType;
+            while (currType.Name.StartsWith('<')) {
+                // Not accessible
+                var nextType = currType.SafeResolve()?.BaseType;
+                if (nextType == null) {
+                    currType = outputModule.TypeSystem.Object;
+                    break;
+                }
+
+                currType = nextType;
+            }
+
             invoke.Parameters.Add(new ParameterDefinition(
                 param.Name,
                 param.Attributes & ~ParameterAttributes.Optional & ~ParameterAttributes.HasDefault,
-                outputModule.ImportReference(param.ParameterType)
+                outputModule.ImportReference(currType)
             ));
         }
 
