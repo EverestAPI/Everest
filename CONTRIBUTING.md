@@ -50,7 +50,6 @@ When making a pull request, please note the following guidelines:
 - **Branch name:** use a descriptive name for your branch, following the format of `action-target-details` where possible.
 - **Description:** explain what your pull request changes and _why_.
 - **Credits:** if your modifications are in response to a request or issue, link to it or otherwise provide a "paper trail".
-- **Testing:** if you are submitting a bugfix, describe the issue thoroughly and provide recreation steps, *especially* if it is not an existing [issue](https://github.com/EverestAPI/Everest/issues).
 - **State:** Submit the pull request as a draft if it is still work in progress or you want to share your code for the purposes of gathering feedback before considering it ready to merge. If the pull request is not marked as a draft, this indicates that to the best of your knowledge, you believe the feature is ready to be merged as-is.
 
 ### Testing
@@ -139,7 +138,7 @@ Some guidelines for using them are as follows:
 
 - When using types or methods in an IL patch, they must be imported as a reference through `MonoModRule.Modder` or by association with an already imported type.
 
-- While in code mods it is often preferred to fail safe when patching, if an Everest patch does not work it should fail hard to prevent broken builds from reaching end-users.
+- While in code mods it is often preferred to fail safe when patching, if an Everest patch does not work, it should fail hard to prevent broken builds from reaching end-users.
 This means using `ILCursor.GotoNext` instead of `TryGotoNext` where possible, and implementing additional checks when `TryGotoNext` is necessary.
 
 - Primitive arrays and switch statements with more than 6 cases are not usable due to compiler optimizations.
