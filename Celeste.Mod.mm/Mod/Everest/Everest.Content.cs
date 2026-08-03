@@ -1105,7 +1105,12 @@ namespace Celeste.Mod {
             /// Crawl through the content mod and automatically fill the mod asset map.
             /// </summary>
             /// <param name="meta">The content mod to crawl through.</param>
-            public static void Crawl(ModContent meta) => Crawl(meta, registerInMods: true);
+            public static void Crawl(ModContent meta) {
+                if (!Mods.Contains(meta))
+                    Mods.Add(meta);
+                meta._Crawl();
+                CrawlLateIngest(meta);
+            }
 
             /// <summary>
             /// Crawl through the content mod and fill the mod asset map. When
@@ -1117,7 +1122,10 @@ namespace Celeste.Mod {
                 if (registerInMods && !Mods.Contains(meta))
                     Mods.Add(meta);
                 meta._Crawl();
+                CrawlLateIngest(meta);
+            }
 
+            private static void CrawlLateIngest(ModContent meta) {
                 if (_ContentLoaded) {
                     // We're late-loading this mod and thus need to manually ingest new assets.
                     Logger.Verbose("content", $"Late ingest via update for {meta.Name}");
