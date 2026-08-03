@@ -2,6 +2,7 @@
 using System.Collections;
 
 namespace Celeste.Mod.Entities {
+    [Tracked]
     public class DialogCutscene : CutsceneEntity {
 
         private Player player;
@@ -43,6 +44,13 @@ namespace Celeste.Mod.Entities {
                 player.StateMachine.State = Player.StDummy;
                 RemoveSelf();
             }
+        }
+
+        public static bool IsInProgress(string dialogID) {
+            foreach (DialogCutscene dialogCutscene in Engine.Scene.Tracker.GetEntities<DialogCutscene>()) {
+                if (dialogCutscene.dialogID == dialogID) return true;
+            }
+            return false;
         }
 
     }

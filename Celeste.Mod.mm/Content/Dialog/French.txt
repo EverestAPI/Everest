@@ -2,12 +2,13 @@
 
 # Helper Postcards
 	POSTCARD_LEVELGONE= 		{big}Merci ((player)) !{/big}{n}Mais {#ff1144}((sid)){#} est dans une autre montagne.{n}{n}(Cette map n'existe plus.)
-	POSTCARD_LEVELLOADFAILED= 	{big}Désolé !{/big}{n}Mais {#ff1144}((sid)){#}{n}n'a pas pu être chargé.{n}Envoie ton {#44adf7}log.txt{#}{n}au créateur de la map.
+	POSTCARD_LEVELLOADFAILED= 	{big}Désolé !{/big}{n}Mais {#ff1144}((sid)){#}{n}n'a pas pu être chargé.{n}Ouvre le fichier {#44adf7}log.txt{#}{n} pour plus d'informations, et si tu demandes de l'aide à quelqu'un, envoie-lui le log !
 	POSTCARD_LEVELNOSPAWN= 		{big}Oups !{/big}{n}Cette map n'a pas{n}de {#44adf7}point de départ !{#}{n}Vérifie que la map{n}contient une entité {#44adf7}Player{#}.
 	POSTCARD_BADTILEID=			{big}Oups !{/big}{n}Une ((type))tile inexistante dont l'id est {#ff1144}((id)){#} est présente à la position{n}{#ff1144}(((x)), ((y))){#} dans la salle {#ff1144}((room)){#}.{n}Ouvre le fichier {#44adf7}log.txt{#} pour plus d'informations.
 	POSTCARD_DECALREGERROR=		{big}Oups !{/big}{n}Il y a eu une erreur lors de l'application de la propriété{n}{#ff1144}((property)){#} à {#ff1144}((decal)){#}{n}Il y a peut-être un attribut manquant ou invalide dans ton fichier {#44adf7}DecalRegistry.xml{#}.
 	POSTCARD_MISSINGTUTORIAL=	{big}Oups !{/big}{n}Le tutorial {#ff1144}((tutorial)){#} est introuvable.{n}Ouvre le fichier {#44adf7}log.txt{#} pour plus d'informations.
 	POSTCARD_TILEXMLERROR=		{big}Oups !{/big}{n}Une erreur est survenue lors de la lecture d'un tileset dans {#ff1144}((path)){#}.{n}Ouvre le fichier {#44adf7}log.txt{#} pour plus d'informations.
+	POSTCARD_DUPLICATETILEID=   {big}Oups !{/big}{n}L'ID de tileset '{#ff1144}((tilechar)){#}' ({#ff1144}U+((tilehex)){#}) a été utilisé plusieurs fois. Vérifie dans{n}{#44adf7}((filename)){#}{n}que chaque tileset a un ID différent.
 	POSTCARD_XMLERROR=			{big}Oups !{/big}{n}Il y a une erreur de syntaxe dans {#ff1144}((path)){#}.{n}Ouvre le fichier {#44adf7}log.txt{#} pour plus d'informations.
 	POSTCARD_BOSSLASTNODEHIT=	{big}Oups !{/big}{n}Le dernier noeud de l'entité {#ff1144}Badeline Boss{#} a été touché, tu dois ajouter un autre noeud en-dehors de la salle pour que Madeline ne puisse pas l'atteindre.
 	POSTCARD_LEVELNOROOMS=		{big}Oups !{/big}{n}Cette map n'a {#f94a4a}aucune salle{#} !{n}Vérifie que cette map contient {n}{#44adf7}au moins une salle{#}, et que{n}tu as bien sauvegardé la map.
@@ -66,7 +67,7 @@
 	MODOPTIONS_COREMODULE_COMPATMODE_NONE_DESCR_B=
 	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYXNA=				LEGACY XNA
 	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYXNA_DESCR_A=		Reproduit le bug des 61 FPS présent sous XNA
-	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYXNA_DESCR_B=		À ACTIVER UNIQUEMENT SI TU ES AFFECTÉ PAR CE PROBLÈME !
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYXNA_DESCR_B=		À ACTIVER UNIQUEMENT SI TU ES AFFECTÉ(E) PAR CE PROBLÈME !
 	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYFNA=				LEGACY FNA
 	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYFNA_DESCR_A=		Reproduit la latence sur les contrôles présente sur FNA
 	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYFNA_DESCR_B=		À ACTIVER UNIQUEMENT SI TU AS L'HABITUDE DE CETTE LATENCE !

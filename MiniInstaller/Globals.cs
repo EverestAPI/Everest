@@ -22,9 +22,12 @@ public static class Globals {
     public static string PathOrig;
     public static string PathLog;
     public static string PathTmp;
+    public static string PathMiniInstallerWorkspace;
+
     public static bool SetupPaths() {
         PathGame = Directory.GetCurrentDirectory();
         Console.WriteLine(PathGame);
+        PathMiniInstallerWorkspace = Path.Combine(PathGame, "MiniInstallerWorkspace");
 
         if (Path.GetFileName(PathGame) == "everest-update" && (
                 File.Exists(Path.Combine(Path.GetDirectoryName(PathGame), "Celeste.exe")) ||

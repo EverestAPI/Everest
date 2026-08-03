@@ -5,6 +5,7 @@ using Celeste.Mod;
 using Celeste.Mod.Core;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
+using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
@@ -31,9 +32,7 @@ namespace Celeste {
         }
 
         private bool needsRebuild = false;
-        private int selectedIndex;
-        private int offsetFactor;
-        private Vector2 regularButtonOffset;
+        private float regularButtonOffset;
 
         public extern void orig_CreateButtons();
         public new void CreateButtons() {
@@ -41,7 +40,7 @@ namespace Celeste {
 
             // assume the second button have a regular height
             // only the Climb button is taller
-            regularButtonOffset = buttons[1].ButtonHeight * -Vector2.UnitY;
+            regularButtonOffset = buttons[1].ButtonHeight;
 
             Everest.Events.MainMenu.CreateButtons(this, buttons);
 
@@ -62,34 +61,28 @@ namespace Celeste {
 
             // no mode -> vanilla menu, only apply scroll in vanilla menu
             if (CoreModule.Settings.MainMenuMode == "") {
-                ScrollButtonsIfNeeded();
+                ScrollButtons();
             }
 
             orig_Update();
         }
 
-        //TODO: scrolling is not smooth, implement smooth scrolling
-        private void ScrollButtonsIfNeeded() {
-            int newSelectedIndex = 0;
+        private void ScrollButtons() {
+            int selectedIndex = 0;
             for (int i = 0; i < buttons.Count; i++) {
                 if (buttons[i].Selected) {
-                    newSelectedIndex = i;
+                    selectedIndex = i;
                     break;
                 }
             }
 
-            // only attempt to scroll if selection changed
-            if (selectedIndex != newSelectedIndex) {
-                int newOffsetFactor = Math.Max(0, newSelectedIndex - 6);
-                // only scroll if needed (7th or further button selected)
-                if (offsetFactor != newOffsetFactor) {
-                    foreach (MenuButton button in buttons) {
-                        // handle wrapping from last to first button, which resets position
-                        button.Position += regularButtonOffset * (newOffsetFactor - offsetFactor);
-                    }
-                    offsetFactor = newOffsetFactor;
-                }
-                selectedIndex = newSelectedIndex;
+            // only scroll if needed (7th or further button selected)
+            float offsetTarget = Math.Max(0, selectedIndex - 6) * regularButtonOffset;
+            float buttonYPosition = 160f; // start of menu
+            foreach (MenuButton button in buttons) {
+                float targetPosition = buttonYPosition - offsetTarget;
+                buttonYPosition += button.ButtonHeight;
+                button.Position.Y += (targetPosition - button.Position.Y) * (1f - (float)Math.Pow(0.01, Engine.DeltaTime));
             }
         }
 

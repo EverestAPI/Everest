@@ -18,7 +18,7 @@ public static class InGameUpdaterHelper {
 
             // Check if we have a new runtime (=there is a piton-runtime folder both in the game and the update directory)
             if (Directory.Exists(Path.Combine(Globals.PathGame, "piton-runtime")) && Directory.Exists(Path.Combine(Globals.PathUpdate, "piton-runtime")))
-                Directory.Delete(Path.Combine(Globals.PathGame, "piton-runtime"), true);
+                Directory.Delete(Path.Combine(Globals.PathGame, "piton-runtime"), recursive: true);
         }
 
         if (!Directory.Exists(dstPath))
@@ -29,7 +29,7 @@ public static class InGameUpdaterHelper {
 
             if (File.Exists(entrySrc)) {
                 Logger.LogLine($"Copying {entrySrc} +> {entryDst}");
-                File.Copy(entrySrc, entryDst, true);
+                File.Copy(entrySrc, entryDst, overwrite: true);
             } else
                 MoveFilesFromUpdate(entrySrc, entryDst);
         }

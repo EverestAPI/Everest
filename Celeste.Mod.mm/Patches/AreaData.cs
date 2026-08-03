@@ -14,6 +14,8 @@ using System.Text.RegularExpressions;
 namespace Celeste {
     public class patch_AreaData : AreaData {
 
+        public static readonly Dictionary<string, Action<Scene, bool, Action>> WipeLoaders = new();
+
 #pragma warning disable CS0108 // Hides inherited member
 
         // Required to reference this class in other files

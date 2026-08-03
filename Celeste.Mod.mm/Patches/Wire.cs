@@ -10,6 +10,10 @@ namespace Celeste {
     class patch_Wire : Wire {
         private bool fixWindBehavior;
 
+        // from empirical testing 100f seemed about the right amount to lower the wind amplitude by
+        private float ReducedVisualWind =>
+            Scene is Level level ? level.Wind.X / 100f + level.WindSine : 0f;
+
         public patch_Wire(EntityData data, Vector2 offset) : base(data, offset) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
@@ -51,24 +55,35 @@ namespace MonoMod {
         public static void PatchWireRender(ILContext il, CustomAttribute attrib) {
             ILCursor cursor = new ILCursor(il);
 
-            // from empirical testing this seemed about the right amount to lower the wind amplitude by
-            const float windAmplitudeReduction = 100f;
+            TypeDefinition t_Wire = il.Method.DeclaringType;
 
-            // lower the VisualWind amplitude
-            cursor.GotoNext(MoveType.After, static instr => instr.MatchCallvirt("Celeste.Level", "get_VisualWind"));
-            ILLabel noDiv = cursor.DefineLabel();
+            // use ReducedVisualWind if necessary
+            cursor.GotoNext(MoveType.Before,
+                static instr => instr.MatchLdloc(0),
+                static instr => instr.MatchCallvirt("Celeste.Level", "get_VisualWind"));
+            ILLabel needsFix = cursor.DefineLabel();
+            ILLabel join = cursor.DefineLabel();
+
+            // fixWindBehavior ?
             cursor.EmitLdarg0();
-            cursor.EmitLdfld(il.Method.DeclaringType.FindField("fixWindBehavior"));
-            cursor.EmitBrfalse(noDiv);
-            cursor.EmitLdcR4(windAmplitudeReduction);
-            cursor.EmitDiv();
-            cursor.MarkLabel(noDiv);
+            cursor.EmitLdfld(t_Wire.FindField("fixWindBehavior"));
+            cursor.EmitBrtrue(needsFix);
+
+            // : level.VisualWind
+            cursor.Index += 2;
+            cursor.EmitBr(join);
+
+            // ReducedVisualWind :
+            cursor.MarkLabel(needsFix);
+            cursor.EmitLdarg0();
+            cursor.EmitCallvirt(t_Wire.FindProperty("ReducedVisualWind").GetMethod);
+            cursor.MarkLabel(join);
 
             // insert culling code after the curve is fully set up.
             cursor.GotoNext(MoveType.After, static instr => instr.MatchStfld("Monocle.SimpleCurve", "Control"));
 
             cursor.EmitLdarg0();
-            cursor.EmitCall(il.Method.DeclaringType.FindMethod("System.Boolean IsVisible()"));
+            cursor.EmitCall(t_Wire.FindMethod("System.Boolean IsVisible()"));
 
             // return early if IsVisible returned false
             ILLabel label = cursor.DefineLabel();

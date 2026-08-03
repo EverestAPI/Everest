@@ -269,8 +269,10 @@ namespace Celeste.Mod {
             // Revert native library path to prevent accidentally messing with vanilla
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 SetDllDirectory(null);
-            else
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", null);
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                Environment.SetEnvironmentVariable("DYLD_LIBRARY_PATH", null);
             
             // Don't clear FNA vars to preserve FNA compat mode
             StartCelesteProcess(Path.Combine(AppContext.BaseDirectory, "orig"), clearFNAEnv: false);

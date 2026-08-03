@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using System;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Monocle;
 using MonoMod;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
@@ -15,6 +16,10 @@ namespace Celeste {
     public class patch_LevelData : LevelData {
 
         public Vector2? DefaultSpawn;
+
+        // custom room color
+        // if null, `EditorColorIndex` will be used to determine the room color
+        public Color? CustomEditorColor;
 
         public patch_LevelData(BinaryPacker.Element data) : base(data) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
@@ -29,6 +34,9 @@ namespace Celeste {
         [MonoModConstructor]
         public void ctor(BinaryPacker.Element data) {
             orig_ctor(data);
+
+            string color = data.Attr("color");
+            CustomEditorColor = string.IsNullOrEmpty(color) ? null : Calc.HexToColor(color);
         }
 
         private void CheckForDefaultSpawn(BinaryPacker.Element spawn, Vector2 coords) {
