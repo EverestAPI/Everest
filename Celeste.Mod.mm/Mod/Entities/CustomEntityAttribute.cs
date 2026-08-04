@@ -13,14 +13,18 @@ namespace Celeste.Mod.Entities {
     public class CustomEntityAttribute : Attribute {
 
         /// <summary>
-        /// A list of unique identifiers for this Entity.
+        /// A list of unique identifiers for this Entity.<br/>
+        /// Follows the pattern "ID [= LoadMethodName]".
         /// </summary>
         public string[] IDs;
 
         /// <summary>
         /// Mark this entity as a Custom <see cref="Entity"/> or <see cref="Trigger"/>.
         /// </summary>
-        /// <param name="ids">A list of unique identifiers for this Entity.</param>
+        /// <param name="ids">
+        /// A list of unique identifiers for this Entity.<br/>
+        /// Follows the pattern "ID [= LoadMethodName]".
+        /// </param>
         public CustomEntityAttribute(params string[] ids) {
             IDs = ids;
         }

@@ -63,7 +63,7 @@ public static class DepCalls {
         string asmTmp = Path.Combine(Globals.PathTmp, Path.GetFileName(asmTo));
         try {
             // We're lazy.
-            Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", Globals.PathGame);
+            Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", $"{Globals.PathMiniInstallerWorkspace}{Path.PathSeparator}{Globals.PathGame}"); // Prioritize workspace
             Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
             int returnCode = (int) AsmMonoMod.EntryPoint.Invoke(null, new object[] { Enumerable.Repeat(asmFrom, 1).Concat(dllPaths).Append(asmTmp).ToArray() });
 
@@ -84,7 +84,7 @@ public static class DepCalls {
     public static void RunHookGen(string asm, string targetName) {
         Logger.LogLine($"Running MonoMod.RuntimeDetour.HookGen for {asm}");
         // We're lazy.
-        Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", Globals.PathGame);
+        Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", $"{Globals.PathMiniInstallerWorkspace}{Path.PathSeparator}{Globals.PathGame}"); // Prioritize workspace
         Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
         AsmHookGen.EntryPoint.Invoke(null, new object[] { new string[] { "--private", asm, Path.Combine(Path.GetDirectoryName(targetName), "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(targetName), "dll")) } });
     }

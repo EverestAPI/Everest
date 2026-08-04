@@ -26,8 +26,10 @@
 	POSTCARD_DECALREGERROR=		{big}しまった！{/big}{n}{#ff1144}((decal)){#}に{#ff1144}((property)){#}を{n}付与する際にエラーが起きちゃった。{n}{#44adf7}Decal Registry{#}属性が見つからないか、不正な属性があるよ。
 	POSTCARD_MISSINGTUTORIAL=	{big}しまった！{/big}{n}プレイバックチュートリアル{n}{#ff1144}((tutorial)){#}が{n}見つからなかったよ。{n}詳しくは{#44adf7}log.txt{#}をチェックしてね。
 	POSTCARD_TILEXMLERROR=		{big}しまった！{/big}{n}{#ff1144}((path)){#}の{n}タイルセット解析中にエラーが見つかっちゃった。{n}詳しくは{#44adf7}log.txt{#}をチェックしてね。
+	POSTCARD_DUPLICATETILEID=   {big}しまった！{/big}{n}タイルセットID'{#ff1144}((tilechar)){#}' ({#ff1144}U+((tilehex)){#})が複数回定義されているよ。{n}{#44adf7}((filename)){#}{n}をチェックして、重複しているタイルセットIDを確認してね。
 	POSTCARD_XMLERROR=			{big}しまった！{/big}{n}{#ff1144}((path)){#}に構文エラーがあるよ。{n}詳しくは{#44adf7}log.txt{#}をチェックしてね。
 	POSTCARD_BOSSLASTNODEHIT=	{big}しまった！{/big}{n}{#ff1144}バデリンボス{#}の実体が最後のノードに到達したよ。{n}プレイヤーが触れないよう、{n}現在の部屋の外にノードを追加してね。 
+	POSTCARD_LEVELNOROOMS=		{big}しまった！{/big}{n}このマップには{#f94a4a}部屋が存在しません{#}！{n}マップに{#44adf7}最低でも一部屋{#}つくって、{n}保存されていることを確認してね。
 
 # Main Menu
 	MENU_TITLETOUCH= 		タッチ
@@ -98,6 +100,8 @@
 	MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT=			テキストの入力にキーボードを使用する
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS=			everest.yamlのエラー表示
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC=		MOD制作者用オプションです
+	MODOPTIONS_COREMODULE_COLORIZEDLOGGING=			        コンソールログのシンタックスハイライト
+	MODOPTIONS_COREMODULE_COLORIZEDLOGGING_DESC=			MOD開発者用オプションです
 	MODOPTIONS_COREMODULE_MENUNAV_SUBHEADER=				メニュー画面の移動
 	MODOPTIONS_COREMODULE_MENUPAGEUP=						メニュー画面での前ページ移動
 	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						メニュー画面での後ページ移動
@@ -129,11 +133,36 @@
 	MODOPTIONS_COREMODULE_DISCORDSHOWDEATHS=				デス数表示
 	MODOPTIONS_COREMODULE_DISCORDFAILED=					Discordに接続できませんでした。一度OFFにして、もう一度試してください。
 
+	MODOPTIONS_COREMODULE_PSOPTIONS=						光敏感対策モードの設定
+	MODOPTIONS_COREMODULE_PSOPTIONS_DESC=					Everestの機能を用いて「光敏感対策モード」の設定をします
+	MODOPTIONS_COREMODULE_PSDISTORT=						不安 & ゆがみ効果
+	MODOPTIONS_COREMODULE_PSDISTORT_DESC=					シーカー付近のゆがみ効果
+	MODOPTIONS_COREMODULE_PSGLITCH=							グリッチ効果
+	MODOPTIONS_COREMODULE_PSGLITCH_DESC=					「別れ」の「事象の地平線」へ遷移する際のグリッチ効果
+	MODOPTIONS_COREMODULE_PSLIGHTNING=						電気内部のフラッシュ
+	MODOPTIONS_COREMODULE_PSLIGHTNING_DESC=					「別れ」の電気内部のフラッシュ
+	MODOPTIONS_COREMODULE_PSSCREENFLASH=					画面のフラッシュ
+	MODOPTIONS_COREMODULE_PSSCREENFLASH_DESC=				画面の白いフラッシュ（例: 「核」のスイッチ）
+	MODOPTIONS_COREMODULE_PSTEXTHIGHLIGHT=					テキストのハイライト
+	MODOPTIONS_COREMODULE_PSTEXTHIGHLIGHT_DESC=				テキスト選択時の色効果
+	
+
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES=				デフォルトのミラーサーバー
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_GB=				無効
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_JADE=			ドイツ
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_WEGFAN=			中国
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_OTOBOT=			北米
+
+	MODOPTIONS_COREMODULE_USEAPIMIRROR= 				    ミラーサーバーからデータベースをダウンロードする
+	MODOPTIONS_COREMODULE_USEAPIMIRROR_DESC=			    「データベースのダウンロードに失敗しました」というエラーが出たときに、有効にしてみてください
+
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						MODをロードするのに失敗しました。
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						詳細はlog.txtを確認してください。
 	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND= 				{0}が見つかりませんでした
 	MODOPTIONS_COREMODULE_NOTLOADED_ASMLOADERROR=			MODアセンブリをロードできませんでした
 	MODOPTIONS_COREMODULE_YAMLERRORS= 						everest.yamlをロードできませんでした。
+
+	MODOPTIONS_COREMODULE_SEARCHBOX_PLACEHOLDER=			「Tab」または「Enter」で、次にマッチするまでスクロールします
 
 	MODOPTIONS_VANILLATRISTATE_NEVER=						OFF
 	MODOPTIONS_VANILLATRISTATE_EVEREST=						EVERESTのみ
@@ -161,6 +190,8 @@
 
 	LEVELSET_CELESTE= 		Celeste
 	LEVELSET_= 				未分類
+
+	MISSING_VANILLA_DATA= バニラのデータが見つからないよ :(
 
 # Updater
 	UPDATER_TITLE= 					Everestのアップデート
@@ -264,6 +295,7 @@
 	DEPENDENCYDOWNLOADER_UPDATING=					{3}に{0}のアップデート({1} -> {2})をインストールしています…
 	DEPENDENCYDOWNLOADER_INSTALLING=				{2}に{0} v.{1}をインストールしています…
 	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			エラー： {0}のインストールに失敗しました。詳しくはlog.txtを確認してください。
+	DEPENDENCYDOWNLOADER_HOTLOAD_FAILED=			注意： {0}のホットロードに失敗しました。Celesteの再起動が必要です。
 	DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST=			{0}をブラックリストから除外しています…
 	DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED=		ブラックリストからの除外に失敗しました。詳しくはlog.txtを確認してください。
 	DEPENDENCYDOWNLOADER_LOADING_MOD=				{1}から{0}をロードしています…

@@ -9,14 +9,18 @@ namespace Celeste.Mod.Backdrops {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public class CustomBackdropAttribute : Attribute {
         /// <summary>
-        /// A list of unique identifiers for this Backdrop.
+        /// A list of unique identifiers for this Backdrop.<br/>
+        /// Follows the pattern "ID [= LoadMethodName]".
         /// </summary>
         public string[] IDs { get; }
 
         /// <summary>
         /// Marks this backdrop as a Custom <see cref="Backdrop"/>.
         /// </summary>
-        /// <param name="ids">A list of unique identifiers for this Backdrop.</param>
+        /// <param name="ids">
+        /// A list of unique identifiers for this Backdrop.<br/>
+        /// Follows the pattern "ID [= LoadMethodName]".
+        /// </param>
         public CustomBackdropAttribute(params string[] ids) {
             IDs = ids;
         }

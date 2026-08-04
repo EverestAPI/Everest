@@ -163,10 +163,17 @@ namespace Celeste.Mod.Meta {
                 area.ColorGrade = ColorGrade;
 
             if (!string.IsNullOrEmpty(Wipe)) {
-                Type type = Assembly.GetEntryAssembly().GetType(Wipe);
-                ConstructorInfo ctor = type?.GetConstructor(new Type[] { typeof(Scene), typeof(bool), typeof(Action) });
-                if (type != null && ctor != null) {
-                    area.Wipe = (scene, wipeIn, onComplete) => ctor.Invoke(new object[] { scene, wipeIn, onComplete });
+                string wipeStr = Wipe;
+                if (Everest.Events.MapMeta.ParseWipe(wipeStr) is { } wipeLoader)
+                    area.Wipe = wipeLoader;
+                else if (patch_AreaData.WipeLoaders.TryGetValue(wipeStr, out wipeLoader) && wipeLoader is not null)
+                    area.Wipe = wipeLoader;
+                else {
+                    Type type = Assembly.GetEntryAssembly().GetType(wipeStr);
+                    ConstructorInfo ctor = type?.GetConstructor(new Type[] { typeof(Scene), typeof(bool), typeof(Action) });
+                    if (type != null && ctor != null) {
+                        area.Wipe = (scene, wipeIn, onComplete) => ctor.Invoke(new object[] { scene, wipeIn, onComplete });
+                    }
                 }
             }
 
@@ -336,6 +343,7 @@ namespace Celeste.Mod.Meta {
         public bool? HeartIsEnd { get; set; }
         public bool? SeekerSlowdown { get; set; }
         public bool? TheoInBubble { get; set; }
+        public bool? CoreModeIceTileOverlay { get; set; }
 
         public patch_ModeProperties Convert()
             => new patch_ModeProperties() {
@@ -356,6 +364,7 @@ namespace Celeste.Mod.Meta {
             meta.AttrIfBool("HeartIsEnd", v => HeartIsEnd = v);
             meta.AttrIfBool("SeekerSlowdown", v => SeekerSlowdown = v);
             meta.AttrIfBool("TheoInBubble", v => TheoInBubble = v);
+            meta.AttrIfBool("CoreModeIceTileOverlay", v => CoreModeIceTileOverlay = v);
 
             BinaryPacker.Element child;
 
@@ -556,5 +565,32 @@ namespace Celeste.Mod.Meta {
 
     public class MapMetaPostcard {
         public string Texture { get; set; }
+    }
+}
+
+namespace Celeste.Mod {
+    public static partial class Everest {
+        public static partial class Events {
+            public static class MapMeta {
+
+                public delegate Action<Scene, bool, Action> ParseWipeHandler(string wipe);
+
+                /// <summary>
+                /// Called during <see cref="Meta.MapMeta.ApplyTo"/>.
+                /// </summary>
+                public static event ParseWipeHandler OnParseWipe;
+
+                internal static Action<Scene, bool, Action> ParseWipe(string wipe) {
+                    if (OnParseWipe is null)
+                        return null;
+
+                    foreach (ParseWipeHandler handler in OnParseWipe.GetInvocationList())
+                        if (handler(wipe) is { } wipeLoader)
+                            return wipeLoader;
+
+                    return null;
+                }
+            }
+        }
     }
 }

@@ -474,7 +474,7 @@ namespace Celeste.Mod.UI {
                         LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_VERIFYING_CHECKSUM"));
                         ModUpdaterHelper.VerifyChecksum(mod, downloadDestination);
                         break; // out of the loop
-                    } catch (Exception e) when (e is WebException or TimeoutException or IOException) {
+                    } catch (Exception e) {
                         downloadException = e;
                         Logger.Warn("OuiDependencyDownloader", $"Download failed, trying another mirror");
                         Logger.LogDetailed(e);
