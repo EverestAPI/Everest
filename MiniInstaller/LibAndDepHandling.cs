@@ -89,7 +89,14 @@ public static class LibAndDepHandling {
 
                 if (symlinkPath != null && symlinkPath != dst) {
                     File.Delete(symlinkPath);
-                    File.CreateSymbolicLink(symlinkPath, Path.GetRelativePath(Path.GetDirectoryName(symlinkPath)!, dst));
+
+                    if (Symlinks.Supported)
+                        File.CreateSymbolicLink(symlinkPath, Path.GetRelativePath(Path.GetDirectoryName(symlinkPath)!, dst));
+                    else if (Symlinks.NeedElevation)
+                        // we never had to do this for Windows
+                        throw new NotImplementedException();
+                    else
+                        File.Copy(dst, symlinkPath);
                 }
             }
 

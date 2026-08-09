@@ -12,6 +12,11 @@ public static class Globals {
     public static readonly ReadOnlyCollection<string> EverestSystemLibs = Array.AsReadOnly(new string[] {
         "System.Drawing.Common.dll", "System.Security.Permissions.dll", "System.Windows.Extensions.dll"
     });
+
+    public const string LibWinX64 = "lib64-win-x64";
+    public const string LibWinX86 = "lib64-win-x86";
+    public const string LibLinux = "lib64-linux";
+    public const string LibMacOS = "lib64-osx";
     
     public static string PathUpdate;
     public static string PathGame;

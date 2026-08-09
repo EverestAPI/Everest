@@ -28,8 +28,10 @@ namespace MiniInstaller {
                 // setting up paths failed (Celeste.exe was not found).
                 return false;
             }
-            
+
+            Interop.SetupImportResolver();
             Globals.DetermineInstallPlatform();
+            Symlinks.DetermineSymlinkSupport();
 
             // .NET hates it when strong-named dependencies get updated.
             AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
@@ -54,7 +56,7 @@ namespace MiniInstaller {
             if (!Init()) return 1;
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                if (WindowsElevationRequest.HandlePostElevationBackup(args)) return 0;
+                if (Symlinks.HandlePostElevationBackup(args)) return 0;
             }
 
             Console.WriteLine("Everest MiniInstaller");
@@ -64,7 +66,7 @@ namespace MiniInstaller {
                 InGameUpdaterHelper.WaitForGameExit();
                 InGameUpdaterHelper.EnsureGameIsWriteable();
 
-                BackUp.Backup();
+                if (!BackUp.Backup()) return 1;
 
                 InGameUpdaterHelper.MoveFilesFromUpdate();
 
