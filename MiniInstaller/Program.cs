@@ -53,6 +53,12 @@ namespace MiniInstaller {
         }
 
         public static int StandardMode(string[] args) {
+            if (args.Contains("--no-symlinks")) {
+                // fast mode doesn't deal with symlinks right now, so this is fine
+                Symlinks.Supported = false;
+                Symlinks.UserConfirmedInstallationWithoutSymlinks = true;
+            }
+
             if (!Init()) return 1;
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {

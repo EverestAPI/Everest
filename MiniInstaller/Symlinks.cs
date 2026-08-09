@@ -15,6 +15,10 @@ public static class Symlinks {
 
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     public static void DetermineSymlinkSupport() {
+        if (UserConfirmedInstallationWithoutSymlinks)
+            // --no-symlinks was passed in cmdline args
+            return;
+
         string symlinkPath = Path.Join(Globals.PathGame, ".symlink-probe");
         try {
             File.CreateSymbolicLink(symlinkPath, Globals.PathCelesteExe);
