@@ -66,7 +66,6 @@ public static class Symlinks {
         string targetFileSystem = new DriveInfo(Globals.PathOrig).DriveFormat;
 
         // can't use RuntimeInformation as people may be running under wine
-        // does macOS even support ext4?
         string suggestedFileSystem = Globals.Platform switch {
             Globals.InstallPlatform.Windows => "an NTFS",
             Globals.InstallPlatform.Linux => "an ext4",
@@ -190,7 +189,7 @@ public static class Symlinks {
                     }
                 } catch (Win32Exception e) {
                     const int ERROR_CANCELLED = unchecked((int) 0x800704c7);
-                    if (e.NativeErrorCode != 1223 && e.HResult != ERROR_CANCELLED) // ERROR_CANCELLED
+                    if (e.NativeErrorCode != 1223 && e.HResult != ERROR_CANCELLED)
                         throw;
 
                     Logger.LogLine("User cancelled elevation request");
