@@ -90,12 +90,12 @@ public static class LibAndDepHandling {
                 if (symlinkPath != null && symlinkPath != dst) {
                     File.Delete(symlinkPath);
 
-                    if (Symlinks.Supported)
+                    if (Symlinks.Supported && !Symlinks.NeedElevation)
                         File.CreateSymbolicLink(symlinkPath, Path.GetRelativePath(Path.GetDirectoryName(symlinkPath)!, dst));
-                    else if (Symlinks.NeedElevation)
-                        // we never had to do this for Windows
-                        throw new NotImplementedException();
                     else
+                        // libraries are usually small enough so that copying is a non-issue.
+                        // besides, if we're here, it's usually an edge case; windows never had to do this,
+                        // and people usually don't use FAT-based filesystems on Unix machines
                         File.Copy(dst, symlinkPath);
                 }
             }
