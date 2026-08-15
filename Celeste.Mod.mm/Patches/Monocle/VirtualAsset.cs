@@ -2,20 +2,49 @@
 using System;
 
 namespace Monocle {
-    // This is only required as VirtualAsset's members are internal or even private, not protected.
-    // Noel or Matt, if you see this, please change the visibility to protected. Thanks!
-    [MonoModIgnore]
     abstract class patch_VirtualAsset : VirtualAsset {
 
 #pragma warning disable CS0108
+        [MonoModIgnore]
         public string Name { get; internal set; }
-        public int Width { get; internal set; }
-        public int Height { get; internal set; }
-# pragma warning restore CS0108
+        
+        protected int _width;
+        public int Width {
+            [MonoModReplace]
+            get => _width;
+            [MonoModReplace]
+            internal set {
+                if (_width != value) {
+                    _width = value;
+                    HandleSizeChange();
+                }
+            }
+        }
 
+        protected int _height;
+        public int Height {
+            [MonoModReplace]
+            get => _height;
+            [MonoModReplace]
+            internal set {
+                if (_height != value) {
+                    _height = value;
+                    HandleSizeChange();
+                }
+            }
+        }
+
+        protected virtual void HandleSizeChange() {
+        }
+        
+# pragma warning restore CS0108
+        // This is only required as VirtualAsset's members are internal or even private, not protected.
+        // Noel or Maddy, if you see this, please change the visibility to protected. Thanks!
+        [MonoModIgnore]
         internal virtual void Unload() {
         }
 
+        [MonoModIgnore]
         internal virtual void Reload() {
         }
 
