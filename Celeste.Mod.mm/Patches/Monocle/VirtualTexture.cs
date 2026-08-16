@@ -394,6 +394,8 @@ namespace Monocle {
             ModAsset,
             SizeDefined
         }
+        
+        private bool Preload(bool force = false) => false;
     }
 
 #nullable disable
