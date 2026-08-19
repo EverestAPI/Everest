@@ -252,13 +252,13 @@ namespace Celeste.Mod.Helpers {
         }
 
         public static IEnumerable GetAllMirrorUrls(string url) {
-            return new EnumeratorEnumerator { Enumerator = getAllMirrorUrls(url) };
+            return getAllMirrorUrls(url);
         }
 
         // Make sure to keep this in sync with
         // - https://github.com/EverestAPI/Olympus/blob/main/sharp/CmdUpdateAllMods.cs :: getAllMirrorUrls
         // - https://github.com/maddie480/RandomStuffWebsite/blob/main/front-vue/src/components/ModListItem.vue :: getMirrorLink
-        private static IEnumerator<string> getAllMirrorUrls(string url) {
+        private static IEnumerable<string> getAllMirrorUrls(string url) {
             uint gbid = 0;
             if ((url.StartsWith("http://gamebanana.com/dl/") && !uint.TryParse(url.Substring("http://gamebanana.com/dl/".Length), out gbid)) ||
                 (url.StartsWith("https://gamebanana.com/dl/") && !uint.TryParse(url.Substring("https://gamebanana.com/dl/".Length), out gbid)) ||
@@ -290,12 +290,6 @@ namespace Celeste.Mod.Helpers {
                         break;
                 }
             }
-        }
-
-        // Why do you need to tell C# how to get an enumerator from an enumerator
-        private class EnumeratorEnumerator : IEnumerable {
-            public IEnumerator Enumerator { get; set; }
-            public IEnumerator GetEnumerator() => Enumerator;
         }
     }
 }
