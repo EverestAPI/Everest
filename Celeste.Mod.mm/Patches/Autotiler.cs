@@ -606,9 +606,9 @@ namespace MonoMod {
             TypeDefinition autotiler = context.Method.DeclaringType;
 
             // char Celeste.Autotiler/TerrainType::ID
-            FieldReference f_terrainTypeID = autotiler.NestedTypes.First(t => t.Name == "TerrainType").FindField("ID");
+            FieldReference f_TerrainType_ID = autotiler.NestedTypes.First(t => t.Name == "TerrainType").FindField("ID");
             // char Celeste.Autotiler/Tiles::ID
-            FieldReference f_tilesID = autotiler.NestedTypes.First(t => t.Name == "Tiles").FindField("ID");
+            FieldReference f_Tiles_ID = autotiler.NestedTypes.First(t => t.Name == "Tiles").FindField("ID");
 
             cursor.GotoNext(MoveType.After, instr => instr.MatchStloc(5));
             cursor.GotoNext(MoveType.After, instr => instr.MatchStloc(4));
@@ -617,8 +617,8 @@ namespace MonoMod {
 
             cursor.EmitLdloc(4); // tiles (Celeste.Autotiler/Tiles)
             cursor.EmitLdarg1(); // data (Celeste.Autotiler/TerrainType)
-            cursor.EmitLdfld(f_terrainTypeID); // data.ID (char)
-            cursor.EmitStfld(f_tilesID);
+            cursor.EmitLdfld(f_TerrainType_ID); // data.ID (char)
+            cursor.EmitStfld(f_Tiles_ID);
         }
     }
 }
