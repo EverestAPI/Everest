@@ -537,11 +537,17 @@ namespace MonoMod {
         public static void PatchAutotilerGenerate(ILContext context, CustomAttribute attrib) {
             ILCursor cursor = new(context);
 
+            TypeDefinition autotiler = context.Method.DeclaringType;
+
             int loc_x = 0;
             int loc_y = 0;
             int loc_tiles = 0;
-            FieldReference f_tileGridTiles = null;
-            FieldReference f_tilesTextures = null;
+
+            // Monocle.VirtualMap`1<char> Monocle.TileGrid::TileIds
+            FieldDefinition f_TileGrid_TileIds = context.Module.GetType("Monocle.TileGrid").FindField("TileIds");
+
+            // char Celeste.Autotiler/Tiles::ID
+            FieldDefinition f_Tiles_ID = autotiler.NestedTypes.First(t => t.Name == "Tiles").FindField("ID");
 
             // cecil my beloved
             // (i wasted like 3 hours figuring this out, only to find out i was like 1 step away from getting it right)
@@ -560,10 +566,10 @@ namespace MonoMod {
             m_VirtualMap_Char_set_Item.Parameters.Add(new ParameterDefinition(t_VirtualMap.GenericParameters[0]));
             m_VirtualMap_Char_set_Item.HasThis = true;
 
-            // tileGrid.Tiles[{x} - startX, {y} - startY] = ...({tiles}.Textures);
+            // tileGrid.Tiles[{x} - startX, {y} - startY] = Calc.Random.Choose({tiles}.Textures);
             while (cursor.TryGotoNext(
                 instr => instr.MatchLdloc0(),
-                instr => instr.MatchLdfld(out f_tileGridTiles),
+                instr => instr.MatchLdfld("Monocle.TileGrid", "Tiles"),
                 instr => instr.MatchLdloc(out loc_x),
                 instr => instr.MatchLdarg2(),
                 instr => instr.MatchSub(),
@@ -572,7 +578,7 @@ namespace MonoMod {
                 instr => instr.MatchSub(),
                 instr => instr.MatchLdsfld("Monocle.Calc", "Random"),
                 instr => instr.MatchLdloc(out loc_tiles),
-                instr => instr.MatchLdfld(out f_tilesTextures),
+                instr => instr.MatchLdfld("Celeste.Autotiler.Tiles", "Textures"),
                 instr => instr.MatchCall("Monocle.Calc", "Choose"),
                 instr => instr.MatchCallvirt("Monocle.VirtualMap`1<Monocle.MTexture>", "set_Item")))
             {
@@ -580,7 +586,7 @@ namespace MonoMod {
 
                 // tileGrid.TileIds
                 cursor.EmitLdloc0();
-                cursor.EmitLdfld(f_tileGridTiles.DeclaringType.Resolve().FindField("TileIds"));
+                cursor.EmitLdfld(f_TileGrid_TileIds);
                 // x - startX
                 cursor.EmitLdloc(loc_x);
                 cursor.EmitLdarg2();
@@ -591,7 +597,7 @@ namespace MonoMod {
                 cursor.EmitSub();
                 // tiles.ID;
                 cursor.EmitLdloc(loc_tiles);
-                cursor.EmitLdfld(f_tilesTextures.DeclaringType.Resolve().FindField("ID"));
+                cursor.EmitLdfld(f_Tiles_ID);
                 // [,] = ...
                 cursor.EmitCallvirt(m_VirtualMap_Char_set_Item);
 
