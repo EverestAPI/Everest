@@ -3,6 +3,7 @@
 #pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -186,7 +187,7 @@ namespace Celeste {
                     OuiMapList list = Overworld.Goto<OuiMapList>();
                     list.OuiIcons = icons;
                     return;
-                } else if (Input.QuickRestart.Pressed) {
+                } else if (CoreModule.Settings.MenuSearch.Pressed) {
                     Overworld.Maddy.Hide(true);
                     Audio.Play(SFX.ui_main_button_select);
                     Audio.Play(SFX.ui_main_whoosh_large_in);
@@ -275,7 +276,7 @@ namespace Celeste {
                     pos.Y -= 128f;
                 }
                 GFX.Gui["menu/mapsearch"].DrawCentered(pos, Color.White * Ease.CubeOut(searchEase));
-                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(pos, Vector2.Zero, Color.White * Ease.CubeOut(searchEase));
+                Input.GuiKey(Input.FirstKey(CoreModule.Settings.MenuSearch.Button)).Draw(pos, Vector2.Zero, Color.White * Ease.CubeOut(searchEase));
             }
 
             if (levelsetEase > 0f) {

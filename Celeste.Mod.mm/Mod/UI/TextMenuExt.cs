@@ -1820,7 +1820,7 @@ namespace Celeste {
                 float scaleFactor = Math.Min(spaceNearMenu / (preferredRenderLocation.X + searchIcon.Width / 2), 1);
                 Vector2 searchIconLocation = new(preferredRenderLocation.X * scaleFactor, preferredRenderLocation.Y);
                 searchIcon.DrawCentered(searchIconLocation, Color.White, scaleFactor);
-                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White, scaleFactor);
+                Input.GuiKey(Input.FirstKey(CoreModule.Settings.MenuSearch.Button)).Draw(searchIconLocation, Vector2.Zero, Color.White, scaleFactor);
             }
         }
     }
