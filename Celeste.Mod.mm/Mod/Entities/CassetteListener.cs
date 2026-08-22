@@ -143,8 +143,8 @@ namespace Celeste.Mod.Entities {
                 level.CassetteBlockTempo = Tempo;
             }
 
-            // duplicates functionality of Level.ShouldCreateCassetteManager
-            if (!(level.Session.Area.Mode != AreaMode.Normal || !level.Session.Cassette)) {
+            // if we shouldn't create a cassette manager, don't
+            if (!((patch_Level) level)._ShouldCreateCassetteManager) {
                 return;
             }
 
