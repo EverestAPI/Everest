@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
+
+  <Project Path="Celeste.Mod.mm/Celeste.Mod.mm.csproj" />
+  <Project Path="Celeste.Mod.HookGen/Celeste.Mod.HookGen.csproj" />
+  <Project Path="EverestSplash/EverestSplash.csproj" />
+  <Project Path="MiniInstaller/MiniInstaller.csproj" />
+  <Project Path="NETCoreifier/NETCoreifier.csproj" />
+
+  <Project Path="DiscordGameSDK/DiscordGameSDK.csproj" />
+</Solution>

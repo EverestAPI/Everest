@@ -7,7 +7,9 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  solution: '**/*.sln'
+  solution: |
+    **/*.sln
+    **/*.slnx
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   runtimeVersion: 'net8.0' # Must match TargetFramework in the csprojs
