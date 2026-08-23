@@ -322,22 +322,6 @@ namespace Celeste {
         private extern void StarFlyReturnToNormalHitbox();
 
         [MonoModIgnore]
-        [PatchPlayerApproachMaxMove]
-        public new extern IEnumerator DummyWalkTo(float x, bool walkBackwards = false, float speedMultiplier = 1f, bool keepWalkingIntoWalls = false);
-
-        [MonoModIgnore]
-        [PatchPlayerApproachMaxMove]
-        public new extern IEnumerator DummyWalkToExact(int x, bool walkBackwards = false, float speedMultiplier = 1f, bool cancelOnFall = false);
-
-        [MonoModIgnore]
-        [PatchPlayerApproachMaxMove]
-        private extern int DummyUpdate();
-        
-        [MonoModIgnore]
-        [PatchPlayerApproachMaxMove]
-        private extern int NormalUpdate();
-
-        [MonoModIgnore]
         [ForceNoInlining]
         private extern ParticleType DustParticleFromSurfaceIndex(int index);
 
@@ -345,7 +329,6 @@ namespace Celeste {
         [ForceNoInlining]
         private new extern void RefillStamina();
     }
-
     public static class PlayerExt {
 
         /// <inheritdoc cref="patch_Player.GetCurrentTrailColor"/>
@@ -466,12 +449,6 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerExplodeLaunch))]
     class PatchPlayerExplodeLaunchAttribute : Attribute { }
-
-    /// <summary>
-    /// Patches the method to fix float jank when calculationg Calc.ApproachTo maxMove values
-    /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerApproachMaxMove))]
-    class PatchPlayerApproachMaxMoveAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -647,36 +624,5 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Call, m_SetPlayerWasExplodeLaunchedThisFrame);
         }
 
-        public static void PatchPlayerApproachMaxMove(ILContext context, CustomAttribute attrib) {
-            ILCursor cursor = new ILCursor(context);
-            while (cursor.TryGotoNext(MoveType.After, i => i.MatchCall("Monocle.Calc", "Approach"))) {
-                // Previous instructions must be: call Monocle.Engine::get_DeltaTime; mul
-                if (!cursor.Prev.Previous.MatchMul() || !cursor.Prev.Previous.Previous.MatchCall("Monocle.Engine", "get_DeltaTime"))
-                    throw new Exception("Unexpected instructions before Calc.Approach");
-
-                // Patch calculation of DeltaTime multiplier
-                int stackDepth = 1;
-                for (int instrIdx = cursor.Index - 4; stackDepth > 0; instrIdx--) {
-                    Instruction instr = context.Instrs[instrIdx];
-
-                    if (instr.MatchAdd() || instr.MatchSub() || instr.MatchMul() || instr.MatchDiv() || instr.MatchRem()) {
-                        // Operation instructions remain unaffected
-                        stackDepth++;
-                    } else if (instr.MatchLdcR4(out float v)) {
-                        // ldc.r4 <constant> -> ...; conv.r8
-                        context.Instrs.Insert(instrIdx+1, Instruction.Create(OpCodes.Conv_R8));
-                        stackDepth--;
-                    } else if (instr.MatchLdloc(out int idx)) {
-                        // ldloc <variable> -> ...; conv.r8
-                        if (context.Body.Variables[idx].VariableType.MetadataType != MetadataType.Single)
-                            throw new Exception($"Unexpected non-float variable load: {instr}");
-
-                        context.Instrs.Insert(instrIdx+1, Instruction.Create(OpCodes.Conv_R8));
-                        stackDepth--;
-                    } else
-                        throw new Exception($"Unexpected instruction in DeltaTime multiplier calculation: {instr}");
-                }
-            }
-        }
     }
 }
