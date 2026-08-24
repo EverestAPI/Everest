@@ -1,4 +1,5 @@
-﻿using Celeste.Mod.Registry;
+﻿using Celeste;
+using Celeste.Mod.Registry;
 using MonoMod;
 using System;
 using System.Collections.Generic;
@@ -23,8 +24,7 @@ namespace Monocle {
         public new bool OnInterval(float interval, float offset) {
             return Math.Floor(((double) TimeActive - offset - Engine.DeltaTime) / interval) < Math.Floor(((double) TimeActive - offset) / interval);
         }
-
-                
+        
         /// <summary>
         /// Finds all entities created from an EntityData with the specified SID, using the Tracker if possible.
         /// </summary>
@@ -47,6 +47,19 @@ namespace Monocle {
         [MethodImpl(MethodImplOptions.NoInlining)]
         public new virtual void AfterUpdate() {
             Interlocked.Exchange(ref OnEndOfFrame, null)?.Invoke();
+        }
+
+        /// <summary>
+        /// Called during freeze frames instead of the normal <see cref="Scene.Update"/>.
+        /// </summary>
+        public virtual void FreezeFrameUpdate() {
+            if (!Paused) {
+                foreach (patch_Entity entity in this[TagsExt.FreezeFrameUpdate]) {
+                    if (entity.Active) {
+                        entity.Update();
+                    }
+                }
+            }
         }
     }
 }

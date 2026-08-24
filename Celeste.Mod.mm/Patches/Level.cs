@@ -106,6 +106,58 @@ namespace Celeste {
         [PatchLevelUpdate] // ... except for manually manipulating the method via MonoModRules
         public extern new void Update();
 
+        [MonoModIgnore] // don't put this in `Level` when we're done
+        internal static extern void base_FreezeFrameUpdate(); // dummy method, will be replaced with the actual `base.FreezeFrameUpdate` call in the IL patch
+        [PatchLevelFreezeFrameUpdate] // add the `virtual` flag to this method so it overrides the one in `patch_Scene` properly and calls `base.FreezeFrameUpdate`
+        public void FreezeFrameUpdate() {
+            Everest.Events.Level.BeforeFreezeFrameUpdate(this);
+
+            // same logic as in `Level.Update` so entities with `TagsExt.FreezeFrameUpdate` and other "special update tags" are handled correctly
+            if (FrozenOrPaused) {
+                bool disabled = MInput.Disabled;
+                MInput.Disabled = false;
+
+                if (!Paused) {
+                    foreach (Entity entity in base[Tags.FrozenUpdate]) {
+                        if (entity.Active && entity.TagCheck(TagsExt.FreezeFrameUpdate)) {
+                            entity.Update();
+                        }
+                    }
+                }
+                foreach (Entity entity in base[Tags.PauseUpdate]) {
+                    if (entity.Active && entity.TagCheck(TagsExt.FreezeFrameUpdate)) {
+                        entity.Update();
+                    }
+                }
+
+                MInput.Disabled = disabled;
+            } else if (!Transitioning) {
+                if (RetryPlayerCorpse == null) {
+                    base_FreezeFrameUpdate();
+                } else {
+                    foreach (Entity entity in base[Tags.PauseUpdate]) {
+                        if (entity.Active && entity.TagCheck(TagsExt.FreezeFrameUpdate)) {
+                            entity.Update();
+                        }
+                    }
+                }
+            } else {
+                foreach (Entity entity in base[Tags.TransitionUpdate]) {
+                    if (entity.TagCheck(TagsExt.FreezeFrameUpdate)) {
+                        entity.Update();
+                    }
+                }
+            }
+
+            foreach (PostUpdateHook component in Tracker.GetComponents<PostUpdateHook>()) {
+                if (component.Entity.Active && component.Entity.TagCheck(TagsExt.FreezeFrameUpdate)) {
+                    component.OnPostUpdate();
+                }
+            }
+
+            Everest.Events.Level.AfterFreezeFrameUpdate(this);
+        }
+
         /// <summary>
         /// Flash the screen a solid color. Respects the user's advanced photosensitivity settings.
         /// </summary>
@@ -797,6 +849,20 @@ namespace Celeste.Mod {
                 public static event Action<_Level> OnAfterUpdate;
                 internal static void AfterUpdate(_Level level)
                     => OnAfterUpdate?.Invoke(level);
+                
+                /// <summary>
+                /// Called at the very beginning of <see cref="patch_Level.FreezeFrameUpdate"/>.
+                /// </summary>
+                public static event Action<_Level> OnBeforeFreezeFrameUpdate;
+                internal static void BeforeFreezeFrameUpdate(_Level level)
+                    => OnBeforeFreezeFrameUpdate?.Invoke(level);
+                
+                /// <summary>
+                /// Called at the very end of <see cref="patch_Level.FreezeFrameUpdate"/>.
+                /// </summary>
+                public static event Action<_Level> OnAfterFreezeFrameUpdate;
+                internal static void AfterFreezeFrameUpdate(_Level level)
+                    => OnAfterFreezeFrameUpdate?.Invoke(level);
             }
         }
     }
@@ -820,6 +886,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelUpdate))]
     class PatchLevelUpdateAttribute : Attribute { }
+    
+    /// <summary>
+    /// Patch our <see cref="Celeste.patch_Level.FreezeFrameUpdate"/> to be marked as <c>virtual</c> so it overrides the base method, and to call the base method instead of the dummy.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelFreezeFrameUpdate))]
+    class PatchLevelFreezeFrameUpdateAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level rendering method instead of reimplementing it in Everest.
@@ -1163,6 +1235,22 @@ namespace MonoMod {
                 cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_Everest_Events_Level_AfterUpdate);
                 cursor.Index++;
             }
+        }
+
+        public static void PatchLevelFreezeFrameUpdate(ILContext context, CustomAttribute attrib) {
+            // mark the method as `virtual` so it registers as an override
+            context.Method.IsVirtual = true;
+            
+            TypeDefinition t_Scene = context.Method.DeclaringType.BaseType.Resolve();
+            MethodReference m_Scene_FreezeFrameUpdate = t_Scene.FindMethod("FreezeFrameUpdate");
+
+            ILCursor cursor = new ILCursor(context);
+            
+            // replace the dummy method with the actual call to `base.FreezeFrameUpdate`
+            cursor.GotoNext(MoveType.Before, instr => instr.MatchCall("Celeste.Level", "base_FreezeFrameUpdate"));
+            cursor.Remove();
+            cursor.EmitLdarg0();
+            cursor.EmitCall(m_Scene_FreezeFrameUpdate);
         }
 
         public static void PatchLevelRender(ILContext context, CustomAttribute attrib) {
