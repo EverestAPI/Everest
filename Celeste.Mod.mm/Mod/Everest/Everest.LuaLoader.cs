@@ -162,6 +162,10 @@ namespace Celeste.Mod {
                 }
 
                 foreach (Type type in asm.GetTypesSafe()) {
+                    PrecacheType(type);
+                }
+
+                static CachedType PrecacheType(Type type) {
                     // Non-public type instances can still be passed / returned.
                     /*
                     if (!type.IsPublic)
@@ -169,6 +173,26 @@ namespace Celeste.Mod {
                     */
 
                     _Preloaded.Add(type.FullName);
+
+                    if (type.IsNested) {
+                        if (!type.IsNestedPublic)
+                            return null;
+
+                        if (!AllTypes.TryGetValue(type.FullName, out CachedType cntype)) {
+                            Type parent = type.DeclaringType;
+                            if (!AllTypes.TryGetValue(parent.FullName, out CachedType cparent)) {
+                                cparent = PrecacheType(parent);
+                                if (cparent is null) // nested non public
+                                    return null;
+                            }
+
+                            string part = type.Name;
+                            cntype = new CachedType(cparent, type);
+                            cparent.NestedTypeMap[part] = cntype;
+                            AllTypes[cntype.FullName] = cntype;
+                        }
+                        return cntype;
+                    }
 
                     if (!AllNamespaces.TryGetValue(type.Namespace ?? "", out CachedNamespace cns)) {
                         string ns = type.Namespace;
@@ -192,6 +216,7 @@ namespace Celeste.Mod {
                         cns.TypeMap[part] = ctype;
                         AllTypes[ctype.FullName] = ctype;
                     }
+                    return ctype;
                 }
             }
 

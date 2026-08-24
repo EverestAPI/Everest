@@ -59,8 +59,6 @@ namespace Celeste.Mod {
                     Name = type.Name;
                     Type = type;
                     FullName = type.FullName;
-
-                    _Crawl();
                 }
 
                 public CachedType(CachedNamespace ns, Type type)
@@ -71,18 +69,6 @@ namespace Celeste.Mod {
                 public CachedType(CachedType parent, Type type)
                     : this(type) {
                     Parent = parent;
-                }
-
-                private void _Crawl() {
-                    foreach (Type type in Type.GetNestedTypes()) {
-                        if (!type.IsNestedPublic)
-                            continue;
-
-                        string part = type.Name;
-                        CachedType ctype = new CachedType(this, type);
-                        NestedTypeMap[part] = ctype;
-                        AllTypes[ctype.FullName] = ctype;
-                    }
                 }
 
                 public LuaTable GetMembers(string key) {
