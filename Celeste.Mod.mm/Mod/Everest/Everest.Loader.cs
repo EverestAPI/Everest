@@ -797,6 +797,53 @@ namespace Celeste.Mod {
                         }
                     }
 
+                    // Search for all Screen Wipes marked with the CustomWipeAttribute.
+                    foreach (CustomWipeAttribute attrib in type.GetCustomAttributes<CustomWipeAttribute>()) {
+                        foreach (string idFull in attrib.IDs) {
+                            string id;
+                            string genName;
+                            string[] split = idFull.Split('=');
+
+                            if (split.Length == 1) {
+                                id = split[0];
+                                genName = "Load";
+                            } else if (split.Length == 2) {
+                                id = split[0];
+                                genName = split[1];
+                            } else {
+                                Logger.Warn("core", $"Invalid number of custom wipe ID elements: {idFull} ({type.FullName})");
+                                continue;
+                            }
+
+                            id = id.Trim();
+                            genName = genName.Trim();
+
+                            Action<Scene, bool, Action> loader = null;
+
+                            ConstructorInfo ctor;
+                            MethodInfo gen;
+
+                            gen = type.GetMethod(genName, new Type[] { typeof(Scene), typeof(bool), typeof(Action) });
+                            if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(ScreenWipe))) {
+                                loader = (scene, wipeIn, onComplete) => gen.Invoke(null, new object[] { scene, wipeIn, onComplete });
+                                goto RegisterWipeLoader;
+                            }
+
+                            ctor = type.GetConstructor(new Type[] { typeof(Scene), typeof(bool), typeof(Action) });
+                            if (ctor != null) {
+                                loader = (scene, wipeIn, onComplete) => ctor.Invoke(new object[] { scene, wipeIn, onComplete });
+                                goto RegisterWipeLoader;
+                            }
+
+                            RegisterWipeLoader:
+                            if (loader == null) {
+                                Logger.Warn("core", $"Found custom wipe without suitable constructor / {genName}(Scene, bool, Action): {id} ({type.FullName})");
+                                continue;
+                            }
+                            patch_AreaData.WipeLoaders[id] = loader;
+                        }
+                    }
+
                     // we already are in the overworld. Register new Ouis real quick!
                     if (Engine.Instance != null && Engine.Scene is Overworld overworld && typeof(Oui).IsAssignableFrom(type) && !type.IsAbstract) {
                         Logger.Verbose("core", $"Instantiating UI from {meta}: {type.FullName}");

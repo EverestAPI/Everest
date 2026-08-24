@@ -428,8 +428,6 @@ namespace Celeste {
 
         /// <summary>
         /// <see cref="TextMenu.Item"/> that acts as a Submenu for other Items.
-        /// <br/><br/>
-        /// Currently does not support recursive submenus
         /// </summary>
         public class SubMenu : patch_Item {
             public string Label;
@@ -507,12 +505,14 @@ namespace Celeste {
             public float MenuHeight { get; private set; }
 
             public bool Focused;
+            public bool AutoScroll;
+
+            public bool ItemsVisible;
+            public SubMenu Parent = null;
 
             private bool enterOnSelect;
             private bool entering;
             private float ease;
-
-            private bool containerAutoScroll;
 
             /// <summary>
             /// Create a new SubMenu.
@@ -558,6 +558,8 @@ namespace Celeste {
                 if (Container != null) {
                     Items.Add(item);
                     item.Container = Container;
+                    if (item is SubMenu menu)
+                        menu.Parent = this;
                     Container.Add(item.ValueWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
                     Container.Add(item.SelectWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
                     item.ValueWiggler.UseRawDeltaTime = (item.SelectWiggler.UseRawDeltaTime = true);
@@ -580,6 +582,8 @@ namespace Celeste {
                 if (Container != null) {
                     Items.Insert(index, item);
                     item.Container = Container;
+                    if (item is SubMenu menu)
+                        menu.Parent = this;
                     Container.Add(item.ValueWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
                     Container.Add(item.SelectWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
                     item.ValueWiggler.UseRawDeltaTime = (item.SelectWiggler.UseRawDeltaTime = true);
@@ -613,6 +617,8 @@ namespace Celeste {
                         return this;
                     }
                     item.Container = null;
+                    if (item is SubMenu menu) 
+                        menu.Parent = null;
                     Container.Remove(item.ValueWiggler);
                     Container.Remove(item.SelectWiggler);
                     RecalculateSize();
@@ -663,7 +669,11 @@ namespace Celeste {
                             // Avoid crash when getting Current item
                             Selection = selection;
                             Exit();
-                            Container.MoveSelection(direction, true);
+                            if (Parent is null) {
+                                Container.MoveSelection(direction, true);
+                            } else {
+                                Parent.MoveSelection(direction, true);
+                            }
                             return;
                         }
                     }
@@ -714,6 +724,8 @@ namespace Celeste {
                 }
                 foreach (TextMenu.Item item in Items) {
                     if (item.Visible) {
+                        if (item is SubMenu menu)  // The heights of the submenus may change at any time due to the ease parameter, recalculation is needed
+                            menu.RecalculateSize();
                         MenuHeight += item.Height() + Container.ItemSpacing;
                     }
                 }
@@ -722,7 +734,8 @@ namespace Celeste {
 
             /// <inheritdoc cref="TextMenu.GetYOffsetOf(TextMenu.Item)"/>
             public float GetYOffsetOf(TextMenu.Item item) {
-                float offset = Container.GetYOffsetOf(this) - Height() * 0.5f;
+                float y_offset = Parent is not null ? Parent.GetYOffsetOf(this) : Container.GetYOffsetOf(this);
+                float offset = y_offset - Height() * 0.5f;
                 if (item == null) {
                     // common case is all items in submenu are disabled when item is null
                     return offset + TitleHeight * 0.5f;
@@ -742,10 +755,17 @@ namespace Celeste {
             public void Exit() {
                 Current?.OnLeave?.Invoke();
                 Focused = false;
+                ItemsVisible = false;
                 if (!Input.MenuUp.Repeating && !Input.MenuDown.Repeating)
                     Audio.Play(SFX.ui_main_button_back);
-                Container.AutoScroll = containerAutoScroll;
-                Container.Focused = true;
+
+                if (Parent is null) {
+                    Container.AutoScroll = AutoScroll;
+                    Container.Focused = true;
+                } else {
+                    Parent.AutoScroll = AutoScroll;
+                    Parent.Focused = true;
+                }
             }
 
             public override string SearchLabel() {
@@ -758,10 +778,20 @@ namespace Celeste {
 
             public override void ConfirmPressed() {
                 if (Items.Count > 0) {
-                    Container.Focused = false;
+                    if (Parent is null)
+                        Container.Focused = false;
+                    else
+                        Parent.Focused = false;
                     Focused = true;
-                    containerAutoScroll = Container.AutoScroll;
-                    Container.AutoScroll = false;
+                    ItemsVisible = true;
+
+                    if (Parent is null) {
+                        AutoScroll = Container.AutoScroll;
+                        Container.AutoScroll = false;
+                    } else {
+                        AutoScroll = Parent.AutoScroll;
+                        Parent.AutoScroll = false;
+                    }
 
                     entering = true;
                     if (Input.MenuUp.Pressed)
@@ -800,7 +830,7 @@ namespace Celeste {
             }
 
             public override void Update() {
-                if (Focused)
+                if (ItemsVisible)
                     ease = Calc.Approach(ease, 1f, Engine.RawDeltaTime * 4f);
                 else
                     ease = Calc.Approach(ease, 0f, Engine.RawDeltaTime * 4f);
@@ -850,7 +880,7 @@ namespace Celeste {
                     }
                 }
 
-                if (Focused && containerAutoScroll) {
+                if (Focused && AutoScroll) {
                     if (Container.Height > Container.ScrollableMinSize) {
                         Container.Position.Y += (ScrollTargetY - Container.Position.Y) * (1f - (float) Math.Pow(0.01f, Engine.RawDeltaTime));
                         return;
@@ -874,7 +904,7 @@ namespace Celeste {
                 SubMenu.DrawIcon(titlePosition, Icon, iconJustify, true, (Disabled || Items.Count < 1 ? Color.DarkSlateGray : (Focused ? Container.HighlightColor : Color.White)) * alpha, 0.8f);
                 ActiveFont.DrawOutline(Label, titlePosition, justify, Vector2.One, color, 2f, strokeColor);
 
-                if (Focused && ease > 0.9f) {
+                if (ItemsVisible && ease > 0.9f) {
                     Vector2 menuPosition = new Vector2(top.X + ItemIndent, top.Y + TitleHeight + ItemSpacing);
                     RecalculateSize();
                     foreach (TextMenu.Item item in Items) {
