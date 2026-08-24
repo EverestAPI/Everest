@@ -685,7 +685,7 @@ namespace Celeste.Mod.Core {
             if (inGame) return;
 
             List<string> mirrorPreferences = new List<string> {
-                "gb,jade,otobot,wegfan,risingsunlight",
+                "gb,jade,risingsunlight,otobot,wegfan",
                 "jade,risingsunlight,otobot,wegfan,gb",
                 "wegfan,otobot,jade,risingsunlight,gb",
                 "otobot,jade,risingsunlight,wegfan,gb",
