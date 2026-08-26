@@ -449,14 +449,48 @@ How these should be structured is poorly documented, so if having nested members
             Attributes for this entity.
             </summary>
         </member>
-    </members>
+      </members>
       <members name="EntityID">
         <member name="T:Celeste.EntityID">
             <summary>
             A semi-unique id consisting of the level name and entity id (<see cref="T:System.Int32"/>).
             </summary>
         </member>
-    </members>
+        <member name="M:Celeste.EntityID.None">
+          <summary>
+            Representation of a "null" Entity ID.<br/>
+            Should not be modified directly, and instead copied to a local variable.
+          </summary>
+        </member>
+        <member name="M:Celeste.EntityID.Level">
+          <summary>
+            The name of the level in which the Entity is placed.
+          </summary>
+        </member>
+        <member name="M:Celeste.EntityID.ID">
+          <summary>
+            The numeric ID assigned to the Entity upon placement.
+          </summary>
+        </member>
+        <member name="P:Celeste.EntityID.Key">
+          <summary>
+            Combination of the level name and numeric ID as a single key in the format "level:id".
+          </summary>
+        </member>
+        <member name="M:Celeste.EntityID.#ctor(System.String,System.Int32)">
+          <summary>
+            Construct an Entity ID with the given level name and numeric ID.
+          </summary>
+        </member>
+        <member name="M:Celeste.EntityID.ToString">
+          <summary>
+            Returns the <see cref="P:Celeste.EntityID.Key"/> of this Entity ID.
+          </summary>
+        </member>
+        <member name="M:Celeste.EntityID.GetHashCode">
+          <inheritdoc/>
+        </member>
+      </members>
       
       <members name="CutsceneEntity">
         <member name="T:Celeste.CutsceneEntity">
@@ -674,7 +708,54 @@ How these should be structured is poorly documented, so if having nested members
             Lerp from right to left of the trigger.
             </summary>
         </member>
+      </members>
     </members>
+    <members name="Tags">
+      <members name="Tags">
+        <member name="T:Celeste.Tags">
+          <summary>
+            Provides <see cref="T:Monocle.BitTag"/> tags used by Entities throughout the game.
+          </summary>
+        </member>
+        <member name="M:Celeste.Tags.PauseUpdate">
+          <summary>
+            Tag used for Entities which should also update when the <see cref="T:Celeste.Level"/> is paused or frozen.
+          </summary>
+        </member>
+        <member name="M:Celeste.Tags.FrozenUpdate">
+          <summary>
+            Tag used for Entities which should also update when the <see cref="T:Celeste.Level"/> is in a frozen state.<br/>
+            This state is separate but similar to pausing, used for certain cutscenes, e.g. collecting all strawberry seeds, collecting a Heart Gem.<br/>
+            It is not to be confused with <see cref="M:Celeste.Celeste.Freeze(System.Single)"/>, which freezes the entire scene.
+          </summary>
+        </member>
+        <member name="M:Celeste.Tags.TransitionUpdate">
+          <summary>
+            Tag used for Entities which should also update during level transitions.
+          </summary>
+        </member>
+        <member name="M:Celeste.Tags.HUD">
+          <summary>
+            Tag used for Entities to be rendered at HUD level.<br/>
+            Uses a 1920 x 1080 pixel space instead of 320 x 180 as in the <see cref="T:Celeste.Level"/> scene.
+          </summary>
+        </member>
+        <member name="M:Celeste.Tags.Persistent">
+          <summary>
+            Tag used for Entities which should not be unloaded during level transitions.
+          </summary>
+        </member>
+        <member name="M:Celeste.Tags.Global">
+          <summary>
+            Tag used for Entities which should not be unloaded throughout the entire session.
+          </summary>
+        </member>
+        <member name="M:Celeste.Tags.Initialize">
+          <summary>
+            Initialises the tags. Called once in <see cref="M:Celeste.Celeste.Initialize"/>.
+          </summary>
+        </member>
+      </members>
     </members>
     <members name="Components">
       <members name="Listeners">
