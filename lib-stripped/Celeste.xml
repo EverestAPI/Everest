@@ -726,7 +726,7 @@ How these should be structured is poorly documented, so if having nested members
           <summary>
             Tag used for Entities which should also update when the <see cref="T:Celeste.Level"/> is in a frozen state.<br/>
             This state is separate but similar to pausing, used for certain cutscenes, e.g. collecting all strawberry seeds, collecting a Heart Gem.<br/>
-            It is not to be confused with <see cref="M:Celeste.Celeste.Freeze(System.Single)"/>, which freezes the entire scene.
+            Not to be confused with <see cref="M:Celeste.Celeste.Freeze(System.Single)"/>, which freezes the entire section of the engine that updates the current scene.
           </summary>
         </member>
         <member name="M:Celeste.Tags.TransitionUpdate">
@@ -737,7 +737,7 @@ How these should be structured is poorly documented, so if having nested members
         <member name="M:Celeste.Tags.HUD">
           <summary>
             Tag used for Entities to be rendered at HUD level.<br/>
-            Uses a 1920 x 1080 pixel space instead of 320 x 180 as in the <see cref="T:Celeste.Level"/> scene.
+            This makes them use a 1920 x 1080 pixel space instead of 320 x 180 as in the <see cref="T:Celeste.Level"/> scene.
           </summary>
         </member>
         <member name="M:Celeste.Tags.Persistent">
@@ -752,7 +752,12 @@ How these should be structured is poorly documented, so if having nested members
         </member>
         <member name="M:Celeste.Tags.Initialize">
           <summary>
-            Initialises the tags. Called once in <see cref="M:Celeste.Celeste.Initialize"/>.
+            Initialises the tags. Called only once in <see cref="M:Celeste.Celeste.Initialize"/>.
+          </summary>
+        </member>
+        <member name="M:Celeste.Tags.orig_Initialize">
+          <summary>
+            Vanilla method of <see cref="M:Celeste.Tags.Initialize"/>.
           </summary>
         </member>
       </members>
