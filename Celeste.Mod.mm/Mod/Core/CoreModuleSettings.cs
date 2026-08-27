@@ -284,7 +284,7 @@ namespace Celeste.Mod.Core {
         }
 
         // Keep in sync with https://github.com/EverestAPI/Olympus/blob/main/src/scenes/options.lua :: mirrorPreferences
-        public string MirrorPreferences { get; set; } = "gb,jade,otobot,wegfan";
+        public string MirrorPreferences { get; set; } = "gb,jade,risingsunlight,otobot,wegfan";
 
         [SettingSubText("MODOPTIONS_COREMODULE_USEAPIMIRROR_DESC")]
         public bool UseAPIMirror { get; set; } = false;
@@ -685,10 +685,11 @@ namespace Celeste.Mod.Core {
             if (inGame) return;
 
             List<string> mirrorPreferences = new List<string> {
-                "gb,jade,otobot,wegfan",
-                "jade,otobot,wegfan,gb",
-                "wegfan,otobot,jade,gb",
-                "otobot,jade,wegfan,gb"
+                "gb,jade,risingsunlight,otobot,wegfan",
+                "jade,risingsunlight,otobot,wegfan,gb",
+                "wegfan,otobot,jade,risingsunlight,gb",
+                "otobot,jade,risingsunlight,wegfan,gb",
+                "risingsunlight,jade,otobot,wegfan,gb"
             };
             List<string> dialogKeys = mirrorPreferences
                 .Select(setting => "MODOPTIONS_COREMODULE_MIRRORPREFERENCES_" + setting.Substring(0, setting.IndexOf(",")))
