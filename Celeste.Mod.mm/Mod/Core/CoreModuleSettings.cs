@@ -283,6 +283,8 @@ namespace Celeste.Mod.Core {
             }
         }
 
+        public bool NestedOptions { get; set; }
+
         // Keep in sync with https://github.com/EverestAPI/Olympus/blob/main/src/scenes/options.lua :: mirrorPreferences
         public string MirrorPreferences { get; set; } = "gb,jade,otobot,wegfan";
 
@@ -311,7 +313,7 @@ namespace Celeste.Mod.Core {
 
         [SettingIgnore]
         public int DebugRCPort { get; set; } = 32270;
-        
+
         [SettingIgnore]
         [EditorBrowsable(EditorBrowsableState.Never)]
         // This option is exclusively used internally; do not use it in mods. Use AllowDistort instead.
@@ -323,7 +325,7 @@ namespace Celeste.Mod.Core {
         /// </summary>
         [SettingIgnore]
         [YamlIgnore]
-        public bool AllowDistort => !Settings.Instance.DisableFlashes || PhotosensitivityDistortOverride; 
+        public bool AllowDistort => !Settings.Instance.DisableFlashes || PhotosensitivityDistortOverride;
 
         [SettingIgnore]
         [EditorBrowsable(EditorBrowsableState.Never)]
@@ -362,7 +364,7 @@ namespace Celeste.Mod.Core {
         /// </summary>
         [SettingIgnore]
         [YamlIgnore]
-        public bool AllowScreenFlash => !Settings.Instance.DisableFlashes || PhotosensitivityScreenFlashOverride; 
+        public bool AllowScreenFlash => !Settings.Instance.DisableFlashes || PhotosensitivityScreenFlashOverride;
 
         [SettingIgnore]
         [EditorBrowsable(EditorBrowsableState.Never)]

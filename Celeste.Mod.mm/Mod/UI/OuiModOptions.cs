@@ -1,5 +1,7 @@
 ﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using FMOD.Studio;
+using MAB.DotIgnore;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -8,6 +10,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Xml.Linq;
 
 namespace Celeste.Mod.UI {
     public class OuiModOptions : Oui {
@@ -19,6 +23,7 @@ namespace Celeste.Mod.UI {
 
         public static OuiModOptions Instance;
 
+        private TextMenu rootMenu;
         private TextMenu menu;
 
         private const float onScreenX = 960f;
@@ -35,142 +40,190 @@ namespace Celeste.Mod.UI {
         }
 
         public static TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
-            patch_TextMenu menu = new patch_TextMenu();
-            menu.CompactWidthMode = true;
-            menu.BatchMode = true;
-
-            menu.Add(new TextMenuExt.HeaderImage("menu/everest") {
+            patch_TextMenu rootMenu = new patch_TextMenu();
+            rootMenu.CompactWidthMode = true;
+            rootMenu.BatchMode = true;
+            TextMenuExt.HeaderImage headerImage = new TextMenuExt.HeaderImage("menu/everest") {
                 ImageColor = Color.White,
                 ImageOutline = true,
-                ImageScale = 0.5f
-            });
-
-            if (!inGame) {
-                List<EverestModuleMetadata> missingDependencies = new List<EverestModuleMetadata>();
-
-                lock (Everest.Loader.Delayed) {
-                    if (Everest.Loader.Delayed.Count > 0 || Everest.Loader.ModsWithAssemblyLoadFailures.Count > 0) {
-                        menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_a")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
-                        menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_b")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
-
-                        foreach (EverestModuleMetadata mod in Everest.Loader.ModsWithAssemblyLoadFailures) {
-                            menu.Add(new TextMenuExt.SubHeaderExt($"{mod.Name} | v.{mod.VersionString} ({Dialog.Get("modoptions_coremodule_notloaded_asmloaderror")})") {
-                                HeightExtra = 0f,
-                                TextColor = Color.PaleVioletRed
-                            });
-                        }
-
-                        foreach (Tuple<EverestModuleMetadata, Action> mod in Everest.Loader.Delayed) {
-                            string missingDepsString = "";
-                            if (mod.Item1.Dependencies != null) {
-                                // check for missing dependencies
-                                List<EverestModuleMetadata> missingDependenciesForMod = mod.Item1.Dependencies
-                                    .FindAll(dep => !Everest.Loader.DependencyLoaded(dep));
-                                if (mod.Item1.OptionalDependencies != null) {
-                                    // find optional dependencies with mismatching versions
-                                    List<EverestModuleMetadata> optionalDependenciesWithVersionMismatches = mod.Item1.OptionalDependencies
-                                        .FindAll(dep => !Everest.Loader.DependencyLoaded(dep) && Everest.Modules.Any(module => module.Metadata?.Name == dep.Name));
-                                    missingDependenciesForMod.AddRange(optionalDependenciesWithVersionMismatches);
-                                }
-                                missingDependencies.AddRange(missingDependenciesForMod);
-
-                                if (missingDependenciesForMod.Count != 0) {
-                                    // format their names and versions, and join all of them in a single string
-                                    missingDepsString = string.Join(", ", missingDependenciesForMod.Select(dependency => dependency.Name + " | v." + dependency.VersionString));
-
-                                    // ensure that string is not too long, or else it would break the display
-                                    if (missingDepsString.Length > 40) {
-                                        missingDepsString = missingDepsString.Substring(0, 40) + "...";
-                                    }
-
-                                    // wrap that in a " ({list} not found)" message
-                                    missingDepsString = $" ({string.Format(Dialog.Get("modoptions_coremodule_notloaded_notfound"), missingDepsString)})";
-                                }
-                            }
-
-                            menu.Add(new TextMenuExt.SubHeaderExt(mod.Item1.Name + " | v." + mod.Item1.VersionString + missingDepsString) {
-                                HeightExtra = 0f,
-                                TextColor = Color.PaleVioletRed
-                            });
-                        }
-                    } else if (CoreModule.Settings.WarnOnEverestYamlErrors && Everest.Loader.FilesWithMetadataLoadFailures.Count > 0) {
-                        menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_yamlerrors")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
-                        menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_b")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
-
-                        foreach (string fileName in Everest.Loader.FilesWithMetadataLoadFailures) {
-                            menu.Add(new TextMenuExt.SubHeaderExt(Path.GetFileName(fileName)) { HeightExtra = 0f, TextColor = Color.PaleVioletRed });
-                        }
-                    }
-                }
-
-                if (Everest.Updater.HasUpdate) {
-                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_update").Replace("((version))", Everest.Updater.Newest.Build.ToString())).Pressed(() => {
-                        Everest.Updater.Update(Instance.Overworld.Goto<OuiLoggedProgress>());
-                    }));
-                }
-
-                if (missingDependencies.Count != 0) {
-                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_downloaddeps")).Pressed(() => {
-                        OuiDependencyDownloader.MissingDependencies = missingDependencies;
-                        Instance.Overworld.Goto<OuiDependencyDownloader>();
-                    }));
-                }
-            }
+                ImageScale = 0.5f,
+            };
+            rootMenu.Add(headerImage);
 
             List<EverestModule> modules = new List<EverestModule>(Everest._Modules);
             // sort by Mod names and move everest to the beginning
-            EverestModule everest = modules[0];
             modules.Remove(CoreModule.Instance);
-            modules = modules.OrderBy(module => module.Metadata.Name).ToList();
+            modules.Sort((a, b) => a.Metadata.Name.CompareTo(b.Metadata.Name));
             modules.Insert(0, CoreModule.Instance);
-            // reorder Mod Options according to the modoptionsorder.txt file.
-            if (Everest.Loader._ModOptionsOrder != null && Everest.Loader._ModOptionsOrder.Count > 0) {
-                foreach (string modName in Everest.Loader._ModOptionsOrder) {
-                    if (modName.Equals("Everest", StringComparison.InvariantCultureIgnoreCase)) {
-                        // the current entry is for Everest Core
-                        createModMenuSectionAndDelete(modules, module => module.Metadata.Name == "Everest", menu, inGame, snapshot);
-                    } else {
-                        string modPath = Path.Combine(Everest.Loader.PathMods, modName);
 
-                        // check for both PathDirectory and PathArchive for each module.
-                        if (!createModMenuSectionAndDelete(modules, module => module.Metadata.PathDirectory == modPath, menu, inGame, snapshot)) {
-                            createModMenuSectionAndDelete(modules, module => module.Metadata.PathArchive == modPath, menu, inGame, snapshot);
+            List<EverestModule> orderRequired = new List<EverestModule>();
+            // handle ordered mod separately according to the modoptionsorder.txt file
+            List<string> orderList = Everest.Loader._ModOptionsOrder;
+            if (orderList?.Count > 0) {
+                foreach (string modName in orderList) {
+                    if (modName.Equals("Everest", StringComparison.InvariantCultureIgnoreCase)) {
+                        orderRequired.Add(CoreModule.Instance);
+                    }
+                    string modPath = Path.Combine(Everest.Loader.PathMods, modName);
+                    orderRequired.AddRange(modules.Where(
+                        m => m.Metadata.PathDirectory == modPath ||
+                             m.Metadata.PathArchive == modPath
+                             ));
+                }
+            }
+
+            modules.RemoveAll(orderRequired.Contains);
+
+            // now create our mod options
+
+            if (!inGame)
+                CreateCoreModuleNotInGameSection(rootMenu);
+
+            bool nested = CoreModule.Settings.NestedOptions;
+            if (nested) {
+                foreach (EverestModule module in orderRequired.Concat(modules)) {
+                    if (module._Settings == null || module.SettingsType == null)
+                        continue;
+                    patch_TextMenu menu = new patch_TextMenu();
+                    menu.CompactWidthMode = true;
+
+                    menu.BatchMode = true;
+                    module.CreateModMenuSection(menu, inGame, snapshot);
+                    menu.BatchMode = false;
+
+                    if (menu.Items.Count == 0)
+                        continue;
+
+                    // some mods will have a disabled item
+                    // as their first menu item
+                    menu.FirstSelection();
+
+                    string modSettingsName = module.SettingsType.Name.ToLowerInvariant();
+                    if (modSettingsName.EndsWith("settings") == true)
+                        modSettingsName = modSettingsName[..^8];
+
+                    string title = (module.SettingsType.GetCustomAttribute<SettingNameAttribute>()?.Name
+                        ?? $"modoptions_{modSettingsName}_title").DialogCleanOrNull()
+                        ?? ModUpdaterHelper.FormatModName(module.Metadata.Name);
+                    TextMenu.Button button = new TextMenu.Button(title);
+
+                    menu.OnESC = () => {
+                        Scene scene = menu.Scene;
+                        scene.Add(rootMenu);
+                        scene.Remove(menu);
+
+                        rootMenu.Focused = true;
+                        menu.Focused = false;
+                        if (!inGame)
+                            Instance.menu = rootMenu;
+                    };
+                    menu.OnCancel = menu.OnESC;
+                    button.Pressed(() => {
+                        Scene scene = button.Container.Scene;
+                        scene.Add(menu);
+                        scene.Remove(rootMenu);
+                        rootMenu.Focused = false;
+                        menu.Focused = true;
+                        if (!inGame)
+                            Instance.menu = menu;
+                    });
+
+                    rootMenu.Add(button);
+                }
+            } else {
+                foreach (EverestModule module in orderRequired.Concat(modules)) {
+                    module.CreateModMenuSection(rootMenu, inGame, snapshot);
+                }
+            }
+            if (rootMenu.Height > rootMenu.ScrollableMinSize) {
+                rootMenu.Position.Y = rootMenu.ScrollTargetY;
+            }
+
+            rootMenu.BatchMode = false;
+
+            // there'll be a narrow menu when nested options is enabled
+            // then the header image will be ugly if we don't center it
+
+            // 1640f is the 'real' width of the 'everest/menu' texture
+            float headerImageWidth = 1640f * headerImage.ImageScale;
+
+            if (rootMenu.Width < headerImageWidth) {
+                headerImage.Offset = new Vector2(-headerImageWidth / 2f + rootMenu.Width / 2f, 0f);
+            }
+
+            return rootMenu;
+        }
+
+        private static void CreateCoreModuleNotInGameSection(TextMenu menu) {
+            List<EverestModuleMetadata> missingDependencies = new List<EverestModuleMetadata>();
+
+            lock (Everest.Loader.Delayed) {
+                if (Everest.Loader.Delayed.Count > 0 || Everest.Loader.ModsWithAssemblyLoadFailures.Count > 0) {
+                    menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_a")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
+                    menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_b")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
+
+                    foreach (EverestModuleMetadata mod in Everest.Loader.ModsWithAssemblyLoadFailures) {
+                        menu.Add(new TextMenuExt.SubHeaderExt($"{mod.Name} | v.{mod.VersionString} ({Dialog.Get("modoptions_coremodule_notloaded_asmloaderror")})") {
+                            HeightExtra = 0f,
+                            TextColor = Color.PaleVioletRed
+                        });
+                    }
+
+                    foreach (Tuple<EverestModuleMetadata, Action> mod in Everest.Loader.Delayed) {
+                        string missingDepsString = "";
+                        if (mod.Item1.Dependencies != null) {
+                            // check for missing dependencies
+                            List<EverestModuleMetadata> missingDependenciesForMod = mod.Item1.Dependencies
+                                .FindAll(dep => !Everest.Loader.DependencyLoaded(dep));
+                            if (mod.Item1.OptionalDependencies != null) {
+                                // find optional dependencies with mismatching versions
+                                List<EverestModuleMetadata> optionalDependenciesWithVersionMismatches = mod.Item1.OptionalDependencies
+                                    .FindAll(dep => !Everest.Loader.DependencyLoaded(dep) && Everest.Modules.Any(module => module.Metadata?.Name == dep.Name));
+                                missingDependenciesForMod.AddRange(optionalDependenciesWithVersionMismatches);
+                            }
+                            missingDependencies.AddRange(missingDependenciesForMod);
+
+                            if (missingDependenciesForMod.Count != 0) {
+                                // format their names and versions, and join all of them in a single string
+                                missingDepsString = string.Join(", ", missingDependenciesForMod.Select(dependency => dependency.Name + " | v." + dependency.VersionString));
+
+                                // ensure that string is not too long, or else it would break the display
+                                if (missingDepsString.Length > 40) {
+                                    missingDepsString = missingDepsString.Substring(0, 40) + "...";
+                                }
+
+                                // wrap that in a " ({list} not found)" message
+                                missingDepsString = $" ({string.Format(Dialog.Get("modoptions_coremodule_notloaded_notfound"), missingDepsString)})";
+                            }
                         }
+
+                        menu.Add(new TextMenuExt.SubHeaderExt(mod.Item1.Name + " | v." + mod.Item1.VersionString + missingDepsString) {
+                            HeightExtra = 0f,
+                            TextColor = Color.PaleVioletRed
+                        });
+                    }
+                } else if (CoreModule.Settings.WarnOnEverestYamlErrors && Everest.Loader.FilesWithMetadataLoadFailures.Count > 0) {
+                    menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_yamlerrors")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
+                    menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_b")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
+
+                    foreach (string fileName in Everest.Loader.FilesWithMetadataLoadFailures) {
+                        menu.Add(new TextMenuExt.SubHeaderExt(Path.GetFileName(fileName)) { HeightExtra = 0f, TextColor = Color.PaleVioletRed });
                     }
                 }
             }
 
-            foreach (EverestModule mod in modules)
-                mod.CreateModMenuSection(menu, inGame, snapshot);
-
-            if (menu.Height > menu.ScrollableMinSize) {
-                menu.Position.Y = menu.ScrollTargetY;
+            if (Everest.Updater.HasUpdate) {
+                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_update").Replace("((version))", Everest.Updater.Newest.Build.ToString())).Pressed(() => {
+                    Everest.Updater.Update(Instance.Overworld.Goto<OuiLoggedProgress>());
+                }));
             }
 
-            ((patch_TextMenu) menu).BatchMode = false;
-            return menu;
-        }
-
-        /// <summary>
-        /// Adds the mod menu section for the first element of 'modules' that matches 'criteria',
-        /// then removes it from the 'modules' list.
-        /// </summary>
-        /// <returns>true if an element matching 'criteria' was found, false otherwise.</returns>
-        private static bool createModMenuSectionAndDelete(List<EverestModule> modules, Predicate<EverestModule> criteria,
-            patch_TextMenu menu, bool inGame, EventInstance snapshot) {
-
-            bool foundMatch = false;
-
-            // find all modules matching the criteria, and create their mod menu sections.
-            int matchingIndex = modules.FindIndex(criteria);
-            while (matchingIndex != -1) {
-                modules[matchingIndex].CreateModMenuSection(menu, inGame, snapshot);
-                modules.RemoveAt(matchingIndex);
-                foundMatch = true;
-                matchingIndex = modules.FindIndex(criteria);
+            if (missingDependencies.Count != 0) {
+                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_downloaddeps")).Pressed(() => {
+                    OuiDependencyDownloader.MissingDependencies = missingDependencies;
+                    Instance.Overworld.Goto<OuiDependencyDownloader>();
+                }));
             }
-
-            return foundMatch;
         }
 
         private void ReloadMenu() {
@@ -183,7 +236,7 @@ namespace Celeste.Mod.UI {
                 Scene.Remove(menu);
             }
 
-            menu = CreateMenu(false, null);
+            menu = rootMenu = CreateMenu(false, null);
             startSearching = AddSearchBox(menu, Overworld);
 
             if (selected >= 0) {
@@ -324,7 +377,7 @@ namespace Celeste.Mod.UI {
         }
 
         public override void Update() {
-            if (menu != null && menu.Focused &&
+            if (rootMenu != null && rootMenu.Focused &&
                 Selected && Input.MenuCancel.Pressed) {
                 Audio.Play(SFX.ui_main_button_back);
                 Overworld.Goto<OuiMainMenu>();
