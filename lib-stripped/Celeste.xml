@@ -1693,6 +1693,104 @@ How these should be structured is poorly documented, so if having nested members
       </member>
      </members>
     <members name="Entity">
+      <member name="T:Monocle.Entity">
+        <summary>
+          Represents an object in the Scene, as well as a collection of Components.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.Active">
+        <summary>
+          Whether this Entity should update every frame.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.Visible">
+        <summary>
+          Whether this Entity should render to the screen.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.Collidable">
+        <summary>
+          Whether this Entity should be detected in collision checks.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.Position">
+        <summary>
+          The position of this Entity in global coordinates.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.tag">
+        <summary>
+          Backing field for <see cref="P:Monocle.Entity.Tag"/>.<br/>
+          This field should not be directly modified. Use <see cref="P:Monocle.Entity.Tag"/> instead.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.collider">
+        <summary>
+          Backing field for <see cref="P:Monocle.Entity.Collider"/>.<br/>
+          This field should not be directly modified. Use <see cref="P:Monocle.Entity.Collider"/> instead.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.depth">
+        <summary>
+          Backing field that holds the integral depth value of this Entity.<br/>
+          This field should not be directly modified. Use <see cref="P:Monocle.Entity.Depth"/> instead.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.actualDepth">
+        <summary>
+          Backing field that holds the actual depth value of this Entity.<br/>
+          This field should not be directly modified. Use <see cref="P:Monocle.Entity.Depth"/> instead.
+        </summary>
+      </member>
+      <member name="P:Monocle.Entity.Scene">
+        <summary>
+          The Scene that contains this Entity.<br/>
+          Set when the Entity is added, and null when it is removed.
+        </summary>
+      </member>
+      <member name="P:Monocle.Entity.Components">
+        <summary>
+          The list of Components that this Entity contains.
+        </summary>
+      </member>
+      <member name="P:Monocle.Entity.Depth">
+        <summary>
+          The update / render priority of this Entity.<br/>
+          Lower values will make this entity update later, and render in front of other entities.
+        </summary>
+      </member>
+      <member name="P:Monocle.Entity.X">
+        <summary>
+          The global X position of this Entity.
+        </summary>
+      </member>
+      <member name="P:Monocle.Entity.Y">
+        <summary>
+          The global Y position of this Entity.
+        </summary>
+      </member>
+      <member name="P:Monocle.Entity.Collider">
+        <summary>
+          Defines a region on this Entity used for collision checks.
+        </summary>
+      </member>
+      <member name="P:Monocle.Entity.Tag">
+        <summary>
+          The bit tags applied to this Entity.<br/>
+          Combine tags using the | operator.<br/>
+          See <see cref="T:Celeste.Tags"/> for the tags used throughout Celeste.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.#ctor(Microsoft.Xna.Framework.Vector2)">
+        <summary>
+          Create an Entity at the given global coordinates.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.#ctor()">
+        <summary>
+          Create an Entity at the global origin point (0, 0).
+        </summary>
+      </member>
       <member name="M:Monocle.Entity.SceneBegin(Monocle.Scene)">
         <summary>
           Called when the containing Scene Begins.
@@ -1742,6 +1840,11 @@ How these should be structured is poorly documented, so if having nested members
       <member name="M:Monocle.Entity.HandleGraphicsReset">
         <summary>
           Called when the graphics device resets. When this happens, any RenderTargets or other contents of VRAM will be wiped and need to be regenerated.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.RemoveSelf">
+        <summary>
+          Remove this entity from the Scene.
         </summary>
       </member>
       <member name="M:Monocle.Entity.Add(Monocle.Component)">
