@@ -147,15 +147,21 @@ namespace Celeste.Mod {
         }
 
         /// <summary>
+        /// Get a checksum through the startup loader's persistent stat-validated cache.
+        /// Falls back to a direct calculation before the cache is initialized.
+        /// </summary>
+        internal static byte[] GetCachedChecksum(string path) => LoaderChecksumCache.GetChecksum(path);
+
+        /// <summary>
         /// Get the checksum for a given mod. Might not be determined by the entire mod content.
         /// </summary>
         /// <param name="meta">The mod.</param>
         /// <returns>A checksum.</returns>
         public static byte[] GetChecksum(EverestModuleMetadata meta) {
             if (!string.IsNullOrEmpty(meta.PathArchive))
-                return GetChecksum(meta.PathArchive);
+                return GetCachedChecksum(meta.PathArchive);
             if (!string.IsNullOrEmpty(meta.DLL))
-                return GetChecksum(meta.DLL);
+                return GetCachedChecksum(meta.DLL);
             return new byte[0];
         }
 
