@@ -50,6 +50,7 @@ namespace Celeste.Mod {
 
             /// <summary>
             /// Does the environment (platform, ...) prefer lazy loading?
+            /// Used to be used by android, which is not supported currently.
             /// </summary>
             [Obsolete("`PreferLazyLoading` is always false on Everest Core")]
             public static bool PreferLazyLoading => false;
