@@ -1,3 +1,4 @@
+using Celeste.Editor;
 using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
@@ -38,7 +39,8 @@ namespace Celeste.Mod.UI {
             FlushSaveData,
             RetryLevel,
             SaveAndQuit,
-            ReturnToMainMenu
+            ReturnToMainMenu,
+            OpenDebugMap
         }
 
         public static CriticalErrorHandler CurrentHandler { get; private set; }
@@ -387,6 +389,9 @@ namespace Celeste.Mod.UI {
 
             UserChoice? choice = null;
             if (Session != null) {
+                if (Celeste.PlayMode == Celeste.PlayModes.Debug)
+                    optMenu.Add(new TextMenu.Button("Open debug map") { Disabled = !CanExecuteChoice(UserChoice.OpenDebugMap) }.Pressed(() => choice = UserChoice.OpenDebugMap));
+                
                 optMenu.Add(new TextMenu.Button("Retry level") { Disabled = !CanExecuteChoice(UserChoice.RetryLevel) }.Pressed(() => choice = UserChoice.RetryLevel));
                 optMenu.Add(new TextMenu.Button("Save & Quit") { Disabled = !CanExecuteChoice(UserChoice.SaveAndQuit) }.Pressed(() => choice = UserChoice.SaveAndQuit));
             }
@@ -433,6 +438,7 @@ namespace Celeste.Mod.UI {
 
         private bool CanExecuteChoice(UserChoice choice) => !failedChoices.Contains(choice) && choice switch {
             UserChoice.FlushSaveData => SaveData.Instance != null && !hasFlushedSaveData,
+            UserChoice.OpenDebugMap => Session != null && Celeste.PlayMode == Celeste.PlayModes.Debug,
             UserChoice.RetryLevel => Session != null,
             UserChoice.SaveAndQuit => SaveData.Instance != null && Session != null,
             UserChoice.ReturnToMainMenu => true,
@@ -452,7 +458,16 @@ namespace Celeste.Mod.UI {
                         }
                         hasFlushedSaveData = true;
                         return true; // We don't want to reset the overlay yet
+                        
+                    case UserChoice.OpenDebugMap:
+                        if (Session == null) {
+                            Logger.Warn("crit-error-handler", "Can't open debug map as no session is present!");
+                            return false;
+                        }
 
+                        Celeste.Scene = new MapEditor(Session.Area);
+                        break;
+                        
                     case UserChoice.RetryLevel:
                         if (Session == null) {
                             Logger.Warn("crit-error-handler", "Can't retry as no session is present!");
