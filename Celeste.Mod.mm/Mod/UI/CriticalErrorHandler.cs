@@ -45,7 +45,10 @@ namespace Celeste.Mod.UI {
 
         public static CriticalErrorHandler CurrentHandler { get; private set; }
 
-        public static ExceptionDispatchInfo HandleCriticalError(ExceptionDispatchInfo error) {
+        // Done so that older mods that use this don't crash due to a linking error
+        public static ExceptionDispatchInfo HandleCriticalError(ExceptionDispatchInfo error) => HandleCriticalError(error, null);
+        
+        public static ExceptionDispatchInfo HandleCriticalError(ExceptionDispatchInfo error, DisplayState? defaultDisplayState) {
             if (!CoreModule.Settings.UseInGameCrashHandler)
                 return error;
 
@@ -64,12 +67,16 @@ namespace Celeste.Mod.UI {
                 CurrentHandler.EncounteredAdditionalErrors = true;
                 AmendLogFile(CurrentHandler.LogFile, "Encountered an additional critical error", error.SourceException);
             }
-
+            
             // Invoke the critical error event
             Everest.Events.CriticalError(CurrentHandler);
-
+            
             // If this is a compatible scene, display as an overlay
-            if (CurrentHandler.State < DisplayState.Overlay && Celeste.Scene is Level lvl) {
+            if (
+                defaultDisplayState is null or <= DisplayState.Overlay
+                && CurrentHandler.State < DisplayState.Overlay 
+                && Celeste.Scene is Level lvl
+            ) {
                 CurrentHandler.State = DisplayState.Overlay;
                 lvl.Add(CurrentHandler);
 
@@ -111,7 +118,10 @@ namespace Celeste.Mod.UI {
                 }
             }
 
-            if (CurrentHandler.State < DisplayState.CleanScene) {
+            if (
+                defaultDisplayState is null or <= DisplayState.CleanScene
+                && CurrentHandler.State < DisplayState.CleanScene
+            ) {
                 Scene oldScene = CurrentHandler.Scene;
                 CurrentHandler.RemoveSelf();
                 oldScene?.Entities?.UpdateLists();
@@ -128,7 +138,10 @@ namespace Celeste.Mod.UI {
             }
 
             // If we aren't on a bluescreen scene, try that as a last resort
-            if (CurrentHandler.State < DisplayState.BlueScreen) {
+            if (
+                (defaultDisplayState is null or <= DisplayState.BlueScreen)
+                && CurrentHandler.State < DisplayState.BlueScreen
+            ) {
                 Scene oldScene = CurrentHandler.Scene;
                 CurrentHandler.RemoveSelf();
                 oldScene?.Entities?.UpdateLists();
@@ -514,7 +527,7 @@ namespace Celeste.Mod.UI {
             optMenu.RecalculateSize();
 
             if (UsePlayerSprite) {
-                optMenu.Position = new Vector2(Celeste.TargetWidth * 0.15f, Celeste.TargetHeight * 0.55f);
+                optMenu.Position = new Vector2(Celeste.TargetWidth * 0.15f, Celeste.TargetHeight * 0.515f);
                 optMenu.Justify = new Vector2(0.5f, 0f);
 
                 // Reduce item spacing if there are too many items
@@ -781,6 +794,24 @@ namespace Celeste.Mod.UI {
             }
         }
 
+        
+        [Command("criterror", "Shows the Everest critical error handler. Optionally can take a display state of 'initial', 'overlay', or 'cleanscene'.")]
+        internal static void CmdCriticalError(string displayState = "initial") {
+            DisplayState? state = displayState switch {
+                "initial" => DisplayState.Initial,
+                "overlay" => DisplayState.Overlay,
+                "cleanscene" => DisplayState.CleanScene,
+                "bluescreen" => DisplayState.BlueScreen,
+                _ => null
+            };
+            if (state is null) {
+                Engine.Commands.Log("Expected a display state of 'initial', 'overlay', 'cleanscene', or 'bluescreen'.", Color.Yellow);
+                return;
+            }
+            Exception exc = new(Calc.Random.NextSingle() > 0.95 ? "smots gaming" : "Hello, world!");
+            ExceptionDispatchInfo.SetCurrentStackTrace(exc);
+            HandleCriticalError(ExceptionDispatchInfo.Capture(exc), state);
+        }
     }
 }
 
