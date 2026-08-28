@@ -623,6 +623,29 @@ namespace Celeste.Mod.UI {
                 optMenu?.Update();
 
             base.Update();
+            
+            
+            // Handle option keys
+            if (Engine.Scene.Tracker.GetEntity<KeyboardConfigUI>() == null && Engine.Scene.Tracker.GetEntity<ButtonConfigUI>() == null) {
+                if (Session != null) {
+                    if (Celeste.PlayMode == Celeste.PlayModes.Debug && CoreModule.Settings.DebugMap.Pressed) {
+                        CoreModule.Settings.DebugMap.ConsumePress();
+                        ForceOptionImmediately(UserChoice.OpenDebugMap);
+                    } else if (Input.MenuCancel.Pressed) {
+                        Input.MenuCancel.ConsumePress();
+                        ForceOptionImmediately(UserChoice.RetryLevel);
+                    }
+                } else if (Input.MenuCancel.Pressed) {
+                    Input.MenuCancel.ConsumePress();
+                    ForceOptionImmediately(UserChoice.ReturnToMainMenu);
+                }
+            }
+        }
+
+        private void ForceOptionImmediately(UserChoice choice) {
+            if (!ExecuteUserChoice(choice)) return;
+            if (CurrentHandler == this) return;
+            RemoveSelf(); // The rest of the coroutine is never run
         }
 
         private void BeforeRender() {
@@ -795,8 +818,8 @@ namespace Celeste.Mod.UI {
         }
 
         
-        [Command("criterror", "Shows the Everest critical error handler. Optionally can take a display state of 'initial', 'overlay', or 'cleanscene'.")]
-        internal static void CmdCriticalError(string displayState = "initial") {
+        [Command("criterror", "Shows the Everest critical error handler. Must take a display state of 'initial', 'overlay', or 'cleanscene'.")]
+        internal static void CmdCriticalError(string displayState) {
             DisplayState? state = displayState switch {
                 "initial" => DisplayState.Initial,
                 "overlay" => DisplayState.Overlay,
