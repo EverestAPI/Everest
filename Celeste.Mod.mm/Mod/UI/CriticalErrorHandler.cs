@@ -46,9 +46,9 @@ namespace Celeste.Mod.UI {
         public static CriticalErrorHandler CurrentHandler { get; private set; }
 
         // Done so that older mods that use this don't crash due to a linking error
-        public static ExceptionDispatchInfo HandleCriticalError(ExceptionDispatchInfo error) => HandleCriticalError(error, null);
+        public static ExceptionDispatchInfo HandleCriticalError(ExceptionDispatchInfo error) => HandleCriticalError(error, DisplayState.Initial);
         
-        public static ExceptionDispatchInfo HandleCriticalError(ExceptionDispatchInfo error, DisplayState? defaultDisplayState) {
+        public static ExceptionDispatchInfo HandleCriticalError(ExceptionDispatchInfo error, DisplayState defaultDisplayState) {
             if (!CoreModule.Settings.UseInGameCrashHandler)
                 return error;
 
