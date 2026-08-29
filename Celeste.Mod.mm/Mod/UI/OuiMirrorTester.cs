@@ -1,17 +1,12 @@
 ﻿using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
-using Monocle;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Net.NetworkInformation;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.UI {
