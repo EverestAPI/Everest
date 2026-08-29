@@ -73,7 +73,7 @@ namespace Celeste.Mod.UI {
             
             // If this is a compatible scene, display as an overlay
             if (
-                defaultDisplayState is null or <= DisplayState.Overlay
+                defaultDisplayState <= DisplayState.Overlay
                 && CurrentHandler.State < DisplayState.Overlay 
                 && Celeste.Scene is Level lvl
             ) {
@@ -119,7 +119,7 @@ namespace Celeste.Mod.UI {
             }
 
             if (
-                defaultDisplayState is null or <= DisplayState.CleanScene
+                defaultDisplayState <= DisplayState.CleanScene
                 && CurrentHandler.State < DisplayState.CleanScene
             ) {
                 Scene oldScene = CurrentHandler.Scene;
@@ -139,7 +139,7 @@ namespace Celeste.Mod.UI {
 
             // If we aren't on a bluescreen scene, try that as a last resort
             if (
-                (defaultDisplayState is null or <= DisplayState.BlueScreen)
+                defaultDisplayState <= DisplayState.BlueScreen
                 && CurrentHandler.State < DisplayState.BlueScreen
             ) {
                 Scene oldScene = CurrentHandler.Scene;
@@ -827,13 +827,13 @@ namespace Celeste.Mod.UI {
                 "bluescreen" => DisplayState.BlueScreen,
                 _ => null
             };
-            if (state is null) {
+            if (state is not DisplayState validState) {
                 Engine.Commands.Log("Expected a display state of 'initial', 'overlay', 'cleanscene', or 'bluescreen'.", Color.Yellow);
                 return;
             }
             Exception exc = new(Calc.Random.NextSingle() > 0.95 ? "smots gaming" : "Hello, world!");
             ExceptionDispatchInfo.SetCurrentStackTrace(exc);
-            HandleCriticalError(ExceptionDispatchInfo.Capture(exc), state);
+            HandleCriticalError(ExceptionDispatchInfo.Capture(exc), validState);
         }
     }
 }
