@@ -818,8 +818,8 @@ namespace Celeste.Mod.UI {
         }
 
         
-        [Command("criterror", "Shows the Everest critical error handler. Must take a display state of 'initial', 'overlay', or 'cleanscene'.")]
-        internal static void CmdCriticalError(string displayState) {
+        [Command("criterror", "Shows the Everest critical error handler. Must take a display state of 'initial', 'overlay', 'cleanscene', or 'bluescreen'.")]
+        internal static void CmdCriticalError(string displayState = "initial") {
             DisplayState? state = displayState switch {
                 "initial" => DisplayState.Initial,
                 "overlay" => DisplayState.Overlay,
