@@ -351,7 +351,7 @@ namespace Celeste.Mod.UI {
 
             Exception downloadException = null;
 
-            foreach (string url in ModUpdaterHelper.GetAllMirrorUrls(update.URL)) {
+            foreach (string url in ModUpdaterHelper.GetAllMirrorUrls(update)) {
                 try {
                     downloadException = null;
 
