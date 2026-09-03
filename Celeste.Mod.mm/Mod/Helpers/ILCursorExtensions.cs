@@ -384,7 +384,7 @@ namespace Celeste.Mod.Helpers {
                 throw new ArgumentException("No predicates given.");
 
             if (predicates.Length == 1)
-                return cursor.TryGotoNext(moveType, predicates[0]);
+                return cursor.TryGotoPrev(moveType, predicates[0]);
 
             Logger.Debug(PrevBestFitLogID, $"Looking for previous best fit in {cursor.Context.Method.FullName}.");
             Logger.Debug(PrevBestFitLogID, $"{nameof(ILCursor)}#{cursor.GetHashCode():X8} has initial index 0x{cursor.Index:X4}.");
