@@ -426,6 +426,10 @@ namespace Celeste.Mod.Core {
         [SettingInGame(false)]
         public ButtonBinding MenuPageDown { get; set; }
 
+        [SettingInGame(false)]
+        [DefaultButtonBinding(0, Keys.R)]
+        public ButtonBinding MenuSearch { get; set; }
+
         [SettingSubHeader("MODOPTIONS_COREMODULE_DEBUGMODE_SUBHEADER")]
         [SettingInGame(false)]
         [DefaultButtonBinding(0, Keys.OemTilde)]

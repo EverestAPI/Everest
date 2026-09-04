@@ -331,7 +331,7 @@ namespace Celeste.Mod.UI {
             }
 
             if (Selected && Focused) {
-                if (Input.QuickRestart.Pressed) {
+                if (CoreModule.Settings.MenuSearch.Pressed) {
                     startSearching?.Invoke();
                     return;
                 }

@@ -251,7 +251,7 @@ namespace Celeste.Mod.Core {
 
                 options.OnUpdate = () => {
                     if (options.Focused) {
-                        if (Input.QuickRestart.Pressed) {
+                        if (Settings.MenuSearch.Pressed) {
                             startSearching();
                         }
                     }

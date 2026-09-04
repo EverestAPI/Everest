@@ -2,6 +2,7 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Mono.Cecil;
@@ -123,7 +124,7 @@ namespace Celeste {
         public extern void orig_Update();
         public override void Update() {
             if (Selected && Focused) {
-                if (Input.QuickRestart.Pressed) {
+                if (CoreModule.Settings.MenuSearch.Pressed) {
                     Overworld.Goto<OuiChapterSelect>();
                     Overworld.Goto<OuiMapSearch>();
                     return;

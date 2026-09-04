@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Celeste.Mod.Core;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using System;
@@ -525,7 +526,7 @@ namespace Celeste.Mod.UI {
             canGoBack = (modLoadingTask == null || modLoadingTask.IsCompleted || modLoadingTask.IsCanceled || modLoadingTask.IsFaulted);
 
             if (Selected && Focused) {
-                if (Input.QuickRestart.Pressed) {
+                if (CoreModule.Settings.MenuSearch.Pressed) {
                     startSearching?.Invoke();
                     return;
                 }
