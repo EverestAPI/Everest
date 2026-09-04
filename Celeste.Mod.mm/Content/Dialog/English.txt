@@ -153,6 +153,7 @@
 	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_WEGFAN=			China
 	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_OTOBOT=			North America
 	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_RISINGSUNLIGHT= France
+	MODOPTIONS_COREMODULE_MIRRORTESTING= Determine the best mirror
 
 	MODOPTIONS_COREMODULE_USEAPIMIRROR= 				    Use Database Mirror
 	MODOPTIONS_COREMODULE_USEAPIMIRROR_DESC=			    This option can help if you get "Downloading the database failed" errors
@@ -336,6 +337,15 @@
 	MODOPTIONS_MODTOGGLE_DIRECTORIES=				Directories
 	MODOPTIONS_MODTOGGLE_BINS=						Map Bin Files
 	MODOPTIONS_MODTOGGLE_SEARCHBOX_PLACEHOLDER=		Press 'Tab' or 'Enter' to scroll to the next match
+
+# Mirror Testing Menu
+	MODOPTIONS_MIRRORTESTING= TEST MIRRORS
+	MODOPTIONS_MIRRORTESTING_EXPLANATION= All mirrors will be used to download{n}a same mod and Everest will choose the mirror with the best download speed.
+	MODOPTIONS_MIRRORTESTING_DOWNLOADING= Downloading mod from ((mirror))
+	MODOPTIONS_MIRRORTESTING_DOWNLOADED= Downloaded mod from ((mirror)) in
+	MODOPTIONS_MIRRORTESTING_TIMEDOUT= Downloaded mod from ((mirror)) timed out
+	MODOPTIONS_MIRRORTESTING_CANCELED= Canceled
+	MODOPTIONS_MIRRORTESTING_ERROR= An error occured
 
 # Asset Reload Helper
 	ASSETRELOADHELPER_RELOADINGMAP=			Reloading map
