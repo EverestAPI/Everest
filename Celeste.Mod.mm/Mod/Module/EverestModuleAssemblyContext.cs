@@ -191,10 +191,10 @@ namespace Celeste.Mod {
                 checksums.Add(ModuleMeta.Hash.ToHexadecimalString());
             } else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory)) {
                 // There's no overhead for accessing the files of directory mods, so just calculate the checksum directly
-                checksums.Add(Everest.GetChecksum(path).ToHexadecimalString());
+                checksums.Add(Everest.GetCachedChecksum(path).ToHexadecimalString());
 
                 if (symPath != null)
-                    checksums.Add(Everest.GetChecksum(symPath).ToHexadecimalString());
+                    checksums.Add(Everest.GetCachedChecksum(symPath).ToHexadecimalString());
             } else
                 throw new UnreachableException();
         }
@@ -203,7 +203,7 @@ namespace Celeste.Mod {
             if (!string.IsNullOrEmpty(ModuleMeta.PathArchive)) {
                 return ModuleMeta.Hash.ToHexadecimalString();
             } else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory)) {
-                return Everest.GetChecksum(path).ToHexadecimalString();
+                return Everest.GetCachedChecksum(path).ToHexadecimalString();
             } else throw new UnreachableException();
         }
 
