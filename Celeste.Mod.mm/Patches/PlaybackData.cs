@@ -1,11 +1,15 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
+using Celeste;
 using Celeste.Mod;
-using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
+using Mono.Cecil;
 using Monocle;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -73,6 +77,7 @@ namespace Celeste {
             }
         }
 
+        [PatchChaserStateImport]
         public static extern List<Player.ChaserState> orig_Import(byte[] buffer);
         public static List<Player.ChaserState> Import(byte[] buffer) {
             try {
@@ -129,5 +134,36 @@ namespace Celeste {
             }
         }
 
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the ChaserState.Import method to intern animation id strings, to reduce duplicate strings in memory.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchChaserStateImport))]
+    class PatchChaserStateImport : Attribute {
+    }
+
+    static partial class MonoModRules {
+
+        public static void PatchChaserStateImport(ILContext context, CustomAttribute attrib) {
+            MethodReference m_String_Intern = MonoModRule.Modder.Module.ImportReference(
+                MonoModRule.Modder.FindType("System.String").Resolve()
+                    .FindMethod("System.String Intern(System.String)")
+            );
+            
+            /*
+             * - chaserState.Animation = binaryReader.ReadString();
+             * + chaserState.Animation = string.Intern(binaryReader.ReadString());
+             */
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(MoveType.After, 
+                instr => instr.MatchCallOrCallvirt("System.IO.BinaryReader", nameof(BinaryReader.ReadString)),
+                              instr => instr.MatchStfld("Celeste.Player/ChaserState", nameof(Player.ChaserState.Animation)));
+
+            cursor.Index--; // Go before the stfld
+            cursor.EmitCall(m_String_Intern);
+        }
     }
 }

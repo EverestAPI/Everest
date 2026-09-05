@@ -9,8 +9,13 @@ using System;
 
 namespace Celeste {
     public class patch_SeekerBarrier : SeekerBarrier {
-        public patch_SeekerBarrier(EntityData data, Vector2 offset) : base(data, offset) {
-            // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+
+        [MonoModConstructor]
+        [MonoModReplace]
+        public patch_SeekerBarrier(EntityData data, Vector2 offset)
+            : base(data.Position + offset, data.Width, data.Height) {
+
+            AllowStaticMovers = data.Bool("allowStaticMovers", true);
         }
 
         [MonoModIgnore]

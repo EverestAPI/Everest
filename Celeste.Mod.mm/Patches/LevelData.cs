@@ -1,5 +1,6 @@
 #pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
+using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using System;
 using Mono.Cecil;
@@ -49,7 +50,8 @@ namespace Celeste {
         [MonoModReplace]
         private EntityData CreateEntityData(BinaryPacker.Element entity) {
             EntityData entityData = new() {
-                Name = entity.Name,
+                // While Name comes from a lookup table, it's still duplicated between multiple .bin files.
+                Name = string.Intern(entity.Name),
                 Level = this
             };
             
@@ -86,7 +88,9 @@ namespace Celeste {
                             // but auto-resizing from passing a capacity too small would probably make it too big anyway.
                             entityData.Values ??= new Dictionary<string, object>(entity.Attributes.Count - 3);
                             
-                            entityData.Values.Add(key, value);
+                            // We'll intern keys, which, while they come from a lookup table already,
+                            // still get duplicated between different .bin files.
+                            entityData.Values.Add(string.Intern(key), value);
                             break;
                         }
                     }
