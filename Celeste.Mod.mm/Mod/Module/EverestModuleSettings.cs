@@ -126,6 +126,15 @@ namespace Celeste.Mod {
         public SettingIgnoreAttribute() {
         }
     }
+
+    /// <summary>
+    /// Experimental setting, only supported on bool? property type
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Property)]
+    public class SettingExperimentalAttribute : Attribute {
+        public SettingExperimentalAttribute() {
+        }
+    }
     
     /// <summary>
     /// Insert a subheader before the setting.
