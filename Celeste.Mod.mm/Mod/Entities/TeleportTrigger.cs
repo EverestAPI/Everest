@@ -11,22 +11,20 @@ public class TeleportTrigger : Trigger {
     private readonly Player.IntroTypes _introType;
     private Vector2 _nearestSpawn;
 
-    private readonly bool _onlyOnce;
+    private readonly bool _onlyOnce, _useDefaultSpawn;
     private readonly string _flag;
     private bool Flag => string.IsNullOrEmpty(_flag) || SceneAs<Level>().Session.GetFlag(_flag);
     private readonly string _onlyOnceFlag;
-
-    private readonly bool _useWorldCoordinates;
     
     public TeleportTrigger(EntityData data, Vector2 offset) : base(data, offset)
     {
         
         _nextLevel = data.Attr("nextLevel");
         _introType = data.Enum("introType", Player.IntroTypes.None);
-        _useWorldCoordinates = data.Bool("useWorldCoordinates");
         _nearestSpawn = new Vector2(data.Float("nearestSpawnX"),  data.Float("nearestSpawnY"));
         
         _onlyOnce = data.Bool("onlyOnce");
+        _useDefaultSpawn = data.Bool("useDefaultSpawn");
         _flag = data.Attr("flag");
         
         _onlyOnceFlag = $"{data.Level.Name}:{data.ID}_teleport_doNotTrigger";
@@ -39,10 +37,12 @@ public class TeleportTrigger : Trigger {
             RemoveSelf();
             return;
         }
-        
-        if (!_useWorldCoordinates || level.Session.MapData.Levels.FirstOrDefault(l => l.Name == _nextLevel) is not { } nextLevel) return;
 
-        _nearestSpawn += nextLevel.Position;
+        if (level.Session.MapData.Levels.FirstOrDefault(l => l.Name == _nextLevel) is not { } nextLevel)
+        {
+            RemoveSelf();
+            Logger.Warn("Teleport Trigger", $"Destination room {_nextLevel} does not exist!");
+        }
     }
 
     public override void OnEnter(Player player) {
@@ -56,7 +56,7 @@ public class TeleportTrigger : Trigger {
                 player, 
                 _nextLevel, 
                 _introType, 
-                _nearestSpawn);
+                _useDefaultSpawn ? null : _nearestSpawn);
         };
         
         if (_onlyOnce)
