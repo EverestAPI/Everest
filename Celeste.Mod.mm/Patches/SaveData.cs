@@ -79,6 +79,9 @@ namespace Celeste {
         [MonoModLinkFrom("Celeste.AreaKey Celeste.SaveData::LastArea")]
         public AreaKey LastArea_Safe;
 
+        [XmlIgnore]
+        public string TrueLastAreaSID = null;
+
         // We want use CurrentSession_Safe instead of CurrentSession to avoid breaking vanilla Celeste.
 
         [MonoModLinkFrom("Celeste.Session Celeste.SaveData::CurrentSession_Unsafe")]
@@ -553,8 +556,10 @@ namespace Celeste {
             CurrentSession_Unsafe = null;
 
             // Fix areas with missing SID (f.e. deleted or renamed maps).
-            if (AreaData.Get(LastArea) == null)
+            if (AreaData.Get(LastArea) == null) {
+                TrueLastAreaSID = LastArea.GetSID();
                 LastArea = AreaKey.Default;
+            }
 
             // Fix out of bounds areas.
             if (LastArea.ID < 0 || LastArea.ID >= AreaData.Areas.Count)
