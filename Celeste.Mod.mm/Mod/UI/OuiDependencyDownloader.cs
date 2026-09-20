@@ -459,7 +459,7 @@ namespace Celeste.Mod.UI {
 
                 Exception downloadException = null;
 
-                foreach (string url in ModUpdaterHelper.GetAllMirrorUrls(mod.URL)) {
+                foreach (string url in ModUpdaterHelper.GetAllMirrorUrls(mod)) {
                     try {
                         downloadException = null;
                         LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_DOWNLOADING"), mod.Name, url));
