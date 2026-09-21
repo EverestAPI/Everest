@@ -494,6 +494,7 @@ namespace Celeste {
             public float ItemIndent;
             /// <inheritdoc cref="TextMenu.HighlightColor"/>
             private Color HighlightColor;
+            private Color UnselectedColor;
             public string ConfirmSfx;
 
             public bool AlwaysCenter;
@@ -513,8 +514,6 @@ namespace Celeste {
             private bool enterOnSelect;
             private bool entering;
             private float ease;
-
-            public Color UnselectedColor;
 
             /// <summary>
             /// Create a new SubMenu.
@@ -896,7 +895,7 @@ namespace Celeste {
                 Vector2 top = new Vector2(position.X, position.Y - (Height() / 2));
 
                 float alpha = Container.Alpha;
-                Color color = Disabled ? Color.DarkSlateGray : ((highlighted ? Container.HighlightColor : UnselectedColor) * alpha);
+                Color color = Disabled ? Color.DarkSlateGray : ((highlighted ? Container.HighlightColor : Container.UnselectedColor) * alpha);
                 Color strokeColor = Color.Black * (alpha * alpha * alpha);
 
                 bool uncentered = Container.InnerContent == TextMenu.InnerContentMode.TwoColumn && !AlwaysCenter;
