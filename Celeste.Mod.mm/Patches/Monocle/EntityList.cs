@@ -1,7 +1,6 @@
 ﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste;
-using Celeste.Mod.Registry;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod;
@@ -10,7 +9,6 @@ using MonoMod.InlineRT;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Monocle {
     // No public constructors.
@@ -18,6 +16,7 @@ namespace Monocle {
 
         // We're effectively in EntityList, but still need to "expose" private fields to our mod.
         private List<Entity> toAdd;
+        private List<Entity> toAwake;
         private List<Entity> entities;
 
         /// <summary>
@@ -51,6 +50,32 @@ namespace Monocle {
                 // which is worse than setting it for an unrelated entity.
                 // This can only happen with entities added via the legacy Everest.Events.Level.LoadEntity event anyway,
                 // so this should be very rare in practice.
+            }
+        }
+
+        private void _SortToAwake() {
+            var counted = new SortedDictionary<int, List<Entity>>();
+            foreach (var entity in toAwake) {
+                var priority = (entity as patch_Entity).AwakePriority;
+                List<Entity> entities;
+                if (counted.TryGetValue(priority, out entities)) {
+                    entities.Add(entity);
+                } else {
+                    entities = new();
+                    entities.Add(entity);
+                    counted[priority] = entities;
+                }
+            }
+
+            if (counted.TryGetValue(0, out var zeroPriority) && zeroPriority.Count == toAwake.Count)
+                return;
+
+            int i = 0;
+            foreach (var slice in counted.Values) {
+                for (int j = 0; j < slice.Count; j++) {
+                    toAwake[i] = slice[j];
+                    i++;
+                }
             }
         }
     }
@@ -139,6 +164,19 @@ namespace MonoMod {
             cursor.GotoPrev(instr => instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference).GetID().Contains("List`1<Monocle.Entity>::Contains"));
             cursor.Prev.Previous.Operand = currentOperand;
             cursor.Next.Operand = hashRemoveOperand;
+
+            // Add call to _SortToAwake so that AwakePriority works
+            cursor.GotoNext(
+                MoveType.After,
+                instr => instr.MatchLdarg(0),
+                instr => instr.MatchLdfld(out FieldReference f_toAwake) && f_toAwake.Name == "toAwake",
+                instr => instr.MatchLdarg(0),
+                instr => instr.MatchLdfld(out _),
+                instr => instr.MatchCallvirt(out MethodReference m_AddRange) && m_AddRange.GetID().Contains("List`1<Monocle.Entity>::AddRange"));
+            TypeDefinition t_EntityList = MonoModRule.Modder.FindType("Monocle.EntityList").Resolve();
+            MethodDefinition m_EntityList_SortToAwake = t_EntityList.FindMethod("_SortToAwake");
+            cursor.EmitLdarg(0);
+            cursor.EmitCall(m_EntityList_SortToAwake);
         }
 
         public static void PatchEntityListAdd(ILContext context, CustomAttribute attrib) {
