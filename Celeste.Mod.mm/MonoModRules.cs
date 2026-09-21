@@ -61,7 +61,14 @@ namespace MonoMod {
     /// </summary>=
     [MonoModCustomAttribute(nameof(MonoModRules.ForceSealed))]
     class ForceSealedAttribute : Attribute { }
-#endregion
+
+    /// <summary>
+    /// Makes all methods on a type have [MethodImpl(MethodImplOptions.Synchronized)], static or not.
+    /// Can only be applied on types.
+    /// </summary>
+    [MonoModCustomAttribute(nameof(MonoModRules.MakeAllMethodsSynchronized))]
+    class MakeAllMethodsSynchronizedAttribute : Attribute { }
+    #endregion
 
     static partial class MonoModRules {
 
@@ -351,6 +358,16 @@ namespace MonoMod {
                 case MethodDefinition method:
                     method.IsFinal = true;
                     break;
+            }
+            
+            provider?.CustomAttributes?.Remove(attrib);
+        }
+
+        public static void MakeAllMethodsSynchronized(ICustomAttributeProvider provider, CustomAttribute attrib) {
+            if (provider is not TypeDefinition typeDef) throw new ArgumentException("Must be of type TypeDefinition", nameof(provider));
+
+            foreach (MethodDefinition methodDef in typeDef.Methods) {
+                methodDef.IsSynchronized = true;
             }
             
             provider?.CustomAttributes?.Remove(attrib);
