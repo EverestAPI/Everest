@@ -514,6 +514,8 @@ namespace Celeste {
             private bool entering;
             private float ease;
 
+            public Color UnselectedColor;
+
             /// <summary>
             /// Create a new SubMenu.
             /// </summary>
@@ -543,6 +545,7 @@ namespace Celeste {
                 ItemSpacing = 4f;
                 ItemIndent = 20f;
                 HighlightColor = Color.White;
+                UnselectedColor = Color.White;
 
                 RecalculateSize();
             }
@@ -893,7 +896,7 @@ namespace Celeste {
                 Vector2 top = new Vector2(position.X, position.Y - (Height() / 2));
 
                 float alpha = Container.Alpha;
-                Color color = Disabled ? Color.DarkSlateGray : ((highlighted ? Container.HighlightColor : Color.White) * alpha);
+                Color color = Disabled ? Color.DarkSlateGray : ((highlighted ? Container.HighlightColor : Container.UnselectedColor) * alpha);
                 Color strokeColor = Color.Black * (alpha * alpha * alpha);
 
                 bool uncentered = Container.InnerContent == TextMenu.InnerContentMode.TwoColumn && !AlwaysCenter;
