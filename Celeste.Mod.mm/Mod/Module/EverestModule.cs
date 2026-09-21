@@ -662,6 +662,7 @@ namespace Celeste.Mod {
             SettingInGameAttribute attribInGame;
             SettingRangeAttribute attribRange;
             SettingNumberInputAttribute attribNumber;
+            SettingExperimentalAttribute attribExperimental;
 
             // If the settings type has got the InGame attrib, only show it in the matching situation.
             if ((attribInGame = type.GetCustomAttribute<SettingInGameAttribute>()) != null &&
@@ -794,6 +795,23 @@ namespace Celeste.Mod {
                                 minValueLength
                             );
                         });
+                } else if (propType == typeof(bool?) && (attribExperimental = prop.GetCustomAttribute<SettingExperimentalAttribute>()) != null) {
+                    Dictionary<string, bool?> preferences = new() {
+                        {"MODOPTIONS_DEFAULT", null},
+                        {"OPTIONS_ON", true},
+                        {"OPTIONS_OFF", false},
+                    };
+
+                    List<string> dialogKeys = preferences.Keys.ToList();
+                    List<bool?> dialogValues = preferences.Values.ToList();
+
+                    item = new TextMenu.Slider(
+                        label: name,
+                        values: index => Dialog.Clean(dialogKeys[index]),
+                        min: 0,
+                        max: preferences.Count - 1,
+                        value: preferences.Values.ToList().IndexOf((bool?)prop.GetValue(settingsObject))
+                    ).Change(value => prop.SetValue(settingsObject, dialogValues[value]));
                 }
 
                 if (item is not null)
@@ -878,6 +896,10 @@ namespace Celeste.Mod {
 
                 if (prop.GetCustomAttribute<SettingNeedsRelaunchAttribute>() != null)
                     item.NeedsRelaunch(menu);
+
+                if (prop.GetCustomAttribute<SettingExperimentalAttribute>() != null)
+                    item.IsExperimental(menu);
+
 
                 string description = prop.GetCustomAttribute<SettingSubTextAttribute>()?.Description;
                 if (description != null)

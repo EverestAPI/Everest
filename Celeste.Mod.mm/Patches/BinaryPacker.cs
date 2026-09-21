@@ -10,7 +10,7 @@ using System.Globalization;
 
 namespace Celeste {
     static class patch_BinaryPacker {
-        [MonoModIgnore]
+        [ThreadStatic]
         private static string[] stringLookup;
 
         [MonoModIgnore] // We don't want to change anything about the method...
