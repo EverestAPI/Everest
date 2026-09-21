@@ -836,6 +836,19 @@ namespace Celeste.Mod {
                             $"Create{subTypeProp.Name}Entry",
                             BindingFlags.Public | BindingFlags.Instance,
                             null,
+                            new Type[] { typeof(TextMenuExt.SubMenu), typeof(TextMenu), typeof(bool) },
+                            new ParameterModifier[0]
+                        );
+
+                        if (creator != null) {
+                            creator.CreateDelegate<Action<TextMenuExt.SubMenu, TextMenu, bool>>(propObject)(subMenu, menu, inGame);
+                            continue;
+                        }
+
+                        creator = prop.PropertyType.GetMethod(
+                            $"Create{subTypeProp.Name}Entry",
+                            BindingFlags.Public | BindingFlags.Instance,
+                            null,
                             new Type[] { typeof(TextMenuExt.SubMenu), typeof(bool) },
                             new ParameterModifier[0]
                         );
