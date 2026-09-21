@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Input;
 using Monocle;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using static Celeste.patch_TextMenu;
 
@@ -1017,6 +1018,7 @@ namespace Celeste {
             public float ItemIndent;
 
             private Color HighlightColor;
+            private Color UnselectedColor;
 
             public string ConfirmSfx;
 
@@ -1056,6 +1058,7 @@ namespace Celeste {
                 ItemSpacing = 4f;
                 ItemIndent = 20f;
                 HighlightColor = Color.White;
+                UnselectedColor = Color.White;
 
                 RecalculateSize();
             }
@@ -1341,7 +1344,7 @@ namespace Celeste {
                 Vector2 top = new Vector2(position.X, position.Y - (Height() / 2));
 
                 float alpha = Container.Alpha;
-                Color color = Disabled ? Color.DarkSlateGray : ((highlighted ? Container.HighlightColor : Color.White) * alpha);
+                Color color = Disabled ? Color.DarkSlateGray : ((highlighted ? Container.HighlightColor : Container.UnselectedColor) * alpha);
                 Color strokeColor = Color.Black * (alpha * alpha * alpha);
 
                 bool uncentered = Container.InnerContent == TextMenu.InnerContentMode.TwoColumn && !AlwaysCenter;
