@@ -1,3 +1,4 @@
+using Celeste.Editor;
 using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
@@ -38,12 +39,16 @@ namespace Celeste.Mod.UI {
             FlushSaveData,
             RetryLevel,
             SaveAndQuit,
-            ReturnToMainMenu
+            ReturnToMainMenu,
+            OpenDebugMap
         }
 
         public static CriticalErrorHandler CurrentHandler { get; private set; }
 
-        public static ExceptionDispatchInfo HandleCriticalError(ExceptionDispatchInfo error) {
+        // Done so that older mods that use this don't crash due to a linking error
+        public static ExceptionDispatchInfo HandleCriticalError(ExceptionDispatchInfo error) => HandleCriticalError(error, DisplayState.Initial);
+        
+        public static ExceptionDispatchInfo HandleCriticalError(ExceptionDispatchInfo error, DisplayState defaultDisplayState) {
             if (!CoreModule.Settings.UseInGameCrashHandler)
                 return error;
 
@@ -62,12 +67,16 @@ namespace Celeste.Mod.UI {
                 CurrentHandler.EncounteredAdditionalErrors = true;
                 AmendLogFile(CurrentHandler.LogFile, "Encountered an additional critical error", error.SourceException);
             }
-
+            
             // Invoke the critical error event
             Everest.Events.CriticalError(CurrentHandler);
-
+            
             // If this is a compatible scene, display as an overlay
-            if (CurrentHandler.State < DisplayState.Overlay && Celeste.Scene is Level lvl) {
+            if (
+                defaultDisplayState <= DisplayState.Overlay
+                && CurrentHandler.State < DisplayState.Overlay 
+                && Celeste.Scene is Level lvl
+            ) {
                 CurrentHandler.State = DisplayState.Overlay;
                 lvl.Add(CurrentHandler);
 
@@ -109,7 +118,10 @@ namespace Celeste.Mod.UI {
                 }
             }
 
-            if (CurrentHandler.State < DisplayState.CleanScene) {
+            if (
+                defaultDisplayState <= DisplayState.CleanScene
+                && CurrentHandler.State < DisplayState.CleanScene
+            ) {
                 Scene oldScene = CurrentHandler.Scene;
                 CurrentHandler.RemoveSelf();
                 oldScene?.Entities?.UpdateLists();
@@ -126,7 +138,10 @@ namespace Celeste.Mod.UI {
             }
 
             // If we aren't on a bluescreen scene, try that as a last resort
-            if (CurrentHandler.State < DisplayState.BlueScreen) {
+            if (
+                defaultDisplayState <= DisplayState.BlueScreen
+                && CurrentHandler.State < DisplayState.BlueScreen
+            ) {
                 Scene oldScene = CurrentHandler.Scene;
                 CurrentHandler.RemoveSelf();
                 oldScene?.Entities?.UpdateLists();
@@ -387,6 +402,9 @@ namespace Celeste.Mod.UI {
 
             UserChoice? choice = null;
             if (Session != null) {
+                if (Celeste.PlayMode == Celeste.PlayModes.Debug)
+                    optMenu.Add(new TextMenu.Button("Open debug map") { Disabled = !CanExecuteChoice(UserChoice.OpenDebugMap) }.Pressed(() => choice = UserChoice.OpenDebugMap));
+                
                 optMenu.Add(new TextMenu.Button("Retry level") { Disabled = !CanExecuteChoice(UserChoice.RetryLevel) }.Pressed(() => choice = UserChoice.RetryLevel));
                 optMenu.Add(new TextMenu.Button("Save & Quit") { Disabled = !CanExecuteChoice(UserChoice.SaveAndQuit) }.Pressed(() => choice = UserChoice.SaveAndQuit));
             }
@@ -433,6 +451,7 @@ namespace Celeste.Mod.UI {
 
         private bool CanExecuteChoice(UserChoice choice) => !failedChoices.Contains(choice) && choice switch {
             UserChoice.FlushSaveData => SaveData.Instance != null && !hasFlushedSaveData,
+            UserChoice.OpenDebugMap => Session != null && Celeste.PlayMode == Celeste.PlayModes.Debug,
             UserChoice.RetryLevel => Session != null,
             UserChoice.SaveAndQuit => SaveData.Instance != null && Session != null,
             UserChoice.ReturnToMainMenu => true,
@@ -452,7 +471,16 @@ namespace Celeste.Mod.UI {
                         }
                         hasFlushedSaveData = true;
                         return true; // We don't want to reset the overlay yet
+                        
+                    case UserChoice.OpenDebugMap:
+                        if (Session == null) {
+                            Logger.Warn("crit-error-handler", "Can't open debug map as no session is present!");
+                            return false;
+                        }
 
+                        Celeste.Scene = new MapEditor(Session.Area);
+                        break;
+                        
                     case UserChoice.RetryLevel:
                         if (Session == null) {
                             Logger.Warn("crit-error-handler", "Can't retry as no session is present!");
@@ -499,7 +527,7 @@ namespace Celeste.Mod.UI {
             optMenu.RecalculateSize();
 
             if (UsePlayerSprite) {
-                optMenu.Position = new Vector2(Celeste.TargetWidth * 0.15f, Celeste.TargetHeight * 0.55f);
+                optMenu.Position = new Vector2(Celeste.TargetWidth * 0.15f, Celeste.TargetHeight * 0.515f);
                 optMenu.Justify = new Vector2(0.5f, 0f);
 
                 // Reduce item spacing if there are too many items
@@ -595,6 +623,29 @@ namespace Celeste.Mod.UI {
                 optMenu?.Update();
 
             base.Update();
+            
+            
+            // Handle option keys
+            if (Engine.Scene.Tracker.GetEntity<KeyboardConfigUI>() == null && Engine.Scene.Tracker.GetEntity<ButtonConfigUI>() == null) {
+                if (Session != null) {
+                    if (Celeste.PlayMode == Celeste.PlayModes.Debug && CoreModule.Settings.DebugMap.Pressed) {
+                        CoreModule.Settings.DebugMap.ConsumePress();
+                        ForceOptionImmediately(UserChoice.OpenDebugMap);
+                    } else if (Input.MenuCancel.Pressed) {
+                        Input.MenuCancel.ConsumePress();
+                        ForceOptionImmediately(UserChoice.RetryLevel);
+                    }
+                } else if (Input.MenuCancel.Pressed) {
+                    Input.MenuCancel.ConsumePress();
+                    ForceOptionImmediately(UserChoice.ReturnToMainMenu);
+                }
+            }
+        }
+
+        private void ForceOptionImmediately(UserChoice choice) {
+            if (!ExecuteUserChoice(choice)) return;
+            if (CurrentHandler == this) return;
+            RemoveSelf(); // The rest of the coroutine is never run
         }
 
         private void BeforeRender() {
@@ -766,6 +817,24 @@ namespace Celeste.Mod.UI {
             }
         }
 
+        
+        [Command("criterror", "Shows the Everest critical error handler. Must take a display state of 'initial', 'overlay', 'cleanscene', or 'bluescreen'.")]
+        internal static void CmdCriticalError(string displayState = "initial") {
+            DisplayState? state = displayState switch {
+                "initial" => DisplayState.Initial,
+                "overlay" => DisplayState.Overlay,
+                "cleanscene" => DisplayState.CleanScene,
+                "bluescreen" => DisplayState.BlueScreen,
+                _ => null
+            };
+            if (state is not DisplayState validState) {
+                Engine.Commands.Log("Expected a display state of 'initial', 'overlay', 'cleanscene', or 'bluescreen'.", Color.Yellow);
+                return;
+            }
+            Exception exc = new(Calc.Random.NextSingle() > 0.95 ? "smots gaming" : "Hello, world!");
+            ExceptionDispatchInfo.SetCurrentStackTrace(exc);
+            HandleCriticalError(ExceptionDispatchInfo.Capture(exc), validState);
+        }
     }
 }
 
