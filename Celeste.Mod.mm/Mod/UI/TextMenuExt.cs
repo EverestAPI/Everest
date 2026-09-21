@@ -896,7 +896,7 @@ namespace Celeste {
                 Vector2 top = new Vector2(position.X, position.Y - (Height() / 2));
 
                 float alpha = Container.Alpha;
-                Color color = Disabled ? Color.DarkSlateGray : ((highlighted ? Container.HighlightColor : Container.UnselectedColor) * alpha);
+                Color color = Disabled ? Color.DarkSlateGray : ((highlighted ? Container.HighlightColor : UnselectedColor) * alpha);
                 Color strokeColor = Color.Black * (alpha * alpha * alpha);
 
                 bool uncentered = Container.InnerContent == TextMenu.InnerContentMode.TwoColumn && !AlwaysCenter;
