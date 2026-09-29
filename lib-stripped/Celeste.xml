@@ -1665,7 +1665,34 @@ How these should be structured is poorly documented, so if having nested members
             The top bound of the wipe.
             </summary>
         </member>
-    </members>
+      </members>
+      <members name="Achievements">
+        <member name="T:Celeste.Achievements">
+          <summary>
+            Manages achievements for Celeste on Steam.<br/>
+            The implementation is stubbed out in non-Steam copies of the game.<br/>
+            Mods should avoid depending on this class or any of its members, in order to ensure compatibility across platforms.
+          </summary>
+        </member>
+      </members>
+      <members name="Stats">
+        <member name="T:Celeste.Stats">
+          <summary>
+            Manages user stats for Celeste on Steam.<br/>
+            The implementation is stubbed out in non-Steam copies of the game.<br/>
+            Mods should avoid depending on this class or any of its members, in order to ensure compatibility across platforms.
+          </summary>
+        </member>
+      </members>
+      <members name="StatsForStadia">
+        <member name="T:Celeste.StatsForStadia">
+          <summary>
+            Manages user stats for Celeste on Google Stadia, a cloud-gaming service which was shut down on 18 January 2023.<br/>
+            The implementation is stubbed out in non-Google-Stadia copies of the game.<br/>
+            Mods should avoid depending on this class or any of its members, in order to ensure compatibility across platforms.
+          </summary>
+        </member>
+      </members>
     </members>
   </members>
   
