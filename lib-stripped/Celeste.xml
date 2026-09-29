@@ -1710,7 +1710,8 @@ How these should be structured is poorly documented, so if having nested members
       </member>
       <member name="M:Monocle.Entity.Collidable">
         <summary>
-          Whether this Entity should be detected in collision checks.
+          Whether this Entity should be detected in collision checks.<br/>
+          Note that non-collidable Entities themselves can still collide with other collidable Entities.
         </summary>
       </member>
       <member name="M:Monocle.Entity.Position">
