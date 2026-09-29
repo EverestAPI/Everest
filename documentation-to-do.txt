@@ -1,0 +1,9 @@
+-- Documented --
+
+- EntityID
+- Tags
+
+-- TO-DOcument --
+
+- EverestMapDataProcessor and MapDataFixup
+  - potentially BinaryPacker and MapData and other related classes as well
