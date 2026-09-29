@@ -1886,6 +1886,28 @@ How these should be structured is poorly documented, so if having nested members
       </member>
     </members>
     <members name="Scene">
+      <member name="T:Monocle.Scene">
+        <summary>
+          Represents a section of the game, as well as a collection of Entities.
+        </summary>
+      </member>
+      <member name="M:Monocle.Scene.Paused">
+        <summary>
+          Whether this Scene is paused.
+        </summary>
+      </member>
+      <member name="M:Monocle.Scene.TimeActive">
+        <summary>
+          How long this Scene has been active for.<br/>
+          Increases by <see cref="P:Monocle.Engine.DeltaTime"/> every frame while not paused, and is therefore affected by time rate.
+        </summary>
+      </member>
+      <member name="M:Monocle.Scene.RawTimeActive">
+        <summary>
+          How long this Scene has been active for.<br/>
+          Increases by <see cref="P:Monocle.Engine.RawDeltaTime"/> every frame, even while paused.
+        </summary>
+      </member>
       <member name="M:Monocle.Scene.OnInterval(System.Single)">
         <summary>
           Returns whether the Scene timer has passed the given time interval since the last frame. <br/>
