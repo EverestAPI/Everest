@@ -44,7 +44,7 @@ namespace Celeste.Mod.UI {
             Progress = 0;
             ProgressMax = max;
 
-            OnFinish += (gotoAction = () => Overworld.Goto<T>());
+            SwitchGoto<T>();
 
             if (task.Status == TaskStatus.Created)
                 task.Start();
