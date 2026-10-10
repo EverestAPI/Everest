@@ -46,6 +46,11 @@ namespace Celeste {
 
         public SubHudRenderer SubHudRenderer;
 
+        // we want to expose `ShouldCreateCassetteManager` to `CassetteListener` without modifying its visibility, so create an internal property that forwards to it
+        [MonoModIgnore]
+        private bool ShouldCreateCassetteManager { get; }
+        internal bool _ShouldCreateCassetteManager => ShouldCreateCassetteManager;
+
         public class LoadOverride {
 
             public Player NextLoadedPlayer = null;
