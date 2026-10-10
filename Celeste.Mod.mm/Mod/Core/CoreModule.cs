@@ -327,6 +327,14 @@ namespace Celeste.Mod.Core {
                 menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_togglemods")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiModToggler>();
                 }));
+
+                // insert mirror test under "Use Mirror to Download Mods"
+                int MirrorPreferenceEntryIndex = items.FindIndex(item => (item is TextMenu.Slider) && (item as TextMenu.Slider).Label == Dialog.Clean("MODOPTIONS_COREMODULE_MIRRORPREFERENCES"));
+                if (MirrorPreferenceEntryIndex != -1) {
+                    menu.Insert(MirrorPreferenceEntryIndex + 1, new TextMenu.Button(Dialog.Clean("MODOPTIONS_COREMODULE_MIRRORTESTING")).Pressed(() => {
+                        OuiModOptions.Instance.Overworld.Goto<OuiMirrorTester>();
+                    }));
+                }
             }
         }
 
