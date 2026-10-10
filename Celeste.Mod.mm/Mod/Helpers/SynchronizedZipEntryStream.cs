@@ -44,7 +44,7 @@ namespace Celeste.Mod.Helpers {
         // closes and reopens the ZipArchiveEntry in order to rewind the stream
         private void reset() {
             wrappedStream?.Close();
-            wrappedStream = new BufferedStream(entry.Open());
+            wrappedStream = entry.Open();
             position = 0;
         }
 
