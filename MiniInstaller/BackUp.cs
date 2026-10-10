@@ -1,12 +1,12 @@
-using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 
 namespace MiniInstaller;
 
 public static class BackUp {
-    public static void Backup() {
+    public static bool Backup() {
         // Backup / restore the original game files we're going to modify.
         // TODO: Maybe invalidate the orig dir when the backed up version < installed version?
         if (!Directory.Exists(Globals.PathOrig)) {
@@ -68,44 +68,80 @@ public static class BackUp {
             Directory.Delete(patchLibsDir, recursive: true);
         }
 
-        //Create symlinks
-        try {
-            CreateBackupSymlinks();
-        } catch (Exception e) {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                throw;
-            }
+        //Create symlinks if necessary
+        ShouldCreateBackupSymlinks(out bool content, out bool saves);
+        if (!content && !saves)
+            // target directories or symlinks already exist
+            return true;
 
-            if (!WindowsElevationRequest.HandleWindowsElevationProcedure(e))
-                throw;
+        if (!Symlinks.Supported) {
+            if (!Symlinks.ContinueInstallationWithoutSymlinks())
+                return false;
+
+            CreateBackupSymlinksFallback(content, saves);
+            return true;
         }
+
+        if (!Symlinks.NeedElevation) {
+            CreateBackupSymlinks(content, saves);
+            return true;
+        }
+
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            throw new UnreachableException("Symlinks are supported and need elevation, but we aren't on Windows? How did you do that?");
+
+        switch (Symlinks.CreateBackupSymlinksWithElevation()) {
+            case Symlinks.ElevationRequestResult.Accepted:
+                // symlinks have been created
+                break;
+            case Symlinks.ElevationRequestResult.Rejected:
+                CreateBackupSymlinksFallback(content, saves);
+                break;
+            case Symlinks.ElevationRequestResult.InstallationCancelled:
+                return false;
+            default:
+                throw new UnreachableException($"{nameof(Symlinks.ElevationRequestResult)} value out of range.");
+        }
+
+        return true;
     }
 
-    public static void CreateBackupSymlinks() {
-        if (!Directory.Exists(Path.Combine(Globals.PathOrig, "Content")))
+    public static void ShouldCreateBackupSymlinks(out bool content, out bool saves) {
+        content = !Directory.Exists(Path.Combine(Globals.PathOrig, "Content"));
+        saves = Globals.Platform == Globals.InstallPlatform.Windows && !Directory.Exists(Path.Combine(Globals.PathOrig, "Saves"));
+    }
+
+    public static void CreateBackupSymlinks(bool content, bool saves) {
+        if (content)
             Directory.CreateSymbolicLink(Path.Combine(Globals.PathOrig, "Content"), Path.GetRelativePath(Globals.PathOrig, Path.Combine(Globals.PathGame, "Content")));
 
-        if (Globals.Platform == Globals.InstallPlatform.Windows && !Directory.Exists(Path.Combine(Globals.PathOrig, "Saves"))) {
+        if (saves) {
             Directory.CreateDirectory(Path.Combine(Globals.PathGame, "Saves"));
             Directory.CreateSymbolicLink(Path.Combine(Globals.PathOrig, "Saves"), Path.GetRelativePath(Globals.PathOrig, Path.Combine(Globals.PathGame, "Saves")));
         }
     }
 
-    public static void CreateBackupSymlinksFallback() {
-        if (!Directory.Exists(Path.Combine(Globals.PathOrig, "Content"))) {
-            static void CopyDirectory(string src, string dst) {
-                Directory.CreateDirectory(dst);
-
-                foreach (string file in Directory.GetFiles(src))
-                    File.Copy(file, Path.Combine(dst, Path.GetRelativePath(src, file)));
-
-                foreach (string dir in Directory.GetDirectories(src))
-                    CopyDirectory(dir, Path.Combine(dst, Path.GetRelativePath(src, dir)));
-            }
+    public static void CreateBackupSymlinksFallback(bool content, bool saves) {
+        if (content) {
             CopyDirectory(Path.Combine(Globals.PathGame, "Content"), Path.Combine(Globals.PathOrig, "Content"));
         }
 
-        // We can't have a fallback for the saves folder symlink
+        if (saves) {
+            // We can't have a fallback for the saves folder symlink
+        }
+
+        return;
+
+        static void CopyDirectory(string src, string dst) {
+            Directory.CreateDirectory(dst);
+
+            foreach (string file in Directory.GetFiles(src))
+                File.Copy(file, Path.Combine(dst, Path.GetRelativePath(src, file)));
+
+            foreach (string dir in Directory.GetDirectories(src))
+                CopyDirectory(dir, Path.Combine(dst, Path.GetRelativePath(src, dir)));
+        }
+
     }
 
     private static void BackupPEDeps(string path, string depFolder, HashSet<string> backedUpDeps = null) {
