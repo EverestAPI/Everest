@@ -227,6 +227,35 @@ namespace Celeste.Mod {
         }
 
         /// <summary>
+        /// Add an Enter and Leave handler, notifying the user that the current setting is experimental.
+        /// </summary>
+        /// <param name="option">The input TextMenu.Item option.</param>
+        /// <param name="containingMenu">The menu containing the TextMenu.Item option.</param>
+        /// <param name="isExperimental">This method does nothing if this is set to false.</param>
+        /// <returns>The passed option.</returns>
+        public static TextMenu.Item IsExperimental(this TextMenu.Item option, patch_TextMenu containingMenu, bool isExperimental = true) {
+            if (!isExperimental)
+                return option;
+
+            // build the text menu entry
+            TextMenuExt.EaseInSubHeaderExt isExperimentalText = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean("MODOPTIONS_ISEXPERIMENTAL"), false, containingMenu) {
+                TextColor = Color.OrangeRed,
+                HeightExtra = 0f
+            };
+
+            List<TextMenu.Item> items = containingMenu.Items;
+            if (items.Contains(option)) {
+                // insert the text after the option
+                containingMenu.Insert(items.IndexOf(option) + 1, isExperimentalText);
+            }
+
+            option.OnEnter += delegate { isExperimentalText.FadeVisible = true; };
+            option.OnLeave += delegate { isExperimentalText.FadeVisible = false; };
+
+            return option;
+        }
+
+        /// <summary>
         /// Add an Enter and Leave handler, displaying a description if selected.
         /// </summary>
         /// <param name="option">The input TextMenu.Item option.</param>

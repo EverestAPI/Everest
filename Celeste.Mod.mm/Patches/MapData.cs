@@ -16,6 +16,8 @@ using Celeste.Mod.Helpers;
 namespace Celeste {
     public class patch_MapData : MapData {
 
+        private static readonly object locker = new object();
+
         public bool DetectedCassette;
         public int DetectedStrawberriesIncludingUntracked;
         public List<EntityData> DashlessGoldenberries = new List<EntityData>();
@@ -177,7 +179,9 @@ namespace Celeste {
             if (root.Children.Find(element => element.Name == "meta") is BinaryPacker.Element meta)
                 ProcessMeta(meta);
 
-            new MapDataFixup(this).Process(root);
+            lock (locker) {
+                new MapDataFixup(this).Process(root);
+            }
 
             return root;
         }

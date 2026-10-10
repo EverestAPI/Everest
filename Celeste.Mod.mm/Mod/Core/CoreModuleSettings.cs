@@ -159,6 +159,11 @@ namespace Celeste.Mod.Core {
         [SettingIgnore]
         public int LogHistoryCountToKeep { get; set; } = 3;
 
+        [SettingInGame(false)]
+        [SettingExperimental]
+        [SettingNeedsRelaunch]
+        public bool? FastLevelLoading { get; set; } = null;
+
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
