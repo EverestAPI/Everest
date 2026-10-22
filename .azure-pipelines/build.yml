@@ -10,7 +10,7 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
-  runtimeVersion: 'net8.0' # Must match TargetFramework in the csprojs
+  runtimeVersion: 'net10.0' # Must match TargetFramework in the csprojs
   VANILLA_CACHE: $(Pipeline.Workspace)/vanilla
 
 name: '$(Build.BuildId)+$(Build.BuildIdOffset)'
@@ -26,7 +26,7 @@ steps:
 - task: UseDotNet@2
   displayName: 'Set up .NET'
   inputs: # packageType defaults to sdk
-    version: 9.0.304 # net9.0 required by MonoMod
+    version: 10.0.110 # Monomod enforces 10.0.100 with a lastestPatch rollForward
 
 - task: DotNetCoreCLI@2
   displayName: 'Restore NuGet packages'
