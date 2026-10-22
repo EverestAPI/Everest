@@ -57,6 +57,8 @@ namespace Celeste {
 
         private StaticMover staticMover;
 
+        public List<Solid> Solids => solids;
+
         public patch_Decal(string texture, Vector2 position, Vector2 scale, int depth)
             : base(texture, position, scale, depth) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
@@ -233,15 +235,24 @@ namespace Celeste {
                 SolidChecker = s => !solids.Contains(s) && s.CollideRect(new Rectangle((int) X + x, (int) Y + y, w, h)),
                 OnDestroy = () => {
                     RemoveSelf();
-                    solids.ForEach(s => s.RemoveSelf());
+                    solids.ForEach(s => {
+                        s.DestroyStaticMovers();
+                        s.RemoveSelf();
+                    });
                 },
                 OnDisable = () => {
                     Active = Visible = Collidable = false;
-                    solids.ForEach(s => s.Collidable = false);
+                    solids.ForEach(s => {
+                        s.Collidable = false;
+                        s.DisableStaticMovers();
+                    });
                 },
                 OnEnable = () => {
                     Active = Visible = Collidable = true;
-                    solids.ForEach(s => s.Collidable = true);
+                    solids.ForEach(s => {
+                        s.Collidable = true;
+                        s.EnableStaticMovers();
+                    });
                 },
                 OnMove = v => {
                     Position += v;
@@ -251,17 +262,23 @@ namespace Celeste {
                         s.MoveV(v.Y, liftSpeed.Y);
                     });
                 },
-                OnShake = v => Position += v,
+                OnShake = v => {
+                    Position += v;
+                    solids.ForEach(s => s.OnShake(v));
+                },
                 OnAttach = p => {
                     p.Add(new EntityRemovedListener(() => {
                         RemoveSelf();
-                        solids.ForEach(s => s.RemoveSelf());
+                        solids.ForEach(s => {
+                            s.DestroyStaticMovers();
+                            s.RemoveSelf();
+                        });
                     }));
                     CoreModule.Session.AttachedDecals.Add(string.Format("{0}||{1}||{2}", Name, Position.X, Position.Y));
                 }
             };
             if (jumpThrus)
-                staticMover.JumpThruChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) X + y, w, h));
+                staticMover.JumpThruChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) Y + y, w, h));
             Add(staticMover);
         }
 
@@ -300,9 +317,12 @@ namespace Celeste {
 
         public override void Awake(Scene scene) {
             base.Awake(scene);
-            if (staticMover?.Platform == null && CoreModule.Session.AttachedDecals.Contains(string.Format("{0}||{1}||{2}", Name, Position.X, Position.Y))) {
-                RemoveSelf();
-            }
+
+            ((patch_EntityList) (object) scene.Entities).OnEndOfAwake += () => {
+                if (staticMover?.Platform == null && CoreModule.Session.AttachedDecals.Contains(string.Format("{0}||{1}||{2}", Name, Position.X, Position.Y))) {
+                    RemoveSelf();
+                }
+            };
         }
 
         public extern void orig_Added(Scene scene);
