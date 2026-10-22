@@ -194,6 +194,7 @@ namespace Celeste.Mod {
 
                 EverestSplashHandler.SetSplashLoadingModCount(files.Length + dirs.Length);
 
+                LoaderChecksumCache.Initialize(PathCache);
                 foreach (string file in files) {
                     LoadZip(Path.Combine(PathMods, file));
                 }
@@ -204,6 +205,7 @@ namespace Celeste.Mod {
                 enforceOptionalDependencies = false;
                 Logger.Info("loader", "Loading mods with unsatisfied optional dependencies (if any)");
                 Everest.CheckDependenciesOfDelayedMods();
+                LoaderChecksumCache.Flush();
 
                 EverestSplashHandler.AllModsLoaded();
 
