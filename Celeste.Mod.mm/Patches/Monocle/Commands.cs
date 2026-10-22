@@ -410,12 +410,134 @@ namespace Monocle {
             return (forward && backWord && !foreWord) || (!forward && !backWord && foreWord);
         }
 
-        // Fix for https://github.com/EverestAPI/Everest/issues/167
-        private extern void orig_EnterCommand();
+        [MonoModReplace]
         private void EnterCommand() {
-            // only accept commands that will be correctly parsed
-            if (!string.IsNullOrWhiteSpace(currentText.Replace(",", ""))) {
-                orig_EnterCommand();
+            string command;
+            string[] args;
+            try {
+                ParseCommand(currentText, out command, out args);
+            } catch (Exception e) {
+                RecordCommand();
+                Log($"Invalid command: {e.Message}", Color.Yellow);
+                return;
+            }
+
+            if (command is null)
+                // no input or only separator chars
+                return;
+
+            RecordCommand();
+            ExecuteCommand(command, args);
+
+            return;
+
+            void RecordCommand() {
+                if (commandHistory.Count == 0 || commandHistory[0] != currentText)
+                    commandHistory.Insert(0, currentText);
+                drawCommands.Insert(0, new patch_Line(currentText, Color.Aqua));
+                currentText = "";
+                seekIndex = -1;
+            }
+        }
+
+        // keep in sync with the if in ParseCommand
+        private static readonly char[] CommandSeparators = { ' ', ',' };
+
+        private static void ParseCommand(
+            string input,
+            out string command,
+            out string[] args)
+        {
+            ReadOnlySpan<char> inputSpan = input.AsSpan().Trim(CommandSeparators);
+
+            command = null;
+            args = null;
+            if (inputSpan.IsEmpty)
+                // no input or only separator chars
+                return;
+
+            List<string> argsList = null;
+            bool readingCommand = true;
+
+            bool tokenIsQuoted = false;
+            bool inQuote = false;
+            bool charEscaped = false;
+            StringBuilder currentToken = new();
+
+            foreach (char c in inputSpan) {
+                if (charEscaped) {
+                    if (c is not ('"' or '\\'))
+                        throw new FormatException($"Unrecognized escape sequence: \\{c}");
+
+                    currentToken.Append(c);
+                    charEscaped = false;
+                    continue;
+                }
+
+                if (c is '\\') {
+                    charEscaped = true;
+                    continue;
+                }
+
+                if (inQuote) {
+                    if (c is '"')
+                        inQuote = false;
+                    else
+                        currentToken.Append(c);
+                    continue;
+                }
+
+                if (c is '"') {
+                    if (currentToken.Length > 0)
+                        throw new FormatException("Attempted to open a quote in the middle of a token.");
+                    if (tokenIsQuoted)
+                        throw new FormatException("Attempted to open a quote twice in one token.");
+
+                    tokenIsQuoted = true;
+                    inQuote = true;
+                    continue;
+                }
+
+                if (c is ' ' or ',') {
+                    if (currentToken.Length == 0 && !tokenIsQuoted)
+                        // doubled up separator, let's pretend we didn't see that
+                        continue;
+
+                    // TODO: should we trim the tokens?
+                    if (readingCommand) {
+                        command = currentToken.ToString();
+                        currentToken.Clear();
+                        readingCommand = false;
+                    } else {
+                        argsList ??= new List<string>(capacity: 1);
+                        argsList.Add(currentToken.ToString());
+                        currentToken.Clear();
+                    }
+                    tokenIsQuoted = false;
+                    continue;
+                }
+
+                if (tokenIsQuoted)
+                    throw new FormatException("Missing separator after quoted token.");
+                currentToken.Append(c);
+            }
+
+            // end of input, ensure we're in a valid state and consume the final token
+            // (currentToken can't be empty as we trimmed any separators at the end of the string)
+            if (tokenIsQuoted && inQuote)
+                throw new FormatException("Unclosed quote.");
+            if (charEscaped)
+                throw new FormatException("Incomplete escape sequence.");
+
+            // TODO: should we trim the tokens?
+            if (readingCommand) {
+                command = currentToken.ToString();
+                args = Array.Empty<string>();
+            } else if (argsList is null) {
+                args = new[] { currentToken.ToString() };
+            } else {
+                argsList.Add(currentToken.ToString());
+                args = argsList.ToArray();
             }
         }
 
