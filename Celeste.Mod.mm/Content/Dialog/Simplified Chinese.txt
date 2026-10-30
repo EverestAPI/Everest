@@ -22,15 +22,17 @@
 	POSTCARD_LEVELGONE= 		{big}谢谢你((player))！{/big}{n}不过我们的 {#ff1144}((sid)){#} 在另一座山。
 	POSTCARD_LEVELLOADFAILED= 	{big}不好意思！{/big}{n}{#ff1144}((sid)){#} 加载失败了。{n}请把你的 {#44adf7}log.txt{#}{n} 文件发送给作者。
 	POSTCARD_LEVELNOSPAWN= 		{big}哦吼！{/big}{n}有人忘记了设置{#44adf7}重生点！{#}{n}请检查一下你的地图{n}是否存在 {#44adf7}Player{#} entity。
-    POSTCARD_BADTILEID=			{big}哦吼！{/big}{n}在房间 {#ff1144}((room)){#} {#ff1144}(((x)), ((y))){#} 处有一个未定义的 ((type))tile id {#ff1144}((id)){#}。请查看你的 {#44adf7}log.txt{#} 文件获知更详细的信息。
-    POSTCARD_DECALREGERROR=		{big}哦吼！{/big}{n}在设置 {#ff1144}((decal)){#} 的属性 {n}{#ff1144}((property)){#} 时出现了错误！{n}你可能在 {#44adf7}Decal Registry{#} 中忘记设置或者设置了一个无效的属性。
+    POSTCARD_BADTILEID=			{big}哦吼！{/big}{n}在房间 {#ff1144}((room)){#}{n}{#ff1144}(((x)), ((y))){#} 处有一个未定义的{n}((type))tile id {#ff1144}((id)){#}。{n}请查看你的 {#44adf7}log.txt{#} 文件获知更详细的信息。
+    POSTCARD_DECALREGERROR=		{big}哦吼！{/big}{n}在设置 {#ff1144}((decal)){#} 的属性 {n}{#ff1144}((property)){#} 时出现了错误！{n}你可能在 {#44adf7}Decal Registry{#} 中忘记设置{n}或者设置了一个无效的属性。
 	POSTCARD_MISSINGTUTORIAL=	{big}哦吼！{/big}{n}找不到回放教学 {#ff1144}((tutorial)){#}。{n}请查看你的 {#44adf7}log.txt{#} 文件获知更详细的信息。
 	POSTCARD_TILEXMLERROR=		{big}哦吼！{/big}{n}在解析 {#ff1144}((path)){#} 中的 Tileset 时出现了错误。{n}请查看你的 {#44adf7}log.txt{#} 文件获知更详细的信息。
+	POSTCARD_DUPLICATETILEID=   {big}哦吼！{/big}{n}Tileset ID “{#ff1144}((tilechar)){#}”（{#ff1144}U+((tilehex)){#}）{n}被重复定义了。请检查{n}{#44adf7}((filename)){#}{n}中是否存在重复的 Tileset ID。
 	POSTCARD_XMLERROR=			{big}哦吼！{/big}{n}{#ff1144}((path)){#} 中出现了语法错误。{n}请查看你的 {#44adf7}log.txt{#} 文件获知更详细的信息。
 	POSTCARD_BOSSLASTNODEHIT=	{big}哦吼！{/big}{n}{#ff1144}Badeline Boss{#} 实体的最后一个节点被玩家碰到了，{n}请在当前房间外新加入一个额外的节点{n}确保玩家不会碰到它。
 
 
 # Main Menu
+	POSTCARD_LEVELNOROOMS=		{big}哦吼！{/big}{n}这张地图{#f94a4a}没有房间{#}！{n}请确保你的地图中有{n}{#44adf7}至少一个房间{#}，并且{n}创建地图后已经保存过。
 	MENU_TITLETOUCH= 		TOUCH
 	MENU_MAPLIST= 			地图列表
 	MENU_MODOPTIONS= 		Mod 选项
@@ -99,6 +101,8 @@
 	MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT=			使用键盘输入文字
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS=			everest.yaml 错误警告
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC=		有助于 Mod 制作者发现错误
+	MODOPTIONS_COREMODULE_COLORIZEDLOGGING=			        彩色控制台日志
+    MODOPTIONS_COREMODULE_COLORIZEDLOGGING_DESC=		    有助于 Mod 开发者调试
 	MODOPTIONS_COREMODULE_MENUNAV_SUBHEADER=				菜单导航
 	MODOPTIONS_COREMODULE_MENUPAGEUP=						向上翻页
 	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						向下翻页
@@ -131,11 +135,33 @@
 	MODOPTIONS_COREMODULE_DISCORDSHOWDEATHS=				展示死亡数量
 	MODOPTIONS_COREMODULE_DISCORDFAILED=					无法连接到 Discord。请关闭重试。
 
+	MODOPTIONS_COREMODULE_PSOPTIONS=						Everest 光敏模式选项
+	MODOPTIONS_COREMODULE_PSOPTIONS_DESC=					允许单独开关光敏模式中的部分效果。由 Everest 添加。
+	MODOPTIONS_COREMODULE_PSDISTORT=						焦虑与扭曲特效
+	MODOPTIONS_COREMODULE_PSDISTORT_DESC=					控制靠近大眼怪时产生的扭曲特效。
+	MODOPTIONS_COREMODULE_PSGLITCH=							故障特效
+	MODOPTIONS_COREMODULE_PSGLITCH_DESC=					控制第九章中进入“视界”时的故障特效。
+	MODOPTIONS_COREMODULE_PSLIGHTNING=						电网内部闪烁
+	MODOPTIONS_COREMODULE_PSLIGHTNING_DESC=					控制第九章中的电流障碍内部是否闪烁。
+	MODOPTIONS_COREMODULE_PSSCREENFLASH=					屏幕闪光
+	MODOPTIONS_COREMODULE_PSSCREENFLASH_DESC=				控制屏幕是否闪白，例如激活核心开关时的闪光。
+	MODOPTIONS_COREMODULE_PSTEXTHIGHLIGHT=					文字高亮
+	MODOPTIONS_COREMODULE_PSTEXTHIGHLIGHT_DESC=				控制文字被选中时是否闪烁为另一种颜色。
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES=				使用镜像下载 Mod
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_GB=				禁用
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_JADE=			德国
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_WEGFAN=			中国
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_OTOBOT=			北美
+	MODOPTIONS_COREMODULE_MIRRORPREFERENCES_RISINGSUNLIGHT= 法国
+	MODOPTIONS_COREMODULE_USEAPIMIRROR= 				    使用数据库镜像
+	MODOPTIONS_COREMODULE_USEAPIMIRROR_DESC=			    如果出现“下载数据库失败”错误，此选项可能有所帮助
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						有一些 Mod 加载失败了。
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						请查看 log.txt 文件获知更详细的信息。
 	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND= 				未找到 {0}
+	MODOPTIONS_COREMODULE_NOTLOADED_ASMLOADERROR=			Mod 程序集加载失败
 	MODOPTIONS_COREMODULE_YAMLERRORS= 						有一些 everest.yaml 文件无法加载。
 
+	MODOPTIONS_COREMODULE_SEARCHBOX_PLACEHOLDER=			按下 'Tab' 或者 'Enter' 键切换到下一个匹配项
 	MODOPTIONS_VANILLATRISTATE_NEVER=						关
 	MODOPTIONS_VANILLATRISTATE_EVEREST=						仅 EVEREST
 	MODOPTIONS_VANILLATRISTATE_ALWAYS=						开
@@ -164,6 +190,7 @@
 	LEVELSET_= 					未分类
 
 # Updater
+	MISSING_VANILLA_DATA= 缺少原版游戏数据 :(
 	UPDATER_TITLE= 					更新
     UPDATER_LEGACYREF_TITLE=		安装 LEGACYREF
 	UPDATER_VERSIONS_TITLE= 		更改 Everest 版本
@@ -265,6 +292,7 @@
 	DEPENDENCYDOWNLOADER_UPDATING=					安装更新 {0} ({1} -> {2}) 到 {3}…
 	DEPENDENCYDOWNLOADER_INSTALLING=				安装 Mod {0} v.{1} 到 {2}…
 	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			错误：安装 {0} 失败，请查看你的 log.txt 文件获知更详细的信息。
+	DEPENDENCYDOWNLOADER_HOTLOAD_FAILED=			警告：{0} 热加载失败，需要重启游戏。
 	DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST=			从黑名单中移除 Mod {0} 中…
 	DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED=		自动从黑名单中移除 Mod 失败。请查看你的 log.txt 文件获知更详细的信息。
 	DEPENDENCYDOWNLOADER_LOADING_MOD=				正在加载来自 {1} 的 {0}
