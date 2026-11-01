@@ -211,6 +211,8 @@ namespace Celeste.Mod {
                 Logger.Verbose("loader", $"ALL MODS LOADED IN {watch.ElapsedMilliseconds}ms");
                 Logger.Info("loader", $"Loaded {Everest._Modules.Count} modules");
 
+                DataComponentRegistry.Optimize();
+
                 try {
                     Watcher = new FileSystemWatcher {
                         Path = PathMods,
