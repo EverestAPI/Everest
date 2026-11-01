@@ -820,12 +820,12 @@ namespace Celeste {
 
                 bool completedAllBSides = true;
                 for (int i = 0; i <= MaxArea; i++) {
-                    AreaData areaData = AreaData.Areas[offset + i];
+                    patch_AreaData areaData = patch_AreaData.Areas[offset + i];
                     if (!areaData.HasMode(AreaMode.BSide)) {
                         continue;
                     }
                     AreaModeStats modeStats = AreasIncludingCeleste[i].Modes[(int) AreaMode.BSide];
-                    bool interlude = areaData.Interlude;
+                    bool interlude = areaData.Interlude_Unsafe;
                     bool mapHasHeartGem = areaData.Mode[(int) AreaMode.BSide].MapData.DetectedHeartGem;
                     bool heartGemCollected = modeStats.HeartGem;
                     bool completed = modeStats.Completed;
@@ -839,7 +839,42 @@ namespace Celeste {
                 }
 
                 for (int i = 0; i <= MaxArea; i++) {
-                    if (!AreaData.Areas[offset + i].Interlude && AreasIncludingCeleste[i].Cassette) {
+                    if (!patch_AreaData.Areas[offset + i].Interlude_Unsafe && AreasIncludingCeleste[i].Cassette) {
+                        return 2;
+                    }
+                }
+
+                return 1;
+            }
+        }
+
+        [XmlIgnore]
+        public int UnlockedModesUnsafe {
+            get {
+                int offset = AreaOffset;
+
+                bool completedAllBSides = true;
+                for (int i = 0; i <= MaxArea; i++) {
+                    patch_AreaData areaData = patch_AreaData.Areas[offset + i];
+                    if (!areaData.HasMode(AreaMode.BSide)) {
+                        continue;
+                    }
+                    AreaModeStats modeStats = AreasIncludingCeleste[i].Modes[(int) AreaMode.BSide];
+                    bool interlude = areaData.Interlude_Unsafe;
+                    bool mapHasHeartGem = areaData.Mode[(int) AreaMode.BSide].MapData.DetectedHeartGem;
+                    bool heartGemCollected = modeStats.HeartGem;
+                    bool completed = modeStats.Completed;
+                    if (!interlude && !(mapHasHeartGem ? heartGemCollected : completed)) {
+                        completedAllBSides = false;
+                    }
+                }
+
+                if (completedAllBSides) {
+                    return 3;
+                }
+
+                for (int i = 0; i <= MaxArea; i++) {
+                    if (!patch_AreaData.Areas[offset + i].Interlude_Unsafe && AreasIncludingCeleste[i].Cassette) {
                         return 2;
                     }
                 }
