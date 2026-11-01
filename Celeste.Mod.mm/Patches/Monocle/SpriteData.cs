@@ -11,13 +11,17 @@ namespace Monocle {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        private extern bool orig_HasFrames(patch_Atlas atlas, string path, int[] frames = null);
+        [MonoModReplace]
         private bool HasFrames(patch_Atlas atlas, string path, int[] frames = null) {
-            atlas.PushFallback(null);
-            bool rv = orig_HasFrames(atlas, path, frames);
-            atlas.PopFallback();
-            return rv;
+            if (frames == null || frames.Length == 0) {
+                return atlas.GetAtlasSubtexturesAt(path, 0, null) != null;
+            }
+            for (int i = 0; i < frames.Length; i++) {
+                if (atlas.GetAtlasSubtexturesAt(path, frames[i], null) == null) {
+                    return false;
+                }
+            }
+            return true;
         }
-
     }
 }
