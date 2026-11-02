@@ -7,8 +7,10 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
+using Celeste.Mod;
 
 namespace Celeste {
+    [PatchSpeedInterface]
     class patch_MoveBlock : MoveBlock {
 
         public patch_MoveBlock(Vector2 position, int width, int height, MoveBlock.Directions direction, bool canSteer, bool fast)
@@ -19,6 +21,13 @@ namespace Celeste {
         [MonoModIgnore]
         [PatchMoveBlockController]
         private extern IEnumerator Controller();
+
+        class patch_Debris : ISpeed {
+            private Vector2 speed;
+
+            [PatchInterfaceProperty]
+            Vector2 ISpeed.Speed { get => speed; set => speed = value; }
+        }
     }
 }
 
