@@ -313,6 +313,34 @@ namespace Celeste {
             }
         }
 
+        public string GetFurthestAreaName() {
+            if (!CoreModule.Settings.TrueLastAreaInFileSelect || string.IsNullOrEmpty(SaveData.TrueLastAreaSID)) {
+                return Dialog.Clean(AreaData.Areas[FurthestArea].Name);
+            }
+
+            float maxSize = 580;
+            float fullnameExtraSize = ActiveFont.Measure('[').X + ActiveFont.Measure(']').X;
+            float truncatedExtraSize = 3f * ActiveFont.Measure('.').X + fullnameExtraSize;
+
+            int truncatedStart = SaveData.TrueLastAreaSID.Length;
+            float size = 0f;
+
+            while (truncatedStart > 0) {
+                float newSize = size + ActiveFont.Measure(SaveData.TrueLastAreaSID[truncatedStart - 1]).X;
+                if (newSize + truncatedExtraSize > maxSize)
+                    break;
+                size = newSize;
+                truncatedStart -= 1;
+            }
+
+            for (int i = 0; i < truncatedStart; i++) {
+                size += ActiveFont.Measure(SaveData.TrueLastAreaSID[i]).X;
+                if (size + fullnameExtraSize > maxSize)
+                    return "[..." + SaveData.TrueLastAreaSID[truncatedStart..] + "]";
+            }
+            return "[" + SaveData.TrueLastAreaSID + "]";
+        }
+
         // very similar to MoveTo, except the easing is different if the slot was already moving.
         // used for scrolling, since using MoveTo can look weird if holding up or down in file select.
         internal void ScrollTo(float x, float y) {
@@ -506,6 +534,7 @@ namespace MonoMod {
             FieldDefinition f_totalGoldenStrawberries = declaringType.FindField("totalGoldenStrawberries");
             FieldDefinition f_totalHeartGems = declaringType.FindField("totalHeartGems");
             FieldDefinition f_totalCassettes = declaringType.FindField("totalCassettes");
+            MethodDefinition m_GetFurthestAreaName = declaringType.FindMethod("GetFurthestAreaName");
 
             ILCursor cursor = new ILCursor(context);
             // SaveData.TotalStrawberries replaced by SaveData.TotalStrawberries_Safe with MonoModLinkFrom
@@ -563,6 +592,16 @@ namespace MonoMod {
             cursor.RemoveRange(8);
             // Replace with `this.farewellStamp`
             cursor.Emit(OpCodes.Ldfld, f_farewellStamp);
+
+            // Replace Dialog.Clean(AreaData.Areas[FurthestArea].Name)
+            cursor.GotoNext(instr => instr.MatchLdfld("Celeste.AreaData", "Name"),
+                instr => instr.MatchLdnull(),
+                instr => instr.MatchCall("Celeste.Dialog", "Clean"));
+            cursor.Index -= 4;
+            cursor.RemoveRange(7);
+            // Replace with this.GetFurthestAreaName()
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_GetFurthestAreaName);
         }
 
         public static void PatchOuiFileSelectSlotOnContinueSelected(ILContext context, CustomAttribute attrib) {
