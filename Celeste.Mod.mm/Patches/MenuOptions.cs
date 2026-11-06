@@ -2,77 +2,35 @@
 
 using FMOD.Studio;
 using Celeste.Mod.Core;
-using Celeste.Mod;
-using Microsoft.Xna.Framework;
+using System.Reflection;
 
 namespace Celeste {
     class patch_MenuOptions {
 
+        private static string[] photosensitivityOptions = new string[] {
+            "Distort",
+            "Glitch",
+            "Lightning",
+            "ScreenFlash",
+            "TextHighlight"
+        };
+
         public static extern TextMenu orig_Create(bool inGame = false, EventInstance snapshot = null);
         public static TextMenu Create(bool inGame = false, EventInstance snapshot = null) {
-
             // Create the original options menu
             patch_TextMenu menu = (patch_TextMenu) orig_Create(inGame, snapshot);
 
             // Get the index of the photosensitive mode option
-            int photosensitiveIndex = menu.GetItems().FindIndex(item =>
-                item.GetType() == typeof(TextMenu.OnOff) && ((TextMenu.OnOff) item).Label == Dialog.Clean("OPTIONS_DISABLE_FLASH"));
-
-            // Create all of our submenu options and their descriptions
-            // TODO: Make this less redundant using a loop and reflection
-            TextMenu.Item distort = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSDISTORT"), CoreModule.Settings.PhotosensitivityDistortOverride)
-                .Change(value => {
-                    CoreModule.Settings.PhotosensitivityDistortOverride = value;
-                });
-            var distortDesc = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean("MODOPTIONS_COREMODULE_PSDISTORT_DESC"), false, menu) { HeightExtra = 0f };
-            distort.OnEnter += () => distortDesc.FadeVisible = true;
-            distort.OnLeave += () => distortDesc.FadeVisible = false;
-
-            TextMenu.Item glitch = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSGLITCH"), CoreModule.Settings.PhotosensitivityGlitchOverride)
-                .Change(value => {
-                    CoreModule.Settings.PhotosensitivityGlitchOverride = value;
-                });
-            var glitchDesc = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean("MODOPTIONS_COREMODULE_PSGLITCH_DESC"), false, menu) { HeightExtra = 0f };
-            glitch.OnEnter += () => glitchDesc.FadeVisible = true;
-            glitch.OnLeave += () => glitchDesc.FadeVisible = false;
-
-            TextMenu.Item lightning = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSLIGHTNING"), CoreModule.Settings.PhotosensitivityLightningOverride)
-                .Change(value => {
-                    CoreModule.Settings.PhotosensitivityLightningOverride = value;
-                });
-            var lightningDesc = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean("MODOPTIONS_COREMODULE_PSLIGHTNING_DESC"), false, menu) { HeightExtra = 0f };
-            lightning.OnEnter += () => lightningDesc.FadeVisible = true;
-            lightning.OnLeave += () => lightningDesc.FadeVisible = false;
-
-            TextMenu.Item screenFlash = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSSCREENFLASH"), CoreModule.Settings.PhotosensitivityScreenFlashOverride)
-                .Change(value => {
-                    CoreModule.Settings.PhotosensitivityScreenFlashOverride = value;
-                });
-            var screenFlashDesc = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean("MODOPTIONS_COREMODULE_PSSCREENFLASH_DESC"), false, menu) { HeightExtra = 0f };
-            screenFlash.OnEnter += () => screenFlashDesc.FadeVisible = true;
-            screenFlash.OnLeave += () => screenFlashDesc.FadeVisible = false;
-
-            TextMenu.Item textHighlight = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_PSTEXTHIGHLIGHT"), CoreModule.Settings.PhotosensitivityTextHighlightOverride)
-                .Change(value => {
-                    CoreModule.Settings.PhotosensitivityTextHighlightOverride = value;
-                });
-            var textHighlightDesc = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean("MODOPTIONS_COREMODULE_PSTEXTHIGHLIGHT_DESC"), false, menu) { HeightExtra = 0f };
-            textHighlight.OnEnter += () => textHighlightDesc.FadeVisible = true;
-            textHighlight.OnLeave += () => textHighlightDesc.FadeVisible = false;
+            int photosensitiveIndex = menu.Items.FindIndex(
+                item => item is TextMenu.OnOff onOff
+                     && onOff.Label == Dialog.Clean("OPTIONS_DISABLE_FLASH")
+            );
 
             // Put all the options into a big submenu
-            TextMenuExt.SubMenu submenu = new TextMenuExt.SubMenu(Dialog.Clean("MODOPTIONS_COREMODULE_PSOPTIONS"), false)
-                .Add(distort)
-                .Add(distortDesc)
-                .Add(glitch)
-                .Add(glitchDesc)
-                .Add(lightning)
-                .Add(lightningDesc)
-                .Add(screenFlash)
-                .Add(screenFlashDesc)
-                .Add(textHighlight)
-                .Add(textHighlightDesc);
-            
+            TextMenuExt.SubMenu submenu = new TextMenuExt.SubMenu(Dialog.Clean("MODOPTIONS_COREMODULE_PSOPTIONS"), false);
+            foreach (string name in photosensitivityOptions)
+                makePhotosentivityItem(menu, submenu, name);
+
             // Create a master switch that toggles the submenu to replace the existing photosensitive mode option
             TextMenu.Item masterSwitch = new TextMenu.OnOff(Dialog.Clean("OPTIONS_DISABLE_FLASH"), Settings.Instance.DisableFlashes)
                 .Change(value => {
@@ -81,7 +39,7 @@ namespace Celeste {
                 });
 
             // Remove the existing photosensitive menu and replace it with our master switch
-            menu.Remove(menu.GetItems()[photosensitiveIndex]);
+            menu.Remove(menu.Items[photosensitiveIndex]);
             menu.Insert(photosensitiveIndex, masterSwitch);
 
             // Insert the submenu at the correct point
@@ -90,8 +48,36 @@ namespace Celeste {
             // Disable the submenu if necessary
             submenu.Disabled = !Settings.Instance.DisableFlashes;
 
+            // Also create a colorblindness accessibility switch
+            TextMenu.Item colorblindness = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_COREMODULE_COLORBLINDNESS"), CoreModule.Settings.ColourblindnessAccessibility)
+                .Change(value => {
+                    CoreModule.Settings.ColourblindnessAccessibility = value;
+                });
+            var colorblindnessDesc = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean("MODOPTIONS_COREMODULE_COLORBLINDNESS_DESC"), false, menu) { HeightExtra = 0f };
+            colorblindness.OnEnter += () => colorblindnessDesc.FadeVisible = true;
+            colorblindness.OnLeave += () => colorblindnessDesc.FadeVisible = false;
+
+            menu.Insert(photosensitiveIndex + 2, colorblindness);
+            menu.Insert(photosensitiveIndex + 3, colorblindnessDesc);
+
             // Send back the menu
             return menu;
+        }
+
+        private static void makePhotosentivityItem(patch_TextMenu menu, TextMenuExt.SubMenu submenu, string name) {
+            string key = $"MODOPTIONS_COREMODULE_PS{name.ToUpper()}";
+            string setting = $"Photosensitivity{name}Override";
+            PropertyInfo property = typeof(CoreModuleSettings).GetProperty(setting);
+
+            TextMenu.Item item = new TextMenu.OnOff(Dialog.Clean(key), (bool)property.GetValue(CoreModule.Settings))
+                .Change(value => {
+                    property.SetValue(CoreModule.Settings, value);
+                });
+            var desc = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean(key + "_DESC"), false, menu) { HeightExtra = 0f };
+            item.OnEnter += () => desc.FadeVisible = true;
+            item.OnLeave += () => desc.FadeVisible = false;
+
+            submenu.Add(item).Add(desc);
         }
     }
 }
