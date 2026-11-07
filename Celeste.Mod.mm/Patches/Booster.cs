@@ -15,7 +15,7 @@ namespace Celeste {
         public override void Render() {
             orig_Render();
             if (CoreModule.Settings.ColourblindnessAccessibility)
-                GFX.Game["everest/objects/booster" + (red ? "Red" : "") + "/colorblindness_symbol"].DrawCentered(Position, Color.White * 0.5f);
+                GFX.Game["everest/objects/booster" + (red ? "Red" : "") + "/colorblindness_symbol"].DrawCentered(Position);
         }
         
     }
