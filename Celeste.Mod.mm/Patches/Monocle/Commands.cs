@@ -500,7 +500,6 @@ namespace Monocle {
                         // doubled up separator, let's pretend we didn't see that
                         continue;
 
-                    // TODO: should we trim the tokens?
                     if (readingCommand) {
                         command = currentToken.ToString();
                         currentToken.Clear();
@@ -526,7 +525,6 @@ namespace Monocle {
             if (charEscaped)
                 throw new FormatException("Incomplete escape sequence.");
 
-            // TODO: should we trim the tokens?
             if (readingCommand) {
                 command = currentToken.ToString();
                 args = Array.Empty<string>();
