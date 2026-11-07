@@ -445,6 +445,7 @@ namespace Monocle {
             out string command,
             out string[] args)
         {
+            // keep separators in sync with the if in ParseCommand
             ReadOnlySpan<char> inputSpan = input.AsSpan().Trim(stackalloc[] { ' ', ',' });
 
             command = null;
