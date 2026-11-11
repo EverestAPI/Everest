@@ -46,6 +46,9 @@ namespace Celeste {
         [DllImport("fmod_SDL", CallingConvention = CallingConvention.Cdecl)]
         private static extern void FMOD_SDL_Register(IntPtr system);
 
+        [DllImport("fmodstudio", EntryPoint = "FMOD_Studio_System_Create")]
+        private static extern RESULT FMOD_Studio_System_Create(out IntPtr studiosystem, uint headerversion);
+
         [MonoModReplace]
         public static void Init() {
             if (Everest.Flags.IsHeadless) {
@@ -63,12 +66,20 @@ namespace Celeste {
                 if (Settings.Instance.LaunchWithFMODLiveUpdate)
                     flags = FMOD.Studio.INITFLAGS.LIVEUPDATE;
 
-                CheckFmod(FMOD.Studio.System.create(out system));
+                RESULT createResult = FMOD.Studio.System.create(out system);
+                if (createResult == RESULT.ERR_HEADER_MISMATCH) {
+                    createResult = FMOD_Studio_System_Create(out IntPtr sysHandle, 0x00020100);
+                    if (createResult == RESULT.OK) {
+                        system = new FMOD.Studio.System(sysHandle);
+                    }
+                }
+                CheckFmod(createResult);
 
-                // The following snippet is missing on XNA
-                system.getLowLevelSystem(out var lowLevelSystem);
-                if (SDL.SDL_GetPlatform().Equals("Linux"))
+                // The following snippet is only needed on Linux
+                if (SDL.SDL_GetPlatform().Equals("Linux")) {
+                    system.getLowLevelSystem(out var lowLevelSystem);
                     FMOD_SDL_Register(lowLevelSystem.getRaw());
+                }
 
                 CheckFmod(system.initialize(1024, flags, FMOD.INITFLAGS.NORMAL, IntPtr.Zero));
 
