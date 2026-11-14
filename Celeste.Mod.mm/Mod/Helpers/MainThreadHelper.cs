@@ -3,6 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,17 +17,36 @@ namespace Celeste.Mod {
 
             public bool TaskIsForceQueued;
 
-            private readonly ConcurrentQueue<Task> _TasksQueue = new ConcurrentQueue<Task>();
-            private readonly Stopwatch _Stopwatch = new Stopwatch();
+            private readonly Dictionary<Task, ulong> _TaskIds = new();
+            private readonly SortedDictionary<ulong, Task> _TasksList = new();
+            private ulong _taskId;
+            private readonly Stopwatch _Stopwatch = new();
 
             public override int MaximumConcurrencyLevel => 1;
 
-            protected override IEnumerable<Task> GetScheduledTasks() => _TasksQueue;
-            protected override void QueueTask(Task task) => _TasksQueue.Enqueue(task);
+            protected override IEnumerable<Task> GetScheduledTasks() {
+                return _TasksList.Values;
+            }
+            
+            protected override void QueueTask(Task task) {
+                lock (_TasksList) {
+                    ulong id = _taskId++;
+                    _TaskIds.TryAdd(task, id);
+                    _TasksList[id] = task;
+                }
+            }
+
+            protected override bool TryDequeue(Task task) {
+                lock (_TasksList) {
+                    if (!_TaskIds.Remove(task, out ulong id)) return false;
+                    // If one is removed, the other one should always succeed too
+                    if (!_TasksList.Remove(id)) throw new UnreachableException();
+                    return true;
+                }
+            }
 
             protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued) {
                 // We must be on the main thread
-                // We don't have to worry about dequeuing as there only is a single thread executing tasks
                 if (!IsMainThread)
                     return false;
 
@@ -34,25 +54,45 @@ namespace Celeste.Mod {
                 if (TaskIsForceQueued)
                     return false;
 
+                if (taskWasPreviouslyQueued) {
+                    if (!TryDequeue(task)) throw new UnreachableException();
+                }
+
                 return TryExecuteTask(task);
             }
 
             public void ExecuteTasksFor(int timeSlice) {
-                if (_TasksQueue.Count <= 0)
-                    return;
-
                 // Execute tasks during our allocated time slice
-                _Stopwatch.Reset();
-                while (_Stopwatch.ElapsedMilliseconds < timeSlice) {
-                    if (!_TasksQueue.TryDequeue(out Task task))
-                        break;
+                // Always execute a task at least
+                if (timeSlice > 0)
+                    _Stopwatch.Restart();
+                do {
+                    Task task;
+                    lock (_TasksList) {
+                        if (_TasksList.Count == 0) break;
+                        ulong smallest = _TasksList.Keys.First();
+                        if (!_TasksList.Remove(smallest, out task) || !_TaskIds.Remove(task)) 
+                            throw new UnreachableException();
+                    }
                     TryExecuteTask(task);
-                }
+                } while (timeSlice > 0 && _Stopwatch.ElapsedMilliseconds < timeSlice);
+                if (timeSlice > 0)
+                    _Stopwatch.Stop();
+            }
+
+            // Should always be invoked from main thread
+            internal bool TryRunTaskNow(Task task) {
+                Debug.Assert(IsMainThread);
+                if (!TryDequeue(task)) return false;
+                
+                TryExecuteTask(task);
+                
+                return true;
             }
 
         }
 
-        public static MainThreadHelper Instance;
+        internal static MainThreadHelper Instance;
 
         public static Thread MainThread { get; private set; }
         public static bool UpdatedOnce { get; private set; }
@@ -84,7 +124,7 @@ namespace Celeste.Mod {
             if (forceQueue && IsMainThread) {
                 try {
                     TaskScheduler.TaskIsForceQueued = true;
-                    return Schedule(act);
+                    return new ValueTask(TaskFactory.StartNew(act));
                 } finally {
                     TaskScheduler.TaskIsForceQueued = false;
                 }
@@ -101,7 +141,7 @@ namespace Celeste.Mod {
             if (forceQueue && IsMainThread) {
                 try {
                     TaskScheduler.TaskIsForceQueued = true;
-                    return Schedule(act);
+                    return new ValueTask<T>(TaskFactory.StartNew(act));
                 } finally {
                     TaskScheduler.TaskIsForceQueued = false;
                 }
@@ -112,12 +152,28 @@ namespace Celeste.Mod {
             else
                 return new ValueTask<T>(TaskFactory.StartNew(act));
         }
+        
+        public static ValueTask<T> Schedule<T>(Func<T> act, CancellationToken ct, bool forceQueue = false) {
+            if (forceQueue && IsMainThread) {
+                try {
+                    TaskScheduler.TaskIsForceQueued = true;
+                    return new ValueTask<T>(TaskFactory.StartNew(act, ct));
+                } finally {
+                    TaskScheduler.TaskIsForceQueued = false;
+                }
+            }
+
+            if (IsMainThread)
+                return new ValueTask<T>(act());
+            else
+                return new ValueTask<T>(TaskFactory.StartNew(act, ct));
+        }
 
         public static Task Schedule(Func<Task> act, bool forceQueue = false) {
             if (forceQueue && IsMainThread) {
                 try {
                     TaskScheduler.TaskIsForceQueued = true;
-                    return Schedule(act);
+                    return TaskFactory.StartNew(act).Unwrap();
                 } finally {
                     TaskScheduler.TaskIsForceQueued = false;
                 }
@@ -133,7 +189,7 @@ namespace Celeste.Mod {
             if (forceQueue && IsMainThread) {
                 try {
                     TaskScheduler.TaskIsForceQueued = true;
-                    return Schedule(act);
+                    return TaskFactory.StartNew(act).Unwrap();
                 } finally {
                     TaskScheduler.TaskIsForceQueued = false;
                 }
@@ -143,6 +199,41 @@ namespace Celeste.Mod {
                 return act();
             else
                 return TaskFactory.StartNew(act).Unwrap();
+        }
+
+        // Waits for a task to complete while using the downtime to run MTH tasks
+        public static void BusyWaitTask(Task task) {
+            if (task.IsCompletedSuccessfully) return;
+            if (!IsMainThread) {
+                task.Wait();
+                return;
+            }
+            
+            if (TaskScheduler.TryRunTaskNow(task)) {
+                if (task.IsCompleted)
+                    return;
+                throw new InvalidOperationException("Recursive call to BusyWaitTask!");
+            }
+            while (!task.IsCompleted) {
+                TaskScheduler.ExecuteTasksFor(0);
+            }
+            task.Wait(0); // .Wait to pop any exceptions in this other code path too
+        }
+
+        // Waits for a task to complete while using the downtime to run MTH tasks
+        public static T BusyWaitTask<T>(Task<T> task) {
+            BusyWaitTask((Task)task);
+            return task.Result; // The task is fully guaranteed to be complete here
+        }
+        
+        public static void BusyWaitTask(ValueTask valueTask) {
+            if (valueTask.IsCompletedSuccessfully) return;
+            BusyWaitTask(valueTask.AsTask());
+        }
+
+        public static T BusyWaitTask<T>(ValueTask<T> valueTask) {
+            if (valueTask.IsCompletedSuccessfully) return valueTask.Result;
+            return BusyWaitTask(valueTask.AsTask());
         }
 
         public static readonly YieldFrameAwaitable YieldFrame;
