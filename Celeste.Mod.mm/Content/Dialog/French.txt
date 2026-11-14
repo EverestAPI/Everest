@@ -318,6 +318,12 @@
 	MODOPTIONS_MODTOGGLE_BINS=			Fichiers .bin de maps
 	MODOPTIONS_MODTOGGLE_SEARCHBOX_PLACEHOLDER=		Appuie sur Tab ou Entrée pour lancer la recherche
 
+# Mirror Testing Menu
+	MODOPTIONS_MIRRORTESTING= TEST DES MIROIRS
+	MODOPTIONS_MIRRORTESTING_EXPLANATION= Tout les miroirs vont être utilisés pour télécharger{n}un même mod puis Everest va choisir le miroir avec la meilleur vitesse de téléchargement.
+	MODOPTIONS_MIRRORTESTING_DOWNLOADING= Téléchargement du mod via le miroir ((mirror))
+	MODOPTIONS_MIRRORTESTING_DOWNLOADED= Téléchargement du mod via le miroir ((mirror)) fini en
+
 # Asset Reload Helper
 	ASSETRELOADHELPER_RELOADINGMAP=			Rechargement de la map...
 	ASSETRELOADHELPER_RELOADINGLEVEL=		Rechargement du niveau...
