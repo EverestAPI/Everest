@@ -4,6 +4,7 @@ namespace Celeste.Mod.Registry.DecalRegistryHandlers;
 
 internal sealed class StaticMoverDecalRegistryHandler : DecalRegistryHandler {
     private int _x, _y, _width, _height;
+    private bool _jumpThrus;
     
     public override string Name => "staticMover";
     
@@ -12,6 +13,7 @@ internal sealed class StaticMoverDecalRegistryHandler : DecalRegistryHandler {
         _y = Get(xml, "y", 0);
         _width = Get(xml, "width", 16);
         _height = Get(xml, "height", 16);
+        _jumpThrus = GetBool(xml, "jumpThrus", false);
     }
 
     public override void ApplyTo(Decal decal) {
@@ -19,6 +21,6 @@ internal sealed class StaticMoverDecalRegistryHandler : DecalRegistryHandler {
         
         decal.ScaleRectangle(ref x, ref y, ref width, ref height);
 
-        ((patch_Decal)decal).MakeStaticMover(x, y, width, height);
+        ((patch_Decal)decal).MakeStaticMover(x, y, width, height, _jumpThrus);
     }
 }

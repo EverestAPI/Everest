@@ -11,6 +11,7 @@ using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Monocle {
     // No public constructors.
@@ -24,6 +25,8 @@ namespace Monocle {
         /// The list of entities which are about to get added.
         /// </summary>
         public List<Entity> ToAdd => toAdd;
+
+        public event Action OnEndOfAwake;
 
         internal void ClearEntities() {
             entities.Clear();
@@ -53,6 +56,8 @@ namespace Monocle {
                 // so this should be very rare in practice.
             }
         }
+
+        private void _PostAwake() => Interlocked.Exchange(ref OnEndOfAwake, null)?.Invoke();
     }
 
     public static class EntityListExt {
@@ -107,6 +112,9 @@ namespace MonoMod {
         }
 
         public static void PatchEntityListUpdateLists(ILContext context, CustomAttribute attrib) {
+            TypeDefinition t_EntityList = MonoModRule.Modder.FindType("Monocle.EntityList").Resolve();
+            MethodDefinition m_PostAwake = t_EntityList.FindMethod("_PostAwake");
+
             ILCursor cursor = new ILCursor(context);
 
             // if (!current.Contains(entity)) {          if (current.Add(entity)) {
@@ -139,6 +147,11 @@ namespace MonoMod {
             cursor.GotoPrev(instr => instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference).GetID().Contains("List`1<Monocle.Entity>::Contains"));
             cursor.Prev.Previous.Operand = currentOperand;
             cursor.Next.Operand = hashRemoveOperand;
+
+            // at the end, call PostAwake
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchRet());
+            cursor.EmitLdarg0();
+            cursor.EmitCallvirt(m_PostAwake);
         }
 
         public static void PatchEntityListAdd(ILContext context, CustomAttribute attrib) {
