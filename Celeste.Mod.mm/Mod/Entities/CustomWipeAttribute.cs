@@ -9,7 +9,7 @@ namespace Celeste.Mod.Entities;
 /// <br/>
 /// If there is no match, then the full type name of the Screen Wipe is checked for.
 /// </summary>
-[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
 public class CustomWipeAttribute : Attribute {
 
     /// <summary>

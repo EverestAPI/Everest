@@ -6,7 +6,7 @@ namespace Celeste.Mod.Backdrops {
     /// <br></br>
     /// This Backdrop will be loaded when a matching ID is detected.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
     public class CustomBackdropAttribute : Attribute {
         /// <summary>
         /// A list of unique identifiers for this Backdrop.<br/>

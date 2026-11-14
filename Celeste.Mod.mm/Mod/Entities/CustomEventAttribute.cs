@@ -9,7 +9,7 @@ namespace Celeste.Mod.Entities {
     /// <br></br>
     /// <seealso href="https://github.com/EverestAPI/Resources/wiki/Creating-Custom-Events#customevent-attribute">Read More.</seealso>
     /// </summary>
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
     public class CustomEventAttribute : Attribute {
 
         /// <summary>

@@ -25,8 +25,11 @@ public static class EntityRegistry {
     /// Might not necessarily be exhaustive, for example if entities from that type have not been instantiated yet.
     /// </summary>
     public static IReadOnlySet<string> GetKnownSidsFromType(Type type) => TypeToSids.GetValueOrDefault(type) ?? EmptyStringSet;
-    
-    internal static void RegisterSidToTypeConnection(string sid, Type type) {
+
+    /// <summary>
+    /// Indicates that a given sid is associated with a C# type.
+    /// </summary>
+    public static void RegisterSidToTypeConnection(string sid, Type type) {
         if (sid is null || type is null)
             return;
 
