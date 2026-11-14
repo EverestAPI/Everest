@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Celeste.Mod.Core;
+using Microsoft.Xna.Framework;
 using Monocle;
 using System;
 using System.Collections;
@@ -502,9 +503,12 @@ namespace Celeste.Mod.UI {
         }
 
         private Color GetTextColor(bool selected) {
-            if (selected)
-                return (Calc.BetweenInterval(timer, 0.1f) ? selectColorA : selectColorB);
-            return unselectColor;
+            if (!selected)
+                return unselectColor;
+            if (!CoreModule.Settings.AllowTextHighlight)
+                return selectColorA;
+
+            return Calc.BetweenInterval(timer, 0.1f) ? selectColorA : selectColorB;
         }
 
     }
