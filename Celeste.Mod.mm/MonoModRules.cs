@@ -4,10 +4,12 @@ using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
+using MethodImplAttributes = Mono.Cecil.MethodImplAttributes;
 
 namespace MonoMod {
 #region Helper Patch Attributes
@@ -132,6 +134,39 @@ namespace MonoMod {
 
             // Add common post processor
             modder.PostProcessors += CommonPostProcessor;
+
+            // For the methods that will land in the vanilla namespace from everest patches
+            // run the no inlining criteria on those too.
+            // MonoMod will nuke the inlining configuration of vanilla methods when
+            // those are replaced, this is why this needs to be recalculated.
+            // Also find the non-orig_ counterparts of orig_ methods to run the no inlining criteria on them,
+            // since those are hooked often.
+            foreach (TypeDefinition typeDef in RulesModule.Types) {
+                AddNoInliningToRulesModule(typeDef);
+            }
+            return;
+
+            static void AddNoInliningToRulesModule(TypeDefinition type) {
+                HashSet<string> origMethods = [];
+                foreach (MethodDefinition method in type.Methods) {
+                    if (method.Name.StartsWith("orig_")) {
+                        string targetName = method.Name["orig_".Length..];
+                        origMethods.Add(targetName);
+                    }
+                }
+                foreach (MethodDefinition method in type.Methods) {
+                    // 2 cases: replaced methods and non-orig_ counterpart of orig_ methods (and also those which use an attribute instead of the orig_ syntax).
+                    if ((method.HasCustomAttribute("MonoMod.MonoModReplace") 
+                         || method.HasCustomAttribute("MonoMod.MonoModOriginalName") || origMethods.Contains(method.Name)) 
+                        && method.Body.CodeSize >= 20 && (method.ImplAttributes & MethodImplAttributes.AggressiveInlining) == 0) {
+                        method.ImplAttributes |= MethodImplAttributes.NoInlining;
+                    }
+                }
+                
+                foreach (TypeDefinition nestedTypeDef in type.NestedTypes) {
+                    AddNoInliningToRulesModule(nestedTypeDef);
+                }
+            }
         }
 
         public static void CommonPostProcessor(MonoModder modder) {
