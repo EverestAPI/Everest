@@ -281,9 +281,16 @@ public static class LibAndDepHandling {
                 Logger.LogLine($"Binding OS X apphost {Path.ChangeExtension(appExe, null)}");
                 HostWriter.CreateAppHost(Path.Combine(hostsDir, "osx"), Path.ChangeExtension(appExe, null), Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll));
 
-                File.Delete(Path.Combine(Globals.PathOSXExecDir, Path.GetFileNameWithoutExtension(appExe)));
-                File.CreateSymbolicLink(Path.Combine(Globals.PathOSXExecDir, Path.GetFileNameWithoutExtension(appExe)),
-                                        Path.GetRelativePath(Globals.PathOSXExecDir, Path.ChangeExtension(appExe, null)));
+                string osxExecLink = Path.Combine(Globals.PathOSXExecDir, Path.GetFileNameWithoutExtension(appExe));
+                string appHostPath = Path.GetRelativePath(Globals.PathOSXExecDir, Path.ChangeExtension(appExe, null));
+                File.Delete(osxExecLink);
+                if (Symlinks.Supported && !Symlinks.NeedElevation)
+                    File.CreateSymbolicLink(osxExecLink, appHostPath);
+                else
+                    // an apphost is usually small enough so that copying is a non-issue.
+                    // besides, if we're here, it's usually an edge case; windows never had to do this,
+                    // and people usually don't use FAT-based filesystems on Unix machines
+                    File.Copy(appHostPath, osxExecLink);
                 File.Delete(Globals.PathCelesteExe);
             } break;
         }
