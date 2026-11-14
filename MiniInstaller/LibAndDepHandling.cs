@@ -272,7 +272,38 @@ public static class LibAndDepHandling {
             case Globals.InstallPlatform.MacOS: {
                 // Bind OS X apphost
                 Logger.LogLine($"Binding OS X apphost {Path.ChangeExtension(appExe, null)}");
-                HostWriter.CreateAppHost(Path.Combine(hostsDir, "osx"), Path.ChangeExtension(appExe, null), Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll));
+                string appHostDst = Path.ChangeExtension(appExe, null);
+                string appBinaryRel = Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll);
+                HostWriter.CreateAppHost(Path.Combine(hostsDir, "osx"), appHostDst, appBinaryRel);
+
+                // In universal Mach-O binaries, HostWriter only replaces the first occurrence of the placeholder.
+                // Replace any remaining placeholders (e.g. in arm64 slice) and ad-hoc codesign on macOS.
+                try {
+                    byte[] placeholder = System.Text.Encoding.ASCII.GetBytes("c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2");
+                    byte[] appBinaryBytes = System.Text.Encoding.UTF8.GetBytes(appBinaryRel + "\0");
+                    byte[] replacement = new byte[placeholder.Length];
+                    Array.Copy(appBinaryBytes, replacement, appBinaryBytes.Length);
+
+                    byte[] destBytes = File.ReadAllBytes(appHostDst);
+                    bool modified = false;
+
+                    for (int i = 0; i <= destBytes.Length - placeholder.Length; i++) {
+                        if (destBytes.AsSpan(i, placeholder.Length).SequenceEqual(placeholder)) {
+                            replacement.CopyTo(destBytes.AsSpan(i, placeholder.Length));
+                            modified = true;
+                            i += placeholder.Length - 1;
+                        }
+                    }
+
+                    if (modified) {
+                        File.WriteAllBytes(appHostDst, destBytes);
+                    }
+
+                    Process codesignProc = Process.Start(new ProcessStartInfo("codesign", $"-s - -f \"{appHostDst}\"") { UseShellExecute = false });
+                    codesignProc?.WaitForExit();
+                } catch (Exception ex) {
+                    Logger.LogLine($"Warning: failed to patch or sign OS X apphost: {ex.Message}");
+                }
 
                 File.Delete(Path.Combine(Globals.PathOSXExecDir, Path.GetFileNameWithoutExtension(appExe)));
                 File.CreateSymbolicLink(Path.Combine(Globals.PathOSXExecDir, Path.GetFileNameWithoutExtension(appExe)),

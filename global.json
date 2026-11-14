@@ -1,4 +1,7 @@
 {
+  "sdk": {
+    "version": "9.0.304"
+  },
   "msbuild-sdks": {
     "Microsoft.Net.Sdk.IL": "8.0.0"
   }
