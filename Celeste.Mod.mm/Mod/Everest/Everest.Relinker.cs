@@ -18,7 +18,7 @@ namespace Celeste.Mod {
             /// <summary>
             /// The current Celeste.exe's checksum.
             /// </summary>
-            public static string GameChecksum => _GameChecksum = (_GameChecksum ?? Everest.GetChecksum(Assembly.GetAssembly(typeof(Relinker)).Location).ToHexadecimalString());
+            public static string GameChecksum => _GameChecksum = (_GameChecksum ?? Everest.GetCachedChecksum(Assembly.GetAssembly(typeof(Relinker)).Location).ToHexadecimalString());
             private static string _GameChecksum;
 
             /// <summary>
