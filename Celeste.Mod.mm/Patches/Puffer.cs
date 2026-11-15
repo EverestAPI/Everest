@@ -53,7 +53,7 @@ namespace MonoMod {
                 instr => instr.MatchCall("Monocle.Entity", "get_Scene"),
                 instr => instr.MatchCallvirt("Monocle.Scene", "get_Tracker"),
                 instr => instr.MatchCallvirt(out MethodReference m)
-                                  && m.FullName == "System.Collections.Generic.List`1<Monocle.Entity> Monocle.Tracker::GetEntities<Celeste.TempleCrackedBlock>()");
+                         && m.FullName == "System.Collections.Generic.List`1<Monocle.Entity> Monocle.Tracker::GetEntities<Celeste.TempleCrackedBlock>()");
 
             // get the (inclusive) start index of the code to remove
             int removeStartIndex = cursor.Index;
