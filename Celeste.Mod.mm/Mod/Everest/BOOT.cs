@@ -24,6 +24,8 @@ namespace Celeste.Mod {
     /// </summary>
     internal static class BOOT {
 
+        private static string OldPath;
+
         [MakeEntryPoint]
         private static void Main(string[] args) {
             try {
@@ -207,7 +209,25 @@ namespace Celeste.Mod {
             }
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                SetDllDirectory(Path.Combine(AppContext.BaseDirectory, $"lib64-win-{(Environment.Is64BitProcess ? "x64" : "x86")}")); // Windows is the only platform with an API like this
+                // <rant>
+                // our previous approach would've used kernel32!SetDllDirectory, which worked perfectly fine
+                // for the almost 4 years we've been doing things. microsoft, however, decided this wasn't good enough.
+                // their new :sparkles: AI Feature :sparkles: called Automatic Super Resolution chose violence,
+                // overwriting our SetDllDirectory during D3D11 swapchain creation with the value
+                // "%ProgramFiles%\WindowsApps\Microsoft.AutoSuperResolution_1.10.7.0_x64__8wekyb3d8bbwe\",
+                // and doesn't reset it to the previous path, subsequently destroying any attempt at
+                // resolving celeste/everest's native libraries. this happens regardless of whether
+                // the feature is turned on, because why?
+                // initially using the OpenGL driver worked via "--graphics OpenGL" but another user
+                // kept getting the same error but with a different library. turns out an intel driver
+                // still created a D3D11 swapchain, which runs into the same issue of SetDllDirectory being overwritten.
+                // this leaves us with no choice but to inject the path to lib64-win-x64 to the beginning of PATH.
+                // fuck microsoft. wasted 3 days debugging this thing.
+                // </rant>
+                // - Snip
+                OldPath = Environment.GetEnvironmentVariable("PATH");
+                string everestLibPath = Path.Combine(AppContext.BaseDirectory, $"lib64-win-{(Environment.Is64BitProcess ? "x64" : "x86")}");
+                Environment.SetEnvironmentVariable("PATH", $"{OldPath}{Path.PathSeparator}{everestLibPath}");
 
                 // Register an unmanaged DLL resolver so that we can take redirect fmod.dll to fmod64.dll
                 AssemblyLoadContext.Default.ResolvingUnmanagedDll += static (_, name) => {
@@ -229,10 +249,6 @@ namespace Celeste.Mod {
             }
 
         }
-
-        [SupportedOSPlatform("windows")]
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern bool SetDllDirectory(string lpPathName);
 
         public static Process StartCelesteProcess(string gameDir = null, bool clearFNAEnv = true) {
             gameDir ??= AppContext.BaseDirectory;
@@ -266,8 +282,8 @@ namespace Celeste.Mod {
 
         public static void StartVanilla() {
             // Revert native library path to prevent accidentally messing with vanilla
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                SetDllDirectory(null);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && OldPath is not null)
+                Environment.SetEnvironmentVariable("PATH", OldPath);
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", null);
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
