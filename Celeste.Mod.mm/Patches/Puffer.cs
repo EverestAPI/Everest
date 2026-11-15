@@ -45,7 +45,7 @@ namespace MonoMod {
 
             ILCursor cursor = new(context);
 
-            // remove hardcoded explosion interactions (excluding players and theo crystals)
+            // remove hardcoded explosion interactions (excluding for players and theo crystals)
 
             // jump to just before the first hardcoded interaction (TempleCrackedBlocks)
             cursor.GotoNext(MoveType.Before,
@@ -64,7 +64,7 @@ namespace MonoMod {
                 instr => instr.MatchLdloc0(),
                 instr => instr.MatchCall("Monocle.Entity", "set_Collider"));
 
-            // get the (exclusive) start index of the code to remove
+            // get the (exclusive) end index of the code to remove
             int removeEndIndex = cursor.Index;
 
             // remove the try/finally blocks used by the foreach loops over entities with hardcoded explosion interactions

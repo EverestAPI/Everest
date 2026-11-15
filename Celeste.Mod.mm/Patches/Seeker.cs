@@ -118,7 +118,7 @@ namespace MonoMod {
                     instr => instr.MatchLdfld("Celeste.Seeker", "physicsHitbox"),
                     instr => instr.MatchCallvirt("Monocle.Entity", "set_Collider"));
 
-                // get the (exclusive) start index of the code to remove
+                // get the (exclusive) end index of the code to remove
                 int removeEndIndex = cursor.Index;
 
                 // remove the try/finally blocks used by the foreach loops over entities with hardcoded explosion interactions
@@ -129,7 +129,7 @@ namespace MonoMod {
                     }
                 }
 
-                // remove the hardcoded explosion interactions
+                // remove hardcoded explosion interactions
                 cursor.Index = removeStartIndex;
                 cursor.RemoveRange(removeEndIndex - removeStartIndex);
                 cursor.MoveAfterLabels();

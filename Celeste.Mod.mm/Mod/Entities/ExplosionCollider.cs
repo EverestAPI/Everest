@@ -22,16 +22,16 @@ public class ExplosionCollider : Component {
     public Collider Collider;
 
     /// <summary>
-    /// Creates a new <see cref="ExplosionCollider"/>.
+    /// Create a new <see cref="ExplosionCollider"/> component.
     /// </summary>
-    /// <param name="onCollide">The Action to be called when an explosion collides with this component.</param>
-    /// <param name="collider">A collider to optionally be used instead of this component's entity's collider for colliding with explosions.</param>
+    /// <param name="onCollide">The Action to call when an explosion collides with this component.</param>
+    /// <param name="collider">A collider to optionally use instead of this component's entity's collider for colliding with explosions.</param>
     public ExplosionCollider(Action<Entity, Vector2> onCollide, Collider collider = null) : base(false, false) {
         OnCollide = onCollide;
         Collider = collider;
     }
 
-    private bool Check(Entity other) {
+    public bool Check(Entity other) {
         Collider entityCollider = Entity.Collider;
         if (Collider != null) {
             Entity.Collider = Collider;
