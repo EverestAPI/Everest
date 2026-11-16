@@ -46,5 +46,10 @@ namespace Monocle {
         internal void _PreUpdate() => PreUpdate?.Invoke(this);
 
         internal void _PostUpdate() => PostUpdate?.Invoke(this);
+
+        /// <summary>
+        /// Allows changing the awake priority for an entity (similar to Depth, but decides the order of Awake instead of Update).
+        /// </summary>
+        public virtual int AwakePriority => 0;
     }
 }
