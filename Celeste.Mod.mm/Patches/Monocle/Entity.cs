@@ -5,7 +5,10 @@ using Celeste.Mod.Registry;
 using System.ComponentModel;
 
 namespace Monocle {
-    class patch_Entity : Entity {
+    public class patch_Entity : Entity {
+        internal object[] slots = null;
+        internal DebugModeDataComponent[][] debugSlots = null;
+
         public new Scene Scene {
             [MonoModIgnore]
             get;
