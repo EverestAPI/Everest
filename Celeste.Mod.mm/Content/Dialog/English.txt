@@ -146,6 +146,9 @@
 	MODOPTIONS_COREMODULE_PSSCREENFLASH_DESC=				Controls whether the screen can flash white, like on activating a core switch.
 	MODOPTIONS_COREMODULE_PSTEXTHIGHLIGHT=					Text Highlighting
 	MODOPTIONS_COREMODULE_PSTEXTHIGHLIGHT_DESC=				Controls whether text will flash a different color on select.
+
+	MODOPTIONS_COREMODULE_COLORBLINDNESS=					Colorblindness Accessiblity
+	MODOPTIONS_COREMODULE_COLORBLINDNESS_DESC=				wawawawawawawawawawawawawawwawawawawawawawawawawawwawawawawawaawawawa
 	
 
 	MODOPTIONS_COREMODULE_MIRRORPREFERENCES=				Use Mirror to Download Mods
