@@ -24,8 +24,50 @@
         <AppHost_win-x86>..\lib-ext\piton\piton-gui-win_x86.exe</AppHost_win-x86>
         <AppHost_win-x64>..\lib-ext\piton\piton-gui-win_x64.exe</AppHost_win-x64>
         <AppHost_linux-x64>..\lib-ext\piton\piton-linux_x64</AppHost_linux-x64>
-        <AppHost_osx-x64>..\lib-ext\piton\piton-gui-macos_x64</AppHost_osx-x64>
+        <AppHost_osx>..\lib-ext\piton\piton-gui-macos</AppHost_osx>
     </PropertyGroup>
+
+    <UsingTask TaskName="PatchUniversalAppHost" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <AppHostPath ParameterType="System.String" Required="true" />
+            <AppBinaryName ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Using Namespace="System.Text" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                    byte[] placeholder = Encoding.ASCII.GetBytes("c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2");
+                    byte[] appBinaryBytes = Encoding.UTF8.GetBytes(AppBinaryName + "\0");
+                    byte[] replacement = new byte[placeholder.Length];
+                    Array.Copy(appBinaryBytes, replacement, appBinaryBytes.Length);
+
+                    byte[] destBytes = File.ReadAllBytes(AppHostPath);
+                    bool modified = false;
+
+                    for (int i = 0; i <= destBytes.Length - placeholder.Length; i++) {
+                        bool match = true;
+                        for (int j = 0; j < placeholder.Length; j++) {
+                            if (destBytes[i + j] != placeholder[j]) {
+                                match = false;
+                                break;
+                            }
+                        }
+                        if (match) {
+                            Array.Copy(replacement, 0, destBytes, i, replacement.Length);
+                            modified = true;
+                            i += placeholder.Length - 1;
+                        }
+                    }
+
+                    if (modified) {
+                        File.WriteAllBytes(AppHostPath, destBytes);
+                    }
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
 
     <!-- Bind AppHosts for EverestBootSplash, just a trick to "compile" for all platforms in one publish -->
     <Target Name="IncludeAppHosts" BeforeTargets="AssignTargetPaths">
@@ -33,14 +75,14 @@
             <AppHostIntermediatePath_win-x86>$(IntermediateOutputPath)\EverestSplash-win.exe</AppHostIntermediatePath_win-x86>
             <AppHostIntermediatePath_win-x64>$(IntermediateOutputPath)\EverestSplash-win64.exe</AppHostIntermediatePath_win-x64>
             <AppHostIntermediatePath_linux-x64>$(IntermediateOutputPath)\EverestSplash-linux</AppHostIntermediatePath_linux-x64>
-            <AppHostIntermediatePath_osx-x64>$(IntermediateOutputPath)\EverestSplash-osx</AppHostIntermediatePath_osx-x64>
+            <AppHostIntermediatePath_osx>$(IntermediateOutputPath)\EverestSplash-osx</AppHostIntermediatePath_osx>
         </PropertyGroup>
 
         <ItemGroup>
             <Content Include="$(AppHostIntermediatePath_win-x86)" TargetPath="EverestSplash-win.exe" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
             <Content Include="$(AppHostIntermediatePath_win-x64)" TargetPath="EverestSplash-win64.exe" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
             <Content Include="$(AppHostIntermediatePath_linux-x64)" TargetPath="EverestSplash-linux" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
-            <Content Include="$(AppHostIntermediatePath_osx-x64)" TargetPath="EverestSplash-osx" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+            <Content Include="$(AppHostIntermediatePath_osx)" TargetPath="EverestSplash-osx" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
         </ItemGroup>
     </Target>
 
@@ -50,7 +92,9 @@
         <CreateAppHost AppHostSourcePath="$(AppHost_win-x86)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x86)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')"  WindowsGraphicalUserInterface="true" />
         <CreateAppHost AppHostSourcePath="$(AppHost_win-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')"  WindowsGraphicalUserInterface="true" />
         <CreateAppHost AppHostSourcePath="$(AppHost_linux-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_linux-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
-        <CreateAppHost AppHostSourcePath="$(AppHost_osx-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_osx-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
+        <CreateAppHost AppHostSourcePath="$(AppHost_osx)" AppHostDestinationPath="$(AppHostIntermediatePath_osx)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
+        <PatchUniversalAppHost AppHostPath="$(AppHostIntermediatePath_osx)" AppBinaryName="$(AssemblyName)$(TargetExt)" />
+        <Exec Condition="$([MSBuild]::IsOSPlatform('OSX'))" Command="chmod +x &quot;$(AppHostIntermediatePath_osx)&quot; &amp;&amp; codesign -s - -f &quot;$(AppHostIntermediatePath_osx)&quot;" />
     </Target>
 
     <!-- Anonymize paths -->
