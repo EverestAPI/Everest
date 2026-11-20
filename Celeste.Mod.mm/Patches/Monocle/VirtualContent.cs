@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.IO;
 
 namespace Monocle {
+    // We may have concurrent usage of this class due to FTL
+    [MakeAllMethodsSynchronized]
     static class patch_VirtualContent {
 
         // We're effectively in VirtualContent, but still need to "expose" private fields to our mod.
@@ -62,6 +64,9 @@ namespace Monocle {
         [MonoModLinkFrom("System.Void Monocle.VirtualContent::_Unload()")]
         public static extern void Unload();
 
+        [MonoModIgnore]
+        public static extern void Remove(VirtualAsset asset);
+
         /// <summary>
         /// Forcibly unload and reload all content.
         /// </summary>
@@ -76,8 +81,9 @@ namespace Monocle {
         public static void UnloadOverworld() {
             foreach (patch_VirtualAsset asset in assets) {
                 string path = asset.Name.Replace('\\', '/');
-                if (asset is patch_VirtualTexture && path.StartsWith("Graphics/Atlases/")) {
-                    path = path.Substring(17);
+                const string pfx = "Graphics/Atlases/";
+                if (asset is patch_VirtualTexture && path.StartsWith(pfx)) {
+                    path = path[pfx.Length..];
                     if (path.StartsWith("Opening") || path.StartsWith("Overworld") || path.StartsWith("Mountain") || path.StartsWith("Journal")) {
                         asset.Unload();
                     }
