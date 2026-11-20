@@ -672,6 +672,14 @@ namespace Celeste.Mod {
                             patch_Level.EntityLoaders[id] = loader;
                         }
                     }
+
+                    foreach (AssociatedWithSidAttribute attrib in type.GetCustomAttributes<AssociatedWithSidAttribute>()) {
+                        foreach (string idFull in attrib.IDs) {
+                            string id = idFull.Trim();
+                            EntityRegistry.RegisterSidToTypeConnection(id, type);
+                        }
+                    }
+
                     // Register with the StrawberryRegistry all entities marked with RegisterStrawberryAttribute.
                     foreach (RegisterStrawberryAttribute attrib in type.GetCustomAttributes<RegisterStrawberryAttribute>()) {
                         List<string> names = new List<string>();
