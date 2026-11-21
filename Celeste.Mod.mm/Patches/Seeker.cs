@@ -2,9 +2,14 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value null
 
 using Celeste.Mod;
+using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
+using Mono.Cecil;
 using Monocle;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 using System;
 using System.Collections;
 
@@ -54,6 +59,10 @@ namespace Celeste {
         public int AddState(string name, Func<Seeker, int> onUpdate, Func<Seeker, IEnumerator> coroutine = null, Action<Seeker> begin = null, Action<Seeker> end = null){
             return ((patch_StateMachine)State).AddState(name, onUpdate, coroutine, begin, end);
         }
+
+        [MonoModIgnore] // We don't want to change anything about the method...
+        [PatchSeekerRegenerateCoroutine] // ... except for manually manipulating the method via MonoModRules
+        private extern IEnumerator RegenerateCoroutine();
     }
 }
 
@@ -68,6 +77,90 @@ namespace Celeste.Mod {
                 internal static void RegisterStates(_Seeker seeker)
                     => OnRegisterStates?.Invoke(seeker);
             }
+        }
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch seeker regenerate explosions to handle explosion interactions using <see cref="ExplosionCollider"/> components, rather than hardcoding them.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSeekerRegenerateCoroutine))]
+    class PatchSeekerRegenerateCoroutineAttribute : Attribute { }
+
+    static partial class MonoModRules {
+        public static void PatchSeekerRegenerateCoroutine(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition routine = method.GetEnumeratorMoveNext(); // ienumerators are scary ..
+
+            new ILContext(routine).Invoke(ctx => {
+                TypeDefinition t_ExplosionCollider = MonoModRule.Modder.Module.GetType("Celeste.Mod.Entities.ExplosionCollider");
+                MethodDefinition m_ExplosionCollider_TriggerExplosionColliders = t_ExplosionCollider.FindMethod("System.Void TriggerExplosionColliders(Monocle.Entity,System.Nullable`1<Microsoft.Xna.Framework.Vector2>)");
+
+                TypeDefinition t_Entity = MonoModRule.Modder.Module.GetType("Monocle.Entity");
+                FieldDefinition f_Entity_Position = t_Entity.FindField("Position");
+
+                TypeReference t_Nullable_Vector2 = m_ExplosionCollider_TriggerExplosionColliders.Parameters[1].ParameterType;
+                MethodReference m_Nullable_Vector2_ctor = MonoModRule.Modder.Module.ImportReference(t_Nullable_Vector2.Resolve().FindMethod(".ctor"));
+                m_Nullable_Vector2_ctor.DeclaringType = t_Nullable_Vector2; // generics are scary ..
+
+                ILCursor cursor = new(ctx);
+
+                // remove hardcoded explosion interactions (excluding for players and theo crystals)
+
+                // jump to just before the first hardcoded interaction (TempleCrackedBlocks)
+                cursor.GotoNext(MoveType.Before,
+                    instr => instr.MatchLdloc1(),
+                    instr => instr.MatchCallvirt("Monocle.Entity", "get_Scene"),
+                    instr => instr.MatchCallvirt("Monocle.Scene", "get_Tracker"),
+                    instr => instr.MatchCallvirt(out MethodReference m)
+                             && m.FullName == "System.Collections.Generic.List`1<Monocle.Entity> Monocle.Tracker::GetEntities<Celeste.TempleCrackedBlock>()");
+
+                // get the (inclusive) start index of the code to remove
+                int removeStartIndex = cursor.Index;
+
+                // jump to just before the collider is reset to normal (just after the last hardcoded interaction)
+                cursor.GotoNext(MoveType.Before,
+                    instr => instr.MatchLdloc1(),
+                    instr => instr.MatchLdloc1(),
+                    instr => instr.MatchLdfld("Celeste.Seeker", "physicsHitbox"),
+                    instr => instr.MatchCallvirt("Monocle.Entity", "set_Collider"));
+
+                // get the (exclusive) end index of the code to remove
+                int removeEndIndex = cursor.Index;
+
+                // remove the try/finally blocks used by the foreach loops over entities with hardcoded explosion interactions
+                for (int i = ctx.Body.ExceptionHandlers.Count - 1; i >= 0; i--) {
+                    int tryStartIndex = ctx.IndexOf(ctx.Body.ExceptionHandlers[i].TryStart);
+                    if (tryStartIndex >= removeStartIndex && tryStartIndex < removeEndIndex) {
+                        ctx.Body.ExceptionHandlers.RemoveAt(i);
+                    }
+                }
+
+                // remove hardcoded explosion interactions
+                cursor.Index = removeStartIndex;
+                cursor.RemoveRange(removeEndIndex - removeStartIndex);
+                cursor.MoveAfterLabels();
+
+                // remove locals used by the foreach loops over entities with hardcoded explosion interactions
+                for (int i = ctx.Body.Variables.Count - 1; i >= 0; i--) {
+                    switch (ctx.Body.Variables[i].VariableType.FullName) {
+                        case "System.Collections.Generic.List`1/Enumerator<Monocle.Entity>":
+                        case "Celeste.TempleCrackedBlock":
+                        case "Celeste.TouchSwitch":
+                            ctx.Body.Variables.RemoveAt(i);
+                            break;
+                    }
+                }
+
+                // inject `ExplosionCollider.TriggerExplosionColliders(this, this.Position)` call
+                cursor.EmitLdloc1();
+
+                cursor.EmitLdloc1();
+                cursor.EmitLdfld(f_Entity_Position);
+                cursor.EmitNewobj(m_Nullable_Vector2_ctor);
+
+                cursor.EmitCall(m_ExplosionCollider_TriggerExplosionColliders);
+            });
         }
     }
 }
