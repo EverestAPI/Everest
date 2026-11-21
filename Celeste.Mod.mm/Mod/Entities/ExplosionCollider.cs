@@ -12,7 +12,7 @@ namespace Celeste.Mod.Entities;
 public class ExplosionCollider : Component {
     /// <summary>
     /// Called when an explosion collides with this component.<br/>
-    /// The first argument is the entity triggering the explosion, and the second argument is the position of the center of the explosion.
+    /// The first argument is the entity triggering the explosion, and the second argument is the position of the origin of the explosion.
     /// </summary>
     public Action<Entity, Vector2> OnCollide;
 
@@ -58,7 +58,8 @@ public class ExplosionCollider : Component {
     /// (Does not launch Players or TheoCrystals.)
     /// </summary>
     /// <param name="entity">The entity triggering the explosion.</param>
-    public static void TriggerExplosionColliders(Entity entity) {
+    /// <param name="explosionOrigin">The position of the origin of the explosion. If null, the center of the entity triggering the explosion is used.</param>
+    public static void TriggerExplosionColliders(Entity entity, Vector2? explosionOrigin = null) {
         // collect the colliding components beforehand so no side effects from their `OnCollide` will affect which components are checked
         ExplosionCollider[] collidingExplosionColliders = entity.Scene.Tracker
             .GetComponents<ExplosionCollider>()
@@ -66,8 +67,9 @@ public class ExplosionCollider : Component {
             .Where(c => c.OnCollide != null && c.Check(entity))
             .ToArray();
 
+        Vector2 origin = explosionOrigin ?? entity.Center;
         foreach (ExplosionCollider explosionCollider in collidingExplosionColliders) {
-            explosionCollider.OnCollide(entity, entity.Center);
+            explosionCollider.OnCollide(entity, origin);
         }
     }
 }

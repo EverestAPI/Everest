@@ -90,15 +90,22 @@ namespace MonoMod {
 
     static partial class MonoModRules {
         public static void PatchSeekerRegenerateCoroutine(MethodDefinition method, CustomAttribute attrib) {
-            MethodDefinition routine = method.GetEnumeratorMoveNext();
+            MethodDefinition routine = method.GetEnumeratorMoveNext(); // ienumerators are scary ..
 
             new ILContext(routine).Invoke(ctx => {
                 TypeDefinition t_ExplosionCollider = MonoModRule.Modder.Module.GetType("Celeste.Mod.Entities.ExplosionCollider");
-                MethodDefinition m_ExplosionCollider_TriggerExplosionColliders = t_ExplosionCollider.FindMethod("System.Void TriggerExplosionColliders(Monocle.Entity)");
+                MethodDefinition m_ExplosionCollider_TriggerExplosionColliders = t_ExplosionCollider.FindMethod("System.Void TriggerExplosionColliders(Monocle.Entity,System.Nullable`1<Microsoft.Xna.Framework.Vector2>)");
+
+                TypeDefinition t_Entity = MonoModRule.Modder.Module.GetType("Monocle.Entity");
+                FieldDefinition f_Entity_Position = t_Entity.FindField("Position");
+
+                TypeReference t_Nullable_Vector2 = m_ExplosionCollider_TriggerExplosionColliders.Parameters[1].ParameterType;
+                MethodReference m_Nullable_Vector2_ctor = MonoModRule.Modder.Module.ImportReference(t_Nullable_Vector2.Resolve().FindMethod(".ctor"));
+                m_Nullable_Vector2_ctor.DeclaringType = t_Nullable_Vector2; // generics are scary ..
 
                 ILCursor cursor = new(ctx);
 
-                // remove hardcoded explosion interactions (excluding players and theo crystals)
+                // remove hardcoded explosion interactions (excluding for players and theo crystals)
 
                 // jump to just before the first hardcoded interaction (TempleCrackedBlocks)
                 cursor.GotoNext(MoveType.Before,
@@ -145,8 +152,13 @@ namespace MonoMod {
                     }
                 }
 
-                // inject call to ExplosionCollider.TriggerExplosionColliders
+                // inject `ExplosionCollider.TriggerExplosionColliders(this, this.Position)` call
                 cursor.EmitLdloc1();
+
+                cursor.EmitLdloc1();
+                cursor.EmitLdfld(f_Entity_Position);
+                cursor.EmitNewobj(m_Nullable_Vector2_ctor);
+
                 cursor.EmitCall(m_ExplosionCollider_TriggerExplosionColliders);
             });
         }

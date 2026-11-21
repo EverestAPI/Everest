@@ -41,7 +41,14 @@ namespace MonoMod {
     static partial class MonoModRules {
         public static void PatchPufferExplode(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_ExplosionCollider = MonoModRule.Modder.Module.GetType("Celeste.Mod.Entities.ExplosionCollider");
-            MethodDefinition m_ExplosionCollider_TriggerExplosionColliders = t_ExplosionCollider.FindMethod("System.Void TriggerExplosionColliders(Monocle.Entity)");
+            MethodDefinition m_ExplosionCollider_TriggerExplosionColliders = t_ExplosionCollider.FindMethod("System.Void TriggerExplosionColliders(Monocle.Entity,System.Nullable`1<Microsoft.Xna.Framework.Vector2>)");
+
+            TypeDefinition t_Entity = MonoModRule.Modder.Module.GetType("Monocle.Entity");
+            FieldDefinition f_Entity_Position = t_Entity.FindField("Position");
+
+            TypeReference t_Nullable_Vector2 = m_ExplosionCollider_TriggerExplosionColliders.Parameters[1].ParameterType;
+            MethodReference m_Nullable_Vector2_ctor = MonoModRule.Modder.Module.ImportReference(t_Nullable_Vector2.Resolve().FindMethod(".ctor"));
+            m_Nullable_Vector2_ctor.DeclaringType = t_Nullable_Vector2; // generics are scary ..
 
             ILCursor cursor = new(context);
 
@@ -92,8 +99,13 @@ namespace MonoMod {
                 }
             }
 
-            // inject call to ExplosionCollider.TriggerExplosionColliders
+            // inject `ExplosionCollider.TriggerExplosionColliders(this, this.Position)` call
             cursor.EmitLdarg0();
+
+            cursor.EmitLdarg0();
+            cursor.EmitLdfld(f_Entity_Position);
+            cursor.EmitNewobj(m_Nullable_Vector2_ctor);
+
             cursor.EmitCall(m_ExplosionCollider_TriggerExplosionColliders);
         }
     }
