@@ -401,7 +401,7 @@ namespace Celeste.Mod {
             lock (zip) {
                 ZipArchiveEntry entry = zip.GetEntry(path);
                 if (entry == null) throw new KeyNotFoundException($"File {path} not found in archive {Path}");
-                return new SynchronizedZipEntryStream(entry);
+                return new BufferedStream(new SynchronizedZipEntryStream(entry));
             }
         }
 
