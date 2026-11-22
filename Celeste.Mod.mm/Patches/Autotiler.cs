@@ -10,6 +10,7 @@ using MonoMod.Cil;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 
 namespace Celeste {
@@ -41,6 +42,11 @@ namespace Celeste {
             return orig_GenerateOverlay(id, x, y, tilesX, tilesY, mapData);
         }
 
+        [MonoModIgnore]
+        [PatchAutotilerGenerate]
+        private extern Generated Generate(VirtualMap<char> mapData, int startX, int startY, int tilesX, int tilesY, bool forceSolid, char forceID, Behaviour behaviour);
+
+        [PatchAutotilerReadInto]
         private extern void orig_ReadInto(patch_TerrainType data, Tileset tileset, XmlElement xml);
         private void ReadInto(patch_TerrainType data, Tileset tileset, XmlElement xml) {
             if (xml.HasAttr("scanWidth")) {
@@ -67,7 +73,7 @@ namespace Celeste {
 
                 data.CustomFills = new List<patch_Tiles>();
                 for (int i = 0; i < fills.Count; i++)
-                    data.CustomFills.Add(new patch_Tiles());
+                    data.CustomFills.Add(new patch_Tiles() { ID = data.ID });
             }
 
             if (data.CustomFills == null && data.ScanWidth == 3 && data.ScanHeight == 3 && !xml.HasChild("define")) // ReadIntoCustomTemplate can handle vanilla templates but meh
@@ -126,6 +132,7 @@ namespace Celeste {
                             patch_Masked masked = new patch_Masked();
                             masked.Mask = new byte[data.ScanWidth * data.ScanHeight];
                             tiles = masked.Tiles;
+                            tiles.ID = data.ID;
 
                             try {
                                 // Allows for spacer characters like '-' in the xml
@@ -268,6 +275,7 @@ namespace Celeste {
             if (!lookup.TryGetValue(tile, out patch_TerrainType terrainType)) {
                 Logger.Error("Autotiler", $"Undefined tile id '{tile}' at ({x}, {y})");
                 return new patch_Tiles {
+                    ID = tile,
                     Textures = { ((patch_Atlas) GFX.Game).GetFallback() },
                 };
             }
@@ -455,6 +463,9 @@ namespace Celeste {
             public void ctor(char id) {
                 orig_ctor(id);
 
+                Center.ID = id;
+                Padded.ID = id;
+
                 IgnoreExceptions = new HashSet<char>();
 
                 whitelists = new Dictionary<byte, string>();
@@ -471,8 +482,9 @@ namespace Celeste {
         }
 
         // Required because Tiles is private.
-        [MonoModIgnore]
         private class patch_Tiles {
+            public char ID;
+
             public List<MTexture> Textures;
             public List<string> OverlapSprites;
             public bool HasOverlays;
@@ -499,6 +511,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAutotilerCtor))]
     class PatchAutotilerCtorAttribute : Attribute { }
 
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAutotilerGenerate))]
+    class PatchAutotilerGenerateAttribute : Attribute { }
+
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAutotilerReadInto))]
+    class PatchAutotilerReadIntoAttribute : Attribute { }
+
     static partial class MonoModRules {
         public static void PatchAutotilerCtor(ILContext context, CustomAttribute attrib) {
             ILCursor cursor = new(context);
@@ -514,6 +532,99 @@ namespace MonoMod {
             cursor.EmitLdloc3(); // char c (the tileset id)
             cursor.EmitLdarg1(); // string filename (the xml path)
             cursor.EmitCallvirt(m_throwOnDuplicateId);
+        }
+
+        public static void PatchAutotilerGenerate(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new(context);
+
+            TypeDefinition autotiler = context.Method.DeclaringType;
+
+            int loc_x = 0;
+            int loc_y = 0;
+            int loc_tiles = 0;
+
+            // Monocle.VirtualMap`1<char> Monocle.TileGrid::TileIds
+            FieldDefinition f_TileGrid_TileIds = context.Module.GetType("Monocle.TileGrid").FindField("TileIds");
+
+            // char Celeste.Autotiler/Tiles::ID
+            FieldDefinition f_Tiles_ID = autotiler.NestedTypes.First(t => t.Name == "Tiles").FindField("ID");
+
+            // cecil my beloved
+            // (i wasted like 3 hours figuring this out, only to find out i was like 1 step away from getting it right)
+
+            // Monocle.VirtualMap`1
+            TypeDefinition t_VirtualMap = context.Module.GetType("Monocle.VirtualMap`1");
+
+            // Monocle.VirtualMap`1<char>
+            GenericInstanceType t_VirtualMap_Char = new(t_VirtualMap);
+            t_VirtualMap_Char.GenericArguments.Add(context.Module.TypeSystem.Char);
+
+            // Monocle.VirtualMap`1<char>::set_Item(int32, int32, !0)
+            MethodReference m_VirtualMap_Char_set_Item = new MethodReference("set_Item", context.Module.TypeSystem.Void, t_VirtualMap_Char);
+            m_VirtualMap_Char_set_Item.Parameters.Add(new ParameterDefinition(context.Module.TypeSystem.Int32));
+            m_VirtualMap_Char_set_Item.Parameters.Add(new ParameterDefinition(context.Module.TypeSystem.Int32));
+            m_VirtualMap_Char_set_Item.Parameters.Add(new ParameterDefinition(t_VirtualMap.GenericParameters[0]));
+            m_VirtualMap_Char_set_Item.HasThis = true;
+
+            // tileGrid.Tiles[{x} - startX, {y} - startY] = Calc.Random.Choose({tiles}.Textures);
+            while (cursor.TryGotoNext(
+                instr => instr.MatchLdloc0(),
+                instr => instr.MatchLdfld("Monocle.TileGrid", "Tiles"),
+                instr => instr.MatchLdloc(out loc_x),
+                instr => instr.MatchLdarg2(),
+                instr => instr.MatchSub(),
+                instr => instr.MatchLdloc(out loc_y),
+                instr => instr.MatchLdarg3(),
+                instr => instr.MatchSub(),
+                instr => instr.MatchLdsfld("Monocle.Calc", "Random"),
+                instr => instr.MatchLdloc(out loc_tiles),
+                instr => instr.MatchLdfld("Celeste.Autotiler.Tiles", "Textures"),
+                instr => instr.MatchCall("Monocle.Calc", "Choose"),
+                instr => instr.MatchCallvirt("Monocle.VirtualMap`1<Monocle.MTexture>", "set_Item")))
+            {
+                // tileGrid.TileIds[{x} - startX, {y} - startY] = {tiles}.ID;
+
+                // tileGrid.TileIds
+                cursor.EmitLdloc0();
+                cursor.EmitLdfld(f_TileGrid_TileIds);
+                // x - startX
+                cursor.EmitLdloc(loc_x);
+                cursor.EmitLdarg2();
+                cursor.EmitSub();
+                // y - startY
+                cursor.EmitLdloc(loc_y);
+                cursor.EmitLdarg3();
+                cursor.EmitSub();
+                // tiles.ID;
+                cursor.EmitLdloc(loc_tiles);
+                cursor.EmitLdfld(f_Tiles_ID);
+                // [,] = ...
+                cursor.EmitCallvirt(m_VirtualMap_Char_set_Item);
+
+                // advance past the current match
+                cursor.Index++;
+            }
+        }
+
+        public static void PatchAutotilerReadInto(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new(context);
+
+            TypeDefinition autotiler = context.Method.DeclaringType;
+
+            // char Celeste.Autotiler/TerrainType::ID
+            FieldReference f_TerrainType_ID = autotiler.NestedTypes.First(t => t.Name == "TerrainType").FindField("ID");
+            // char Celeste.Autotiler/Tiles::ID
+            FieldReference f_Tiles_ID = autotiler.NestedTypes.First(t => t.Name == "Tiles").FindField("ID");
+
+            cursor.GotoNext(MoveType.After, instr => instr.MatchStloc(5));
+            cursor.GotoNext(MoveType.After, instr => instr.MatchStloc(4));
+
+            // tiles.ID = data.ID;
+
+            cursor.EmitLdloc(4); // tiles (Celeste.Autotiler/Tiles)
+            cursor.EmitLdarg1(); // data (Celeste.Autotiler/TerrainType)
+            cursor.EmitLdfld(f_TerrainType_ID); // data.ID (char)
+            cursor.EmitStfld(f_Tiles_ID);
         }
     }
 }
