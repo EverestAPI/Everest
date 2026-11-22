@@ -378,6 +378,9 @@ namespace Celeste.Mod.Core {
         public bool AllowTextHighlight => !Settings.Instance.DisableFlashes || PhotosensitivityTextHighlightOverride;
 
         [SettingIgnore]
+        public bool ColourblindnessAccessibility { get; set; } = false;
+
+        [SettingIgnore]
         public int? QuickRestart { get; set; }
 
         [SettingIgnore]

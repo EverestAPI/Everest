@@ -30,7 +30,7 @@ using _Player = Celeste.Player;
 namespace Celeste {
     class patch_Level : Level {
 
-        // We're effectively in GameLoader, but still need to "expose" private fields to our mod.
+        // We're effectively in Level, but still need to "expose" private fields to our mod.
         private float flash;
 
         private Color flashColor = Color.White;
@@ -106,6 +106,15 @@ namespace Celeste {
         [MonoModIgnore] // We don't want to change anything about the method...
         [PatchLevelRender] // ... except for manually manipulating the method via MonoModRules
         public override extern void Render();
+
+        public override void BeforeUpdate() {
+            base.BeforeUpdate();
+            Session.SetFlag("everest_core_cold", CoreMode is Session.CoreModes.Cold);
+            Session.SetFlag("everest_core_hot", CoreMode is Session.CoreModes.Hot);
+            Session.SetFlag("everest_photosensitivity", Settings.Instance.DisableFlashes);
+            Session.SetFlag("everest_colorblindness", CoreModule.Settings.ColourblindnessAccessibility);
+            Session.SetFlag("everest_screenshake_off", Settings.Instance.ScreenShake is ScreenshakeAmount.Off);
+        }
 
         [MonoModIgnore] // We don't want to change anything about the method...
         [PatchLevelUpdate] // ... except for manually manipulating the method via MonoModRules
