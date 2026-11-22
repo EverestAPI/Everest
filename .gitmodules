@@ -7,5 +7,5 @@
 	url = https://github.com/EverestAPI/NLua
 [submodule "lib-ext"]
 	path = lib-ext
-	url = https://github.com/EverestAPI/Everest-libs
+	url = https://github.com/lucasaf04/Everest-libs
 	branch = binaries
