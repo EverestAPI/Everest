@@ -2,12 +2,17 @@
 #pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
+using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using MonoMod;
 
 namespace Celeste {
-    class patch_Glider : Glider {
+    [PatchSpeedInterface]
+    class patch_Glider : Glider, ISpeed {
         public patch_Holdable Hold; // avoids extra cast
+
+        [PatchInterfaceProperty]
+        Vector2 ISpeed.Speed { get => Speed; set => Speed = value; }
 
         public patch_Glider(Vector2 position, bool bubble, bool tutorial)
             : base(position, bubble, tutorial) {

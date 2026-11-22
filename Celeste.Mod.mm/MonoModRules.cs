@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
+using PropertyAttributes = Mono.Cecil.PropertyAttributes;
 
 namespace MonoMod {
 #region Helper Patch Attributes
@@ -22,6 +23,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInterface))]
     class PatchInterfaceAttribute : Attribute { }
+
+    /// <summary>
+    /// Helper for patching properties force-implemented by an interface
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInterfaceProperty))]
+    class PatchInterfacePropertyAttribute : Attribute { }
 
     /// <summary>
     /// Forcibly changes a given member's name.
@@ -226,6 +233,12 @@ namespace MonoMod {
         public static void PatchInterface(MethodDefinition method, CustomAttribute attrib) {
             MethodAttributes flags = MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot;
             method.Attributes |= flags;
+        }
+
+        public static void PatchInterfaceProperty(PropertyDefinition property, CustomAttribute attrib) {
+            MethodAttributes flags = MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot;
+            if (property.GetMethod is {} @get) @get.Attributes |= flags;
+            if (property.SetMethod is {} @set) @set.Attributes |= flags;
         }
 
         public static void ForceName(ICustomAttributeProvider cap, CustomAttribute attrib) {
