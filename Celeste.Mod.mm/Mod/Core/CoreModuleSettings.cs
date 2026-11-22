@@ -283,6 +283,10 @@ namespace Celeste.Mod.Core {
             }
         }
 
+        [SettingSubText("MODOPTIONS_COREMODULE_TRUELASTAREAINFILESELECT_DESC")]
+        [SettingInGame(false)]
+        public bool TrueLastAreaInFileSelect { get; set; } = false;
+
         // Keep in sync with https://github.com/EverestAPI/Olympus/blob/main/src/scenes/options.lua :: mirrorPreferences
         public string MirrorPreferences { get; set; } = "gb,jade,risingsunlight,otobot,wegfan";
 
